@@ -60,3 +60,6 @@ node_modules/
 build/
 dist/
 .gradle/
+
+# Raw unredacted article screenshots (real IPs visible) - never commit
+artifacts/phpto/

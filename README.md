@@ -42,6 +42,7 @@ Before starting, make sure you have:
 - Docker Engine 20.10+
 - Docker Compose v2
 - A VPS (required only for external access)
+
 ```bash
 git clone https://github.com/AlexeyBorovskoy/Nasa_home.git ~/nasa
 cd ~/nasa
@@ -50,7 +51,8 @@ docker compose -f docker/compose/docker-compose.nextcloud.yml --env-file config/
 docker compose -f docker/compose/docker-compose.immich.yml   --env-file config/.env up -d
 ```
 
-> 📖 For the complete setup guide, see **Full Quick Start** below.
+> 📖 For the complete setup guide, see [Full Quick Start](#быстрый-старт--quick-start) below.
+
 ---
 
 ## Зачем это нужно / Why

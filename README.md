@@ -32,16 +32,18 @@
 ---
 
 ## Быстрый старт / Quick Start (TL;DR)
-The following commands deploy the core services using the default project configuration.
 
-### Requirements
+> 🇷🇺 Команды ниже разворачивают основные сервисы с конфигурацией проекта по умолчанию.
+> 🇬🇧 The following commands deploy the core services using the default project configuration.
 
-Before starting, make sure you have:
+### Требования / Requirements
 
-- NVIDIA Jetson Nano, Raspberry Pi 4/5, or another compatible mini-PC
+🇷🇺 Перед началом убедитесь, что у вас есть: · 🇬🇧 Before starting, make sure you have:
+
+- NVIDIA Jetson Nano, Raspberry Pi 4/5 или другой совместимый мини-ПК / or another compatible mini-PC
 - Docker Engine 20.10+
 - Docker Compose v2
-- A VPS (required only for external access)
+- VPS — нужен только для внешнего доступа / required only for external access
 
 ```bash
 git clone https://github.com/AlexeyBorovskoy/Nasa_home.git ~/nasa
@@ -51,7 +53,7 @@ docker compose -f docker/compose/docker-compose.nextcloud.yml --env-file config/
 docker compose -f docker/compose/docker-compose.immich.yml   --env-file config/.env up -d
 ```
 
-> 📖 For the complete setup guide, see [Full Quick Start](#быстрый-старт--quick-start) below.
+> 📖 Подробный гайд / For the complete setup guide: [Быстрый старт / Full Quick Start](#быстрый-старт--quick-start) ↓
 
 ---
 
@@ -413,7 +415,8 @@ docker run --rm --network host \
 ```
 
 ### 7. Проверить / Verify
-Run the following commands to verify that each core service is running correctly after deployment.
+
+🇷🇺 Команды ниже проверяют, что каждый основной сервис работает корректно после развёртывания. · 🇬🇧 Run the following commands to verify that each core service is running correctly after deployment.
 
 ```bash
 curl -sf http://localhost:8080/status.php         # Nextcloud → {"installed":true,...}
@@ -425,7 +428,7 @@ curl -sf http://localhost:19999/api/v1/info       # Netdata → {...}
 goss -g tests/goss/goss.yaml validate --format tap   # 40 infrastructure tests
 ```
 
-After deployment, you can access the following web interfaces (Web UI):
+🇷🇺 После развёртывания доступны веб-интерфейсы: · 🇬🇧 After deployment, you can access the following web interfaces (Web UI):
 - **Swagger:** http://192.168.0.50:8099/docs
 - **Netdata:** http://192.168.0.50:19999
 - **Uptime Kuma:** http://192.168.0.50:3001

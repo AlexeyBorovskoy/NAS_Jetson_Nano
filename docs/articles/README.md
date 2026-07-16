@@ -1,12 +1,14 @@
-# Articles and project logs
+# Статьи и журналы проекта / Articles and project logs
 
-This folder contains public article drafts and publication materials for NAS_Jetson_Nano.
+🇷🇺 В этой папке находятся черновики статей и материалы подготовки. Наличие файла не означает, что материал опубликован.
+
+🇬🇧 This folder contains article drafts and preparation materials. The presence of a file does not mean that it has been published.
 
 ## Available materials
 
 | File | Language | Purpose | Status |
 |---|---|---|---|
-| habr_article_ru.md | RU | Habr article — GitHub Pages version (image paths 01–07) | published |
+| habr_article_ru.md | RU | Черновик статьи для Habr / Habr article draft | draft / черновик |
 | habr_ready.md | RU | Habr article — clean paste for Markdown editor | ready |
 | habr_wysiwyg.html | RU | Habr article — HTML for WYSIWYG editor paste | ready |
 | hackaday_project_en.md | EN | Hackaday.io project page | draft |
@@ -36,7 +38,7 @@ See [reddit/](reddit/) folder:
 | reddit/r_immich.md | r/Immich | ~50k — Immich on constrained hardware | Medium |
 | reddit/r_jetsonnano.md | r/JetsonNano | ~30k — JMS583 quirk, ARM64 Docker | Medium |
 
-## Publication links
+## Статус публикаций / Publication status
 
-- Habr Sandbox: https://habr.com/ru/sandbox/291694/
+- Habr: не опубликовано / not published
 - GitHub Pages: https://alexeyborovskoy.github.io/NAS_Jetson_Nano/articles/habr_article_ru.html

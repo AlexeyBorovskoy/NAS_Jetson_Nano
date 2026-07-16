@@ -7,6 +7,8 @@ Nextcloud, Immich, Android clients, monitoring and AI-assisted reliability engin
 
 ## Highlights
 
+> **Статус данных / Data status:** приведённые ниже эксплуатационные числа являются историческими снимками из материалов проекта, а не текущими показателями. / The runtime figures below are historical snapshots from project records, not current measurements.
+
 - **Jetson Nano 4GB** as home server (ARM64, no swap — real constraints)
 - **Nextcloud** for files, contacts and calendar (CardDAV/CalDAV)
 - **Immich** for family photo archive (6 697 photos backed up)
@@ -19,14 +21,14 @@ Nextcloud, Immich, Android clients, monitoring and AI-assisted reliability engin
 
 ## Read
 
-- [🇷🇺 Habr article (RU)](articles/habr_article_ru.md)
+- [🇷🇺 Черновик статьи для Habr / Habr article draft](articles/habr_article_ru.md)
 - [🇬🇧 Hackaday.io project draft (EN)](articles/hackaday_project_en.md)
 - [Architecture](pages/architecture.md)
 - [Reliability and validation](pages/reliability.md)
 - [Android client](pages/android.md)
 - [Evidence package](pages/evidence.md)
 
-## Current status
+## Historical status snapshot / Исторический снимок состояния
 
 | Component | Status |
 |---|---|

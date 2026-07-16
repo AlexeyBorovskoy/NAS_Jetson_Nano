@@ -8,9 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Corrected / Исправлено
+
+- 🇷🇺 Исправлено недостоверное заявление о публикации статьи на Habr: статья не опубликована; в репозитории находятся только черновики и материалы подготовки.
+- 🇬🇧 Corrected the unsupported claim that the Habr article had been published: it is unpublished; the repository contains drafts and preparation materials only.
+
 ---
 
-## [1.4.1] — 2026-06-29 · GitHub Pages + Habr publication
+## [1.4.1] — 2026-06-29 · GitHub Pages + Habr preparation
 
 ### Added / Добавлено
 
@@ -20,13 +25,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `docs/pages/architecture.md` · `reliability.md` · `android.md` · `evidence.md`
   - `docs/assets/screenshots/article/redacted/` — 7 редактированных скриншотов (01–07)
   - URL: https://alexeyborovskoy.github.io/NAS_Jetson_Nano/
-- **Habr article** — публикация в Песочнице https://habr.com/ru/sandbox/291694/
+- **Habr article / Статья для Habr** — подготовлены черновики и форматы для редактора; публикация не подтверждена и фактически не состоялась.
   - `docs/articles/habr_article_ru.md` — канонический вариант для GitHub Pages (пути 01–07)
   - `docs/articles/habr_ready.md` — чистая версия для вставки в Markdown-редактор Хабра
   - `docs/articles/habr_wysiwyg.html` — HTML для вставки в WYSIWYG-редактор Хабра
   - `docs/articles/hackaday_project_en.md` — черновик для Hackaday.io
 - **`.gitleaks.toml`** — конфиг подавления ложных срабатываний (placeholders)
-- **README.md**: раздел «Статьи и публикации / Articles» с ссылками на Habr и GitHub Pages
+- **README.md**: раздел «Статьи и публикации / Articles» с черновиком Habr и ссылкой на GitHub Pages
 - **`docs/prompts/CODEX_GITHUB_PAGES_PUBLICATION_PROMPT.md`** — сохранён промпт публикации
 
 ---

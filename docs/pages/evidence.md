@@ -3,7 +3,11 @@ layout: default
 title: Evidence Package
 ---
 
-# Evidence package
+# Пакет доказательств / Evidence package
+
+> 🇷🇺 Скриншоты являются историческими снимками, а не подтверждением текущего состояния. Эксплуатационные показатели требуют повторной проверки на указанную дату.
+>
+> 🇬🇧 Screenshots are historical snapshots, not proof of current state. Runtime figures require a dated re-verification.
 
 Screenshots and artifacts confirming the system is live and working.
 
@@ -23,7 +27,7 @@ All screenshots are redacted: IPs replaced with placeholders, personal names blu
 
 ## Validation results
 
-**goss 40/40** — all infrastructure tests pass.
+**goss 40/40** — исторический результат из материалов проекта; в рамках аудита документации 16.07.2026 тест не перезапускался. / Historical result recorded in project materials; the test was not rerun during the 2026-07-16 documentation audit.
 
 Run on Jetson Nano:
 ```bash
@@ -44,7 +48,7 @@ Test matrix: [docs/quality/test_matrix.md](../quality/test_matrix.md)
 ## Links
 
 - GitHub repository: [AlexeyBorovskoy/NAS_Jetson_Nano](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano)
-- Habr article: [habr.com/ru/sandbox/291694/](https://habr.com/ru/sandbox/291694/)
+- Habr article / Статья Habr: not published / не опубликована
 
 ---
 

@@ -85,7 +85,9 @@ Browser warns once — accept certificate. Next step: add a domain, switch to Ca
 
 ---
 
-## Current status
+## Historical status snapshot (2026-06-29)
+
+> These figures have not been re-verified for the current date and must not be presented as current runtime state.
 
 - 13 Docker containers — all up, healthy
 - 6 697 photos and videos backed up from family phones (Immich)

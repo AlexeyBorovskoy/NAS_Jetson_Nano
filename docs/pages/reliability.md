@@ -57,7 +57,7 @@ If the SSD cable is physically unplugged and replugged:
 
 No manual SSH required. Full recovery in under 60 seconds.
 
-## Validation: goss 40/40
+## Historical validation snapshot: goss 40/40
 
 Infrastructure tested with [goss](https://github.com/goss-org/goss) (ARM64 binary):
 
@@ -73,7 +73,7 @@ Test categories:
 - HTTP endpoints responding (200/302)
 - Mount point available
 
-Current result: **40/40 passing**.
+Recorded result on 2026-06-28: **40/40 passing**. This is historical evidence and must be rerun before being described as current.
 
 ## Telegram daily report
 

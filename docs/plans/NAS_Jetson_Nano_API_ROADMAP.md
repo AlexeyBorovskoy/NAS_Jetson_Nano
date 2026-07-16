@@ -5,7 +5,11 @@
 
 ---
 
-## Текущее состояние — v0.6.0 ✅ (live 2026-06-29)
+## Историческое состояние / Historical state — v0.6.0 (проверялось / observed 2026-06-29)
+
+> 🇷🇺 Для подтверждения текущего состояния нужна новая read-only проверка.
+>
+> 🇬🇧 A new read-only check is required to confirm the current state.
 
 **Стек:** FastAPI 0.138 · Python 3.12 · Pydantic v2 · JWT (Nextcloud OCS) · Swagger UI `:8099/docs`
 

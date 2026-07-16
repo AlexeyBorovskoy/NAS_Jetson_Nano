@@ -164,7 +164,7 @@ Principles:
 > Android: Immich ✅ (6484 фото, 210 видео) · Nextcloud ✅ · DAVx⁵ ✅ · Talk ✅.
 > USB SSD: **JMS583** ✅ (152d:a583, USB 3.0 SuperSpeed, 5 Gbps, write 250 MB/s, UAS quirk активен).
 > Nextcloud Talk: группа «Семья» ✅ (5 участников: admin, olga, ivan, ulyana, anna).
-> NAS_Jetson_Nano API: **v0.6.0** ✅ — Talk, Users, Photos, Actions endpoints live · goss 40/40.
+> Исторический снимок / Historical snapshot (2026-06-29): NAS_Jetson_Nano API **v0.6.0**, Talk, Users, Photos and Actions endpoints, goss 40/40. Требуется повторная проверка для подтверждения текущего состояния / A rerun is required to confirm current state.
 
 | Сервис / Service | Порт / Port | Доступ / Access | Статус / Status |
 |---|---|---|---|
@@ -574,13 +574,15 @@ CI автоматически проверяет секреты / CI automatical
 
 ## Статьи и публикации / Articles
 
-🇷🇺 **Habr:** [«Домашний облачный сервер за ноль рублей»](https://habr.com/ru/sandbox/291694/) — статья в Песочнице (ждёт выхода в основную ленту).
+🇷🇺 **Habr:** статья **не опубликована**. В репозитории хранится только черновик и материалы подготовки. Ранее указанный адрес Песочницы на 16.07.2026 возвращает HTTP 404 и не является доказательством публикации.
+
+🇬🇧 **Habr:** the article is **not published**. The repository contains only a draft and preparation materials. The previously recorded Sandbox URL returned HTTP 404 on 2026-07-16 and is not evidence of publication.
 
 🇬🇧 **GitHub Pages:** [alexeyborovskoy.github.io/NAS_Jetson_Nano](https://alexeyborovskoy.github.io/NAS_Jetson_Nano/) — project site with architecture, reliability story, evidence.
 
 | Материал | Язык | Ссылка |
 |---|---|---|
-| Habr статья | RU | [habr.com/ru/sandbox/291694/](https://habr.com/ru/sandbox/291694/) |
+| Черновик статьи для Habr / Habr article draft | RU | [docs/articles/habr_article_ru.md](docs/articles/habr_article_ru.md) |
 | GitHub Pages | EN/RU | [alexeyborovskoy.github.io/NAS_Jetson_Nano](https://alexeyborovskoy.github.io/NAS_Jetson_Nano/) |
 | Hackaday.io | EN | [docs/articles/hackaday_project_en.md](docs/articles/hackaday_project_en.md) |
 | Архив версий статьи | — | [docs/articles/README.md](docs/articles/README.md) |

@@ -1,5 +1,5 @@
-# Миграция с Google — NASA Home Cloud
-# Google Migration — NASA Home Cloud
+# Миграция с Google — NAS_Jetson_Nano
+# Google Migration — NAS_Jetson_Nano
 
 > 🇷🇺 Пошаговая замена Google-сервисов самохостингом. Всё делается постепенно — Google не отключается до подтверждения, что данные перенесены.
 >
@@ -185,10 +185,10 @@ Settings → Accounts → Google → disable **Contacts**
 ### 3.2 Синхронизация / Phone sync
 
 🇷🇺 DAVx⁵ автоматически найдёт новые календари после синхронизации.
-Проверить: DAVx⁵ → Аккаунт NASA → CalDAV → список календарей ✅
+Проверить: DAVx⁵ → Аккаунт NAS_Jetson_Nano → CalDAV → список календарей ✅
 
 🇬🇧 DAVx⁵ will automatically find new calendars after sync.
-Check: DAVx⁵ → NASA Account → CalDAV → calendar list ✅
+Check: DAVx⁵ → NAS_Jetson_Nano Account → CalDAV → calendar list ✅
 
 ### 3.3 Отключить Google Calendar sync / Disable Google Calendar sync
 

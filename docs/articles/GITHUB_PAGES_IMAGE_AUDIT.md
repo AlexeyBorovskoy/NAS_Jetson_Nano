@@ -10,7 +10,7 @@
 |---|---|---|---|
 | 01 | `01_beszel_systems_overview.png` | Beszel Hub: Jetson + VPS status overview | ✅ IP blurred |
 | 02 | `02_beszel_jetson_metrics.png` | Jetson metrics: CPU, RAM, disk, network | ✅ IP blurred |
-| 03 | `03_nasa_api_swagger_redacted.png` | NASA API Swagger UI, all endpoint groups | ✅ URL blurred |
+| 03 | `03_nas_jetson_nano_api_swagger_redacted.png` | NAS_Jetson_Nano API Swagger UI, all endpoint groups | ✅ URL blurred |
 | 04 | `04_nextcloud_dashboard_redacted.png` | Nextcloud dashboard: files, contacts, chat | ✅ Names blurred |
 | 05 | `05_nextcloud_talk_redacted.png` | Nextcloud Talk: family group chat | ✅ Names + messages blurred |
 | 06 | `06_android_clients_card_redacted.png` | Android: Immich backup + DAVx⁵ sync card | ✅ Names blurred |
@@ -22,7 +22,7 @@
 - Personal names of family members in Nextcloud, Talk, Immich
 - Chat message content in Nextcloud Talk
 - Nextcloud card #5 "Recent activity" (personal file names)
-- NASA API external access URL
+- NAS_Jetson_Nano API external access URL
 
 ## Article image references (habr_article_ru.md)
 

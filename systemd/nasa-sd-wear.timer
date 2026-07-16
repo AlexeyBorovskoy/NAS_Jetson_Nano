@@ -1,9 +1,0 @@
-[Unit]
-Description=NASA microSD Wear Check — weekly
-
-[Timer]
-OnCalendar=Mon 09:00
-Persistent=true
-
-[Install]
-WantedBy=timers.target

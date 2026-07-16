@@ -1,6 +1,6 @@
 Ты работаешь как инженерный аудитор проекта, Android automation reviewer, DevOps-reviewer и technical writer.
 
-Проект: `NASA Home Cloud` / `Nasa_home`
+Проект: `NAS_Jetson_Nano` / `NAS_Jetson_Nano`
 
 Идея проекта:
 
@@ -382,7 +382,7 @@ config/android_apps.example.yml
 Сформируй итоговый отчёт в Markdown:
 
 ```markdown
-# Android Audit Report: NASA Home Cloud
+# Android Audit Report: NAS_Jetson_Nano
 
 ## 1. Executive summary
 ## 2. What Android role exists in the project

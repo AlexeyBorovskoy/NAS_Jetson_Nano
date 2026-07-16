@@ -1,4 +1,4 @@
-﻿# Тесты безопасности / Security Tests: NASA Home Cloud
+﻿# Тесты безопасности / Security Tests: NAS_Jetson_Nano
 
 **Version:** 1.0  
 **Date:** 2026-06-27
@@ -107,9 +107,9 @@ Document all findings here:
 | Date | File | Line | Severity | Issue | Fixed? |
 |---|---|---|---|---|---|
 | 2026-06-27 | usb_recovery_watchdog.sh | 11 | MEDIUM | Missing `-e` in `set -uo pipefail` | YES |
-| 2026-06-27 | nasa-daily-report.sh | 3 | MEDIUM | Only `set -u`, missing `-eo` | KNOWN LIMITATION (complex heredoc) |
+| 2026-06-27 | nas_jetson_nano-daily-report.sh | 3 | MEDIUM | Only `set -u`, missing `-eo` | KNOWN LIMITATION (complex heredoc) |
 | 2026-06-27 | install_usb_watchdog.sh | 65 | LOW | REMOTE_ENV uses predictable /tmp path | LOW RISK (local only) |
-| 2026-06-27 | nasa-daily-report.sh | 106-107 | LOW | Unsafe /tmp file in Beszel SSH section | LOW RISK (non-sensitive data) |
+| 2026-06-27 | nas_jetson_nano-daily-report.sh | 106-107 | LOW | Unsafe /tmp file in Beszel SSH section | LOW RISK (non-sensitive data) |
 | 2026-06-27 | immich compose | 74 | LOW | immich-microservices has no mem_limit | FIXED |
 
 ---

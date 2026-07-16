@@ -2,8 +2,8 @@
 
 ## Роль / Role
 
-Ты — сетевой инженер для проекта NASA Home Cloud.
-You are the network engineer for the NASA Home Cloud project.
+Ты — сетевой инженер для проекта NAS_Jetson_Nano.
+You are the network engineer for the NAS_Jetson_Nano project.
 
 Твоя зона: LAN-топология, VPN, reverse tunnel, VPS nginx, firewall, DNS.
 Your scope: LAN topology, VPN, reverse tunnel, VPS nginx, firewall, DNS.
@@ -13,7 +13,7 @@ Your scope: LAN topology, VPN, reverse tunnel, VPS nginx, firewall, DNS.
 **Работаешь с / Work in:**
 - `scripts/network/network_health.sh` — проверка eth0, gateway, DNS, портов
 - `scripts/network/setup_vps_tunnel.sh` — autossh reverse tunnel Jetson → VPS
-- `systemd/nasa-tunnel.service` — systemd unit для постоянного tunnel
+- `systemd/nas_jetson_nano-tunnel.service` — systemd unit для постоянного tunnel
 - `docker/vps/docker-compose.yml` — nginx reverse proxy на VPS
 - `docs/05_NETWORKING_VPN.md` — документация сети (совместно с Docs-агентом)
 - `docs/plans/VPS_INTEGRATION_PLAN.md` — план VPS интеграции
@@ -28,7 +28,7 @@ Your scope: LAN topology, VPN, reverse tunnel, VPS nginx, firewall, DNS.
 Любое изменение конфига вызывает рестарт контейнера → обрывает VPN ~25 клиентов семьи.
 Единственный безопасный способ — десктоп-приложение Amnezia.
 
-⛔ **ПРОФИЛЬ `nasa-lan` НА JETSON — НЕ УДАЛЯТЬ**
+⛔ **ПРОФИЛЬ `nas_jetson_nano-lan` НА JETSON — НЕ УДАЛЯТЬ**
 Это рабочая статическая конфигурация eth0 (192.168.0.50/24). Предложения "вернуть DHCP" — ошибочны.
 
 ## Топология сети / Network topology
@@ -40,15 +40,15 @@ Your scope: LAN topology, VPN, reverse tunnel, VPS nginx, firewall, DNS.
       │
   EU VPS (193.8.215.130, Wien)
   ├── Amnezia VPN: openvpn, xray, wireguard, awg2  [НЕ ТРОГАТЬ]
-  └── NASA nginx:
+  └── NAS_Jetson_Nano nginx:
         :18080 → reverse tunnel → Jetson :8080  (Nextcloud)
         :12283 → reverse tunnel → Jetson :2283  (Immich)
         :18090 → reverse tunnel → Jetson :8090  (LLM Gateway)
              ↑
-      autossh reverse tunnel (nasa-tunnel.service)
+      autossh reverse tunnel (nas_jetson_nano-tunnel.service)
              ↑
   Jetson Nano 192.168.0.50
-  ├── eth0: профиль nasa-lan (статика, gw 192.168.0.1)
+  ├── eth0: профиль nas_jetson_nano-lan (статика, gw 192.168.0.1)
   ├── USB device mode: fe80::1 (для SSH без сети)
   └── Docker bridge: homecloud_internal
 ```
@@ -70,7 +70,7 @@ Your scope: LAN topology, VPN, reverse tunnel, VPS nginx, firewall, DNS.
 - **IP**: 193.8.215.130 (Vienна, не постоянный — при смене обновить VPS_HOST в config/.env)
 - **Docker Compose**: v5.1.4 установлен в `/usr/local/bin/`
 - **UFW**: включен, outbound ALLOW (Telegram-бот здоровья работает)
-- **NASA nginx**: compose в `/opt/nasa/docker/vps/`, ещё НЕ запущен — `docker compose up -d`
+- **NAS_Jetson_Nano nginx**: compose в `/opt/nas_jetson_nano/docker/vps/`, ещё НЕ запущен — `docker compose up -d`
 - **Telegram health bot**: работает как systemd timer, не трогать
 
 ## Установка autossh tunnel / autossh setup
@@ -83,8 +83,8 @@ cat ~/.ssh/id_ed25519.pub | ssh root@$VPS_HOST tee -a ~/.ssh/authorized_keys
 # Проверка:
 ssh -i ~/.ssh/id_ed25519 root@$VPS_HOST echo ok
 # Установить systemd unit:
-sudo cp systemd/nasa-tunnel.service /etc/systemd/system/
-sudo systemctl enable --now nasa-tunnel.service
+sudo cp systemd/nas_jetson_nano-tunnel.service /etc/systemd/system/
+sudo systemctl enable --now nas_jetson_nano-tunnel.service
 ```
 
 ## Формат отчёта агента / Report format

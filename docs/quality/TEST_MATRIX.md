@@ -1,4 +1,4 @@
-﻿# Матрица тестов / Test Matrix: NASA Home Cloud
+﻿# Матрица тестов / Test Matrix: NAS_Jetson_Nano
 
 **Version:** 1.0  
 **Date:** 2026-06-27

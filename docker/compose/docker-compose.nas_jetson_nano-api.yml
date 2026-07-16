@@ -1,0 +1,59 @@
+name: homecloud-nas_jetson_nano-api
+services:
+  nas_jetson_nano-api:
+    build:
+      context: ../../services/nas_jetson_nano-api
+    container_name: homecloud_nas_jetson_nano_api
+    restart: always
+    mem_limit: 128m
+    ports:
+      - "8099:8099"
+    volumes:
+      # Shared log directory — persists JSON logs on host
+      - /var/log/nas_jetson_nano-monitor:/var/log/nas_jetson_nano-monitor
+      # Docker socket — for `docker ps` inside container
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Report script — for POST /v1/report/now
+      - /usr/local/sbin/nas_jetson_nano-send-report-telegram.sh:/usr/local/sbin/nas_jetson_nano-send-report-telegram.sh:ro
+      - /etc/nas_jetson_nano-monitor:/etc/nas_jetson_nano-monitor:ro
+    environment:
+      API_LOG_LEVEL: ${NAS_JETSON_NANO_API_LOG_LEVEL:-INFO}
+      JWT_SECRET: ${NAS_JETSON_NANO_API_JWT_SECRET}
+      JWT_TTL_HOURS: ${NAS_JETSON_NANO_API_JWT_TTL_HOURS:-24}
+      NEXTCLOUD_INTERNAL_URL: ${NEXTCLOUD_INTERNAL_URL:-http://host.docker.internal:8080}
+      EXPECTED_CONTAINERS: >-
+        homecloud_nextcloud
+        homecloud_nextcloud_db
+        homecloud_nextcloud_redis
+        homecloud_immich_server
+        homecloud_immich_microservices
+        homecloud_immich_db
+        homecloud_immich_redis
+        homecloud_llm_gateway
+        homecloud_nas_jetson_nano_api
+        homecloud_samba
+        homecloud_netdata
+        homecloud_uptime_kuma
+        homecloud_portainer
+      LOCAL_SERVICES: >-
+        Nextcloud=http://192.168.0.50:8080/
+        Immich=http://192.168.0.50:2283/
+        LLM-Gateway=http://192.168.0.50:8090/health
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER:-admin}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      TALK_FAMILY_ROOM: ${TALK_FAMILY_ROOM:-37pcobmf}
+      IMMICH_API_KEY: ${IMMICH_API_KEY}
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8099/healthcheck', timeout=3)\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - homecloud_internal
+
+networks:
+  homecloud_internal:
+    external: true

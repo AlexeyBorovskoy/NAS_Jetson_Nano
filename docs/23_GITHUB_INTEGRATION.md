@@ -1,8 +1,8 @@
 ﻿# 23. GitHub Integration — Claude Code + gh CLI
 
-> 🇷🇺 Этот документ описывает полный рабочий процесс проекта NASA Home Cloud: как Claude Code взаимодействует с GitHub через `gh` CLI на Windows-машине.
+> 🇷🇺 Этот документ описывает полный рабочий процесс проекта NAS_Jetson_Nano: как Claude Code взаимодействует с GitHub через `gh` CLI на Windows-машине.
 >
-> 🇬🇧 This document describes the complete NASA Home Cloud workflow: how Claude Code interacts with GitHub via `gh` CLI on a Windows machine.
+> 🇬🇧 This document describes the complete NAS_Jetson_Nano workflow: how Claude Code interacts with GitHub via `gh` CLI on a Windows machine.
 >
 > 🇷🇺 **Фишка проекта:** весь жизненный цикл (задача → код → тест → commit → PR → release) выполняется одним агентом (Claude Code) без переключения инструментов.
 >
@@ -114,17 +114,17 @@ EOF
 
 ```bash
 # Обновить описание:
-gh api repos/AlexeyBorovskoy/Nasa_home \
+gh api repos/AlexeyBorovskoy/NAS_Jetson_Nano \
   -X PATCH \
   -f description="Новое описание"
 
 # Обновить topics (через API — gh api не поддерживает topics напрямую):
-gh api repos/AlexeyBorovskoy/Nasa_home/topics \
+gh api repos/AlexeyBorovskoy/NAS_Jetson_Nano/topics \
   -X PUT \
   --input - <<< '{"names":["jetson-nano","homelab","nextcloud","immich"]}'
 
 # Посмотреть статистику:
-gh repo view AlexeyBorovskoy/Nasa_home \
+gh repo view AlexeyBorovskoy/NAS_Jetson_Nano \
   --json name,description,stargazerCount,forkCount,latestRelease
 
 # Список всех релизов:
@@ -165,7 +165,7 @@ gh run view <run-id> --log
    git push
    
 4. Применение на Jetson:
-   ssh admin@192.168.0.50 "cd ~/nasa && git pull --ff-only"
+   ssh admin@192.168.0.50 "cd ~/nas_jetson_nano && git pull --ff-only"
    
 5. GitHub management (при необходимости):
    gh issue create / gh pr create / gh release create
@@ -177,8 +177,8 @@ gh run view <run-id> --log
 
 ## Почему это фишка проекта / Why this is the project's highlight
 
-🇷🇺 Проект NASA Home Cloud демонстрирует **полный AI-assisted DevOps цикл**:
-🇬🇧 NASA Home Cloud demonstrates a **complete AI-assisted DevOps cycle**:
+🇷🇺 Проект NAS_Jetson_Nano демонстрирует **полный AI-assisted DevOps цикл**:
+🇬🇧 NAS_Jetson_Nano demonstrates a **complete AI-assisted DevOps cycle**:
 
 | Этап | Инструмент | Кто делает |
 |---|---|---|

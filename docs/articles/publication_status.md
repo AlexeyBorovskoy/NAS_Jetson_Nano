@@ -10,7 +10,7 @@
 ## GitHub Pages
 
 - Status: **live** ✅
-- URL: https://alexeyborovskoy.github.io/Nasa_home/
+- URL: https://alexeyborovskoy.github.io/NAS_Jetson_Nano/
 - Source: main /docs
 - Enabled: 2026-06-29
 

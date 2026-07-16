@@ -15,7 +15,7 @@ All screenshots are redacted: IPs replaced with placeholders, personal names blu
 |---|---|---|
 | 01 | [Beszel Hub overview](../assets/screenshots/article/redacted/01_beszel_systems_overview.png) | Jetson Nano and VPS — both online, uptime, agent versions |
 | 02 | [Beszel Jetson metrics](../assets/screenshots/article/redacted/02_beszel_jetson_metrics.png) | CPU ~15%, RAM 2.3 GB, disk, network — live data |
-| 03 | [NASA API Swagger](../assets/screenshots/article/redacted/03_nasa_api_swagger_redacted.png) | All 5 endpoint groups (System, Talk, Users, Photos, Actions) |
+| 03 | [NAS_Jetson_Nano API Swagger](../assets/screenshots/article/redacted/03_nas_jetson_nano_api_swagger_redacted.png) | All 5 endpoint groups (System, Talk, Users, Photos, Actions) |
 | 04 | [Nextcloud dashboard](../assets/screenshots/article/redacted/04_nextcloud_dashboard_redacted.png) | Files, contacts, activity — family account |
 | 05 | [Nextcloud Talk](../assets/screenshots/article/redacted/05_nextcloud_talk_redacted.png) | Family group chat, messages |
 | 06 | [Android clients](../assets/screenshots/article/redacted/06_android_clients_card_redacted.png) | Immich backup stats + DAVx⁵ sync status |
@@ -27,7 +27,7 @@ All screenshots are redacted: IPs replaced with placeholders, personal names blu
 
 Run on Jetson Nano:
 ```bash
-cd ~/nasa && goss -g tests/goss/goss.yaml validate
+cd ~/nas_jetson_nano && goss -g tests/goss/goss.yaml validate
 ```
 
 Test matrix: [docs/quality/test_matrix.md](../quality/test_matrix.md)
@@ -43,7 +43,7 @@ Test matrix: [docs/quality/test_matrix.md](../quality/test_matrix.md)
 
 ## Links
 
-- GitHub repository: [AlexeyBorovskoy/Nasa_home](https://github.com/AlexeyBorovskoy/Nasa_home)
+- GitHub repository: [AlexeyBorovskoy/NAS_Jetson_Nano](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano)
 - Habr article: [habr.com/ru/sandbox/291694/](https://habr.com/ru/sandbox/291694/)
 
 ---

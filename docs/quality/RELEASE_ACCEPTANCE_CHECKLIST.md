@@ -1,4 +1,4 @@
-﻿# Чеклист приёмки релиза / Release Acceptance Checklist: NASA Home Cloud
+﻿# Чеклист приёмки релиза / Release Acceptance Checklist: NAS_Jetson_Nano
 
 **Version:** 1.0  
 **Date:** 2026-06-27  
@@ -48,9 +48,9 @@
 
 ## Pre-Release: Systemd Services
 
-- [ ] `systemctl is-active nasa-usb-watchdog.timer` = active
-- [ ] `systemctl is-active nasa-usb-monitor.service` = active
-- [ ] `systemctl is-active nasa-tunnel.service` = active
+- [ ] `systemctl is-active nas_jetson_nano-usb-watchdog.timer` = active
+- [ ] `systemctl is-active nas_jetson_nano-usb-monitor.service` = active
+- [ ] `systemctl is-active nas_jetson_nano-tunnel.service` = active
 - [ ] `systemctl is-active docker` = active
 - [ ] `systemctl is-active beszel-agent` = active
 

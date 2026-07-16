@@ -1,8 +1,0 @@
-[Unit]
-Description=NASA DuckDNS IP Update
-After=network-online.target
-
-[Service]
-Type=oneshot
-EnvironmentFile=/etc/nasa-monitor/ddns.env
-ExecStart=/root/nasa/scripts/network/ddns_duckdns.sh

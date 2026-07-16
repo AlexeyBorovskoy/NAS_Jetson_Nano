@@ -50,4 +50,4 @@ sudo tailscale down
 sudo apt remove tailscale
 ```
 
-Amnezia и `nasa-lan` остаются нетронутыми.
+Amnezia и `nas_jetson_nano-lan` остаются нетронутыми.

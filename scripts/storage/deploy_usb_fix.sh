@@ -23,34 +23,34 @@ deploy_script() {
 
 # 1. Watchdog script (исправленный + увеличен POWER_OFF_SECS=45)
 deploy_script "$REPO_DIR/scripts/storage/usb_recovery_watchdog.sh" \
-    /usr/local/sbin/nasa-usb-watchdog.sh "nasa-usb-watchdog.sh (PORT=2, POWER_OFF_SECS=45)"
+    /usr/local/sbin/nas_jetson_nano-usb-watchdog.sh "nas_jetson_nano-usb-watchdog.sh (PORT=2, POWER_OFF_SECS=45)"
 
 # 2. Pre-boot power cycle script
 deploy_script "$REPO_DIR/scripts/storage/usb_preboot_cycle.sh" \
-    /usr/local/sbin/nasa-usb-preboot.sh "nasa-usb-preboot.sh"
+    /usr/local/sbin/nas_jetson_nano-usb-preboot.sh "nas_jetson_nano-usb-preboot.sh"
 
 # 3. USB error monitor script
 deploy_script "$REPO_DIR/scripts/monitoring/usb_error_monitor.sh" \
-    /usr/local/sbin/nasa-usb-monitor.sh "nasa-usb-monitor.sh"
+    /usr/local/sbin/nas_jetson_nano-usb-monitor.sh "nas_jetson_nano-usb-monitor.sh"
 
 # 4. Systemd units
-cp "$REPO_DIR/systemd/nasa-usb-preboot.service" /etc/systemd/system/
-cp "$REPO_DIR/systemd/nasa-usb-monitor.service" /etc/systemd/system/
-cp "$REPO_DIR/systemd/nasa-usb-watchdog.service" /etc/systemd/system/
-cp "$REPO_DIR/systemd/nasa-usb-watchdog.timer" /etc/systemd/system/
+cp "$REPO_DIR/systemd/nas_jetson_nano-usb-preboot.service" /etc/systemd/system/
+cp "$REPO_DIR/systemd/nas_jetson_nano-usb-monitor.service" /etc/systemd/system/
+cp "$REPO_DIR/systemd/nas_jetson_nano-usb-watchdog.service" /etc/systemd/system/
+cp "$REPO_DIR/systemd/nas_jetson_nano-usb-watchdog.timer" /etc/systemd/system/
 echo "[deploy] systemd units OK"
 
 # 5. Reload + enable + start
 systemctl daemon-reload
-systemctl enable nasa-usb-preboot.service
-systemctl enable nasa-usb-monitor.service
-systemctl restart nasa-usb-watchdog.timer
-systemctl restart nasa-usb-monitor.service
+systemctl enable nas_jetson_nano-usb-preboot.service
+systemctl enable nas_jetson_nano-usb-monitor.service
+systemctl restart nas_jetson_nano-usb-watchdog.timer
+systemctl restart nas_jetson_nano-usb-monitor.service
 echo "[deploy] services enabled and restarted"
 
 # 6. Verify
 echo "[deploy] Verification:"
-systemctl is-active nasa-usb-watchdog.timer && echo "  watchdog timer: OK"
-systemctl is-active nasa-usb-monitor.service && echo "  usb monitor: OK"
-systemctl is-enabled nasa-usb-preboot.service && echo "  preboot: enabled (runs at next boot)"
+systemctl is-active nas_jetson_nano-usb-watchdog.timer && echo "  watchdog timer: OK"
+systemctl is-active nas_jetson_nano-usb-monitor.service && echo "  usb monitor: OK"
+systemctl is-enabled nas_jetson_nano-usb-preboot.service && echo "  preboot: enabled (runs at next boot)"
 echo "[deploy] Done."

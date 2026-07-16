@@ -1,7 +1,7 @@
 # 03. Архитектура / Architecture
 
-> 🇷🇺 Актуализировано: 2026-06-27. Полная карта — [architecture_nasa.md](../docs/architecture_nasa.md).
-> 🇬🇧 Updated: 2026-06-27. Full map — [architecture_nasa.md](../docs/architecture_nasa.md).
+> 🇷🇺 Актуализировано: 2026-06-27. Полная карта — [architecture_nas_jetson_nano.md](../docs/architecture_nas_jetson_nano.md).
+> 🇬🇧 Updated: 2026-06-27. Full map — [architecture_nas_jetson_nano.md](../docs/architecture_nas_jetson_nano.md).
 
 ## 1. Логическая схема / Logical Diagram
 
@@ -9,7 +9,7 @@
 flowchart TB
     Client[Android / браузер / browser]
     VPS["VPS 193.8.215.130\nnginx :8080/:2283/:8090"]
-    Tunnel["SSH reverse tunnel\nnasa-tunnel.service (autossh)"]
+    Tunnel["SSH reverse tunnel\nnas_jetson_nano-tunnel.service (autossh)"]
     Jetson[Jetson Nano 4GB\n192.168.0.50]
     HDD[USB SSD/HDD]
 

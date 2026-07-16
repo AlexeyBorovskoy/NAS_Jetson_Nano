@@ -2,7 +2,7 @@
 
 > **Хабы:** Системное администрирование · Open Source · Искусственный интеллект · Self-hosted  
 > **Теги:** `selfhosted` `nextcloud` `immich` `jetson-nano` `docker` `homelab` `claude-code` `usb-storage`  
-> **Репозиторий:** [github.com/AlexeyBorovskoy/Nasa_home](https://github.com/AlexeyBorovskoy/Nasa_home)
+> **Репозиторий:** [github.com/AlexeyBorovskoy/NAS_Jetson_Nano](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano)
 
 ---
 
@@ -124,9 +124,9 @@ usb-storage.quirks=152d:a583:u
 
 **Итоговая инфраструктура надёжности USB — три systemd-сервиса:**
 
-- `nasa-usb-preboot.service` — power cycle USB-порта при каждом boot, до монтирования
-- `nasa-usb-monitor.service` — dmesg watcher, Telegram alert при первом `error -71`
-- `nasa-ssd-recovery.service` — udev hotplug: подключил кабель → mount → preflight → docker start
+- `nas_jetson_nano-usb-preboot.service` — power cycle USB-порта при каждом boot, до монтирования
+- `nas_jetson_nano-usb-monitor.service` — dmesg watcher, Telegram alert при первом `error -71`
+- `nas_jetson_nano-ssd-recovery.service` — udev hotplug: подключил кабель → mount → preflight → docker start
 
 Сейчас восстановление автоматическое. Просто переткни кабель.
 
@@ -148,9 +148,9 @@ usb-storage.quirks=152d:a583:u
 
 ![Beszel Hub — Jetson Nano: CPU ~15%, RAM 2.3 GB, Docker containers stacked](../../assets/screenshots/article/beszel_jetson_metrics.png)
 
-**NASA API v0.6.0** — FastAPI поверх всего стека. 20 эндпоинтов: состояние системы, Talk, пользователи, статистика Immich, restart контейнеров. JWT через Nextcloud OCS. Swagger UI доступен внешне.
+**NAS_Jetson_Nano API v0.6.0** — FastAPI поверх всего стека. 20 эндпоинтов: состояние системы, Talk, пользователи, статистика Immich, restart контейнеров. JWT через Nextcloud OCS. Swagger UI доступен внешне.
 
-![NASA API v0.6.0 — Swagger UI](../../assets/screenshots/article/nasa_api_swagger.png)
+![NAS_Jetson_Nano API v0.6.0 — Swagger UI](../../assets/screenshots/article/nas_jetson_nano_api_swagger.png)
 
 **Внешний доступ:** autossh reverse SSH tunnel через VPS (CGNAT bypass). WireGuard и Tailscale отклонены — первый несовместим с Tegra kernel 4.9, второй конфликтует с Amnezia на Android. HTTPS на alt-портах с self-signed сертификатом 10 лет (нет домена, порт 443 занят Amnezia).
 
@@ -176,4 +176,4 @@ usb-storage.quirks=152d:a583:u
 
 Система работает. Семья использует. USB больше не убивает сервис.
 
-Промпты агентов, ADR, Docker Compose, скрипты, памятки пользователей — всё открыто: **[github.com/AlexeyBorovskoy/Nasa_home](https://github.com/AlexeyBorovskoy/Nasa_home)**
+Промпты агентов, ADR, Docker Compose, скрипты, памятки пользователей — всё открыто: **[github.com/AlexeyBorovskoy/NAS_Jetson_Nano](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano)**

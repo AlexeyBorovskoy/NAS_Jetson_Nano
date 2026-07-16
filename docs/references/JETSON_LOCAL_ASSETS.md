@@ -12,7 +12,7 @@
 Текущий локальный путь после переноса:
 
 ```text
-/home/alexey/work/NASA/external_docs/jatson
+/home/alexey/work/NAS_Jetson_Nano/external_docs/jatson
 ```
 
 Каталог `external_docs/` намеренно добавлен в `.gitignore`: в нём лежат большие
@@ -39,7 +39,7 @@ b469c726bd9a0cdf6b0c83f70e74f0763bb4a71b90fea56a9622fbb6c39e37b4  PROJECT_EXTERN
 Перед записью microSD checksum локального файла нужно сверить повторно:
 
 ```bash
-cd /home/alexey/work/NASA
+cd /home/alexey/work/NAS_Jetson_Nano
 sha256sum external_docs/jatson/jetson-nano-jp461-sd-card-image.zip
 sha256sum external_docs/jatson/balenaEtcher-linux-x64-2.1.6.zip
 ```
@@ -163,7 +163,7 @@ external_docs/jatson/PROJECT_EXTERNAL_DOCUMENTATION_REFERENCE.md
 1. Проверить, что локальные файлы на месте:
 
 ```bash
-cd /home/alexey/work/NASA
+cd /home/alexey/work/NAS_Jetson_Nano
 ls -lh external_docs/jatson
 ```
 

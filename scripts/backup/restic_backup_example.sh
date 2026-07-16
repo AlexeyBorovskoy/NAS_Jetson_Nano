@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# restic_backup_example.sh — full restic backup workflow for NASA Home Cloud
+# restic_backup_example.sh — full restic backup workflow for NAS_Jetson_Nano
 # ---------------------------------------------------------------------------
 # Usage: ./restic_backup_example.sh
 # Reads config from ../../config/.env relative to this script's location.

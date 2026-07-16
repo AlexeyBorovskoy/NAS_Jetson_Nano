@@ -1,8 +1,8 @@
-# Audit Report: NASA Home Cloud
+# Audit Report: NAS_Jetson_Nano
 **Дата:** 2026-06-25 · **Версия:** v1.3.5 · **Итоговая оценка: 7.9/10**
 
 ## Executive Summary
-NASA Home Cloud — хорошо спроектированный blueprint-проект для домашней облачной платформы на Jetson Nano 4GB. Документация объёмная (24 docs, 5.6K строк), CI работает (secrets-check + validate-compose), безопасность базово настроена. Проект воспроизводим, но требует ручной адаптации. Основные зоны улучшения: Quick Start не на первом экране, CI shellcheck отсутствует, GitHub Topics не заданы, PR template нет.
+NAS_Jetson_Nano — хорошо спроектированный blueprint-проект для домашней облачной платформы на Jetson Nano 4GB. Документация объёмная (24 docs, 5.6K строк), CI работает (secrets-check + validate-compose), безопасность базово настроена. Проект воспроизводим, но требует ручной адаптации. Основные зоны улучшения: Quick Start не на первом экране, CI shellcheck отсутствует, GitHub Topics не заданы, PR template нет.
 
 ## Оценки по категориям
 

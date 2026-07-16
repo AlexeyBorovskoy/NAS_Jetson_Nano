@@ -1,4 +1,4 @@
-﻿# Шаблон отчёта надёжности / Reliability Report Template: NASA Home Cloud
+﻿# Шаблон отчёта надёжности / Reliability Report Template: NAS_Jetson_Nano
 
 **Report date:** YYYY-MM-DD  
 **Version tested:** vX.Y.Z  
@@ -64,7 +64,7 @@ _2-3 sentences: overall system health, any critical findings, recommendation (GO
 | homecloud_immich_db | running | healthy | 0 | |
 | homecloud_immich_redis | running | healthy | 0 | |
 | homecloud_llm_gateway | running | healthy | 0 | |
-| homecloud_nasa_api | running | n/a | 0 | |
+| homecloud_nas_jetson_nano_api | running | n/a | 0 | |
 | homecloud_samba | running | n/a | 0 | |
 | homecloud_netdata | running | healthy | 0 | |
 | homecloud_uptime_kuma | running | healthy | 0 | |

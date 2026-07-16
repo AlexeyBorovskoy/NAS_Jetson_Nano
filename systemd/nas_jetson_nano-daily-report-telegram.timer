@@ -1,0 +1,11 @@
+[Unit]
+Description=Run NAS_Jetson_Nano daily Telegram report every day
+
+[Timer]
+OnCalendar=*-*-* 09:00:00
+Persistent=true
+RandomizedDelaySec=5m
+Unit=nas_jetson_nano-daily-report-telegram.service
+
+[Install]
+WantedBy=timers.target

@@ -14,7 +14,7 @@ enumerate the USB device on `usb 1-2.1` with `error -71`.
 
 Recovery update 2026-06-23 09:32 UTC: after physical reconnect the SSD appeared
 again as Realtek RTL9210B-CG `/dev/sda1`, mounted at `/mnt/storage` with label
-`nasa-storage`, passed `e2fsck -f -n` and `storage_preflight.sh`, and fresh DB
+`nas_jetson_nano-storage`, passed `e2fsck -f -n` and `storage_preflight.sh`, and fresh DB
 dumps were created.
 
 Recovery update 2026-06-23 12:10 UTC: Nextcloud data/app review found no marker,
@@ -38,7 +38,7 @@ HTTP checks returned 200, and `jetson-nas-health.timer` finished with
 | Nextcloud | Recovered: controlled start OK, `/status.php` HTTP 200 |
 | Immich | Responds to `/api/server/ping` |
 | LLM Gateway | Responds to `/health` |
-| nasa-api | Responds to `/healthcheck` |
+| nas_jetson_nano-api | Responds to `/healthcheck` |
 | Reboot/autorecovery | Passed: tunnel, storage, containers, HTTP and health timer recovered automatically |
 | Backup timer | Recovered: fresh DB dumps created; fail-closed guard remains |
 
@@ -90,7 +90,7 @@ journalctl -k -n 120 --no-pager
 3. Run preflight:
 
 ```bash
-cd ~/nasa
+cd ~/nas_jetson_nano
 sudo bash scripts/storage/storage_preflight.sh
 ```
 

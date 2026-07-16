@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# NASA Home Cloud — install USB storage watchdog
+# NAS_Jetson_Nano — install USB storage watchdog
 # Fixes:
 #   1. Disables USB autosuspend for RTL9210B-CG (prevents ELPG power cycle loop)
 #   2. Installs udev rules for Telegram alert on sda connect/disconnect
 #   3. Installs smartmontools for periodic S.M.A.R.T. health checks
 set -euo pipefail
 
-RULES_FILE="/etc/udev/rules.d/85-nasa-storage-watchdog.rules"
-ALERT_SCRIPT="/usr/local/sbin/nasa-storage-alert.sh"
+RULES_FILE="/etc/udev/rules.d/85-nas_jetson_nano-storage-watchdog.rules"
+ALERT_SCRIPT="/usr/local/sbin/nas_jetson_nano-storage-alert.sh"
 SMARTD_CONF="/etc/smartd.conf"
-CONF="/etc/nasa-monitor/telegram.env"
+CONF="/etc/nas_jetson_nano-monitor/telegram.env"
 
 # ── 1. alert script ──────────────────────────────────────────────────────────
 cat > "$ALERT_SCRIPT" << 'SCRIPT'
@@ -18,7 +18,7 @@ cat > "$ALERT_SCRIPT" << 'SCRIPT'
 # $1 = "removed" | "connected" | "error"
 set -euo pipefail
 
-CONF="/etc/nasa-monitor/telegram.env"
+CONF="/etc/nas_jetson_nano-monitor/telegram.env"
 VPS_HOST="193.8.215.130"
 VPS_USER="root"
 VPS_KEY="/home/admin/.ssh/id_ed25519"
@@ -34,7 +34,7 @@ TS=$(date -u '+%Y-%m-%d %H:%M UTC')
 case "$ACTION" in
   removed)
     EMOJI="🔴"
-    TEXT="${EMOJI} NASA Storage ALERT
+    TEXT="${EMOJI} NAS_Jetson_Nano Storage ALERT
 Host: ${HOSTNAME}
 Time: ${TS}
 Event: /dev/sda disconnected (USB error)
@@ -43,7 +43,7 @@ Check: ssh to Jetson → reconnect SSD → storage_preflight.sh"
     ;;
   connected)
     EMOJI="🟢"
-    TEXT="${EMOJI} NASA Storage OK
+    TEXT="${EMOJI} NAS_Jetson_Nano Storage OK
 Host: ${HOSTNAME}
 Time: ${TS}
 Event: /dev/sda connected (RTL9210B-CG detected)
@@ -51,18 +51,18 @@ Action: storage_preflight.sh will run automatically."
     ;;
   smart_warn)
     EMOJI="🟡"
-    TEXT="${EMOJI} NASA Storage S.M.A.R.T. WARNING
+    TEXT="${EMOJI} NAS_Jetson_Nano Storage S.M.A.R.T. WARNING
 Host: ${HOSTNAME}
 Time: ${TS}
 Event: ${2:-smartd detected issue}
 Action: Check smartctl -a /dev/sda ASAP."
     ;;
   *)
-    TEXT="⚠️ NASA Storage event (${ACTION}) on ${HOSTNAME} at ${TS}"
+    TEXT="⚠️ NAS_Jetson_Nano Storage event (${ACTION}) on ${HOSTNAME} at ${TS}"
     ;;
 esac
 
-REMOTE_ENV="/tmp/nasa-storage-alert-$$.env"
+REMOTE_ENV="/tmp/nas_jetson_nano-storage-alert-$$.env"
 ssh -i "$VPS_KEY" \
     -o StrictHostKeyChecking=no \
     -o ConnectTimeout=10 \
@@ -89,7 +89,7 @@ echo "[1/4] alert script installed → $ALERT_SCRIPT"
 
 # ── 2. udev rules ────────────────────────────────────────────────────────────
 cat > "$RULES_FILE" << 'RULES'
-# NASA Home Cloud — USB storage watchdog rules
+# NAS_Jetson_Nano — USB storage watchdog rules
 # RTL9210B-CG: Vendor 0bda, Product 9210
 # Realtek USB 3.0 hub: 0bda:5411 (USB 2.0 side) / 0bda:0411 (USB 3.0 side)
 
@@ -106,16 +106,16 @@ ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0bda", ATTR{idProduct}=="9210"
 
 # Telegram alert when sda block device appears (SSD reconnected)
 ACTION=="add", KERNEL=="sda", SUBSYSTEM=="block", \
-  RUN+="/bin/systemd-run --no-block /usr/local/sbin/nasa-storage-alert.sh connected"
+  RUN+="/bin/systemd-run --no-block /usr/local/sbin/nas_jetson_nano-storage-alert.sh connected"
 
 # Telegram alert when sda block device is removed (SSD disconnected)
 ACTION=="remove", KERNEL=="sda", SUBSYSTEM=="block", \
-  RUN+="/bin/systemd-run --no-block /usr/local/sbin/nasa-storage-alert.sh removed"
+  RUN+="/bin/systemd-run --no-block /usr/local/sbin/nas_jetson_nano-storage-alert.sh removed"
 
 # Auto-recovery: when SSD partition (sda1) appears, mount /mnt/storage + restart Docker + containers
 # Triggered on sda1 (partition) not sda (disk) — partition must exist before mount attempt
 ACTION=="add", KERNEL=="sda1", SUBSYSTEM=="block", \
-  RUN+="/bin/systemctl --no-block start nasa-ssd-recovery.service"
+  RUN+="/bin/systemctl --no-block start nas_jetson_nano-ssd-recovery.service"
 RULES
 echo "[2/4] udev rules installed → $RULES_FILE"
 
@@ -125,7 +125,7 @@ if ! command -v smartctl &>/dev/null; then
 fi
 
 cat > "$SMARTD_CONF" << 'SMARTD'
-# NASA Home Cloud — smartd config
+# NAS_Jetson_Nano — smartd config
 # Monitor /dev/sda explicitly (DEVICESCAN fails on Tegra kernel 4.9)
 /dev/sda \
   -a \
@@ -135,17 +135,17 @@ cat > "$SMARTD_CONF" << 'SMARTD'
   -s (S/../.././02|L/../../0/03) \
   -W 5,45,55 \
   -m root \
-  -M exec /usr/local/sbin/nasa-smartd-alert.sh
+  -M exec /usr/local/sbin/nas_jetson_nano-smartd-alert.sh
 SMARTD
 
 # smartd alert wrapper (translates smartd env vars to our Telegram script)
-cat > /usr/local/sbin/nasa-smartd-alert.sh << 'SMARTD_ALERT'
+cat > /usr/local/sbin/nas_jetson_nano-smartd-alert.sh << 'SMARTD_ALERT'
 #!/usr/bin/env bash
 # Called by smartd on SMART failure
 WARN_MSG="Device: ${SMARTD_DEVICE:-/dev/sda}, ${SMARTD_FAILTYPE:-SMART event}: ${SMARTD_MESSAGE:-}"
-/usr/local/sbin/nasa-storage-alert.sh smart_warn "$WARN_MSG"
+/usr/local/sbin/nas_jetson_nano-storage-alert.sh smart_warn "$WARN_MSG"
 SMARTD_ALERT
-chmod +x /usr/local/sbin/nasa-smartd-alert.sh
+chmod +x /usr/local/sbin/nas_jetson_nano-smartd-alert.sh
 echo "[3/4] smartd configured → $SMARTD_CONF"
 
 # ── 4. apply ─────────────────────────────────────────────────────────────────
@@ -175,7 +175,7 @@ echo "  • RTL9210B-CG autosuspend disabled via udev (device-specific, immediat
 echo "  • usbcore.autosuspend=-1 added to extlinux.conf (all USB, after reboot)"
 echo "  • Telegram alert on /dev/sda connect/disconnect"
 echo "  • smartd monitoring every device, self-test weekly"
-echo "  • smartd SMART failures → Telegram via nasa-storage-alert.sh"
+echo "  • smartd SMART failures → Telegram via nas_jetson_nano-storage-alert.sh"
 echo ""
 echo "Test alert (needs SSD connected):"
-echo "  /usr/local/sbin/nasa-storage-alert.sh connected"
+echo "  /usr/local/sbin/nas_jetson_nano-storage-alert.sh connected"

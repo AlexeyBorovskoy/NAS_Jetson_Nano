@@ -1,4 +1,4 @@
-﻿# Тесты хранилища / Storage Tests: NASA Home Cloud
+﻿# Тесты хранилища / Storage Tests: NAS_Jetson_Nano
 
 **Version:** 1.0  
 **Date:** 2026-06-27
@@ -9,7 +9,7 @@
 
 - Device: USB SSD via RTL9210B-CG USB-SATA bridge
 - Known issue: RTL9210B-CG produces error -71 (USB disconnect) under load or after power events
-- Mitigation: nasa-usb-watchdog.timer (every 3 min), nasa-usb-preboot.service (every boot)
+- Mitigation: nas_jetson_nano-usb-watchdog.timer (every 3 min), nas_jetson_nano-usb-preboot.service (every boot)
 - SMART passthrough: limited via USB bridge; use `smartctl -d sat` or `-d scsi`
 
 ---
@@ -103,20 +103,20 @@ If speeds are < 50 MB/s, check:
 
 ```bash
 # Check watchdog status
-systemctl status nasa-usb-watchdog.timer
-systemctl status nasa-usb-watchdog.service
+systemctl status nas_jetson_nano-usb-watchdog.timer
+systemctl status nas_jetson_nano-usb-watchdog.service
 
 # Check preboot service
-systemctl status nasa-usb-preboot.service
+systemctl status nas_jetson_nano-usb-preboot.service
 
 # Check error monitor
-systemctl status nasa-usb-monitor.service
+systemctl status nas_jetson_nano-usb-monitor.service
 
 # Recent USB errors
 dmesg | grep -E "error -71|unable to enum|sda.*error" | tail -20
 
 # State file (retry counter)
-cat /var/lib/nasa-usb-watchdog.state 2>/dev/null || echo "No state (SSD healthy)"
+cat /var/lib/nas_jetson_nano-usb-watchdog.state 2>/dev/null || echo "No state (SSD healthy)"
 ```
 
 ---

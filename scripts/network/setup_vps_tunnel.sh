@@ -17,7 +17,7 @@ fi
 VPS_USER="${VPS_USER:-root}"
 VPS_SSH_KEY="${VPS_SSH_KEY:-${HOME}/.ssh/id_ed25519}"
 
-log "=== NASA VPS reverse tunnel ==="
+log "=== NAS_Jetson_Nano VPS reverse tunnel ==="
 log "VPS: ${VPS_USER}@${VPS_HOST}"
 log "Tunnels: 18080->8080 (Nextcloud), 12283->2283 (Immich), 18090->8090 (LLM-GW)"
 

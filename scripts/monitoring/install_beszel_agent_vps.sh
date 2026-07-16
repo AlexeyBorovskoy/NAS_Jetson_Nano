@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# NASA Home Cloud — install Beszel agent on VPS (amd64)
+# NAS_Jetson_Nano — install Beszel agent on VPS (amd64)
 # Run on VPS as root after Hub is already running on the same machine.
 #
 # Usage:
 #   bash install_beszel_agent_vps.sh [hub-public-key]
 #
 # If hub-public-key is not provided, reads it from the Hub data directory.
-# Hub data is expected at /opt/nasa/beszel-hub/data/id_ed25519
+# Hub data is expected at /opt/nas_jetson_nano/beszel-hub/data/id_ed25519
 #
 # After install, add VPS in Hub UI (or via API):
 #   Name: vps-vienna
@@ -18,7 +18,7 @@ AGENT_PORT="45877"
 BINARY="/usr/local/bin/beszel-agent-vps"
 WRAPPER="/usr/local/sbin/start-beszel-agent-vps.sh"
 SERVICE="/etc/systemd/system/beszel-agent-vps.service"
-HUB_KEY_FILE="/opt/nasa/beszel-hub/data/id_ed25519"
+HUB_KEY_FILE="/opt/nas_jetson_nano/beszel-hub/data/id_ed25519"
 
 # ── 1. get hub public key ─────────────────────────────────────────────────────
 HUB_KEY="${1:-}"
@@ -91,4 +91,4 @@ echo "  Host: 127.0.0.1"
 echo "  Port: ${AGENT_PORT}"
 echo ""
 echo "Or via API (if Hub is running locally on port 8091):"
-echo "  python3 /opt/nasa/beszel-hub/add_system_api.py vps-vienna 127.0.0.1 ${AGENT_PORT}"
+echo "  python3 /opt/nas_jetson_nano/beszel-hub/add_system_api.py vps-vienna 127.0.0.1 ${AGENT_PORT}"

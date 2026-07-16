@@ -2,7 +2,7 @@
 
 > **Хабы:** Системное администрирование · Open Source · Искусственный интеллект · Self-hosted  
 > **Теги:** `selfhosted` `nextcloud` `immich` `jetson-nano` `docker` `homelab` `claude-code` `ai-assisted-dev`  
-> **Репозиторий:** [github.com/AlexeyBorovskoy/Nasa_home](https://github.com/AlexeyBorovskoy/Nasa_home)
+> **Репозиторий:** [github.com/AlexeyBorovskoy/NAS_Jetson_Nano](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano)
 
 ---
 
@@ -137,7 +137,7 @@ Jetson Nano находится за домашним роутером в CGNAT �
     Nextcloud    :8080
     Immich       :2283
     LLM Gateway  :8090
-    NASA API     :8099
+    NAS_Jetson_Nano API     :8099
     Samba NAS    :445  (только LAN)
     Netdata      :19999
     Uptime Kuma  :3001
@@ -174,7 +174,7 @@ Let's Encrypt недоступен (нет домена, порт 443 занят
 | immich_redis | redis:7-alpine | — | 64m |
 | immich_microservices | immich-server:release | — | 512m |
 | llm_gateway | custom FastAPI | 8090 | 256m |
-| nasa_api | custom FastAPI | 8099 | 128m |
+| nas_jetson_nano_api | custom FastAPI | 8099 | 128m |
 | samba | crazymax/samba | 445 | — |
 | netdata | netdata:latest | 19999 | 256m |
 | uptime_kuma | louislam/uptime-kuma | 3001 | 128m |
@@ -217,10 +217,10 @@ curl -s http://localhost:2283/api/server/ping
 Агент написал bash-скрипт + systemd timer. Каждое утро в 09:00 приходит сообщение:
 
 ```
-NASA HOME CLOUD — Daily Report
+NAS_JETSON_NANO — Daily Report
 2026-06-29 09:00 MSK
 
-SYSTEM — nasa-jetson
+SYSTEM — nas_jetson_nano-jetson
 Uptime: 18h | RAM: 2.3/3.9G | Disk /mnt/storage: 7G/229G (3%)
 
 CONTAINERS
@@ -268,9 +268,9 @@ Android-приложения требуют HTTPS для некоторых фу
 
 ```bash
 openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
-  -keyout /opt/nasa/nginx/ssl/nasa.key \
-  -out /opt/nasa/nginx/ssl/nasa.crt \
-  -subj "/CN=nasa-home-cloud" \
+  -keyout /opt/nas_jetson_nano/nginx/ssl/nas_jetson_nano.key \
+  -out /opt/nas_jetson_nano/nginx/ssl/nas_jetson_nano.crt \
+  -subj "/CN=nas-jetson-nano" \
   -addext "subjectAltName=IP:193.*.***.*, IP:192.168.0.50"
 ```
 
@@ -307,7 +307,7 @@ Nextcloud Talk — встроенный мессенджер. Группа «С�
 
 ![Nextcloud — дашборд пользователя](../../assets/screenshots/article/nextcloud_dashboard.png)
 
-### Шаг 7 — NASA API
+### Шаг 7 — NAS_Jetson_Nano API
 
 Последний шаг — REST API поверх всего стека. Зачем? Чтобы управлять системой без SSH и смотреть статистику программно.
 
@@ -323,7 +323,7 @@ Swagger UI обязателен.
 
 Агент написал 9 роутеров, Pydantic-модели, JWT middleware, OpenAPI-документацию. Итог — 20 эндпоинтов, доступных через Swagger UI:
 
-![NASA API v0.6.0 — Swagger UI с группами эндпоинтов](../../assets/screenshots/article/nasa_api_swagger.png)
+![NAS_Jetson_Nano API v0.6.0 — Swagger UI с группами эндпоинтов](../../assets/screenshots/article/nas_jetson_nano_api_swagger.png)
 
 | Группа | Примеры эндпоинтов |
 |---|---|
@@ -390,4 +390,4 @@ Jetson Nano из коробки превратился в работающий �
 
 Промпты агентов, ADR, Docker Compose, скрипты, памятки пользователей — всё открыто:
 
-**[github.com/AlexeyBorovskoy/Nasa_home](https://github.com/AlexeyBorovskoy/Nasa_home)**
+**[github.com/AlexeyBorovskoy/NAS_Jetson_Nano](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano)**

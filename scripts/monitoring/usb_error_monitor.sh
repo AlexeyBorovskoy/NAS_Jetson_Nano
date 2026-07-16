@@ -11,18 +11,18 @@
 #                 After adding 152d:a583:u quirk + reboot, JMS583 won't generate
 #                 stream errors anymore. Monitor still watches as safety net.
 #
-# Launched by: systemd (nasa-usb-monitor.service) as persistent daemon
+# Launched by: systemd (nas_jetson_nano-usb-monitor.service) as persistent daemon
 
 set -uo pipefail
 
-LOG_TAG="nasa-usb-monitor"
+LOG_TAG="nas_jetson_nano-usb-monitor"
 SSD_DEV="/dev/sda"
 ALERT_COOLDOWN_SECS=300
 LAST_ALERT=0
 
 TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
 TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}"
-[[ -f /etc/nasa-monitor/telegram.env ]] && source /etc/nasa-monitor/telegram.env
+[[ -f /etc/nas_jetson_nano-monitor/telegram.env ]] && source /etc/nas_jetson_nano-monitor/telegram.env
 
 HOSTNAME_SHORT="$(hostname -s)"
 
@@ -46,7 +46,7 @@ tg_send() {
 }
 
 trigger_watchdog() {
-    systemctl start nasa-usb-watchdog.service 2>/dev/null || true
+    systemctl start nas_jetson_nano-usb-watchdog.service 2>/dev/null || true
 }
 
 log "USB error monitor started. Watching dmesg for USB SSD errors..."

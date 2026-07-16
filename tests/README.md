@@ -1,6 +1,6 @@
-# Tests: NASA Home Cloud
+# Tests: NAS_Jetson_Nano
 
-This directory contains test scripts for validating the NASA Home Cloud system.
+This directory contains test scripts for validating the NAS_Jetson_Nano system.
 
 ## Directory Structure
 
@@ -57,7 +57,7 @@ sudo tests/storage/smart_check.sh --device /dev/sda
 # Backup validation (run on Jetson)
 tests/backup/restore_test.sh \
   --source /mnt/storage/backups/database-dumps \
-  --restore-dir /tmp/nasa-restore-test
+  --restore-dir /tmp/nas_jetson_nano-restore-test
 
 # k6 load test (manual, install k6 first)
 NEXTCLOUD_URL=http://192.168.0.50:8080 k6 run tests/load/nextcloud-smoke.js

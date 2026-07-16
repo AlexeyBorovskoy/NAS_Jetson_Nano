@@ -56,7 +56,7 @@ PASS=0
 FAIL=0
 REPORT_LINES=()
 
-echo "=== NASA Android ADB Read-Only Check ($TIMESTAMP) ==="
+echo "=== NAS_Jetson_Nano Android ADB Read-Only Check ($TIMESTAMP) ==="
 echo ""
 echo "POLICY: Only read-only ADB commands. No personal data extracted."
 echo ""
@@ -97,9 +97,9 @@ echo "Android: $ANDROID_VER (API $ANDROID_API)"
 # NOTE: NOT logging IMEI, serial, phone number, accounts
 REPORT_LINES+=("| Android version | INFO | $BRAND $MODEL, Android $ANDROID_VER (API $ANDROID_API) |")
 
-# 3. Check NASA-related apps installed
+# 3. Check NAS_Jetson_Nano-related apps installed
 echo ""
-echo "--- NASA Apps Check ---"
+echo "--- NAS_Jetson_Nano Apps Check ---"
 APP_LIST="$(adb shell pm list packages -3 2>/dev/null || echo "")"
 
 check_app() {

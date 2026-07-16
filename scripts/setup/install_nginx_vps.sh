@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# NASA Home Cloud — Add HTTPS to nasa_nginx Docker container (VPS)
+# NAS_Jetson_Nano — Add HTTPS to nas_jetson_nano_nginx Docker container (VPS)
 #
-# Context: nasa_nginx (nginx:alpine, host network) already proxies:
+# Context: nas_jetson_nano_nginx (nginx:alpine, host network) already proxies:
 #   :8080  → 127.0.0.1:18080 → Jetson:8080 (Nextcloud)  [HTTP]
 #   :2283  → 127.0.0.1:12283 → Jetson:2283 (Immich)     [HTTP]
 #   :8090  → 127.0.0.1:18090 → Jetson:8090 (LLM Gateway)[HTTP]
@@ -16,9 +16,9 @@
 
 set -euo pipefail
 
-NGINX_CONF_DIR="/opt/nasa/nginx/conf.d"
-NGINX_SSL_DIR="/opt/nasa/nginx/ssl"
-NGINX_CONTAINER="nasa_nginx"
+NGINX_CONF_DIR="/opt/nas_jetson_nano/nginx/conf.d"
+NGINX_SSL_DIR="/opt/nas_jetson_nano/nginx/ssl"
+NGINX_CONTAINER="nas_jetson_nano_nginx"
 VPS_IP="193.8.215.130"
 
 # HTTPS ports (avoid 443 — taken by Amnezia xray)
@@ -40,16 +40,16 @@ docker ps --filter "name=${NGINX_CONTAINER}" --format "{{.Names}}" | grep -q "^$
 log "Generating self-signed TLS certificate..."
 mkdir -p "$NGINX_SSL_DIR"
 
-if [ ! -f "$NGINX_SSL_DIR/nasa.crt" ]; then
+if [ ! -f "$NGINX_SSL_DIR/nas_jetson_nano.crt" ]; then
     openssl req -x509 -nodes -newkey rsa:2048 \
-        -keyout "$NGINX_SSL_DIR/nasa.key" \
-        -out    "$NGINX_SSL_DIR/nasa.crt" \
+        -keyout "$NGINX_SSL_DIR/nas_jetson_nano.key" \
+        -out    "$NGINX_SSL_DIR/nas_jetson_nano.crt" \
         -days 3650 \
-        -subj "/CN=nasa-homecloud/O=NASA Home Cloud/C=RU" \
+        -subj "/CN=nas_jetson_nano-homecloud/O=NAS_Jetson_Nano/C=RU" \
         -addext "subjectAltName=IP:${VPS_IP},DNS:localhost" \
         2>/dev/null
-    chmod 600 "$NGINX_SSL_DIR/nasa.key"
-    log "Certificate saved: $NGINX_SSL_DIR/nasa.crt"
+    chmod 600 "$NGINX_SSL_DIR/nas_jetson_nano.key"
+    log "Certificate saved: $NGINX_SSL_DIR/nas_jetson_nano.crt"
 else
     log "Certificate already exists — skipping."
 fi
@@ -68,8 +68,8 @@ server {
     listen 8443 ssl;
     server_name _;
 
-    ssl_certificate     /etc/nginx/ssl/nasa.crt;
-    ssl_certificate_key /etc/nginx/ssl/nasa.key;
+    ssl_certificate     /etc/nginx/ssl/nas_jetson_nano.crt;
+    ssl_certificate_key /etc/nginx/ssl/nas_jetson_nano.key;
     ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_ciphers         HIGH:!aNULL:!MD5;
 
@@ -106,8 +106,8 @@ server {
     listen 2443 ssl;
     server_name _;
 
-    ssl_certificate     /etc/nginx/ssl/nasa.crt;
-    ssl_certificate_key /etc/nginx/ssl/nasa.key;
+    ssl_certificate     /etc/nginx/ssl/nas_jetson_nano.crt;
+    ssl_certificate_key /etc/nginx/ssl/nas_jetson_nano.key;
     ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_ciphers         HIGH:!aNULL:!MD5;
 
@@ -141,8 +141,8 @@ server {
     listen 9443 ssl;
     server_name _;
 
-    ssl_certificate     /etc/nginx/ssl/nasa.crt;
-    ssl_certificate_key /etc/nginx/ssl/nasa.key;
+    ssl_certificate     /etc/nginx/ssl/nas_jetson_nano.crt;
+    ssl_certificate_key /etc/nginx/ssl/nas_jetson_nano.key;
     ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_ciphers         HIGH:!aNULL:!MD5;
 
@@ -163,9 +163,9 @@ LLMCONF
 
 # ── 4. Open firewall ports ────────────────────────────────────────────────────
 log "Opening HTTPS ports in ufw..."
-ufw allow ${NC_HTTPS}/tcp  comment "NASA Nextcloud HTTPS"  2>/dev/null || true
-ufw allow ${IM_HTTPS}/tcp  comment "NASA Immich HTTPS"     2>/dev/null || true
-ufw allow ${LLM_HTTPS}/tcp comment "NASA LLM Gateway HTTPS" 2>/dev/null || true
+ufw allow ${NC_HTTPS}/tcp  comment "NAS_Jetson_Nano Nextcloud HTTPS"  2>/dev/null || true
+ufw allow ${IM_HTTPS}/tcp  comment "NAS_Jetson_Nano Immich HTTPS"     2>/dev/null || true
+ufw allow ${LLM_HTTPS}/tcp comment "NAS_Jetson_Nano LLM Gateway HTTPS" 2>/dev/null || true
 
 # ── 5. Reload nginx inside container ─────────────────────────────────────────
 log "Reloading nginx inside ${NGINX_CONTAINER}..."

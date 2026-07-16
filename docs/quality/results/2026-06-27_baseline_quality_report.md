@@ -1,4 +1,4 @@
-# Baseline Quality Report: NASA Home Cloud
+# Baseline Quality Report: NAS_Jetson_Nano
 
 **Date:** 2026-06-27  
 **Version:** v1.3.7  
@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary
 
-The NASA Home Cloud system (Jetson Nano 4GB + USB SSD) is **operationally stable** as of 2026-06-27: all 13 Docker containers are up and healthy, storage is mounted, and Android Immich backup is active. A quality validation framework has been established for the first time.
+The NAS_Jetson_Nano system (Jetson Nano 4GB + USB SSD) is **operationally stable** as of 2026-06-27: all 13 Docker containers are up and healthy, storage is mounted, and Android Immich backup is active. A quality validation framework has been established for the first time.
 
 **Static analysis found 4 vulnerabilities fixed in this commit** and 2 known limitations documented. No hardcoded secrets were found in git-tracked files. The primary hardware risk -- RTL9210B-CG USB bridge unreliability -- is mitigated by watchdog and preboot services.
 
@@ -85,13 +85,13 @@ Scripts were checked for proper error handling flags:
 |---|---|---|
 | Had full `set -euo pipefail` | 21 | Correct |
 | Missing `-e` flag (set -uo pipefail) | 3 | FIXED |
-| Only `set -u` | 1 | FIXED (nasa-daily-report.sh) |
+| Only `set -u` | 1 | FIXED (nas_jetson_nano-daily-report.sh) |
 
 **Fixed scripts:**
 - `scripts/storage/usb_recovery_watchdog.sh` -- changed `set -uo pipefail` to `set -euo pipefail`
 - `scripts/storage/usb_preboot_cycle.sh` -- changed `set -uo pipefail` to `set -euo pipefail`
 - `scripts/monitoring/usb_error_monitor.sh` -- changed `set -uo pipefail` to `set -euo pipefail`
-- `scripts/monitoring/nasa-daily-report.sh` -- changed `set -u` to `set -uo pipefail`
+- `scripts/monitoring/nas_jetson_nano-daily-report.sh` -- changed `set -u` to `set -uo pipefail`
 
 ### 4.2 Hardcoded Credentials Check
 
@@ -105,9 +105,9 @@ No hardcoded passwords or API tokens found in git-tracked files.
 
 | File | Issue | Fix |
 |---|---|---|
-| `scripts/monitoring/nasa-daily-report.sh` | Fixed `/tmp/beszel_warn_local.txt` path | FIXED: replaced with `mktemp` |
-| `scripts/monitoring/nasa-send-report-telegram.sh` | Uses `/tmp/nasa-tg-$$.env` | OK: $$ suffix is process-unique |
-| `scripts/storage/install_usb_watchdog.sh` | Uses `/tmp/nasa-storage-alert-$$.env` | OK: $$ suffix is process-unique |
+| `scripts/monitoring/nas_jetson_nano-daily-report.sh` | Fixed `/tmp/beszel_warn_local.txt` path | FIXED: replaced with `mktemp` |
+| `scripts/monitoring/nas_jetson_nano-send-report-telegram.sh` | Uses `/tmp/nas_jetson_nano-tg-$$.env` | OK: $$ suffix is process-unique |
+| `scripts/storage/install_usb_watchdog.sh` | Uses `/tmp/nas_jetson_nano-storage-alert-$$.env` | OK: $$ suffix is process-unique |
 
 ### 4.4 Unquoted Variable Check
 
@@ -186,8 +186,8 @@ Per CLAUDE.md (2026-06-27 operational status):
 | USB SSD port | port 2 (1-2.2) |
 | SCSI timeout | 120s (udev rule active) |
 | Autosuspend | disabled (usbcore.autosuspend=-1, kernel cmdline) |
-| Watchdog timer | active (nasa-usb-watchdog.timer) |
-| Preboot service | active (nasa-usb-preboot.service) |
+| Watchdog timer | active (nas_jetson_nano-usb-watchdog.timer) |
+| Preboot service | active (nas_jetson_nano-usb-preboot.service) |
 
 ### 7.2 SMART Check Results (2026-06-27)
 
@@ -218,11 +218,11 @@ sudo bash tests/storage/mount_check.sh --mount-point /mnt/storage
 
 **Status: NOT RUN** -- requires Jetson SSH.
 
-nasa-backup.timer is configured for daily runs. Test when Jetson is accessible:
+nas_jetson_nano-backup.timer is configured for daily runs. Test when Jetson is accessible:
 ```bash
 tests/backup/restore_test.sh \
   --source /mnt/storage/backups/database-dumps \
-  --restore-dir /tmp/nasa-restore-test
+  --restore-dir /tmp/nas_jetson_nano-restore-test
 ```
 
 ---
@@ -290,14 +290,14 @@ None found.
 | M-001 | scripts/storage/usb_recovery_watchdog.sh:11 | `set -uo pipefail` missing `-e` flag -- errors in power-off sequence would not abort | YES |
 | M-002 | scripts/storage/usb_preboot_cycle.sh:11 | Same -- `set -uo pipefail` without `-e` | YES |
 | M-003 | scripts/monitoring/usb_error_monitor.sh:11 | Same -- `set -uo pipefail` without `-e` | YES |
-| M-004 | scripts/monitoring/nasa-daily-report.sh:3 | `set -u` only -- no `-e` or pipefail | YES (changed to set -uo pipefail; full -euo not possible due to heredoc structure) |
+| M-004 | scripts/monitoring/nas_jetson_nano-daily-report.sh:3 | `set -u` only -- no `-e` or pipefail | YES (changed to set -uo pipefail; full -euo not possible due to heredoc structure) |
 
 ### LOW
 
 | ID | File | Finding | Fixed? |
 |---|---|---|---|
-| L-001 | scripts/monitoring/nasa-daily-report.sh:108 | Fixed tmp file path `/tmp/beszel_warn_local.txt` -- predictable name | YES (mktemp) |
-| L-002 | scripts/storage/install_usb_watchdog.sh:65 | Remote env file uses `/tmp/nasa-storage-alert-$$.env` -- PID-based (OK but racy on same PID reuse) | LOW RISK: only runs locally as root |
+| L-001 | scripts/monitoring/nas_jetson_nano-daily-report.sh:108 | Fixed tmp file path `/tmp/beszel_warn_local.txt` -- predictable name | YES (mktemp) |
+| L-002 | scripts/storage/install_usb_watchdog.sh:65 | Remote env file uses `/tmp/nas_jetson_nano-storage-alert-$$.env` -- PID-based (OK but racy on same PID reuse) | LOW RISK: only runs locally as root |
 | L-003 | docker-compose.immich.yml | immich-microservices had no mem_limit -- could OOM Jetson under load | YES (512m added) |
 | L-004 | scripts/diagnostics/hardware_audit.sh | No shebang header after first line -- but it does have `#!/usr/bin/env bash` | N/A |
 
@@ -340,7 +340,7 @@ None found.
 
 ## 15. Article-Ready Summary
 
-**NASA Home Cloud: Quality Baseline (2026-06-27)**
+**NAS_Jetson_Nano: Quality Baseline (2026-06-27)**
 
 A Jetson Nano 4GB running 13 Docker containers (Nextcloud, Immich, LLM Gateway, Samba, monitoring stack) with USB SSD storage. The system replaces Google Photos and Google Drive for a family of 2.
 

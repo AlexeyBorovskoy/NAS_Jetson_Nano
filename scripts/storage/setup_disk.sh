@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# setup_disk.sh — mount USB HDD for NASA Home Cloud on Jetson Nano
+# setup_disk.sh — mount USB HDD for NAS_Jetson_Nano on Jetson Nano
 #
 # Usage: sudo bash scripts/storage/setup_disk.sh [DEVICE] [MOUNT_POINT]
 # Example: sudo bash scripts/storage/setup_disk.sh /dev/sda1 /mnt/storage
@@ -50,7 +50,7 @@ fi
 mount -a
 findmnt "${MOUNT_POINT}"
 
-# Create NASA directory layout
+# Create NAS_Jetson_Nano directory layout
 for dir in \
     nextcloud/data \
     immich/library \

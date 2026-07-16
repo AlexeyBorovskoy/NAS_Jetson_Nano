@@ -1,0 +1,15 @@
+[Unit]
+Description=Run NAS_Jetson_Nano database backup daily at 03:00
+Documentation=https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
+
+[Timer]
+# 03:00 — before 09:00 Telegram report, off-peak for Jetson
+OnCalendar=*-*-* 03:00:00
+# Run on next boot if the last trigger was missed (Jetson was off)
+Persistent=true
+# Spread load ±15 min
+RandomizedDelaySec=15m
+Unit=nas_jetson_nano-backup.service
+
+[Install]
+WantedBy=timers.target

@@ -28,7 +28,7 @@
 | 17 | Self-signed cert срок | 10 лет (3650 дней) | Статья Шаг 4, openssl команда | ✅ OK | -days 3650 в команде. |
 | 18 | Off-site backup | не настроен | Статья «Что ещё не сделано» | ✅ OK | Честно указано. restic скрипты готовы. |
 | 19 | ML в Immich | отключён | Live container configuration: `IMMICH_DISABLE_MACHINE_LEARNING=true` | ✅ LIVE | Подтверждено без вывода секретов. |
-| 20 | Число эндпоинтов NASA API | 20 | Live `/openapi.json` | ✅ LIVE | 20 paths и 20 HTTP operations. |
+| 20 | Число эндпоинтов NAS_Jetson_Nano API | 20 | Live `/openapi.json` | ✅ LIVE | 20 paths и 20 HTTP operations. |
 | 21 | Swap | четыре zram-устройства, около 2 GB суммарно | Live `/proc/meminfo` и `swapon --show --bytes` | ✅ LIVE | Старое утверждение «нет swap» исправлено на «изначально не было дискового swap; позднее добавлен zram». |
 | 22 | VPS | Ubuntu 24.04.4 LTS, около 2 GB RAM | Live `/etc/os-release`, `/proc/meminfo` | ✅ LIVE | Reverse-порты Jetson слушают только на loopback VPS. |
 | 23 | Версии приложений | Nextcloud 33.0.4; Immich 2.7.5 | Live `occ status` и `/api/server/version` | ✅ LIVE | Сервисы отвечают локально и через публичные VPS endpoints. |

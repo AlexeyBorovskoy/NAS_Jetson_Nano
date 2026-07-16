@@ -2,7 +2,7 @@
 
 > 🇷🇺 **Статус: ✅ Репозиторий публичный** (сделано 2026-06-21).
 > 🇬🇧 **Status: ✅ Repository is public** (done 2026-06-21).
-> URL: https://github.com/AlexeyBorovskoy/Nasa_home
+> URL: https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
 
 ## 1. Проект опубликован / Project published
 

@@ -17,7 +17,7 @@ locations. No scripts, systemd units, or Docker Compose files were touched.
 | `AUDIT_2026-05-31.md` | `artifacts/reports/AUDIT_2026-05-31.md` | git mv | audit output → artifacts |
 | `PROJECT_CONTEXT.md` | `docs/PROJECT_CONTEXT.md` | git mv | documentation → docs |
 | `PROJECT_TREE.txt` | `archive/legacy/PROJECT_TREE.txt` | git mv | stale snapshot → archive |
-| `archtectura_nasa.md` | `docs/architecture_nasa.md` | git mv | fix typo + move to docs |
+| `archtectura_nas_jetson_nano.md` | `docs/architecture_nas_jetson_nano.md` | git mv | fix typo + move to docs |
 | `configs/samba/smb.conf` | `config/samba/smb.conf` | git mv | merge duplicate configs/ → config/ |
 | `configs/samba/config.yml` | `config/samba/config.yml` | git mv | merge duplicate configs/ → config/ |
 | `photo/test_sys.jpg` | `assets/photos/test_sys.jpg` | git mv | image → assets |
@@ -29,8 +29,8 @@ locations. No scripts, systemd units, or Docker Compose files were touched.
 | `external_docs/` (53 files, untracked) | `docs/references/external_docs/` | mv | ref docs stay gitignored at new path |
 | `runtime/audit/HARDWARE_AUDIT_REPORT.md` | `artifacts/reports/` | mv | audit → artifacts |
 | `runtime/audit/hdd_*.json` (2 files) | `artifacts/reports/` | mv | audit data → artifacts |
-| `runtime/wg-nasa-client.conf` | `archive/legacy/` | mv | VPN config (gitignored, has private key) |
-| `runtime/wg-nasa-client.png` | `archive/legacy/` | mv | VPN QR code (gitignored) |
+| `runtime/wg-nas_jetson_nano-client.conf` | `archive/legacy/` | mv | VPN config (gitignored, has private key) |
+| `runtime/wg-nas_jetson_nano-client.png` | `archive/legacy/` | mv | VPN QR code (gitignored) |
 | `test_systems/*.md` (3 files, untracked) | `docs/prompts/` | mv | prompts → docs |
 | `prodaction/android audit .md` (untracked) | `artifacts/reports/` | mv | audit → artifacts |
 
@@ -71,7 +71,7 @@ locations. No scripts, systemd units, or Docker Compose files were touched.
 
 | File | Change |
 |---|---|
-| `README.md` | Updated links for `PROJECT_CONTEXT.md` and `archtectura_nasa.md` |
+| `README.md` | Updated links for `PROJECT_CONTEXT.md` and `archtectura_nas_jetson_nano.md` |
 | `docs/references/EXTERNAL_DOCS_CACHE.md` | Updated all `external_docs/` → `docs/references/external_docs/` |
 
 ## Remaining manual actions

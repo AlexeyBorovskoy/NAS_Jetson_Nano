@@ -1,6 +1,6 @@
 # Articles and project logs
 
-This folder contains public article drafts and publication materials for NASA Home Cloud.
+This folder contains public article drafts and publication materials for NAS_Jetson_Nano.
 
 ## Available materials
 
@@ -39,4 +39,4 @@ See [reddit/](reddit/) folder:
 ## Publication links
 
 - Habr Sandbox: https://habr.com/ru/sandbox/291694/
-- GitHub Pages: https://alexeyborovskoy.github.io/Nasa_home/articles/habr_article_ru.html
+- GitHub Pages: https://alexeyborovskoy.github.io/NAS_Jetson_Nano/articles/habr_article_ru.html

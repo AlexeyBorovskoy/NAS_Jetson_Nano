@@ -12,7 +12,7 @@
 
 ## Попытки внешнего доступа / External access attempts
 
-### Попытка 1 / Attempt 1: wg-nasa (WireGuard на EU VPS 45.95.2.49)
+### Попытка 1 / Attempt 1: wg-nas_jetson_nano (WireGuard на EU VPS 45.95.2.49)
 
 🇷🇺 CGNAT блокирует входящие TCP → клиент не подключается к Jetson.
 **Результат: удалено с Jetson 2026-06-13.**
@@ -39,8 +39,8 @@
 
 🇬🇧 **LAN-only as the base home model.** No direct port forwarding on the home router. The historical Tailscale external access plan (ADR-0004) was replaced by the implemented VPS reverse SSH tunnel (ADR-0005), which does not touch Amnezia and does not require incoming connections to Jetson.
 
-🇷🇺 Сеть Jetson: профиль `nasa-lan` (eth0, статика `192.168.0.50/24`, gw `192.168.0.1`, autoconnect=yes).
-🇬🇧 Jetson network: profile `nasa-lan` (eth0, static `192.168.0.50/24`, gw `192.168.0.1`, autoconnect=yes).
+🇷🇺 Сеть Jetson: профиль `nas_jetson_nano-lan` (eth0, статика `192.168.0.50/24`, gw `192.168.0.1`, autoconnect=yes).
+🇬🇧 Jetson network: profile `nas_jetson_nano-lan` (eth0, static `192.168.0.50/24`, gw `192.168.0.1`, autoconnect=yes).
 
 ## Жёсткие правила / Hard rules
 
@@ -48,7 +48,7 @@
    🇬🇧 **Do not touch Amnezia server via SSH/`wg set`** — drops prod for ~25 users.
 2. 🇷🇺 **Не открывать порты 8080/2283/8090 на роутере** без документа риска.
    🇬🇧 **Do not open ports 8080/2283/8090 on the router** without a risk document.
-3. 🇷🇺 **Профиль `nasa-lan` не удалять** — корректная статическая конфигурация Jetson.
-   🇬🇧 **Do not delete `nasa-lan` profile** — correct static Jetson network configuration.
+3. 🇷🇺 **Профиль `nas_jetson_nano-lan` не удалять** — корректная статическая конфигурация Jetson.
+   🇬🇧 **Do not delete `nas_jetson_nano-lan` profile** — correct static Jetson network configuration.
 4. 🇷🇺 SSH через USB всегда работает: `ssh admin@fe80::1%<ifIndex>` (IPv6 link-local).
    🇬🇧 SSH via USB always works: `ssh admin@fe80::1%<ifIndex>` (IPv6 link-local).

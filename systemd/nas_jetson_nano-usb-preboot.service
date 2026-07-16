@@ -1,0 +1,18 @@
+[Unit]
+Description=NAS_Jetson_Nano USB SSD Pre-boot Power Cycle (port 2 power cycle before mount)
+Documentation=https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
+# Запускаем ДО монтирования SSD — power cycle порта 2 для чистой инициализации
+Before=jetson-nas-mount.service
+After=local-fs.target
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+RemainAfterExit=no
+ExecStart=/usr/local/sbin/nas_jetson_nano-usb-preboot.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nas_jetson_nano-usb-preboot
+
+[Install]
+WantedBy=multi-user.target

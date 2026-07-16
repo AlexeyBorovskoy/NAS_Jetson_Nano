@@ -19,10 +19,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="${SCRIPT_DIR}/../.."
 SYSTEMD_SRC="${REPO_ROOT}/systemd/jetson-nas-mount.service"
 SYSTEMD_DST="/etc/systemd/system/jetson-nas-mount.service"
-NASA_DIR="$(realpath "${REPO_ROOT}")"
+NAS_JETSON_NANO_DIR="$(realpath "${REPO_ROOT}")"
 
-log "Installing jetson-nas-mount.service with NASA_DIR=${NASA_DIR}"
-sudo sed "s|/home/admin/nasa|${NASA_DIR}|g" \
+log "Installing jetson-nas-mount.service with NAS_JETSON_NANO_DIR=${NAS_JETSON_NANO_DIR}"
+sudo sed "s|/home/admin/nas_jetson_nano|${NAS_JETSON_NANO_DIR}|g" \
     "${SYSTEMD_SRC}" \
     | sudo tee "${SYSTEMD_DST}" > /dev/null
 sudo chmod 644 "${SYSTEMD_DST}"

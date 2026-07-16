@@ -74,7 +74,7 @@ fi
 check_deps
 
 TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
-echo "=== NASA fio Quick Test ($TIMESTAMP) ==="
+echo "=== NAS_Jetson_Nano fio Quick Test ($TIMESTAMP) ==="
 echo "Directory: $TEST_DIR"
 echo "Test size: $TEST_SIZE"
 echo ""

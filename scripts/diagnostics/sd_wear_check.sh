@@ -6,7 +6,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOG_FILE="/var/log/nasa-monitor/sd-wear.log"
+LOG_FILE="/var/log/nas_jetson_nano-monitor/sd-wear.log"
 TELEGRAM_SCRIPT="$SCRIPT_DIR/../monitoring/send_telegram.sh"
 WARNING_THRESHOLD=5  # alert if life_time_est >= 5 (50% wear)
 DEVICE="mmcblk0"
@@ -84,7 +84,7 @@ elif [[ $LIFE_A_INT -ge $WARNING_THRESHOLD ]] || [[ $LIFE_B_INT -ge $WARNING_THR
 fi
 
 if [[ $ALERT -eq 1 ]] && [[ -x "$TELEGRAM_SCRIPT" ]]; then
-    "$TELEGRAM_SCRIPT" "🖥 nasa-jetson | SD Wear Alert
+    "$TELEGRAM_SCRIPT" "🖥 nas_jetson_nano-jetson | SD Wear Alert
 $ALERT_MSG
 Type-A: $LIFE_A_PCT
 Type-B: $LIFE_B_PCT

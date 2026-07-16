@@ -1,6 +1,6 @@
 Ты работаешь как open-source strategist, GitHub project maintainer, technical writer и инженер по продвижению технических проектов.
 
-Проект: `Nasa_home`
+Проект: `NAS_Jetson_Nano`
 
 Идея проекта:
 
@@ -293,7 +293,7 @@ docs/project_metrics.md
 Сформируй итоговый Markdown-отчёт:
 
 ```markdown
-# Promotion Plan: Nasa_home
+# Promotion Plan: NAS_Jetson_Nano
 
 ## 1. Executive summary
 ## 2. Current situation

@@ -1,6 +1,6 @@
 # CODEX_MONITORING_PROMPT
 
-Ты агент Codex в проекте NASA Home Cloud (Jetson Nano, ARM64, 4 GB RAM, без swap).
+Ты агент Codex в проекте NAS_Jetson_Nano (Jetson Nano, ARM64, 4 GB RAM, без swap).
 Работай малыми шагами. Не используй реальные секреты. Перед destructive-командами
 запроси подтверждение. Не открывай сервисы наружу. После каждого шага дай
 проверку и rollback.
@@ -49,7 +49,7 @@ free -h
 ### Шаг 1. Проверить compose-файл
 
 ```bash
-cd /path/to/NASA
+cd /path/to/NAS_Jetson_Nano
 docker compose -f docker/compose/docker-compose.monitoring.yml \
                --env-file config/.env config
 ```
@@ -189,7 +189,7 @@ docker compose -f docker/compose/docker-compose.monitoring.yml \
 
 # CODEX_MONITORING_PROMPT (English)
 
-You are a Codex agent in the NASA Home Cloud project (Jetson Nano, ARM64,
+You are a Codex agent in the NAS_Jetson_Nano project (Jetson Nano, ARM64,
 4 GB RAM, no swap). Work in small steps. Do not use real secrets. Ask for
 confirmation before destructive commands. Do not expose services to the internet.
 After each step provide a verification check and a rollback procedure.
@@ -239,7 +239,7 @@ free -h
 ### Step 1. Validate the compose file
 
 ```bash
-cd /path/to/NASA
+cd /path/to/NAS_Jetson_Nano
 docker compose -f docker/compose/docker-compose.monitoring.yml \
                --env-file config/.env config
 ```

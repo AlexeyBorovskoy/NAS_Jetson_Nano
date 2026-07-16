@@ -1,9 +1,9 @@
 # 24. Подключение устройств / Client Setup
 
-> 🇷🇺 Как подключить телефон, ноутбук и десктоп к NASA Home Cloud.
+> 🇷🇺 Как подключить телефон, ноутбук и десктоп к NAS_Jetson_Nano.
 > Охватывает Android, Windows и Linux — для каждой платформы и каждого сервиса.
 >
-> 🇬🇧 How to connect your phone, laptop, or desktop to NASA Home Cloud.
+> 🇬🇧 How to connect your phone, laptop, or desktop to NAS_Jetson_Nano.
 > Covers Android, Windows, and Linux — for each platform and each service.
 >
 > Статус / Status 2026-06-27: Nextcloud, Immich и LLM Gateway доступны через VPS / accessible via VPS.
@@ -24,7 +24,7 @@
 | Immich | `http://192.168.0.50:2283` | `http://193.8.215.130:2283` |
 | LLM Gateway | `http://192.168.0.50:8090` | `http://193.8.215.130:8090` |
 | Samba NAS | `\\192.168.0.50` (SMB) | ❌ только LAN / LAN only |
-| nasa-api / Swagger | `http://192.168.0.50:8099/docs` | ❌ только LAN / LAN only |
+| nas_jetson_nano-api / Swagger | `http://192.168.0.50:8099/docs` | ❌ только LAN / LAN only |
 | Netdata | `http://192.168.0.50:19999` | ❌ только LAN / LAN only |
 | Uptime Kuma | `http://192.168.0.50:3001` | ❌ только LAN / LAN only |
 | Portainer | `http://192.168.0.50:9000` | ❌ только LAN / LAN only |
@@ -213,7 +213,7 @@ net use
 | Nextcloud | `http://192.168.0.50:8080` | Файлы, контакты, календарь / Files, contacts, calendar |
 | Immich | `http://192.168.0.50:2283` | Семейный фотоархив / Family photo archive |
 | LLM Gateway | `http://192.168.0.50:8090` | Локальный AI / Local AI assistant |
-| nasa-api Swagger | `http://192.168.0.50:8099/docs` | API сервера / Server API |
+| nas_jetson_nano-api Swagger | `http://192.168.0.50:8099/docs` | API сервера / Server API |
 | Netdata | `http://192.168.0.50:19999` | Мониторинг / Real-time monitoring |
 | Uptime Kuma | `http://192.168.0.50:3001` | Статус сервисов / Service status |
 | Portainer | `http://192.168.0.50:9000` | Управление Docker / Docker management |
@@ -326,7 +326,7 @@ Details / Инструкция: [docs/plans/TAILSCALE_ACCESS_PLAN.md](plans/TAIL
 # Check from client machine / Проверить с клиентской машины:
 curl -sf http://192.168.0.50:8080/status.php | python3 -m json.tool  # Nextcloud
 curl -sf http://192.168.0.50:2283/api/server/ping                     # Immich
-curl -sf http://192.168.0.50:8099/healthcheck                         # nasa-api
+curl -sf http://192.168.0.50:8099/healthcheck                         # nas_jetson_nano-api
 ping 192.168.0.50                                                      # basic connectivity
 ```
 

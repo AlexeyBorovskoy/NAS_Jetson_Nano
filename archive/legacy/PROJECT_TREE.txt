@@ -1,8 +1,8 @@
-nasa-home-cloud/                       # NASA Home Cloud project root
+nas-jetson-nano/                       # NAS_Jetson_Nano project root
 ├── README.md                          # двуязычная документация (RU+EN) с badges
 ├── PROJECT_CONTEXT.md                 # scope, зафиксированные решения, ограничения
 ├── AGENTS.md                          # правила для Codex/агентов + сетевые ограничения
-├── archtectura_nasa.md                # архитектурная карта (актуальна 2026-06-23)
+├── archtectura_nas_jetson_nano.md                # архитектурная карта (актуальна 2026-06-23)
 ├── AUDIT_2026-05-31.md                # аудит целостности (2026-05-31)
 ├── SECURITY.md                        # политика безопасности (RU+EN)
 ├── CONTRIBUTING.md                    # правила для контрибьюторов
@@ -66,7 +66,7 @@ nasa-home-cloud/                       # NASA Home Cloud project root
 │   ├── 18_NAS_RESEARCH_REPORT.md      # аналитика по 6 NAS-проектам (JetsonHacks, OMV, ...)
 │   ├── 19_NETWORK_INVENTORY.md        # инвентарь сети
 │   ├── 20_AGENT_OPERATING_MODEL.md    # операционная модель субагентов
-│   ├── 21_LOGGING_API.md              # logging/API layer для nasa-api
+│   ├── 21_LOGGING_API.md              # logging/API layer для nas_jetson_nano-api
 │   ├── 22_AUDIT_RESILIENCE.md         # аудит устойчивости + F-11 storage incident
 │   ├── 23_GITHUB_INTEGRATION.md       # gh CLI и GitHub workflow
 │   ├── 24_CLIENT_SETUP.md             # подключение Android/Windows/Linux клиентов
@@ -145,10 +145,10 @@ nasa-home-cloud/                       # NASA Home Cloud project root
 │   ├── jetson-nas-health.timer        # OnBootSec=5min, OnUnitActiveSec=6h, Persistent
 │   ├── jetson-nas-mount.service       # монтирование STORAGE_ROOT
 │   ├── docker.service.d/
-│   │   └── 10-nasa-storage.conf       # strict Docker storage boot guard
-│   ├── nasa-backup.service            # bash wrapper для backup_databases.sh
-│   ├── nasa-backup.timer              # daily DB dump timer
-│   └── nasa-tunnel.service            # autossh reverse SSH tunnel → VPS
+│   │   └── 10-nas_jetson_nano-storage.conf       # strict Docker storage boot guard
+│   ├── nas_jetson_nano-backup.service            # bash wrapper для backup_databases.sh
+│   ├── nas_jetson_nano-backup.timer              # daily DB dump timer
+│   └── nas_jetson_nano-tunnel.service            # autossh reverse SSH tunnel → VPS
 │
 └── tests/                             # smoke-тесты (запускать на Jetson вручную)
     ├── test_samba_config.sh           # проверка Samba конфига (testparm или docker)

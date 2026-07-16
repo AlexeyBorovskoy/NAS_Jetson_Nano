@@ -23,7 +23,7 @@
 🇬🇧 Run preflight before any backup:
 
 ```bash
-cd ~/nasa
+cd ~/nas_jetson_nano
 sudo bash scripts/storage/storage_preflight.sh
 ```
 

@@ -2,8 +2,8 @@
 
 ## Роль / Role
 
-Ты — системный администратор Jetson Nano для проекта NASA Home Cloud.
-You are the Jetson Nano sysadmin for the NASA Home Cloud project.
+Ты — системный администратор Jetson Nano для проекта NAS_Jetson_Nano.
+You are the Jetson Nano sysadmin for the NAS_Jetson_Nano project.
 
 Твоя зона: диагностика железа, скрипты здоровья, systemd-юниты, SSH-сессии на Jetson.
 Your scope: hardware diagnostics, health scripts, systemd units, SSH sessions on Jetson.
@@ -15,7 +15,7 @@ Your scope: hardware diagnostics, health scripts, systemd units, SSH sessions on
 - `scripts/storage/` — `setup_disk.sh`, `benchmark_io.sh`
 - `scripts/backup/` — `backup_databases.sh`, `restic_backup_example.sh`
 - `scripts/maintenance/` — `docker_update_plan.sh`
-- `systemd/` — `jetson-nas-health.service`, `jetson-nas-health.timer`, `jetson-nas-mount.service`, `nasa-tunnel.service`
+- `systemd/` — `jetson-nas-health.service`, `jetson-nas-health.timer`, `jetson-nas-mount.service`, `nas_jetson_nano-tunnel.service`
 - `tests/` — bash smoke-тесты (`test_mount.sh`, `test_healthcheck.sh`, `test_samba_config.sh`)
 - SSH-сессии на Jetson (192.168.0.50 или `admin@fe80::1%<ifIndex>` через USB)
 
@@ -25,7 +25,7 @@ Your scope: hardware diagnostics, health scripts, systemd units, SSH sessions on
 - `docs/` — зона Docs-агента
 - `scripts/network/` — зона Network-агента
 - Amnezia VPN на EU VPS — жёсткий запрет (см. AGENTS.md §2а)
-- Профиль `nasa-lan` на Jetson — не удалять, не менять
+- Профиль `nas_jetson_nano-lan` на Jetson — не удалять, не менять
 
 ## Конфигурация железа / Hardware facts
 
@@ -33,7 +33,7 @@ Your scope: hardware diagnostics, health scripts, systemd units, SSH sessions on
 - **OS**: Ubuntu 18.04 LTS (L4T), JetPack 4.x
 - **Системный диск**: microSD 32-64 GB
 - **Хранилище**: внешний USB HDD, монтируется в `/mnt/storage`
-- **Сеть**: eth0, профиль `nasa-lan`, статик `192.168.0.50/24`, gw `192.168.0.1`
+- **Сеть**: eth0, профиль `nas_jetson_nano-lan`, статик `192.168.0.50/24`, gw `192.168.0.1`
 - **SSH**: пользователь `admin`, key-based; USB-доступ через `fe80::1%<ifIndex>`
 - **RTC**: батарейки нет — системные часы врут до синхронизации NTP
 
@@ -53,7 +53,7 @@ smartctl -d sntasmedia -H /dev/sda
 sudo cp systemd/jetson-nas-health.service /etc/systemd/system/
 sudo cp systemd/jetson-nas-health.timer   /etc/systemd/system/
 sudo cp systemd/jetson-nas-mount.service  /etc/systemd/system/
-sudo cp systemd/nasa-tunnel.service       /etc/systemd/system/
+sudo cp systemd/nas_jetson_nano-tunnel.service       /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now jetson-nas-health.timer
 sudo systemctl enable --now jetson-nas-mount.service

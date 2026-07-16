@@ -1,6 +1,6 @@
 Ты работаешь как инженерный аудитор open-source проекта, technical writer и DevOps-reviewer.
 
-Проект: `Nasa_home`
+Проект: `NAS_Jetson_Nano`
 
 Идея проекта:
 **Old Hardware Must Live — домашний NAS на базе Jetson Nano первого поколения и старого HDD 2 ТБ.**
@@ -294,7 +294,7 @@ Jetson Nano 1st Gen + old HDD + low-cost reuse + reproducible documentation + sa
 Структура отчёта:
 
 ```markdown
-# Audit Report: Nasa_home
+# Audit Report: NAS_Jetson_Nano
 
 ## 1. Executive summary
 ## 2. Current repository state

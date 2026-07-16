@@ -45,9 +45,9 @@ Immich Android requires HTTPS for auto-backup. No domain = self-signed cert with
 
 ```bash
 openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
-  -subj "/CN=nasa-home-cloud" \
+  -subj "/CN=nas-jetson-nano" \
   -addext "subjectAltName=IP:YOUR_VPS_IP,IP:192.168.x.x" \
-  -out nasa.crt -keyout nasa.key
+  -out nas_jetson_nano.crt -keyout nas_jetson_nano.key
 ```
 
 Accept the cert once in the app → auto-backup works normally.
@@ -65,7 +65,7 @@ Stable for weeks with these limits.
 
 **Access:** reverse SSH tunnel through VPS (CGNAT, no port forwarding). LAN URL configured separately in Immich Android settings for faster local backup when on WiFi.
 
-Full setup: https://github.com/AlexeyBorovskoy/Nasa_home
+Full setup: https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
 
 ---
 

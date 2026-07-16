@@ -1,4 +1,4 @@
-﻿# Тесты Backup/Restore / Backup and Restore Tests: NASA Home Cloud
+﻿# Тесты Backup/Restore / Backup and Restore Tests: NAS_Jetson_Nano
 
 **Version:** 1.0  
 **Date:** 2026-06-27
@@ -9,10 +9,10 @@
 
 | Component | Backup method | Location | Schedule |
 |---|---|---|---|
-| Nextcloud DB (PostgreSQL) | pg_dump via docker exec | /mnt/storage/backups/database-dumps/ | Daily (nasa-backup.timer) |
-| Immich DB (PostgreSQL) | pg_dump via docker exec | /mnt/storage/backups/database-dumps/ | Daily (nasa-backup.timer) |
+| Nextcloud DB (PostgreSQL) | pg_dump via docker exec | /mnt/storage/backups/database-dumps/ | Daily (nas_jetson_nano-backup.timer) |
+| Immich DB (PostgreSQL) | pg_dump via docker exec | /mnt/storage/backups/database-dumps/ | Daily (nas_jetson_nano-backup.timer) |
 | Media files | rsync (planned) | /mnt/storage/backups/ | Manual |
-| Off-site (restic) | NOT YET CONFIGURED | VPS /opt/nasa/backups | Planned |
+| Off-site (restic) | NOT YET CONFIGURED | VPS /opt/nas_jetson_nano/backups | Planned |
 
 ---
 
@@ -24,12 +24,12 @@
 # Full test: create test file, dry-run rsync, restore to temp, diff check
 tests/backup/restore_test.sh \
   --source /mnt/storage/backups/database-dumps \
-  --restore-dir /tmp/nasa-restore-test-$(date +%Y%m%d)
+  --restore-dir /tmp/nas_jetson_nano-restore-test-$(date +%Y%m%d)
 
 # With output report
 tests/backup/restore_test.sh \
   --source /mnt/storage/backups/database-dumps \
-  --restore-dir /tmp/nasa-restore-test \
+  --restore-dir /tmp/nas_jetson_nano-restore-test \
   --output /tmp/backup-report.md
 ```
 
@@ -61,7 +61,7 @@ Expected: File > 10KB, gzip integrity check passes.
 ```bash
 rsync -avz --dry-run \
   /mnt/storage/backups/database-dumps/ \
-  /tmp/nasa-restore-dry-run/
+  /tmp/nas_jetson_nano-restore-dry-run/
 ```
 
 Expected: rsync lists files to copy, exit code 0.
@@ -69,7 +69,7 @@ Expected: rsync lists files to copy, exit code 0.
 ### T5.4: Restore and Diff
 
 ```bash
-RESTORE_DIR=$(mktemp -d /tmp/nasa-restore-XXXX)
+RESTORE_DIR=$(mktemp -d /tmp/nas_jetson_nano-restore-XXXX)
 rsync -avz /mnt/storage/backups/database-dumps/ "$RESTORE_DIR/"
 diff <(ls -1 /mnt/storage/backups/database-dumps/) <(ls -1 "$RESTORE_DIR/")
 echo "Restore check: $?"

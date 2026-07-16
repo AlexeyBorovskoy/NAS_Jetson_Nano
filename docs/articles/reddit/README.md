@@ -27,5 +27,5 @@ The best single image to accompany any post:
 
 ## Links to include
 
-- GitHub: https://github.com/AlexeyBorovskoy/Nasa_home
-- GitHub Pages (EN): https://alexeyborovskoy.github.io/Nasa_home/
+- GitHub: https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
+- GitHub Pages (EN): https://alexeyborovskoy.github.io/NAS_Jetson_Nano/

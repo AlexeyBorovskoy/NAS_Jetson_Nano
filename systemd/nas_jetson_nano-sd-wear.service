@@ -1,0 +1,7 @@
+[Unit]
+Description=NAS_Jetson_Nano microSD Wear Check
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/admin/nas_jetson_nano/scripts/diagnostics/sd_wear_check.sh

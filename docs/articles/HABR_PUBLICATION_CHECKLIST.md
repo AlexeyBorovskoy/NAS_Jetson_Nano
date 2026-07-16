@@ -34,7 +34,7 @@
 | I1 | android_davx5_caldav.jpg — VPS IP размыт | ❌ НЕ СДЕЛАНО | **КРИТИЧНО** |
 | I2 | immich_web.png — лица семьи: согласие/blur | ❌ НЕ СДЕЛАНО | **КРИТИЧНО** |
 | I3 | nextcloud_talk.png — содержимое чата проверено | ❌ НЕ СДЕЛАНО | **КРИТИЧНО** |
-| I4 | nasa_api_swagger.png — IP в адресной строке размыт | ❌ НЕ СДЕЛАНО | ВЫСОКИЙ |
+| I4 | nas_jetson_nano_api_swagger.png — IP в адресной строке размыт | ❌ НЕ СДЕЛАНО | ВЫСОКИЙ |
 | I5 | beszel_systems_overview.png — IP проверен | ❌ НЕ СДЕЛАНО | СРЕДНИЙ |
 | I6 | android_immich_backup_stats.jpg — имя устройства проверено | ❌ НЕ СДЕЛАНО | СРЕДНИЙ |
 | I7 | nextcloud_dashboard.png — имена файлов проверены | ❌ НЕ СДЕЛАНО | СРЕДНИЙ |
@@ -67,7 +67,7 @@
 | H4 | Заголовок статьи < 120 символов | ✅ ГОТОВО | «Старому «железу» новую жизнь…» |
 | H5 | Markdown скопирован в Habr editor | ❌ НЕ СДЕЛАНО | Финальный шаг |
 | H6 | Preview статьи в Habr проверен | ❌ НЕ СДЕЛАНО | Финальный шаг |
-| H7 | Репозиторий публичный и доступен | ✅ ГОТОВО | github.com/AlexeyBorovskoy/Nasa_home |
+| H7 | Репозиторий публичный и доступен | ✅ ГОТОВО | github.com/AlexeyBorovskoy/NAS_Jetson_Nano |
 | H8 | README.md репозитория обновлён | ✅ ГОТОВО | По checkpoint 2026-06-27c |
 
 ---

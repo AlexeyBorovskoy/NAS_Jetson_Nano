@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 setup_uptime_kuma.py — initialize Uptime Kuma admin + add 5 service monitors.
-Run ON JETSON NANO from ~/nasa:
+Run ON JETSON NANO from ~/nas_jetson_nano:
     python3 scripts/monitoring/setup_uptime_kuma.py
 
 Requires:  pip3 install uptime-kuma-api  (auto-installed if missing)
@@ -77,7 +77,7 @@ MONITORS = [
     },
     {
         "type": MonitorType.HTTP,
-        "name": "nasa-api",
+        "name": "nas_jetson_nano-api",
         "url": f"http://{JETSON_IP}:8099/healthcheck",
         "interval": 60,
         "maxretries": 3,

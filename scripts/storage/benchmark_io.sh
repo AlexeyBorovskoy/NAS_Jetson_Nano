@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# benchmark_io.sh — sequential I/O benchmark for NASA storage (USB HDD / SSD)
+# benchmark_io.sh — sequential I/O benchmark for NAS_Jetson_Nano storage (USB HDD / SSD)
 # Reference speeds (JetsonHacks): microSD ~87 MB/s, USB HDD ~80-120 MB/s, USB SSD ~367 MB/s
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,7 +17,7 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 mkdir -p "${LOG_DIR}"
 REPORT="${LOG_DIR}/benchmark-$(date +%Y%m%d-%H%M%S).txt"
 
-log "=== NASA I/O Benchmark === (${TEST_SIZE}MB on ${STORAGE_ROOT})"
+log "=== NAS_Jetson_Nano I/O Benchmark === (${TEST_SIZE}MB on ${STORAGE_ROOT})"
 {
     echo "Benchmark: $(date)"
     echo "Device: ${STORAGE_ROOT}"

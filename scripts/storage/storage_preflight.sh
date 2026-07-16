@@ -48,7 +48,7 @@ fstab_source_for_storage() {
     awk -v target="${STORAGE_ROOT}" '$2 == target {print $1; exit}' /etc/fstab 2>/dev/null || true
 }
 
-log "=== NASA storage preflight started ==="
+log "=== NAS_Jetson_Nano storage preflight started ==="
 
 if (( EUID != 0 )); then
     warn "Run with sudo for authoritative checks of service-owned directories"
@@ -130,7 +130,7 @@ if [[ -d "${NEXTCLOUD_DATA}" ]]; then
     fi
 fi
 
-log "=== NASA storage preflight finished: errors=${ERRORS}, warnings=${WARNINGS} ==="
+log "=== NAS_Jetson_Nano storage preflight finished: errors=${ERRORS}, warnings=${WARNINGS} ==="
 if (( ERRORS > 0 )); then
     exit 1
 fi

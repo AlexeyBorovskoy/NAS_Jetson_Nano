@@ -1,4 +1,4 @@
-# NASA Home Cloud — Monitoring Stack (Stage 1)
+# NAS_Jetson_Nano — Monitoring Stack (Stage 1)
 #
 # Инструменты:
 #   - Netdata    : системный мониторинг, Docker stats, температура (порт 19999)

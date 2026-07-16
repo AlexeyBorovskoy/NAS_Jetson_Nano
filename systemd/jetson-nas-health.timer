@@ -1,6 +1,6 @@
 ﻿[Unit]
-Description=Run NASA storage health check every 6 hours
-Documentation=https://github.com/AlexeyBorovskoy/Nasa_home
+Description=Run NAS_Jetson_Nano storage health check every 6 hours
+Documentation=https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
 
 [Timer]
 OnBootSec=5min

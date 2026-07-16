@@ -1,0 +1,43 @@
+# NAS_Jetson_Nano — USB storage watchdog udev rules
+# Supports: JMS583 (152d:a583) — current enclosure
+#           RTL9210B-CG (0bda:9210) — legacy enclosure (rules kept for reference)
+#
+# Deploy: sudo cp 85-nas_jetson_nano-storage-watchdog.rules /etc/udev/rules.d/
+#         sudo udevadm control --reload-rules && sudo udevadm trigger
+
+# ── RTL9210B-CG legacy rules (harmless when device absent) ───────────────────
+
+# Disable autosuspend on Realtek USB hub (autosuspend kills child devices)
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0bda", ATTR{idProduct}=="5411", \
+  ATTR{power/control}="on"
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0bda", ATTR{idProduct}=="0411", \
+  ATTR{power/control}="on"
+
+# Disable autosuspend on RTL9210B-CG bridge (prevents ELPG loop => error -71)
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0bda", ATTR{idProduct}=="9210", \
+  ATTR{power/autosuspend_delay_ms}="-1", \
+  ATTR{power/control}="on"
+
+# ── JMS583 (JMicron USB 3.2 Gen1 SSD enclosure) ──────────────────────────────
+# Note: usbcore.autosuspend=-1 in kernel cmdline covers this globally,
+# but explicit per-device rule is a safety net.
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="152d", ATTR{idProduct}=="a583", \
+  ATTR{power/autosuspend_delay_ms}="-1", \
+  ATTR{power/control}="on"
+
+# ── Generic sda block device events ──────────────────────────────────────────
+
+# Telegram alert when SSD appears (reconnected or boot)
+ACTION=="add", KERNEL=="sda", SUBSYSTEM=="block", \
+  RUN+="/bin/systemd-run --no-block /usr/local/sbin/nas_jetson_nano-storage-alert.sh connected"
+
+# Telegram alert when SSD disappears (cable pulled or error)
+ACTION=="remove", KERNEL=="sda", SUBSYSTEM=="block", \
+  RUN+="/bin/systemd-run --no-block /usr/local/sbin/nas_jetson_nano-storage-alert.sh removed"
+
+# Increase SCSI command timeout to 120s (default=30s prevents false error recovery)
+ACTION=="add", KERNEL=="sda", SUBSYSTEM=="block", ATTR{device/timeout}="120"
+
+# Auto-recovery: sda1 partition appears → mount + preflight + Docker + containers
+ACTION=="add", KERNEL=="sda1", SUBSYSTEM=="block", \
+  RUN+="/bin/systemctl --no-block start nas_jetson_nano-ssd-recovery.service"

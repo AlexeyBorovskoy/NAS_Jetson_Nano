@@ -26,7 +26,7 @@ fetch() {
 
   printf 'GET  %s\n' "$out"
   curl -fL --retry 2 --connect-timeout 20 --max-time 120 \
-    -A 'NASA-home-cloud-doc-cache/0.1' \
+    -A 'NAS_Jetson_Nano-home-cloud-doc-cache/0.1' \
     "$url" \
     -o "$out"
 }

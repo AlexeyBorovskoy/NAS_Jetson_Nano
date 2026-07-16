@@ -1,4 +1,4 @@
-# Android Mobile Setup — NASA Home Cloud
+# Android Mobile Setup — NAS_Jetson_Nano
 
 > 🇷🇺 Практическое руководство по настройке Xiaomi (MIUI / HyperOS) для синхронизации с самохостинговыми сервисами: Immich, Nextcloud, CardDAV/CalDAV.
 >

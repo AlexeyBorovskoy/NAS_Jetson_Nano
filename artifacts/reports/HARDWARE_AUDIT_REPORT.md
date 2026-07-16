@@ -4,7 +4,7 @@ Generated: 2026-05-31T17:01:40+00:00
 
 ## uname
 ```
-Linux nasa-jetson 4.9.253-tegra #1 SMP PREEMPT Sat Feb 19 08:59:22 PST 2022 aarch64 aarch64 aarch64 GNU/Linux
+Linux nas_jetson_nano-jetson 4.9.253-tegra #1 SMP PREEMPT Sat Feb 19 08:59:22 PST 2022 aarch64 aarch64 aarch64 GNU/Linux
 ```
 ## os-release
 ```

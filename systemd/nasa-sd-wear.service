@@ -1,7 +1,0 @@
-[Unit]
-Description=NASA microSD Wear Check
-After=network.target
-
-[Service]
-Type=oneshot
-ExecStart=/home/admin/nasa/scripts/diagnostics/sd_wear_check.sh

@@ -30,8 +30,8 @@
 
 ## Решение / Decision
 
-🇷🇺 Добавить HTTPS к `nasa_nginx` Docker контейнеру на нестандартных портах:
-🇬🇧 Add HTTPS to `nasa_nginx` Docker container on non-standard ports:
+🇷🇺 Добавить HTTPS к `nas_jetson_nano_nginx` Docker контейнеру на нестандартных портах:
+🇬🇧 Add HTTPS to `nas_jetson_nano_nginx` Docker container on non-standard ports:
 
 | Сервис / Service | HTTP (было / before) | HTTPS (добавлено / added) |
 |---|---|---|
@@ -42,8 +42,8 @@
 🇷🇺 **Сертификат:** OpenSSL self-signed, RSA 2048, SAN с VPS IP, срок 10 лет.
 🇬🇧 **Certificate:** OpenSSL self-signed, RSA 2048, SAN with VPS IP, 10-year validity.
 
-🇷🇺 Файлы: `/opt/nasa/nginx/ssl/nasa.crt` + `nasa.key` (chmod 600)
-🇬🇧 Files: `/opt/nasa/nginx/ssl/nasa.crt` + `nasa.key` (chmod 600)
+🇷🇺 Файлы: `/opt/nas_jetson_nano/nginx/ssl/nas_jetson_nano.crt` + `nas_jetson_nano.key` (chmod 600)
+🇬🇧 Files: `/opt/nas_jetson_nano/nginx/ssl/nas_jetson_nano.crt` + `nas_jetson_nano.key` (chmod 600)
 
 🇷🇺 Скрипт: `scripts/setup/install_nginx_vps.sh` — идемпотентный.
 🇬🇧 Script: `scripts/setup/install_nginx_vps.sh` — idempotent.

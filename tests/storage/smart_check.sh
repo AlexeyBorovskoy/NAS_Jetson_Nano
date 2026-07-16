@@ -56,7 +56,7 @@ PASS=0; FAIL=0; WARN=0
 REPORT_LINES=()
 USB_BRIDGE_LIMITED=false
 
-echo "=== NASA SMART Check: $DEVICE ($TIMESTAMP) ==="
+echo "=== NAS_Jetson_Nano SMART Check: $DEVICE ($TIMESTAMP) ==="
 echo ""
 
 # --- Detect USB bridge ---

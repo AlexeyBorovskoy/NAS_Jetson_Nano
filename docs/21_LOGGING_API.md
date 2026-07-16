@@ -1,10 +1,10 @@
 # 21. Логирование и Status API / Logging & Status API
 
-> 🇷🇺 Описание подсистемы структурированного логирования и REST API статуса NASA Home Cloud. Актуализировано: 2026-06-27.
+> 🇷🇺 Описание подсистемы структурированного логирования и REST API статуса NAS_Jetson_Nano. Актуализировано: 2026-06-27.
 >
-> 🇬🇧 Structured logging subsystem and Status REST API for NASA Home Cloud. Updated: 2026-06-27.
+> 🇬🇧 Structured logging subsystem and Status REST API for NAS_Jetson_Nano. Updated: 2026-06-27.
 >
-> Сервис / Service: `services/nasa-api/`. Compose: `docker/compose/docker-compose.nasa-api.yml`.
+> Сервис / Service: `services/nas_jetson_nano-api/`. Compose: `docker/compose/docker-compose.nas_jetson_nano-api.yml`.
 
 ---
 
@@ -32,12 +32,12 @@
 Событие (контейнер упал, отчёт отправлен, API-запрос)
     │
     ▼
-nasa-api (FastAPI)
+nas_jetson_nano-api (FastAPI)
     │
-    ├── stdout ──────────────→  docker logs homecloud_nasa_api
+    ├── stdout ──────────────→  docker logs homecloud_nas_jetson_nano_api
     │   (plain text)
     │
-    └── RotatingFileHandler ─→  /var/log/nasa-monitor/nasa-api.jsonl
+    └── RotatingFileHandler ─→  /var/log/nas_jetson_nano-monitor/nas_jetson_nano-api.jsonl
         (JSON-lines)               ← монтируется на хост через volume
 ```
 
@@ -49,8 +49,8 @@ nasa-api (FastAPI)
 {
   "ts": "2026-06-21T09:00:01Z",
   "level": "INFO",
-  "service": "nasa-api",
-  "logger": "nasa_api.system",
+  "service": "nas_jetson_nano-api",
+  "logger": "nas_jetson_nano_api.system",
   "msg": "metrics polled",
   "ram_used_pct": 42.1,
   "services_ok": true
@@ -61,8 +61,8 @@ nasa-api (FastAPI)
 |------|--------|----------|
 | `ts` | ✅ | UTC ISO-8601 timestamp |
 | `level` | ✅ | DEBUG / INFO / WARNING / ERROR / CRITICAL |
-| `service` | ✅ | Всегда `"nasa-api"` |
-| `logger` | ✅ | Python-логгер (например `nasa_api.system`) |
+| `service` | ✅ | Всегда `"nas_jetson_nano-api"` |
+| `logger` | ✅ | Python-логгер (например `nas_jetson_nano_api.system`) |
 | `msg` | ✅ | Текст сообщения |
 | `ram_used_pct` | 📌 | Только в событиях `/v1/metrics` |
 | `unhealthy` | 📌 | Только при проблемных контейнерах |
@@ -75,27 +75,27 @@ nasa-api (FastAPI)
 | Максимальный размер файла | 10 MB |
 | Число бэкапов | 5 |
 | Итого на диске | ≤ 60 MB |
-| Файлы | `nasa-api.jsonl`, `nasa-api.jsonl.1` … `.5` |
+| Файлы | `nas_jetson_nano-api.jsonl`, `nas_jetson_nano-api.jsonl.1` … `.5` |
 
 Ротация встроенная (Python `RotatingFileHandler`), `logrotate` не нужен.
 
 ### 2.4 Директория логов
 
 ```
-/var/log/nasa-monitor/       ← хост (Jetson)
-├── nasa-api.jsonl           ← текущий лог API
-├── nasa-api.jsonl.1         ← предыдущий (после ротации)
+/var/log/nas_jetson_nano-monitor/       ← хост (Jetson)
+├── nas_jetson_nano-api.jsonl           ← текущий лог API
+├── nas_jetson_nano-api.jsonl.1         ← предыдущий (после ротации)
 ├── last-report.txt          ← последний Telegram-отчёт (plain text)
 └── last-telegram-send.json  ← ответ Telegram Bot API
 ```
 
 ---
 
-## 3. NASA Status API
+## 3. NAS_Jetson_Nano Status API
 
 ### 3.1 Обзор
 
-FastAPI-сервис (`services/nasa-api/`) со Swagger UI. Следует паттернам
+FastAPI-сервис (`services/nas_jetson_nano-api/`) со Swagger UI. Следует паттернам
 сервиса `sp_inventory` (pydantic-settings, теги OpenAPI, кастомный Swagger UI).
 
 | Параметр | Значение |
@@ -135,7 +135,7 @@ GET /v1/logs?limit=500&level=ERROR
 ### 3.4 Структура сервиса
 
 ```
-services/nasa-api/
+services/nas_jetson_nano-api/
 ├── app/
 │   ├── main.py            ← FastAPI app, OpenAPI теги, lifespan
 │   ├── config.py          ← pydantic-settings (порт, пути, контейнеры)
@@ -154,7 +154,7 @@ services/nasa-api/
 | Переменная | По умолчанию | Описание |
 |------------|-------------|----------|
 | `API_LOG_LEVEL` | `INFO` | Уровень логирования |
-| `LOG_FILE` | `/var/log/nasa-monitor/nasa-api.jsonl` | Путь к файлу |
+| `LOG_FILE` | `/var/log/nas_jetson_nano-monitor/nas_jetson_nano-api.jsonl` | Путь к файлу |
 | `EXPECTED_CONTAINERS` | (список 6 контейнеров) | Ожидаемые имена |
 | `LOCAL_SERVICES` | Nextcloud/Immich/LLM GW | URL для HTTP-проверок |
 
@@ -165,17 +165,17 @@ services/nasa-api/
 ### 4.1 Сборка и запуск
 
 ```bash
-cd /home/admin/nasa
+cd /home/admin/nas_jetson_nano
 
 # Сборка образа
-docker compose -f docker/compose/docker-compose.nasa-api.yml build
+docker compose -f docker/compose/docker-compose.nas_jetson_nano-api.yml build
 
 # Запуск
-docker compose -f docker/compose/docker-compose.nasa-api.yml up -d
+docker compose -f docker/compose/docker-compose.nas_jetson_nano-api.yml up -d
 
 # Проверка
 curl http://localhost:8099/healthcheck
-# → {"status": "ok", "version": "0.1.0", "service": "nasa-api"}
+# → {"status": "ok", "version": "0.1.0", "service": "nas_jetson_nano-api"}
 ```
 
 ### 4.2 Просмотр логов
@@ -188,7 +188,7 @@ curl "http://192.168.0.50:8099/v1/logs?limit=50" | jq .
 curl "http://192.168.0.50:8099/v1/logs?level=ERROR" | jq .entries[]
 
 # Прямо на хосте (tail -f аналог для JSON-lines)
-tail -f /var/log/nasa-monitor/nasa-api.jsonl | python3 -c "
+tail -f /var/log/nas_jetson_nano-monitor/nas_jetson_nano-api.jsonl | python3 -c "
 import sys, json
 for line in sys.stdin:
     d = json.loads(line)
@@ -196,7 +196,7 @@ for line in sys.stdin:
 "
 
 # Через docker logs (plain text)
-docker logs -f homecloud_nasa_api
+docker logs -f homecloud_nas_jetson_nano_api
 ```
 
 ### 4.3 Ручной запуск Telegram-отчёта
@@ -218,7 +218,7 @@ curl "http://192.168.0.50:8099/v1/logs?q=report"
 # На VPS
 ufw allow 8099/tcp
 
-# В /opt/nasa/nginx/conf.d/ добавить server block по аналогии с :8080
+# В /opt/nas_jetson_nano/nginx/conf.d/ добавить server block по аналогии с :8080
 ```
 
 > **Без этого** — API доступен только из LAN (`http://192.168.0.50:8099/docs`).
@@ -274,7 +274,7 @@ curl "http://192.168.0.50:8099/v1/metrics" | jq .services_http
 ]
 ```
 
-Действие: `systemctl restart nasa-tunnel.service`.
+Действие: `systemctl restart nas_jetson_nano-tunnel.service`.
 
 ---
 
@@ -284,7 +284,7 @@ curl "http://192.168.0.50:8099/v1/metrics" | jq .services_http
 |----------|-------|
 | `docs/13_MONITORING_RUNBOOK.md` | Runbook ежедневных проверок |
 | `docs/17_MONITORING_OBSERVABILITY.md` | Выбор инструментов мониторинга |
-| `scripts/monitoring/nasa-daily-report.sh` | Ежедневный отчёт (systemd timer) |
+| `scripts/monitoring/nas_jetson_nano-daily-report.sh` | Ежедневный отчёт (systemd timer) |
 | `docker/compose/docker-compose.monitoring.yml` | Netdata / Uptime Kuma / Portainer |
 
 ---
@@ -314,11 +314,11 @@ the fact. This subsystem addresses three goals:
 Event (container down, report sent, API call)
     │
     ▼
-nasa-api (FastAPI)
+nas_jetson_nano-api (FastAPI)
     │
-    ├── stdout ──────────────→  docker logs homecloud_nasa_api  (plain text)
+    ├── stdout ──────────────→  docker logs homecloud_nas_jetson_nano_api  (plain text)
     │
-    └── RotatingFileHandler ─→  /var/log/nasa-monitor/nasa-api.jsonl
+    └── RotatingFileHandler ─→  /var/log/nas_jetson_nano-monitor/nas_jetson_nano-api.jsonl
         (JSON-lines)               ← volume-mounted on host
 ```
 
@@ -327,8 +327,8 @@ nasa-api (FastAPI)
 Each line is a valid JSON (JSON-lines format):
 
 ```json
-{"ts":"2026-06-21T09:00:01Z","level":"INFO","service":"nasa-api",
- "logger":"nasa_api.system","msg":"metrics polled","ram_used_pct":42.1}
+{"ts":"2026-06-21T09:00:01Z","level":"INFO","service":"nas_jetson_nano-api",
+ "logger":"nas_jetson_nano_api.system","msg":"metrics polled","ram_used_pct":42.1}
 ```
 
 ### 2.3 Log rotation
@@ -338,17 +338,17 @@ Each line is a valid JSON (JSON-lines format):
 | Max file size | 10 MB |
 | Backup count | 5 |
 | Total disk footprint | ≤ 60 MB |
-| Files | `nasa-api.jsonl`, `nasa-api.jsonl.1` … `.5` |
+| Files | `nas_jetson_nano-api.jsonl`, `nas_jetson_nano-api.jsonl.1` … `.5` |
 
 Rotation is built-in (Python `RotatingFileHandler`). No `logrotate` required.
 
 ---
 
-## 3. NASA Status API
+## 3. NAS_Jetson_Nano Status API
 
 ### 3.1 Overview
 
-FastAPI service (`services/nasa-api/`) with Swagger UI. Follows patterns from
+FastAPI service (`services/nas_jetson_nano-api/`) with Swagger UI. Follows patterns from
 the `sp_inventory` service (pydantic-settings, OpenAPI tags, custom Swagger UI).
 
 | Parameter | Value |
@@ -375,7 +375,7 @@ the `sp_inventory` service (pydantic-settings, OpenAPI tags, custom Swagger UI).
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `API_LOG_LEVEL` | `INFO` | Log level |
-| `LOG_FILE` | `/var/log/nasa-monitor/nasa-api.jsonl` | Log file path |
+| `LOG_FILE` | `/var/log/nas_jetson_nano-monitor/nas_jetson_nano-api.jsonl` | Log file path |
 | `EXPECTED_CONTAINERS` | 6 containers | Space-separated expected names |
 | `LOCAL_SERVICES` | Nextcloud/Immich/LLM GW | URLs for HTTP checks |
 
@@ -386,9 +386,9 @@ the `sp_inventory` service (pydantic-settings, OpenAPI tags, custom Swagger UI).
 ### 4.1 Build and start
 
 ```bash
-cd /home/admin/nasa
-docker compose -f docker/compose/docker-compose.nasa-api.yml build
-docker compose -f docker/compose/docker-compose.nasa-api.yml up -d
+cd /home/admin/nas_jetson_nano
+docker compose -f docker/compose/docker-compose.nas_jetson_nano-api.yml build
+docker compose -f docker/compose/docker-compose.nas_jetson_nano-api.yml up -d
 curl http://localhost:8099/healthcheck
 ```
 
@@ -402,7 +402,7 @@ curl "http://192.168.0.50:8099/v1/logs?limit=50" | jq .
 curl "http://192.168.0.50:8099/v1/logs?level=ERROR" | jq .entries[]
 
 # Live tail on host
-tail -f /var/log/nasa-monitor/nasa-api.jsonl | python3 -c "
+tail -f /var/log/nas_jetson_nano-monitor/nas_jetson_nano-api.jsonl | python3 -c "
 import sys, json
 for line in sys.stdin:
     d = json.loads(line)
@@ -418,5 +418,5 @@ for line in sys.stdin:
 |----------|----------|
 | `docs/13_MONITORING_RUNBOOK.md` | Daily check runbook |
 | `docs/17_MONITORING_OBSERVABILITY.md` | Monitoring tool selection |
-| `scripts/monitoring/nasa-daily-report.sh` | Daily Telegram report |
+| `scripts/monitoring/nas_jetson_nano-daily-report.sh` | Daily Telegram report |
 | `docker/compose/docker-compose.monitoring.yml` | Netdata / Uptime Kuma / Portainer |

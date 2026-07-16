@@ -1,10 +1,10 @@
-# NASA Home Cloud — Руководство по настройке нового телефона
-# NASA Home Cloud — New Phone Setup Guide
+# NAS_Jetson_Nano — Руководство по настройке нового телефона
+# NAS_Jetson_Nano — New Phone Setup Guide
 
-> 🇷🇺 Полный гайд по подключению Android-телефона к NASA Home Cloud.  
+> 🇷🇺 Полный гайд по подключению Android-телефона к NAS_Jetson_Nano.
 > Шаги выполняются один раз при смене телефона или первом подключении.
 
-> 🇬🇧 Complete guide for connecting an Android phone to NASA Home Cloud.  
+> 🇬🇧 Complete guide for connecting an Android phone to NAS_Jetson_Nano.
 > Steps performed once when changing phone or connecting for the first time.
 
 ---
@@ -28,7 +28,7 @@
 
 **Настройка:**
 1. Открыть → адрес сервера: `http://193.8.215.130:2283`
-2. Email: `<login>@nasa.local`
+2. Email: `<login>@nas_jetson_nano.local`
 3. Пароль: из памятки
 4. Включить **резервное копирование**
 5. Настройки → Сеть → добавить локальный WiFi URL: `http://192.168.0.50:2283`
@@ -124,4 +124,4 @@
 
 ---
 
-*Документ: `docs/android/PHONE_SETUP_GUIDE.md` | NASA Home Cloud v1.3.9*
+*Документ: `docs/android/PHONE_SETUP_GUIDE.md` | NAS_Jetson_Nano v1.3.9*

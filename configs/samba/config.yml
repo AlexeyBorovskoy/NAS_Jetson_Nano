@@ -6,14 +6,14 @@ auth:
     password_file: /run/secrets/samba_password
 
 global:
-  - "server string = NASA Home Cloud"
+  - "server string = NAS_Jetson_Nano"
   - "server role = standalone server"
   - "log level = 0"
   - "map to guest = bad user"
 
 share:
   - name: public
-    comment: NASA Public Share
+    comment: NAS_Jetson_Nano Public Share
     path: /mnt/public
     browsable: yes
     readonly: no

@@ -1,6 +1,6 @@
 # GitHub Traffic Tracker — Эффект публикации на Хабре
 
-Отслеживаем трафик репозитория [AlexeyBorovskoy/Nasa_home](https://github.com/AlexeyBorovskoy/Nasa_home)
+Отслеживаем трафик репозитория [AlexeyBorovskoy/NAS_Jetson_Nano](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano)
 в связи с публикацией статьи в Песочнице Хабра (2026-06-29).
 
 ---
@@ -26,7 +26,7 @@
 | Jun 25 | 103 | 39 | HTTPS live, Android docs |
 | Jun 26 | 58 | 25 | USB аудит, .gitattributes fix |
 | Jun 27 | 208 | 37 | Билингвальный аудит, 6 коммитов |
-| Jun 28 | 120 | 30 | JMS583 тесты, NASA API v0.6.0 |
+| Jun 28 | 120 | 30 | JMS583 тесты, NAS_Jetson_Nano API v0.6.0 |
 | **Итого** | **909** | **258** | Почти всё — владелец + CI/CD |
 
 > 91 уникальный "клонер" 21 июня — это GitHub Actions runners.
@@ -60,9 +60,9 @@ Forks:              0
 
 **Команда для обновления данных:**
 ```bash
-gh api repos/AlexeyBorovskoy/Nasa_home/traffic/views
-gh api repos/AlexeyBorovskoy/Nasa_home/traffic/clones
-gh api repos/AlexeyBorovskoy/Nasa_home/traffic/popular/referrers
+gh api repos/AlexeyBorovskoy/NAS_Jetson_Nano/traffic/views
+gh api repos/AlexeyBorovskoy/NAS_Jetson_Nano/traffic/clones
+gh api repos/AlexeyBorovskoy/NAS_Jetson_Nano/traffic/popular/referrers
 ```
 
 ---

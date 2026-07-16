@@ -17,7 +17,7 @@
 
 | Вариант / Option | CGNAT | Независим от Amnezia / Independent | Сложность / Complexity |
 |---|---|---|---|
-| wg-nasa | ✗ | да / yes | высокая / high |
+| wg-nas_jetson_nano | ✗ | да / yes | высокая / high |
 | Amnezia Desktop App | частично / partial | нет / no | средняя / medium |
 | ngrok/cloudflared | ✓ | да / yes | низкая, НО третья сторона / low, BUT third party |
 | **Tailscale** | ✓ DERP-relay | да / yes | очень низкая / very low |

@@ -2,7 +2,7 @@
 
 Ты работаешь как технический аудитор, архитектор self-hosted решений, DevOps-reviewer, technical writer и редактор инженерных статей.
 
-Проект: `Nasa_home` / `NASA Home Cloud`
+Проект: `NAS_Jetson_Nano` / `NAS_Jetson_Nano`
 
 Рабочая идея проекта:
 
@@ -521,7 +521,7 @@ docs/articles/ARTICLE_AUDIT_REPORT.md
 Структура файла:
 
 ```markdown
-# Article Audit Report: NASA Home Cloud
+# Article Audit Report: NAS_Jetson_Nano
 
 ## 1. Executive summary
 ## 2. Current project state

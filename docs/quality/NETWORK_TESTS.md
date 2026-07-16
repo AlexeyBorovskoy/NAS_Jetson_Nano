@@ -1,4 +1,4 @@
-﻿# Сетевые тесты / Network Tests: NASA Home Cloud
+﻿# Сетевые тесты / Network Tests: NAS_Jetson_Nano
 
 **Version:** 1.0  
 **Date:** 2026-06-27
@@ -65,7 +65,7 @@ Expected ports:
 - :8080 Nextcloud
 - :2283 Immich
 - :8090 LLM Gateway
-- :8099 NASA API
+- :8099 NAS_Jetson_Nano API
 - :19999 Netdata
 - :3001 Uptime Kuma
 - :9000 Portainer
@@ -111,6 +111,6 @@ nslookup jetson-nano.local
 - Check port mapping: `docker inspect homecloud_nextcloud | grep PortBindings`
 
 ### VPS proxy not responding
-- Check tunnel: `ssh root@193.8.215.130 "systemctl status autossh-nasa.service"`
+- Check tunnel: `ssh root@193.8.215.130 "systemctl status autossh-nas_jetson_nano.service"`
 - Check nginx: `ssh root@193.8.215.130 "nginx -t && systemctl status nginx"`
 - Check tunnel endpoint: `ssh root@193.8.215.130 "ss -tlnp | grep :8080"`

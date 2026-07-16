@@ -1,4 +1,4 @@
-﻿# План: интеграция VPS в NASA Home Cloud / VPS Integration Plan
+﻿# План: интеграция VPS в NAS_Jetson_Nano / VPS Integration Plan
 
 > 🇷🇺 Завершено 2026-06-21. Реализован VPS reverse SSH tunnel (ADR-0005).
 > 🇬🇧 Completed 2026-06-21. VPS reverse SSH tunnel implemented (ADR-0005).
@@ -6,7 +6,7 @@
 **Статус / Status:** ✅ **Завершено / Completed (2026-06-21)**  
 **VPS:** 193.8.215.130 (hostname: borovskoy-new.ptr.network)  
 **Расположение:** Вена, Австрия (AEZA GROUP)  
-**Важно:** IP-адрес VPS может измениться — при смене обновить `VPS_HOST` в `/opt/nasa/config/.env` на Jetson и перезапустить `nasa-tunnel.service`.
+**Важно:** IP-адрес VPS может измениться — при смене обновить `VPS_HOST` в `/opt/nas_jetson_nano/config/.env` на Jetson и перезапустить `nas_jetson_nano-tunnel.service`.
 
 Архитектурное решение: [docs/decisions/ADR-0005-vps-autossh-reverse-tunnel.md](../decisions/ADR-0005-vps-autossh-reverse-tunnel.md)
 
@@ -14,7 +14,7 @@
 
 ## Что работает на VPS (обновлено 2026-06-23)
 
-- `nasa_nginx` контейнер: `network_mode: host`, порты 8080/2283/8090 публичные
+- `nas_jetson_nano_nginx` контейнер: `network_mode: host`, порты 8080/2283/8090 публичные
 - Nextcloud: `http://193.8.215.130:8080/status.php` → HTTP 200 ✅
 - Immich: `http://193.8.215.130:2283/` → HTTP 200 ✅
 - LLM Gateway: `http://193.8.215.130:8090/health` → HTTP 200 ✅
@@ -35,9 +35,9 @@ storage preflight на Jetson; tunnel/nginx уже подтверждены ра
 - Docker 29.1.3 + Docker Compose v5.1.4 (установлен)
 - 4 контейнера Amnezia VPN (НЕ ТРОГАТЬ): amnezia-openvpn, amnezia-xray, amnezia-wireguard, amnezia-awg2
 - UFW активен (настроен 2026-06-20)
-- Директория `/opt/nasa/` создана
-- Nginx конфиги в `/opt/nasa/nginx/conf.d/`
-- Docker Compose для nginx: `/opt/nasa/docker-compose.yml`
+- Директория `/opt/nas_jetson_nano/` создана
+- Nginx конфиги в `/opt/nas_jetson_nano/nginx/conf.d/`
+- Docker Compose для nginx: `/opt/nas_jetson_nano/docker-compose.yml`
 
 ## ⚠️ Что НЕ делать
 
@@ -107,7 +107,7 @@ autossh -N \
 ### Шаг 4: На VPS — запустить nginx
 
 ```bash
-cd /opt/nasa
+cd /opt/nas_jetson_nano
 docker compose up -d
 ```
 
@@ -123,9 +123,9 @@ http://193.8.215.130:8090   → LLM Gateway
 ### Шаг 6: На Jetson — systemd-сервис для автозапуска туннеля
 
 ```ini
-# /etc/systemd/system/nasa-tunnel.service
+# /etc/systemd/system/nas_jetson_nano-tunnel.service
 [Unit]
-Description=NASA reverse SSH tunnel to VPS
+Description=NAS_Jetson_Nano reverse SSH tunnel to VPS
 After=network-online.target
 Wants=network-online.target
 
@@ -149,8 +149,8 @@ WantedBy=multi-user.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable --now nasa-tunnel.service
-sudo systemctl status nasa-tunnel.service
+sudo systemctl enable --now nas_jetson_nano-tunnel.service
+sudo systemctl status nas_jetson_nano-tunnel.service
 ```
 
 ---
@@ -162,7 +162,7 @@ sudo systemctl status nasa-tunnel.service
 Хранить restic-репозиторий на VPS:
 ```bash
 # В config/.env
-RESTIC_REPOSITORY="sftp:root@193.8.215.130:/opt/nasa/backups/restic-repo"
+RESTIC_REPOSITORY="sftp:root@193.8.215.130:/opt/nas_jetson_nano/backups/restic-repo"
 ```
 
 Плюсы: 25GB свободно, offsite (VPS в другой стране), SFTP встроен.
@@ -182,9 +182,9 @@ Netdata на Jetson → Netdata Cloud или Netdata parent на VPS.
 | 36571 | TCP | Amnezia OpenVPN |
 | 37238 | UDP | Amnezia WireGuard |
 | 40568 | UDP | Amnezia AWG2 |
-| 8080 | TCP | NASA reverse-tunnel Nextcloud |
-| 2283 | TCP | NASA reverse-tunnel Immich |
-| 8090 | TCP | NASA reverse-tunnel LLM Gateway |
+| 8080 | TCP | NAS_Jetson_Nano reverse-tunnel Nextcloud |
+| 2283 | TCP | NAS_Jetson_Nano reverse-tunnel Immich |
+| 8090 | TCP | NAS_Jetson_Nano reverse-tunnel LLM Gateway |
 | 9443 | TCP | Portainer HTTPS (резерв) |
 
 ---
@@ -193,7 +193,7 @@ Netdata на Jetson → Netdata Cloud или Netdata parent на VPS.
 
 VPS IP может меняться. При смене:
 1. Обновить `VPS_HOST` в `config/.env` на Jetson
-2. Обновить `nasa-tunnel.service` на Jetson (`systemctl daemon-reload && systemctl restart nasa-tunnel`)
+2. Обновить `nas_jetson_nano-tunnel.service` на Jetson (`systemctl daemon-reload && systemctl restart nas_jetson_nano-tunnel`)
 3. Обновить SSH config на Windows-хосте если нужно
 4. Проверить что Amnezia клиенты на телефонах переключились автоматически (обычно да)
 
@@ -214,10 +214,10 @@ This bypasses CGNAT without requiring Tailscale or any inbound connectivity to J
 
 `/opt/amnezia/` — 4 containers serving family VPN (~25 clients). See ADR-0003.
 
-### VPS resources available for NASA
+### VPS resources available for NAS_Jetson_Nano
 
 - RAM: ~1.5 GB free (total 2 GB)
 - Disk: ~25 GB free (total 30 GB)
 - Docker Compose v5.1.4 installed
 - UFW configured and active
-- `/opt/nasa/` directory created with nginx configs and compose file
+- `/opt/nas_jetson_nano/` directory created with nginx configs and compose file

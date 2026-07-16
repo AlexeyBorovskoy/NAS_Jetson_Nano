@@ -58,7 +58,7 @@ FAIL=0
 REPORT_LINES=()
 TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
 
-echo "=== NASA Port Check: $HOST ($TIMESTAMP) ==="
+echo "=== NAS_Jetson_Nano Port Check: $HOST ($TIMESTAMP) ==="
 echo "Ports: $PORTS"
 echo ""
 

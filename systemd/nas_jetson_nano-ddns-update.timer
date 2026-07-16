@@ -1,0 +1,10 @@
+[Unit]
+Description=NAS_Jetson_Nano DuckDNS Update — every 5 minutes
+
+[Timer]
+OnBootSec=60
+OnUnitActiveSec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

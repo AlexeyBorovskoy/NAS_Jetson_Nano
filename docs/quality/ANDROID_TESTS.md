@@ -1,4 +1,4 @@
-﻿# Тесты Android-клиента / Android Client Tests: NASA Home Cloud
+﻿# Тесты Android-клиента / Android Client Tests: NAS_Jetson_Nano
 
 **Version:** 1.0  
 **Date:** 2026-06-27

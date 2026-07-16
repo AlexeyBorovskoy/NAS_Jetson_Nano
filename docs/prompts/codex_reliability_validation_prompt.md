@@ -1,6 +1,6 @@
-# Промт для Codex — проведение проверки надёжности NASA Home Cloud
+# Промт для Codex — проведение проверки надёжности NAS_Jetson_Nano
 
-**Проект:** `Nasa_home` / `NASA Home Cloud`  
+**Проект:** `NAS_Jetson_Nano` / `NAS_Jetson_Nano`
 **Дата подготовки промта:** 2026-06-27  
 **Назначение:** промт для Codex-агента в VS Code / Cursor.
 
@@ -25,10 +25,10 @@ docs/quality/CODEX_RELIABILITY_VALIDATION_PROMPT.md
 ## 2. Готовый промт
 
 ```text
-Ты работаешь как reliability engineer, DevOps-аудитор, security reviewer и technical writer проекта NASA Home Cloud.
+Ты работаешь как reliability engineer, DevOps-аудитор, security reviewer и technical writer проекта NAS_Jetson_Nano.
 
 Проект:
-Nasa_home / NASA Home Cloud
+NAS_Jetson_Nano / NAS_Jetson_Nano
 
 Идея проекта:
 Old Hardware Must Live — домашняя облачная платформа на Jetson Nano первого поколения / Jetson Nano 4GB, старом HDD/SSD, Docker Compose, Nextcloud и Android-клиенте.
@@ -320,7 +320,7 @@ set -euo pipefail
 
 Аргументы:
 - `--source /mnt/nas/test-data`
-- `--restore-dir /tmp/nasa_restore_test`
+- `--restore-dir /tmp/nas_jetson_nano_restore_test`
 - `--output`, опционально
 
 Не трогать реальные пользовательские данные.
@@ -461,7 +461,7 @@ docs/quality/results/YYYY-MM-DD_baseline_quality_report.md
 Структура:
 
 ```markdown
-# Baseline Quality Report: NASA Home Cloud
+# Baseline Quality Report: NAS_Jetson_Nano
 
 ## 1. Executive summary
 ## 2. Environment

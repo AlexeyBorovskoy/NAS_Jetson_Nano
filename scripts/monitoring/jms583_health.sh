@@ -2,7 +2,7 @@
 # jms583_health.sh — hourly health monitor for JMS583 USB SSD enclosure
 #
 # Collects: USB stability, I/O stats, disk health, SMART info
-# Logs to: /var/log/nasa-monitor/jms583-health.log
+# Logs to: /var/log/nas_jetson_nano-monitor/jms583-health.log
 # Telegram: error alerts immediately, daily summary at 09:00
 #
 # Deploy:
@@ -18,15 +18,15 @@ MOUNT="/mnt/storage"
 USB_VID="152d"
 USB_PID="a583"
 USB_PORT="2-1.3"          # USB 3.0 SuperSpeed port
-LOG_FILE="/var/log/nasa-monitor/jms583-health.log"
-STATE_DIR="/var/lib/nasa-monitor"
+LOG_FILE="/var/log/nas_jetson_nano-monitor/jms583-health.log"
+STATE_DIR="/var/lib/nas_jetson_nano-monitor"
 STATE_FILE="$STATE_DIR/jms583-last-run"
 DAILY_SENT_FILE="$STATE_DIR/jms583-daily-sent"
-LOG_TAG="nasa-jms583"
+LOG_TAG="nas_jetson_nano-jms583"
 
 TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
 TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}"
-[[ -f /etc/nasa-monitor/telegram.env ]] && source /etc/nasa-monitor/telegram.env
+[[ -f /etc/nas_jetson_nano-monitor/telegram.env ]] && source /etc/nas_jetson_nano-monitor/telegram.env
 
 HOSTNAME_SHORT="$(hostname -s)"
 
@@ -242,7 +242,7 @@ if [[ "$ERRORS" -gt 0 ]]; then
 ${REPORT}
 
 ⚠️ Errors: ${ERRORS}, Warnings: ${WARNINGS}
-📋 Лог: /var/log/nasa-monitor/jms583-health.log"
+📋 Лог: /var/log/nas_jetson_nano-monitor/jms583-health.log"
     tg_send "$MSG"
 fi
 

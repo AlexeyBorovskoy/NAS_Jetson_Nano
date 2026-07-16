@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# connectivity_check.sh -- ping and HTTP connectivity check for NASA Home Cloud
+# connectivity_check.sh -- ping and HTTP connectivity check for NAS_Jetson_Nano
 # Does NOT perform aggressive scanning or nmap.
 
 SCRIPT_NAME="$(basename "$0")"
@@ -80,7 +80,7 @@ result() {
 }
 
 TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
-echo "=== NASA Connectivity Check: $HOST ($TIMESTAMP) ==="
+echo "=== NAS_Jetson_Nano Connectivity Check: $HOST ($TIMESTAMP) ==="
 
 # 1. Ping
 echo ""

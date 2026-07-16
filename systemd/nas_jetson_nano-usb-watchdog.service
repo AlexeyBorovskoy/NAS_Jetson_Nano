@@ -1,0 +1,16 @@
+[Unit]
+Description=NAS_Jetson_Nano USB SSD Recovery Watchdog
+After=network.target
+# Не запускать одновременно с монтированием — дать ему шанс
+After=jetson-nas-mount.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/nas_jetson_nano-usb-watchdog.sh
+# Читаем Telegram credentials из env файла если есть
+EnvironmentFile=-/etc/nas_jetson_nano-monitor/watchdog.env
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nas_jetson_nano-usb-watchdog
+# Разрешаем reboot
+User=root

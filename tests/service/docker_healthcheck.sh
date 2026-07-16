@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# docker_healthcheck.sh -- read-only health check of NASA Docker containers
+# docker_healthcheck.sh -- read-only health check of NAS_Jetson_Nano Docker containers
 # Does NOT restart containers. Reports status only.
 
 SCRIPT_NAME="$(basename "$0")"
@@ -45,7 +45,7 @@ FAIL=0
 WARN=0
 REPORT_LINES=()
 
-echo "=== NASA Docker Health Check ($TIMESTAMP) ==="
+echo "=== NAS_Jetson_Nano Docker Health Check ($TIMESTAMP) ==="
 echo ""
 
 # Auto-detect compose dir
@@ -64,7 +64,7 @@ EXPECTED_CONTAINERS=(
     "homecloud_immich_db"
     "homecloud_immich_redis"
     "homecloud_llm_gateway"
-    "homecloud_nasa_api"
+    "homecloud_nas_jetson_nano_api"
     "homecloud_samba"
     "homecloud_netdata"
     "homecloud_uptime_kuma"

@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # vps_amnezia_monitor.sh — Monitor Amnezia VPN containers on VPS.
 # Sends Telegram alert if any Amnezia container is not running.
-# Deploy on VPS as cron: */5 * * * * /root/nasa/scripts/monitoring/vps_amnezia_monitor.sh
+# Deploy on VPS as cron: */5 * * * * /root/nas_jetson_nano/scripts/monitoring/vps_amnezia_monitor.sh
 #
 # IMPORTANT: NEVER stop/restart Amnezia containers — only monitor.
 # ~25 family VPN clients depend on them. Alert only; human fixes.
 set -euo pipefail
 
-TELEGRAM_BOT_TOKEN="${NASA_TELEGRAM_TOKEN:-}"
-TELEGRAM_CHAT_ID="${NASA_TELEGRAM_CHAT_ID:-}"
-STATE_FILE="/var/lib/nasa-monitor/amnezia-state"
-LOG_FILE="/var/log/nasa-monitor/amnezia-monitor.log"
+TELEGRAM_BOT_TOKEN="${NAS_JETSON_NANO_TELEGRAM_TOKEN:-}"
+TELEGRAM_CHAT_ID="${NAS_JETSON_NANO_TELEGRAM_CHAT_ID:-}"
+STATE_FILE="/var/lib/nas_jetson_nano-monitor/amnezia-state"
+LOG_FILE="/var/log/nas_jetson_nano-monitor/amnezia-monitor.log"
 
 mkdir -p "$(dirname "$STATE_FILE")" "$(dirname "$LOG_FILE")"
 

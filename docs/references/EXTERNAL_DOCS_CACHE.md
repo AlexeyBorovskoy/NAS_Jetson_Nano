@@ -3,7 +3,7 @@
 ## 1. Назначение
 
 Этот manifest описывает локально скачанные внешние материалы для автономной
-работы с проектом NASA Home Cloud.
+работы с проектом NAS_Jetson_Nano.
 
 Локальный cache:
 
@@ -107,7 +107,7 @@ docs/references/external_docs/SHA256SUMS.local
 Его можно пересоздать командой:
 
 ```bash
-cd /home/alexey/work/NASA
+cd /home/alexey/work/NAS_Jetson_Nano
 sha256sum $(find external_docs -type f | sort) > docs/references/external_docs/SHA256SUMS.local
 ```
 

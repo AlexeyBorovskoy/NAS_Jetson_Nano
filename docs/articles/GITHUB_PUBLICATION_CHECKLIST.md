@@ -21,7 +21,7 @@
 - [ ] `docs/pages/evidence.md`
 - [ ] `docs/assets/screenshots/article/redacted/01_beszel_systems_overview.png`
 - [ ] `docs/assets/screenshots/article/redacted/02_beszel_jetson_metrics.png`
-- [ ] `docs/assets/screenshots/article/redacted/03_nasa_api_swagger_redacted.png`
+- [ ] `docs/assets/screenshots/article/redacted/03_nas_jetson_nano_api_swagger_redacted.png`
 - [ ] `docs/assets/screenshots/article/redacted/04_nextcloud_dashboard_redacted.png`
 - [ ] `docs/assets/screenshots/article/redacted/05_nextcloud_talk_redacted.png`
 - [ ] `docs/assets/screenshots/article/redacted/06_android_clients_card_redacted.png`
@@ -31,13 +31,13 @@
 
 - [ ] Go to repo Settings → Pages → Deploy from branch → `main` → `/docs` → Save
 - [ ] Wait 1–3 minutes for build
-- [ ] Open https://alexeyborovskoy.github.io/Nasa_home/ — landing page loads
-- [ ] Open https://alexeyborovskoy.github.io/Nasa_home/articles/habr_article_ru.html — article renders
+- [ ] Open https://alexeyborovskoy.github.io/NAS_Jetson_Nano/ — landing page loads
+- [ ] Open https://alexeyborovskoy.github.io/NAS_Jetson_Nano/articles/habr_article_ru.html — article renders
 - [ ] All 7 images visible in article (no broken image icons)
 - [ ] Links in index.md resolve (architecture, reliability, android, evidence)
 
 ## Publication links
 
-- GitHub Pages: https://alexeyborovskoy.github.io/Nasa_home/
+- GitHub Pages: https://alexeyborovskoy.github.io/NAS_Jetson_Nano/
 - Habr Sandbox: https://habr.com/ru/sandbox/291694/
 - Hackaday.io: TBD (see `docs/articles/hackaday_project_en.md`)

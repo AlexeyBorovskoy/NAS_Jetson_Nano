@@ -1,6 +1,6 @@
-﻿[Unit]
-Description=NASA Home Cloud — storage & SMART health check
-Documentation=https://github.com/AlexeyBorovskoy/Nasa_home
+[Unit]
+Description=NAS_Jetson_Nano — storage & SMART health check
+Documentation=https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
 After=local-fs.target
 Requires=local-fs.target
 RequiresMountsFor=/mnt/storage
@@ -9,9 +9,9 @@ ConditionPathIsMountPoint=/mnt/storage
 [Service]
 Type=oneshot
 User=root
-Environment=NASA_PROJECT_DIR=/home/admin/nasa
-EnvironmentFile=-/home/admin/nasa/config/.env
-ExecStart=/bin/bash "${NASA_PROJECT_DIR}/scripts/diagnostics/storage_health.sh"
+Environment=NAS_JETSON_NANO_PROJECT_DIR=/home/admin/nas_jetson_nano
+EnvironmentFile=-/home/admin/nas_jetson_nano/config/.env
+ExecStart=/bin/bash "${NAS_JETSON_NANO_PROJECT_DIR}/scripts/diagnostics/storage_health.sh"
 StandardOutput=journal
 StandardError=journal
 

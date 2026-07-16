@@ -3,7 +3,7 @@
 #
 # Run AFTER Docker and all containers are up:
 #   ssh admin@192.168.0.50
-#   cd ~/nasa && bash scripts/setup/install_nextcloud_talk.sh
+#   cd ~/nas_jetson_nano && bash scripts/setup/install_nextcloud_talk.sh
 #
 # What this does:
 #   1. Installs the Talk app via occ
@@ -15,7 +15,7 @@
 set -euo pipefail
 
 NC_CONTAINER="homecloud_nextcloud"
-CONF="/etc/nasa-monitor/talk.env"
+CONF="/etc/nas_jetson_nano-monitor/talk.env"
 
 log() { echo "[$(date '+%H:%M:%S')] $*"; }
 ok()  { echo "[$(date '+%H:%M:%S')] ✅ $*"; }

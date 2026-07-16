@@ -77,8 +77,8 @@ jobs:
       - name: Validate monitoring
         run: docker compose -f docker/compose/docker-compose.monitoring.yml --env-file config/.env config --quiet
 
-      - name: Validate nasa-api
-        run: docker compose -f docker/compose/docker-compose.nasa-api.yml --env-file config/.env config --quiet || true
+      - name: Validate nas_jetson_nano-api
+        run: docker compose -f docker/compose/docker-compose.nas_jetson_nano-api.yml --env-file config/.env config --quiet || true
 
       - name: Validate VPS compose
         run: docker compose -f docker/vps/docker-compose.yml --env-file config/.env config --quiet

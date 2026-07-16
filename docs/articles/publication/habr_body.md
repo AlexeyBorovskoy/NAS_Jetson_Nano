@@ -119,7 +119,7 @@ Jetson стоит за домашним роутером в CGNAT — прямо
     Nextcloud    :8080   — файлы, фото, контакты
     Immich       :2283   — фотоархив
     LLM Gateway  :8090   — AI-ассистент
-    NASA API     :8099   — управление и статистика
+    NAS_Jetson_Nano API     :8099   — управление и статистика
     Samba        :445    — только LAN
     Netdata      :19999  — метрики
     Uptime Kuma  :3001   — мониторинг
@@ -148,7 +148,7 @@ Jetson стоит за домашним роутером в CGNAT — прямо
 | immich_redis | redis:7-alpine | — | 64m |
 | immich_microservices | immich-server:release | — | 512m |
 | llm_gateway | custom FastAPI | 8090 | 256m |
-| nasa_api | custom FastAPI | 8099 | 128m |
+| nas_jetson_nano_api | custom FastAPI | 8099 | 128m |
 | samba | crazymax/samba | 445 | — |
 | netdata | netdata:latest | 19999 | 256m |
 | uptime_kuma | louislam/uptime-kuma | 3001 | 128m |
@@ -184,7 +184,7 @@ curl -s http://localhost:2283/api/server/ping
 Хотел понимать, что происходит с системой ночью, когда я сплю. Попросил агента настроить Telegram-бот с ежедневным отчётом. В итоге каждое утро в 09:00 приходит сообщение:
 
 ```
-NASA HOME CLOUD — Daily Report
+NAS_JETSON_NANO — Daily Report
 
 SYSTEM
 Uptime: 18h | RAM: 2.3/3.9G | Disk: 7G/229G (3%)
@@ -226,9 +226,9 @@ Count: 40, Failed: 0, Skipped: 0 — Duration: 4.32s
 
 ```bash
 openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
-  -keyout /opt/nasa/nginx/ssl/nasa.key \
-  -out /opt/nasa/nginx/ssl/nasa.crt \
-  -subj "/CN=nasa-home-cloud" \
+  -keyout /opt/nas_jetson_nano/nginx/ssl/nas_jetson_nano.key \
+  -out /opt/nas_jetson_nano/nginx/ssl/nas_jetson_nano.crt \
+  -subj "/CN=nas-jetson-nano" \
   -addext "subjectAltName=IP:ваш_VPS_IP, IP:192.168.x.x"
 ```
 
@@ -280,7 +280,7 @@ Swagger UI обязателен.
 | Фото | Статистика Immich: 6 622 изображения, 357 видео (проверено 16.07.2026) |
 | Действия | Restart контейнера, запуск бэкапа по требованию |
 
-![NASA API v0.6.0 — Swagger UI со всеми группами эндпоинтов](UPLOAD_7_nasa_api_swagger.png)
+![NAS_Jetson_Nano API v0.6.0 — Swagger UI со всеми группами эндпоинтов](UPLOAD_7_nas_jetson_nano_api_swagger.png)
 
 ---
 
@@ -335,4 +335,4 @@ Jetson Nano из коробки превратился в работающий �
 Главный вывод: AI-агент — не волшебная кнопка. Это инструмент, который резко снижает стоимость реализации, если умеешь описывать задачу из реальной ситуации, а не из технического словаря. Чем точнее контекст — тем точнее результат.
 
 Промпты агентов, ADR, Docker Compose, скрипты, памятки пользователей — всё открыто:
-**[github.com/AlexeyBorovskoy/Nasa_home](https://github.com/AlexeyBorovskoy/Nasa_home)**
+**[github.com/AlexeyBorovskoy/NAS_Jetson_Nano](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano)**

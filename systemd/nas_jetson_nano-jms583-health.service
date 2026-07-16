@@ -1,0 +1,15 @@
+[Unit]
+Description=NAS_Jetson_Nano JMS583 USB SSD Health Check
+Documentation=https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
+After=network.target nas_jetson_nano-ssd-recovery.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/jms583_health.sh
+EnvironmentFile=-/etc/nas_jetson_nano-monitor/telegram.env
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nas_jetson_nano-jms583
+
+[Install]
+WantedBy=multi-user.target

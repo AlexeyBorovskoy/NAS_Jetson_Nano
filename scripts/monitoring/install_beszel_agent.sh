@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# NASA Home Cloud — install Beszel agent as systemd binary (no Docker needed)
+# NAS_Jetson_Nano — install Beszel agent as systemd binary (no Docker needed)
 # Run on Jetson after Hub is started on VPS and Hub SSH key is known.
 #
 # Usage:
 #   sudo bash install_beszel_agent.sh <hub-public-key>
 #
 # <hub-public-key> — ed25519 public key from VPS:
-#   ssh root@193.8.215.130 "cat /opt/nasa/beszel-hub/data/ssh_host_ed25519_key.pub"
+#   ssh root@193.8.215.130 "cat /opt/nas_jetson_nano/beszel-hub/data/ssh_host_ed25519_key.pub"
 #
 # After install, add Jetson in Hub UI:
 #   Name: jetson-nano
@@ -28,7 +28,7 @@ if [ -z "$HUB_KEY" ]; then
     echo "Usage: sudo bash $0 '<hub-ssh-public-key>'"
     echo ""
     echo "Get key from VPS:"
-    echo "  ssh root@193.8.215.130 \"cat /opt/nasa/beszel-hub/data/ssh_host_ed25519_key.pub\""
+    echo "  ssh root@193.8.215.130 \"cat /opt/nas_jetson_nano/beszel-hub/data/ssh_host_ed25519_key.pub\""
     exit 1
 fi
 
@@ -61,7 +61,7 @@ echo "    → $ENV_FILE"
 echo "[3/4] Installing systemd service..."
 cat > "$SERVICE" << 'UNIT'
 [Unit]
-Description=Beszel Agent — NASA Home Cloud metrics
+Description=Beszel Agent — NAS_Jetson_Nano metrics
 Documentation=https://beszel.dev
 After=network-online.target
 Wants=network-online.target

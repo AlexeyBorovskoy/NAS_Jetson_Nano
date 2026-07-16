@@ -1,14 +1,14 @@
 ﻿# 20. Agent Operating Model / Операционная модель агентов
 
-> 🇬🇧 This document describes how subagents are used in the NASA Home Cloud project: roles, safety boundaries, and workflow.
+> 🇬🇧 This document describes how subagents are used in the NAS_Jetson_Nano project: roles, safety boundaries, and workflow.
 >
-> 🇷🇺 Документ описывает модель работы с субагентами в проекте NASA Home Cloud: роли, границы безопасности и рабочий процесс.
+> 🇷🇺 Документ описывает модель работы с субагентами в проекте NAS_Jetson_Nano: роли, границы безопасности и рабочий процесс.
 
 ## 1. Purpose / Назначение
 
-🇬🇧 Subagents are the default way to work on risky or multi-domain changes in NASA Home Cloud. The main agent remains the coordinator, but focused subagents are used to separate analysis, safety review, implementation, verification, and documentation.
+🇬🇧 Subagents are the default way to work on risky or multi-domain changes in NAS_Jetson_Nano. The main agent remains the coordinator, but focused subagents are used to separate analysis, safety review, implementation, verification, and documentation.
 
-🇷🇺 Субагенты — стандартный способ работы с рискованными или многодоменными изменениями в NASA Home Cloud. Основной агент остаётся координатором, а субагенты используются для разделения анализа, проверки безопасности, реализации, верификации и документирования.
+🇷🇺 Субагенты — стандартный способ работы с рискованными или многодоменными изменениями в NAS_Jetson_Nano. Основной агент остаётся координатором, а субагенты используются для разделения анализа, проверки безопасности, реализации, верификации и документирования.
 
 🇬🇧 The goal is to:
 
@@ -156,7 +156,7 @@ Forbidden without explicit user confirmation:
 - exposing Nextcloud, Immich, LLM Gateway, Samba, or SSH directly to the
   internet;
 - touching the Amnezia server on the EU VPS through SSH or `wg set`;
-- deleting or replacing Jetson's `nasa-lan` profile.
+- deleting or replacing Jetson's `nas_jetson_nano-lan` profile.
 
 Allowed safe mode:
 

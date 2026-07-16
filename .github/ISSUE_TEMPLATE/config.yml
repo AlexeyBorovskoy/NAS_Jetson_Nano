@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Question / Вопрос
-    url: https://github.com/AlexeyBorovskoy/nasa-home-cloud/discussions
+    url: https://github.com/AlexeyBorovskoy/nas-jetson-nano/discussions
     about: Ask questions in Discussions / Задавай вопросы в Discussions

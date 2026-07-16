@@ -1,6 +1,6 @@
 # Nextcloud Talk — Plan & Setup
 
-> Семейный мессенджер и видеозвонки внутри NASA Home Cloud.
+> Семейный мессенджер и видеозвонки внутри NAS_Jetson_Nano.
 
 ## Что даёт Nextcloud Talk
 
@@ -22,14 +22,14 @@
 
 ```bash
 ssh admin@192.168.0.50
-cd ~/nasa && git pull --ff-only
+cd ~/nas_jetson_nano && git pull --ff-only
 bash scripts/setup/install_nextcloud_talk.sh
 ```
 
 Скрипт:
 - Устанавливает приложение `spreed` (Talk) через `occ`
 - Настраивает STUN: `stun.l.google.com:19302` (работает из LAN и VPN)
-- Если в `/etc/nasa-monitor/talk.env` есть TURN — настраивает его тоже
+- Если в `/etc/nas_jetson_nano-monitor/talk.env` есть TURN — настраивает его тоже
 
 ---
 
@@ -74,7 +74,7 @@ ufw reload
 
 ```bash
 # На VPS:
-cd ~/nasa
+cd ~/nas_jetson_nano
 git pull --ff-only
 docker compose -f docker/compose/docker-compose.coturn.yml \
   --env-file config/.env up -d
@@ -83,7 +83,7 @@ docker logs homecloud_coturn
 
 ### 2e. Настроить Talk на использование TURN
 
-Создать `/etc/nasa-monitor/talk.env` на Jetson:
+Создать `/etc/nas_jetson_nano-monitor/talk.env` на Jetson:
 ```bash
 TURN_SERVER=193.8.215.130:3478
 TURN_SECRET=твой_секрет_из_шага_2a
@@ -91,7 +91,7 @@ TURN_SECRET=твой_секрет_из_шага_2a
 
 Перезапустить install-скрипт:
 ```bash
-bash ~/nasa/scripts/setup/install_nextcloud_talk.sh
+bash ~/nas_jetson_nano/scripts/setup/install_nextcloud_talk.sh
 ```
 
 Или настроить вручную:  

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # setup_portainer.sh — initialize Portainer CE admin user via API
-# Run ON JETSON NANO from ~/nasa:
+# Run ON JETSON NANO from ~/nas_jetson_nano:
 #   bash scripts/monitoring/setup_portainer.sh
 set -euo pipefail
 

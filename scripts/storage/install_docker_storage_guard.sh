@@ -19,19 +19,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="${SCRIPT_DIR}/../.."
 SYSTEMD_SRC="${REPO_ROOT}/systemd"
 SYSTEMD_DST="/etc/systemd/system"
-NASA_DIR="$(realpath "${REPO_ROOT}")"
+NAS_JETSON_NANO_DIR="$(realpath "${REPO_ROOT}")"
 
-log "Installing jetson-nas-mount.service with NASA_DIR=${NASA_DIR}"
-sudo sed "s|/home/admin/nasa|${NASA_DIR}|g" \
+log "Installing jetson-nas-mount.service with NAS_JETSON_NANO_DIR=${NAS_JETSON_NANO_DIR}"
+sudo sed "s|/home/admin/nas_jetson_nano|${NAS_JETSON_NANO_DIR}|g" \
     "${SYSTEMD_SRC}/jetson-nas-mount.service" \
     | sudo tee "${SYSTEMD_DST}/jetson-nas-mount.service" > /dev/null
 sudo chmod 644 "${SYSTEMD_DST}/jetson-nas-mount.service"
 
 log "Installing docker.service storage guard drop-in"
 sudo mkdir -p "${SYSTEMD_DST}/docker.service.d"
-sudo cp "${SYSTEMD_SRC}/docker.service.d/10-nasa-storage.conf" \
-    "${SYSTEMD_DST}/docker.service.d/10-nasa-storage.conf"
-sudo chmod 644 "${SYSTEMD_DST}/docker.service.d/10-nasa-storage.conf"
+sudo cp "${SYSTEMD_SRC}/docker.service.d/10-nas_jetson_nano-storage.conf" \
+    "${SYSTEMD_DST}/docker.service.d/10-nas_jetson_nano-storage.conf"
+sudo chmod 644 "${SYSTEMD_DST}/docker.service.d/10-nas_jetson_nano-storage.conf"
 
 sudo systemctl daemon-reload
 sudo systemctl enable jetson-nas-mount.service

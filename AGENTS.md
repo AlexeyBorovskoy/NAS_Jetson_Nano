@@ -1,7 +1,7 @@
 # AGENTS.md
 
-> 🇷🇺 Правила работы агентов (Codex/Claude) в проекте NASA Home Cloud.
-> 🇬🇧 Agent operating rules (Codex/Claude) for the NASA Home Cloud project.
+> 🇷🇺 Правила работы агентов (Codex/Claude) в проекте NAS_Jetson_Nano.
+> 🇬🇧 Agent operating rules (Codex/Claude) for the NAS_Jetson_Nano project.
 
 ## 1. Общие правила / General rules
 
@@ -37,8 +37,8 @@
 - 🇷🇺 **Никогда не трогать Amnezia-сервер на EU VPS через SSH или `wg set`** — роняет ~25 VPN-клиентов (телефоны семьи). Единственный безопасный способ — десктоп-приложение Amnezia.
   🇬🇧 **Never touch the Amnezia server on EU VPS via SSH or `wg set`** — drops ~25 VPN clients (family phones). Only safe method: Amnezia desktop app.
 
-- 🇷🇺 **Профиль `nasa-lan` на Jetson не удалять** — рабочая статическая конфигурация eth0 (`192.168.0.50/24`).
-  🇬🇧 **Do not delete the `nasa-lan` profile on Jetson** — it is the working static eth0 configuration (`192.168.0.50/24`).
+- 🇷🇺 **Профиль `nas_jetson_nano-lan` на Jetson не удалять** — рабочая статическая конфигурация eth0 (`192.168.0.50/24`).
+  🇬🇧 **Do not delete the `nas_jetson_nano-lan` profile on Jetson** — it is the working static eth0 configuration (`192.168.0.50/24`).
 
 - 🇷🇺 **Для внешнего доступа использовать реализованный VPS reverse SSH tunnel** (ADR-0005) — пробивает CGNAT, не трогает Amnezia.
   🇬🇧 **For external access use the implemented VPS reverse SSH tunnel** (ADR-0005) — bypasses CGNAT, does not touch Amnezia.

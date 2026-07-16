@@ -1,14 +1,14 @@
-﻿name: nasa-vps
+﻿name: nas_jetson_nano-vps
 
 # Run on VPS, not on Jetson.
-# Start: cd /opt/nasa && docker compose up -d
+# Start: cd /opt/nas_jetson_nano && docker compose up -d
 # Nginx listens on public ports and proxies to Jetson via SSH reverse tunnels.
-# Jetson must run: scripts/network/setup_vps_tunnel.sh (or nasa-tunnel.service)
+# Jetson must run: scripts/network/setup_vps_tunnel.sh (or nas_jetson_nano-tunnel.service)
 
 services:
   nginx:
     image: nginx:alpine
-    container_name: nasa_nginx
+    container_name: nas_jetson_nano_nginx
     restart: always
     # host network required: SSH tunnel binds to 127.0.0.1 on the VPS host.
     # Bridge mode cannot reach the host's loopback — proxy_pass to 127.0.0.1:18080
@@ -23,10 +23,10 @@ services:
   # Beszel Hub — централизованный мониторинг Jetson + VPS
   #
   # Доступ: http://193.8.215.130:8091
-  # Данные: /opt/nasa/beszel-hub/data (SQLite, метрики, ключи)
+  # Данные: /opt/nas_jetson_nano/beszel-hub/data (SQLite, метрики, ключи)
   #
   # host network — обязателен: Hub коннектится к агенту Jetson через
-  # SSH reverse tunnel на 127.0.0.1:45876 (Jetson nasa-tunnel.service).
+  # SSH reverse tunnel на 127.0.0.1:45876 (Jetson nas_jetson_nano-tunnel.service).
   # ---------------------------------------------------------------------------
   beszel-hub:
     image: henrygd/beszel:latest

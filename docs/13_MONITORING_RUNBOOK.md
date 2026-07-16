@@ -18,11 +18,11 @@ docker ps --format "{{.Names}}\t{{.Status}}"
 # goss — 34 теста (порты, сервисы, файлы, HTTP):
 goss -g tests/goss/goss.yaml validate --format tap
 
-# API-статус через nasa-api:
+# API-статус через nas_jetson_nano-api:
 curl -sf http://localhost:8099/v1/containers | python3 -m json.tool
 
 # Storage preflight перед запуском Nextcloud/Immich/backup:
-cd ~/nasa
+cd ~/nas_jetson_nano
 sudo bash scripts/storage/storage_preflight.sh
 ```
 
@@ -46,7 +46,7 @@ sudo smartctl -a /dev/sda || sudo smartctl -a -d sat /dev/sda
 
 | Инструмент / Tool | URL | Назначение / Purpose |
 |---|---|---|
-| nasa-api Swagger | `http://192.168.0.50:8099/docs` | Метрики, логи, контейнеры, report/now |
+| nas_jetson_nano-api Swagger | `http://192.168.0.50:8099/docs` | Метрики, логи, контейнеры, report/now |
 | Netdata | `http://192.168.0.50:19999` | CPU, RAM, Disk, Docker, темп Jetson |
 | Uptime Kuma | `http://192.168.0.50:3001` | HTTP uptime, Telegram-уведомления |
 | Portainer | `http://192.168.0.50:9000` | Docker management UI |
@@ -55,13 +55,13 @@ sudo smartctl -a /dev/sda || sudo smartctl -a -d sat /dev/sda
 
 ```bash
 # Запуск стека (если контейнер упал и не поднялся сам):
-cd ~/nasa
+cd ~/nas_jetson_nano
 sudo bash scripts/storage/storage_preflight.sh
 docker compose -f docker/compose/docker-compose.nextcloud.yml  --env-file config/.env up -d
 docker compose -f docker/compose/docker-compose.immich.yml     --env-file config/.env up -d
 docker compose -f docker/compose/docker-compose.llm-gateway.yml --env-file config/.env up -d
 docker compose -f docker/compose/docker-compose.monitoring.yml  --env-file config/.env up -d
-docker compose -f docker/compose/docker-compose.nasa-api.yml    --env-file config/.env up -d
+docker compose -f docker/compose/docker-compose.nas_jetson_nano-api.yml    --env-file config/.env up -d
 
 # Остановить один стек:
 docker compose -f docker/compose/docker-compose.monitoring.yml --env-file config/.env down
@@ -93,7 +93,7 @@ docker logs homecloud_nextcloud_db --tail=20
 ```bash
 df -h /mnt/storage
 mountpoint /mnt/storage
-cd ~/nasa && sudo bash scripts/storage/storage_preflight.sh
+cd ~/nas_jetson_nano && sudo bash scripts/storage/storage_preflight.sh
 ```
 
 ## 7. Если Immich тормозит / If Immich is slow
@@ -127,7 +127,7 @@ blkid
 mountpoint /mnt/storage || echo "/mnt/storage is not mounted"
 findmnt -T /mnt/storage -o TARGET,SOURCE,FSTYPE,OPTIONS
 journalctl -k -n 120 --no-pager | grep -i -E "usb|sda|sdb|ext4|I/O error|error -71|enumerate|read-only"
-cd ~/nasa && sudo bash scripts/storage/storage_preflight.sh
+cd ~/nas_jetson_nano && sudo bash scripts/storage/storage_preflight.sh
 ```
 
 **Нельзя делать до стабилизации USB:**
@@ -150,7 +150,7 @@ cd ~/nasa && sudo bash scripts/storage/storage_preflight.sh
 **После стабильного переподключения:**
 
 ```bash
-cd ~/nasa
+cd ~/nas_jetson_nano
 sudo bash scripts/storage/storage_preflight.sh
 
 # Установить mount-unit, если он ещё не установлен.
@@ -178,17 +178,17 @@ endpoints и `jetson-nas-health.timer` восстановились автома
 
 ```bash
 # Статус таймера:
-systemctl status nasa-daily-report-telegram.timer
+systemctl status nas_jetson_nano-daily-report-telegram.timer
 
 # Отправить немедленно (тест):
-sudo /usr/local/sbin/nasa-send-report-telegram.sh
+sudo /usr/local/sbin/nas_jetson_nano-send-report-telegram.sh
 
 # Логи последней отправки:
-cat /var/log/nasa-monitor/last-report.txt
-cat /var/log/nasa-monitor/last-telegram-send.json
+cat /var/log/nas_jetson_nano-monitor/last-report.txt
+cat /var/log/nas_jetson_nano-monitor/last-telegram-send.json
 
 # Следующий запуск:
-systemctl list-timers nasa-daily-report-telegram.timer
+systemctl list-timers nas_jetson_nano-daily-report-telegram.timer
 ```
 
 ## 10. Что смотреть в Netdata / What to watch in Netdata
@@ -206,7 +206,7 @@ systemctl list-timers nasa-daily-report-telegram.timer
 | Nextcloud недоступен / unreachable | Section 6 of this runbook |
 | Immich недоступен / unreachable | Section 7 of this runbook |
 | LLM Gateway недоступен / unreachable | `docker logs homecloud_llm_gateway --tail=50` |
-| nasa-api недоступен / unreachable | `docker logs homecloud_nasa_api --tail=50` |
+| nas_jetson_nano-api недоступен / unreachable | `docker logs homecloud_nas_jetson_nano_api --tail=50` |
 
 ## 12. Автоматический бэкап БД / Automated DB Backup — timer setup
 
@@ -218,16 +218,16 @@ mountpoint или указывает на microSD, backup не создаётс�
 
 ```bash
 # Установить на Jetson (один раз, из директории проекта):
-cd ~/nasa
+cd ~/nas_jetson_nano
 bash scripts/backup/install_backup_timer.sh
 
 # Проверить статус:
-systemctl status nasa-backup.timer
-systemctl list-timers nasa-backup.timer
+systemctl status nas_jetson_nano-backup.timer
+systemctl list-timers nas_jetson_nano-backup.timer
 
 # Запустить немедленно (тест):
-sudo systemctl start nasa-backup.service
-journalctl -u nasa-backup.service -n 40 --no-pager
+sudo systemctl start nas_jetson_nano-backup.service
+journalctl -u nas_jetson_nano-backup.service -n 40 --no-pager
 
 # Убедиться, что дампы созданы:
 ls -lh /mnt/storage/backups/database-dumps/
@@ -244,12 +244,12 @@ ls -lh /mnt/storage/backups/database-dumps/
 | Nextcloud | `http://192.168.0.50:8080/status.php` | 60 сек | 200 |
 | Immich | `http://192.168.0.50:2283/api/server/ping` | 60 сек | 200 |
 | LLM Gateway | `http://192.168.0.50:8090/health` | 60 сек | 200 |
-| nasa-api | `http://192.168.0.50:8099/healthcheck` | 60 сек | 200 |
+| nas_jetson_nano-api | `http://192.168.0.50:8099/healthcheck` | 60 сек | 200 |
 | Netdata | `http://192.168.0.50:19999/api/v1/info` | 120 сек | 200 |
 
 **Telegram-уведомления** (Settings → Notifications → Add Notification):
 - Type: Telegram
-- Bot Token: значение из `TELEGRAM_BOT_TOKEN` (см. `/etc/nasa-monitor/telegram.env` на Jetson)
+- Bot Token: значение из `TELEGRAM_BOT_TOKEN` (см. `/etc/nas_jetson_nano-monitor/telegram.env` на Jetson)
 - Chat ID: значение из `TELEGRAM_CHAT_ID`
 - Включить на всех 5 мониторах
 
@@ -263,8 +263,8 @@ docker exec homecloud_netdata grep -n 'TELEGRAM\|DEFAULT_RECIPIENT' \
   /etc/netdata/health_alarm_notify.conf
 
 # 2. Включить Telegram (поправить три строки):
-BOT_TOKEN="YOUR_BOT_TOKEN"   # взять из /etc/nasa-monitor/telegram.env
-CHAT_ID="YOUR_CHAT_ID"       # взять из /etc/nasa-monitor/telegram.env
+BOT_TOKEN="YOUR_BOT_TOKEN"   # взять из /etc/nas_jetson_nano-monitor/telegram.env
+CHAT_ID="YOUR_CHAT_ID"       # взять из /etc/nas_jetson_nano-monitor/telegram.env
 
 docker exec homecloud_netdata sed -i \
   -e "s|^SEND_TELEGRAM=.*|SEND_TELEGRAM=\"YES\"|" \
@@ -286,7 +286,7 @@ docker exec homecloud_netdata /usr/libexec/netdata/plugins.d/alarm-notify.sh tes
 > **Какие алерты приходят:** CPU > 80%, RAM < 300 MB, Disk > 80%, температура > 85°C,
 > контейнер упал. Настроить пороги можно в `/etc/netdata/health.d/` внутри контейнера.
 
-## 15. nasa-api — полезные запросы / Useful API queries
+## 15. nas_jetson_nano-api — полезные запросы / Useful API queries
 
 ```bash
 # Метрики системы (RAM, CPU load, диски, температура):

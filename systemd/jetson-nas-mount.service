@@ -1,6 +1,6 @@
 [Unit]
-Description=NASA storage mount — USB HDD via UUID
-Documentation=https://github.com/AlexeyBorovskoy/Nasa_home
+Description=NAS_Jetson_Nano storage mount — USB HDD via UUID
+Documentation=https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
 After=local-fs.target
 # Ensure mount happens before Docker volumes are expected
 Before=docker.service
@@ -9,7 +9,7 @@ Before=docker.service
 Type=oneshot
 RemainAfterExit=yes
 Environment=STORAGE_ROOT=/mnt/storage
-EnvironmentFile=-/home/admin/nasa/config/.env
+EnvironmentFile=-/home/admin/nas_jetson_nano/config/.env
 # Mount only the storage HDD, not all fstab entries
 ExecStart=/bin/mount ${STORAGE_ROOT}
 ExecStop=/bin/umount ${STORAGE_ROOT}

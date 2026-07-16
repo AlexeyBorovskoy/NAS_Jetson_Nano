@@ -1,5 +1,5 @@
-# Тестовый стенд NASA — чекпойнт и разбор сбоя (2026-05-31)
-# NASA Test Stand — Checkpoint and Incident Review (2026-05-31)
+# Тестовый стенд NAS_Jetson_Nano — чекпойнт и разбор сбоя (2026-05-31)
+# NAS_Jetson_Nano Test Stand — Checkpoint and Incident Review (2026-05-31)
 
 > 🇷🇺 Точка фиксации проекта после сессии развёртывания тестового стенда на реальном Jetson Nano. Особое внимание — разбору сбоя пользовательского VPN (§4.2). Секретов в этом файле нет.
 > 🇬🇧 Project checkpoint after the test stand deployment session on real Jetson Nano hardware. Key focus: analysis of the user VPN outage (§4.2). No secrets in this file.
@@ -17,7 +17,7 @@ USB-флешке). Работают **LLM Gateway** и **Nextcloud**. Jetson п�
 
 | Компонент | Состояние |
 |---|---|
-| Jetson Nano | L4T R32.7.1 (JetPack 4.6.1), user `admin`, hostname `nasa-jetson`, rootfs расширен до 59 ГБ |
+| Jetson Nano | L4T R32.7.1 (JetPack 4.6.1), user `admin`, hostname `nas_jetson_nano-jetson`, rootfs расширен до 59 ГБ |
 | Сеть | eth0 на роутере TP-Link EC220-G5: статика `192.168.0.50/24`, gw `192.168.0.1`, гигабит, интернет через роутер |
 | Хранилище | USB-флешка ~16 ГБ, ext4, `/mnt/storage` — **ВРЕМЕННО, мигрировать на HDD** |
 | Docker | 20.10.7 + docker compose v5.x |
@@ -38,7 +38,7 @@ USB-флешке). Работают **LLM Gateway** и **Nextcloud**. Jetson п�
 
 ## 4. СБОЙ — разбор (главное)
 
-### 4.1. Самодельный WireGuard (`wg-nasa`) через CGNAT — нестабилен
+### 4.1. Самодельный WireGuard (`wg-nas_jetson_nano`) через CGNAT — нестабилен
 
 Подняли отдельный wg-интерфейс на EU VPS (`45.95.2.49:51820`, подсеть
 `10.13.13.0/24`), Jetson-пир; ядро 4.9 → модуль собран через `wireguard-dkms`.
@@ -77,9 +77,9 @@ Amnezia (или его API), которое делает это без рест�
 
 ## 5. Откат (выполнено на 2026-05-31)
 
-- **VPS:** `wg-quick@wg-nasa` остановлен и снят с автозапуска; удалены
-  `/etc/wireguard/wg-nasa.conf` и все ключи `nasa_*`; вычищены iptables
-  (FORWARD `amn0↔wg-nasa`, MSS-clamp). **Amnezia цела** (контейнер Up, 25 пиров,
+- **VPS:** `wg-quick@wg-nas_jetson_nano` остановлен и снят с автозапуска; удалены
+  `/etc/wireguard/wg-nas_jetson_nano.conf` и все ключи `nas_jetson_nano_*`; вычищены iptables
+  (FORWARD `amn0↔wg-nas_jetson_nano`, MSS-clamp). **Amnezia цела** (контейнер Up, 25 пиров,
   NAT `172.29.172.0/24` на месте).
 - **Ноутбук (VM):** удалены добавленные NAT-правила (`MASQUERADE -o ens33`,
   FORWARD для device-mode интерфейса). `ip_forward` не трогали (нужен docker).
@@ -90,12 +90,12 @@ Amnezia (или его API), которое делает это без рест�
 ## 6. Что осталось сделать
 
 1. ~~**Откатить сетевые настройки на самом Jetson** (когда будет доступ по USB):
-   - удалить `/etc/wireguard/wg-nasa.conf` + `wg-quick@wg-nasa` disable;
+   - удалить `/etc/wireguard/wg-nas_jetson_nano.conf` + `wg-quick@wg-nas_jetson_nano` disable;
    - удалить `/etc/amneziawg/awg0.conf` (туннель не поднимался);
-   - вернуть eth0 в исходное (удалить NM-профиль `nasa-lan`, включить DHCP-профиль
+   - вернуть eth0 в исходное (удалить NM-профиль `nas_jetson_nano-lan`, включить DHCP-профиль
      `Wired connection 1`), убрать ручные маршруты, восстановить `/etc/resolv.conf`.~~
-   **Выполнено 2026-06-13, см. §8** — пункт про `nasa-lan`/`Wired connection 1`
-   оказался ошибочным, `nasa-lan` сохранён (см. §8 для деталей).
+   **Выполнено 2026-06-13, см. §8** — пункт про `nas_jetson_nano-lan`/`Wired connection 1`
+   оказался ошибочным, `nas_jetson_nano-lan` сохранён (см. §8 для деталей).
 2. **`wg-yandex`** на VPS — решить, восстанавливать ли туннель пользователя.
 3. **Внешний доступ к стенду** — выбрать способ, НЕ трогающий Amnezia-сервер:
    - **Tailscale на Jetson** (рекомендуется: userspace-WG, пробивает CGNAT, ноль
@@ -106,7 +106,7 @@ Amnezia (или его API), которое делает это без рест�
 ## 7. Реквизиты (вне git)
 
 Все секреты — в `config/.env` (gitignored) и `/home/alexey/work/.master.env`
-(`NASA_*`): Jetson SSH (`admin`), Nextcloud (admin + БД/Redis), DeepSeek ключ,
+(`NAS_Jetson_Nano_*`): Jetson SSH (`admin`), Nextcloud (admin + БД/Redis), DeepSeek ключ,
 (удалённые) WG-ключи. В git — только плейсхолдеры в `config/.env.example`.
 
 ## 8. Дополнение (2026-06-13): откат сетевых настроек Jetson выполнен
@@ -117,9 +117,9 @@ IPv6 link-local (`ssh admin@fe80::1%<ifIndex>`, key-based — см.
 
 **Выполнено:**
 
-- **wg-nasa и awg0 удалены с Jetson.** Интерфейсы `wg-nasa`/`awg0` больше не
-  существуют (`ip link` их не показывает), юниты `wg-quick@wg-nasa` и
-  `awg-quick@awg0` — `disabled`. Конфиги и ключи (`wg-nasa.conf`, `awg0.conf`,
+- **wg-nas_jetson_nano и awg0 удалены с Jetson.** Интерфейсы `wg-nas_jetson_nano`/`awg0` больше не
+  существуют (`ip link` их не показывает), юниты `wg-quick@wg-nas_jetson_nano` и
+  `awg-quick@awg0` — `disabled`. Конфиги и ключи (`wg-nas_jetson_nano.conf`, `awg0.conf`,
   `jetson.key`, `jetson.pub`) забэкаплены в `/root/rollback-backup-2026-06-13/`
   на самом Jetson (вне git, можно восстановить при необходимости).
 - `docs/05_NETWORKING_VPN.md` §3.3 помечен как откаченный (warning-плашка со
@@ -127,11 +127,11 @@ IPv6 link-local (`ssh admin@fe80::1%<ifIndex>`, key-based — см.
 - `runtime/audit/HARDWARE_AUDIT_REPORT.md` перегенерирован (был от
   2021-12-10) — локальный артефакт, в `.gitignore`.
 
-**Корректировка к §6, п.1:** формулировка "удалить NM-профиль `nasa-lan`,
+**Корректировка к §6, п.1:** формулировка "удалить NM-профиль `nas_jetson_nano-lan`,
 включить DHCP-профиль `Wired connection 1`" была **ошибочной**. На практике
-`nasa-lan` (eth0, статика `192.168.0.50/24`, gw `192.168.0.1`,
+`nas_jetson_nano-lan` (eth0, статика `192.168.0.50/24`, gw `192.168.0.1`,
 autoconnect=yes) — это и есть рабочая конфигурация из §2; её удаление
-сломало бы стенд. **`nasa-lan` сохранён, не трогать.** `/etc/resolv.conf`
+сломало бы стенд. **`nas_jetson_nano-lan` сохранён, не трогать.** `/etc/resolv.conf`
 (resolvconf-сгенерированный, `nameserver 127.0.1.1`, `search nvidia.com`) —
 штатно для Ubuntu 18.04 + NetworkManager, тоже не трогать.
 

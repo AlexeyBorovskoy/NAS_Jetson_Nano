@@ -1,17 +1,19 @@
-# NASA Home Cloud
+# NAS_Jetson_Nano
+
+> **Rename status:** the repository and source identifiers use `NAS_Jetson_Nano`. The live Jetson runtime has not been renamed or restarted yet; its controlled migration is tracked in [docs/MIGRATION_TO_NAS_JETSON_NANO.md](docs/MIGRATION_TO_NAS_JETSON_NANO.md).
 ### _Old hardware should live_ · _Старое железо должно жить_
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/AlexeyBorovskoy/Nasa_home?color=brightgreen)](https://github.com/AlexeyBorovskoy/Nasa_home/releases)
+[![Release](https://img.shields.io/github/v/release/AlexeyBorovskoy/NAS_Jetson_Nano?color=brightgreen)](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/releases)
 [![Platform](https://img.shields.io/badge/Platform-Jetson%20Nano-76b900)](https://developer.nvidia.com/embedded/jetson-nano-developer-kit)
 [![Docker](https://img.shields.io/badge/Docker%20Compose-v2-2496ED)](docker/compose/)
 [![AI-Assisted](https://img.shields.io/badge/Built%20with-Claude%20Code-blueviolet)](https://claude.ai/code)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)  
-[![Stars](https://img.shields.io/github/stars/AlexeyBorovskoy/Nasa_home?style=social)](https://github.com/AlexeyBorovskoy/Nasa_home/stargazers)
-[![Discussions](https://img.shields.io/github/discussions/AlexeyBorovskoy/Nasa_home)](https://github.com/AlexeyBorovskoy/Nasa_home/discussions)
-[![Issues](https://img.shields.io/github/issues/AlexeyBorovskoy/Nasa_home)](https://github.com/AlexeyBorovskoy/Nasa_home/issues)
-[![CI](https://github.com/AlexeyBorovskoy/Nasa_home/actions/workflows/secrets-check.yml/badge.svg)](https://github.com/AlexeyBorovskoy/Nasa_home/actions/workflows/secrets-check.yml)
-[![Shellcheck](https://github.com/AlexeyBorovskoy/Nasa_home/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/AlexeyBorovskoy/Nasa_home/actions/workflows/shellcheck.yml)
+[![Stars](https://img.shields.io/github/stars/AlexeyBorovskoy/NAS_Jetson_Nano?style=social)](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/stargazers)
+[![Discussions](https://img.shields.io/github/discussions/AlexeyBorovskoy/NAS_Jetson_Nano)](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/discussions)
+[![Issues](https://img.shields.io/github/issues/AlexeyBorovskoy/NAS_Jetson_Nano)](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/issues)
+[![CI](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/actions/workflows/secrets-check.yml/badge.svg)](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/actions/workflows/secrets-check.yml)
+[![Shellcheck](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/actions/workflows/shellcheck.yml)
 
 > 🇷🇺 В ящике лежал NVIDIA Jetson Nano — купил когда-то для экспериментов, поиграл неделю и забыл.
 > Сын принёс плату DEXP с 232 ГБ памяти — «папа, пригодится». Пригодилась.
@@ -26,7 +28,7 @@
 **Если проект полезен — поставь ⭐ звезду, это помогает другим его найти.**  
 **If you find this useful — please ⭐ star this repo so others can discover it.**
 
-![NASA Home Cloud — реальный стенд](assets/photos/test_sys.jpg)
+![NAS_Jetson_Nano — реальный стенд](assets/photos/test_sys.jpg)
 *Jetson Nano на роутере + DEXP-плата от сына (232 ГБ) · реальный стенд проекта*
 
 ---
@@ -46,8 +48,8 @@
 - VPS — нужен только для внешнего доступа / required only for external access
 
 ```bash
-git clone https://github.com/AlexeyBorovskoy/Nasa_home.git ~/nasa
-cd ~/nasa
+git clone https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano.git ~/nas_jetson_nano
+cd ~/nas_jetson_nano
 cp config/.env.example config/.env && nano config/.env   # заполнить пароли
 docker compose -f docker/compose/docker-compose.nextcloud.yml --env-file config/.env up -d
 docker compose -f docker/compose/docker-compose.immich.yml   --env-file config/.env up -d
@@ -105,9 +107,9 @@ docker compose -f docker/compose/docker-compose.immich.yml   --env-file config/.
 
 Всё началось с того, что в ящике лежал NVIDIA Jetson Nano, купленный несколько лет назад для экспериментов. Поиграл, отложил и забыл. Сын принёс плату DEXP с 232 ГБ памяти — «папа, пригодится». Покупать готовый NAS или новое железо не хотелось.
 
-Решил попробовать сделать домашний сервер из того, что уже есть. Jetson Nano оказался вполне достаточным: 4 ГБ RAM, ARM64, умеет в Docker. SSD смонтирован в `/mnt/storage` (229 GB), 13 контейнеров `Up (healthy)`. USB autosuspend отключён на уровне ядра. HTTPS добавлен на VPS nginx. SSD подключён через **JMS583** (USB 3.0 SuperSpeed, 5 Gbps, 250 MB/s write). Семейный чат работает через Nextcloud Talk — 5 участников. NASA API v0.6.0 живёт на `:8099/docs` (Talk, Photos, Users, Actions).
+Решил попробовать сделать домашний сервер из того, что уже есть. Jetson Nano оказался вполне достаточным: 4 ГБ RAM, ARM64, умеет в Docker. SSD смонтирован в `/mnt/storage` (229 GB), 13 контейнеров `Up (healthy)`. USB autosuspend отключён на уровне ядра. HTTPS добавлен на VPS nginx. SSD подключён через **JMS583** (USB 3.0 SuperSpeed, 5 Gbps, 250 MB/s write). Семейный чат работает через Nextcloud Talk — 5 участников. NAS_Jetson_Nano API v0.6.0 живёт на `:8099/docs` (Talk, Photos, Users, Actions).
 
-**NASA Home Cloud** — это не инсталлятор в один клик. Это инженерный шаблон: документация, Docker Compose, диагностические скрипты, systemd-юниты и промпты для агентов, позволяющие разворачивать платформу малыми проверяемыми шагами.
+**NAS_Jetson_Nano** — это не инсталлятор в один клик. Это инженерный шаблон: документация, Docker Compose, диагностические скрипты, systemd-юниты и промпты для агентов, позволяющие разворачивать платформу малыми проверяемыми шагами.
 
 Принципы:
 
@@ -121,9 +123,9 @@ docker compose -f docker/compose/docker-compose.immich.yml   --env-file config/.
 
 It started with an NVIDIA Jetson Nano sitting in a drawer — bought years ago for experiments, tinkered with it once, then forgot about it. My son brought a DEXP board with 232 GB storage — "dad, you'll need this". Didn't want to buy a ready-made NAS or new hardware.
 
-Decided to try building a home server from what was already there. The Jetson Nano turned out to be perfectly capable: 4 GB RAM, ARM64, Docker-ready. The DEXP board became the target USB storage. The SSD is mounted at `/mnt/storage` (229 GB), all 13 containers are `Up (healthy)`, USB autosuspend is disabled at kernel level, HTTPS is live on VPS nginx. The **JMS583** enclosure (USB 3.0 SuperSpeed, 5 Gbps, 250 MB/s write) replaced the original DEXP/RTL9210B-CG bridge. Family chat runs on Nextcloud Talk (5 members). NASA API v0.6.0 is live at `:8099/docs` with Talk, Photos, Users, and Actions endpoints.
+Decided to try building a home server from what was already there. The Jetson Nano turned out to be perfectly capable: 4 GB RAM, ARM64, Docker-ready. The DEXP board became the target USB storage. The SSD is mounted at `/mnt/storage` (229 GB), all 13 containers are `Up (healthy)`, USB autosuspend is disabled at kernel level, HTTPS is live on VPS nginx. The **JMS583** enclosure (USB 3.0 SuperSpeed, 5 Gbps, 250 MB/s write) replaced the original DEXP/RTL9210B-CG bridge. Family chat runs on Nextcloud Talk (5 members). NAS_Jetson_Nano API v0.6.0 is live at `:8099/docs` with Talk, Photos, Users, and Actions endpoints.
 
-**NASA Home Cloud** is not a one-command installer. It is an engineering template with documentation, Docker Compose files, diagnostics, systemd units, and agent prompts for safe, step-by-step deployment.
+**NAS_Jetson_Nano** is not a one-command installer. It is an engineering template with documentation, Docker Compose files, diagnostics, systemd units, and agent prompts for safe, step-by-step deployment.
 
 Principles:
 
@@ -162,7 +164,7 @@ Principles:
 > Android: Immich ✅ (6484 фото, 210 видео) · Nextcloud ✅ · DAVx⁵ ✅ · Talk ✅.
 > USB SSD: **JMS583** ✅ (152d:a583, USB 3.0 SuperSpeed, 5 Gbps, write 250 MB/s, UAS quirk активен).
 > Nextcloud Talk: группа «Семья» ✅ (5 участников: admin, olga, ivan, ulyana, anna).
-> NASA API: **v0.6.0** ✅ — Talk, Users, Photos, Actions endpoints live · goss 40/40.
+> NAS_Jetson_Nano API: **v0.6.0** ✅ — Talk, Users, Photos, Actions endpoints live · goss 40/40.
 
 | Сервис / Service | Порт / Port | Доступ / Access | Статус / Status |
 |---|---|---|---|
@@ -170,7 +172,7 @@ Principles:
 | Immich | 2283 / **2443** | VPS `193.8.215.130:2283` · HTTPS `:2443` + LAN | ✅ Live |
 | LLM Gateway | 8090 / **9443** | VPS `193.8.215.130:8090` · HTTPS `:9443` + LAN | ✅ Live |
 | DAVx⁵ CardDAV/CalDAV | 8443 | `https://193.8.215.130:8443/remote.php/dav` | ✅ Live · Android sync |
-| nasa-api (Swagger) | 8099 | LAN `192.168.0.50:8099/docs` | ✅ Live |
+| nas_jetson_nano-api (Swagger) | 8099 | LAN `192.168.0.50:8099/docs` | ✅ Live |
 | Samba NAS | 445/139 | LAN only (192.168.0.0/24) | ✅ Live, storage-backed |
 | Netdata | 19999 | LAN `192.168.0.50:19999` | ✅ Live |
 | Uptime Kuma | 3001 | LAN `192.168.0.50:3001` | ✅ Live · 5 monitors configured |
@@ -182,7 +184,7 @@ Principles:
 | autossh tunnel | — | Jetson → VPS persistent | ✅ Live |
 | Telegram daily report | — | Bot → personal chat | ✅ Live (09:00) + Beszel data |
 | DB backup timer | — | pg_dump → /mnt/storage/backups | ✅ Live; fail-closed guard |
-| USB storage watchdog | udev | udev rules + systemd timers | ✅ active (nasa-usb-watchdog.timer) |
+| USB storage watchdog | udev | udev rules + systemd timers | ✅ active (nas_jetson_nano-usb-watchdog.timer) |
 | Android mobile sync | — | Immich app + DAVx⁵ + Nextcloud + Talk | ✅ Immich (6484 фото/210 видео) · Nextcloud · DAVx⁵ · Talk |
 | Nextcloud Talk | 8080/8443 | Семейный чат, 5 участников | ✅ Live · группа «Семья» (admin, olga, ivan, ulyana, anna) |
 
@@ -225,7 +227,7 @@ Principles:
         +-- LLM Gateway / FastAPI (8090)
         |     +-- [ DeepSeek API ] — privacy-filtered (PII redaction / редакция персданных)
         |
-        +-- nasa-api / FastAPI (8099) · Swagger UI /docs · v0.6.0
+        +-- nas_jetson_nano-api / FastAPI (8099) · Swagger UI /docs · v0.6.0
         |     · /v1/metrics · /v1/containers · /v1/storage · /v1/logs
         |     · /v1/talk/rooms · POST /v1/talk/notify
         |     · /v1/users · /v1/photos/stats
@@ -238,15 +240,15 @@ Principles:
         +-- Uptime Kuma (3001) — 5 HTTP monitors / мониторов + Telegram alerts
         +-- Portainer (9000)   — Docker management UI (admin configured / настроен)
         |
-        +-- systemd: nasa-tunnel.service       (autossh, restart=always)
-        +-- systemd: nasa-daily-report-telegram.timer  (09:00 daily / ежедневно)
-        +-- systemd: nasa-backup.timer         (03:00 daily / ежедневно, pg_dump)
+        +-- systemd: nas_jetson_nano-tunnel.service       (autossh, restart=always)
+        +-- systemd: nas_jetson_nano-daily-report-telegram.timer  (09:00 daily / ежедневно)
+        +-- systemd: nas_jetson_nano-backup.timer         (03:00 daily / ежедневно, pg_dump)
         +-- systemd: jetson-nas-health.timer   (SMART HDD monitoring / мониторинг HDD, 6h)
         +-- systemd: beszel-agent.service      (monitoring → Beszel Hub at / на VPS:8091)
         +-- udev:    usb-storage.quirks=152d:a583:u (UAS quirk для JMS583, в extlinux.conf)
-        +-- systemd: nasa-usb-preboot.service  (power cycle SSD порта при boot)
-        +-- systemd: nasa-usb-monitor.service  (Telegram alert при USB ошибках)
-        +-- systemd: nasa-ssd-recovery.service (udev sda1 add → mount → Docker)
+        +-- systemd: nas_jetson_nano-usb-preboot.service  (power cycle SSD порта при boot)
+        +-- systemd: nas_jetson_nano-usb-monitor.service  (Telegram alert при USB ошибках)
+        +-- systemd: nas_jetson_nano-ssd-recovery.service (udev sda1 add → mount → Docker)
         +-- smartd:  /dev/sda monitoring       (S.M.A.R.T., weekly self-test)
 
 /mnt/storage  (JMS583 USB 3.0 SSD 229 GB ext4; mounted, fsck/preflight OK; write 250 MB/s)
@@ -269,7 +271,7 @@ Principles:
 | `docker/compose/docker-compose.llm-gateway.yml` | LLM Gateway (FastAPI) |
 | `docker/compose/docker-compose.samba.yml` | Samba NAS (ARM64, SMB2+) |
 | `docker/compose/docker-compose.monitoring.yml` | Netdata + Uptime Kuma + Portainer |
-| `docker/compose/docker-compose.nasa-api.yml` | nasa-api (FastAPI, Swagger, JSON logs) |
+| `docker/compose/docker-compose.nas_jetson_nano-api.yml` | nas_jetson_nano-api (FastAPI, Swagger, JSON logs) |
 | `docker/vps/docker-compose.yml` | nginx reverse proxy на VPS (`network_mode: host`) |
 
 ---
@@ -285,7 +287,7 @@ Principles:
 | Локальный NAS / Local NAS | Samba (crazymax/samba) | latest ARM64 | SMB2+ for Windows/Android/macOS |
 | LLM-шлюз / LLM Gateway | FastAPI LLM Gateway | — | Privacy shim, PII redaction / редакция персданных |
 | LLM API | DeepSeek API | deepseek-chat | Admin assistant / Помощник администратора |
-| Admin API | nasa-api (FastAPI) | v0.6.0 | Metrics, logs, containers, Talk, Users, Photos, Actions — Swagger UI |
+| Admin API | nas_jetson_nano-api (FastAPI) | v0.6.0 | Metrics, logs, containers, Talk, Users, Photos, Actions — Swagger UI |
 | Тоннель / Tunnel | autossh + systemd | — | Reverse SSH via CGNAT → VPS |
 | VPS прокси / VPS proxy | nginx:alpine | — | Reverse proxy to public ports |
 | Мониторинг / Monitoring | Netdata | latest ARM64 | CPU, RAM, Disk, Docker, Jetson temp |
@@ -336,8 +338,8 @@ Principles:
 ### 1. Клонировать / Clone
 
 ```bash
-git clone https://github.com/AlexeyBorovskoy/Nasa_home.git ~/nasa
-cd ~/nasa
+git clone https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano.git ~/nas_jetson_nano
+cd ~/nas_jetson_nano
 cp config/.env.example config/.env
 chmod 600 config/.env
 nano config/.env   # заполнить пароли, пути, DeepSeek API key
@@ -347,9 +349,9 @@ nano config/.env   # заполнить пароли, пути, DeepSeek API key
 
 ```bash
 # На VPS:
-mkdir -p /opt/nasa
-scp -r docker/vps/ root@<VPS_IP>:/opt/nasa/
-ssh root@<VPS_IP> "cd /opt/nasa/vps && docker compose up -d"
+mkdir -p /opt/nas_jetson_nano
+scp -r docker/vps/ root@<VPS_IP>:/opt/nas_jetson_nano/
+ssh root@<VPS_IP> "cd /opt/nas_jetson_nano/vps && docker compose up -d"
 ```
 
 ### 3. Настроить тоннель на Jetson / Setup tunnel on Jetson
@@ -359,40 +361,40 @@ ssh root@<VPS_IP> "cd /opt/nasa/vps && docker compose up -d"
 ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519
 ssh-copy-id -i ~/.ssh/id_ed25519.pub root@<VPS_IP>
 
-sudo cp systemd/nasa-tunnel.service /etc/systemd/system/
-sudo systemctl daemon-reload && sudo systemctl enable --now nasa-tunnel.service
+sudo cp systemd/nas_jetson_nano-tunnel.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now nas_jetson_nano-tunnel.service
 ```
 
 ### 4. Запустить сервисы / Start services
 
 ```bash
 # На Jetson:
-cd ~/nasa
+cd ~/nas_jetson_nano
 docker compose -f docker/compose/docker-compose.nextcloud.yml   --env-file config/.env up -d
 docker compose -f docker/compose/docker-compose.immich.yml      --env-file config/.env up -d
 docker compose -f docker/compose/docker-compose.llm-gateway.yml --env-file config/.env up -d
 docker compose -f docker/compose/docker-compose.monitoring.yml  --env-file config/.env up -d
-docker compose -f docker/compose/docker-compose.nasa-api.yml    --env-file config/.env up -d
+docker compose -f docker/compose/docker-compose.nas_jetson_nano-api.yml    --env-file config/.env up -d
 ```
 
 ### 5. Настроить Telegram-отчёты / Setup Telegram reports
 
 ```bash
 # На Jetson:
-sudo mkdir -p /etc/nasa-monitor /var/log/nasa-monitor
-sudo cp scripts/monitoring/nasa-daily-report.sh /usr/local/sbin/
-sudo cp scripts/monitoring/nasa-send-report-telegram.sh /usr/local/sbin/
-sudo chmod +x /usr/local/sbin/nasa-*.sh
+sudo mkdir -p /etc/nas_jetson_nano-monitor /var/log/nas_jetson_nano-monitor
+sudo cp scripts/monitoring/nas_jetson_nano-daily-report.sh /usr/local/sbin/
+sudo cp scripts/monitoring/nas_jetson_nano-send-report-telegram.sh /usr/local/sbin/
+sudo chmod +x /usr/local/sbin/nas_jetson_nano-*.sh
 
-sudo tee /etc/nasa-monitor/telegram.env <<EOF
+sudo tee /etc/nas_jetson_nano-monitor/telegram.env <<EOF
 TELEGRAM_BOT_TOKEN=<your-token>
 TELEGRAM_CHAT_ID=<your-chat-id>
 EOF
-sudo chmod 600 /etc/nasa-monitor/telegram.env
+sudo chmod 600 /etc/nas_jetson_nano-monitor/telegram.env
 
-sudo cp systemd/nasa-daily-report-telegram.{service,timer} /etc/systemd/system/
+sudo cp systemd/nas_jetson_nano-daily-report-telegram.{service,timer} /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now nasa-daily-report-telegram.timer
+sudo systemctl enable --now nas_jetson_nano-daily-report-telegram.timer
 ```
 
 ### 6. Автоматическая настройка UI и бэкапов / Automated UI + backup setup
@@ -407,7 +409,7 @@ bash scripts/monitoring/setup_portainer.sh
 
 # Uptime Kuma: admin + 5 мониторов
 docker run --rm --network host \
-  -v ~/nasa/scripts/monitoring/setup_uptime_kuma.py:/setup.py:ro \
+  -v ~/nas_jetson_nano/scripts/monitoring/setup_uptime_kuma.py:/setup.py:ro \
   -e UPTIME_KUMA_ADMIN_USER=admin \
   -e UPTIME_KUMA_ADMIN_PASSWORD=<your-password> \
   -e JETSON_LAN_IP=192.168.0.50 \
@@ -422,7 +424,7 @@ docker run --rm --network host \
 curl -sf http://localhost:8080/status.php         # Nextcloud → {"installed":true,...}
 curl -sf http://localhost:2283/api/server/ping    # Immich → {"res":"pong"}
 curl -sf http://localhost:8090/health             # LLM Gateway → {"status":"ok"}
-curl -sf http://localhost:8099/healthcheck        # nasa-api → {"status":"ok"}
+curl -sf http://localhost:8099/healthcheck        # nas_jetson_nano-api → {"status":"ok"}
 curl -sf http://localhost:19999/api/v1/info       # Netdata → {...}
 
 goss -g tests/goss/goss.yaml validate --format tap   # 40 infrastructure tests
@@ -482,7 +484,7 @@ IMMICH_DISABLE_MACHINE_LEARNING=true   # обязательно для Jetson Na
 | Stage 1D | LLM Gateway + DeepSeek | ✅ **Развёрнут и работает** |
 | Stage 1E | VPS + reverse SSH tunnel (autossh) | ✅ **Работает, nginx на VPS** |
 | Stage 1F | Мониторинг (Netdata, Uptime Kuma, Portainer) | ✅ **Развёрнут и работает** |
-| Stage 1G | nasa-api (FastAPI, Swagger, JSON logs) + Telegram отчёт | ✅ **Развёрнут и работает** |
+| Stage 1G | nas_jetson_nano-api (FastAPI, Swagger, JSON logs) + Telegram отчёт | ✅ **Развёрнут и работает** |
 | Stage 1H | Resilience audit: healthchecks, mem_limit, goss | ✅ **8/10 findings fixed** |
 | Stage 1 Ops | Uptime Kuma (5 мониторов) + Portainer (admin) + бэкап-таймер | ✅ **Monitoring + fail-closed backup live** |
 | Stage 2 | Android sync: Immich + DAVx⁵ + Nextcloud + Talk + миграция с Google | ✅ **Работает** · [docs/android/](docs/android/) · семья подключена |
@@ -511,7 +513,7 @@ IMMICH_DISABLE_MACHINE_LEARNING=true   # обязательно для Jetson Na
 | [docs/17_MONITORING_OBSERVABILITY.md](docs/17_MONITORING_OBSERVABILITY.md) | Анализ инструментов мониторинга |
 | [docs/19_NETWORK_INVENTORY.md](docs/19_NETWORK_INVENTORY.md) | Сетевой паспорт стенда |
 | [docs/20_AGENT_OPERATING_MODEL.md](docs/20_AGENT_OPERATING_MODEL.md) | Операционная модель субагентов |
-| [docs/21_LOGGING_API.md](docs/21_LOGGING_API.md) | JSON-логирование и nasa-api (Swagger) |
+| [docs/21_LOGGING_API.md](docs/21_LOGGING_API.md) | JSON-логирование и nas_jetson_nano-api (Swagger) |
 | [docs/22_AUDIT_RESILIENCE.md](docs/22_AUDIT_RESILIENCE.md) | Аудит надёжности: goss, shellcheck, итоги |
 | [docs/23_GITHUB_INTEGRATION.md](docs/23_GITHUB_INTEGRATION.md) | GitHub CLI + Claude Code интеграция, AI DevOps workflow |
 | [docs/24_CLIENT_SETUP.md](docs/24_CLIENT_SETUP.md) | **Подключение устройств: Android, Windows, Linux** |
@@ -525,7 +527,7 @@ IMMICH_DISABLE_MACHINE_LEARNING=true   # обязательно для Jetson Na
 | [docs/plans/VPS_INTEGRATION_PLAN.md](docs/plans/VPS_INTEGRATION_PLAN.md) | План интеграции VPS + тоннель |
 | [AGENTS.md](AGENTS.md) | Правила для Codex/агентов |
 | [docs/PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md) | Зафиксированные решения и ограничения |
-| [docs/architecture_nasa.md](docs/architecture_nasa.md) | Полная архитектурная карта (Mermaid) |
+| [docs/architecture_nas_jetson_nano.md](docs/architecture_nas_jetson_nano.md) | Полная архитектурная карта (Mermaid) |
 
 ---
 
@@ -564,7 +566,7 @@ CI автоматически проверяет секреты / CI automatical
 - `scripts/backup/backup_databases.sh` работает fail-closed: если `/mnt/storage` не является отдельным mountpoint, backup не пишется в ложный каталог на microSD.
 - `services/backup-api` — Stage 2 placeholder, не production backup-сервис.
 - Immich работает без machine learning (`IMMICH_DISABLE_MACHINE_LEARNING=true`) — Jetson Nano 4 GB с ML не тестировался.
-- VPS IP может меняться — при смене обновить `VPS_HOST` в `config/.env` на Jetson и перезапустить `nasa-tunnel.service`.
+- VPS IP может меняться — при смене обновить `VPS_HOST` в `config/.env` на Jetson и перезапустить `nas_jetson_nano-tunnel.service`.
 - Docker 20.10.7 (JetPack 4.x) — устаревший. Обновление нетривиально из-за зависимостей NVIDIA runtime. Для home lab допустимо.
 - HTTPS для VPS nginx — Let's Encrypt не настроен (нет доменного имени).
 
@@ -574,12 +576,12 @@ CI автоматически проверяет секреты / CI automatical
 
 🇷🇺 **Habr:** [«Домашний облачный сервер за ноль рублей»](https://habr.com/ru/sandbox/291694/) — статья в Песочнице (ждёт выхода в основную ленту).
 
-🇬🇧 **GitHub Pages:** [alexeyborovskoy.github.io/Nasa_home](https://alexeyborovskoy.github.io/Nasa_home/) — project site with architecture, reliability story, evidence.
+🇬🇧 **GitHub Pages:** [alexeyborovskoy.github.io/NAS_Jetson_Nano](https://alexeyborovskoy.github.io/NAS_Jetson_Nano/) — project site with architecture, reliability story, evidence.
 
 | Материал | Язык | Ссылка |
 |---|---|---|
 | Habr статья | RU | [habr.com/ru/sandbox/291694/](https://habr.com/ru/sandbox/291694/) |
-| GitHub Pages | EN/RU | [alexeyborovskoy.github.io/Nasa_home](https://alexeyborovskoy.github.io/Nasa_home/) |
+| GitHub Pages | EN/RU | [alexeyborovskoy.github.io/NAS_Jetson_Nano](https://alexeyborovskoy.github.io/NAS_Jetson_Nano/) |
 | Hackaday.io | EN | [docs/articles/hackaday_project_en.md](docs/articles/hackaday_project_en.md) |
 | Архив версий статьи | — | [docs/articles/README.md](docs/articles/README.md) |
 
@@ -589,7 +591,7 @@ CI автоматически проверяет секреты / CI automatical
 
 🇷🇺 Вклад приветствуется. Прочитайте [CONTRIBUTING.md](CONTRIBUTING.md) перед тем, как открывать pull request.
 
-**Есть вопрос или идея?** Заходи в [Discussions](https://github.com/AlexeyBorovskoy/Nasa_home/discussions) — там есть тема для знакомства и Q&A.
+**Есть вопрос или идея?** Заходи в [Discussions](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/discussions) — там есть тема для знакомства и Q&A.
 
 Правила:
 - Не коммитьте секреты и персональные данные.
@@ -598,7 +600,7 @@ CI автоматически проверяет секреты / CI automatical
 
 🇬🇧 Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
-**Questions or ideas?** Join the [Discussions](https://github.com/AlexeyBorovskoy/Nasa_home/discussions) — there's an intro thread and Q&A.
+**Questions or ideas?** Join the [Discussions](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/discussions) — there's an intro thread and Q&A.
 
 Rules:
 - Do not commit secrets or personal data.
@@ -606,9 +608,9 @@ Rules:
 - Keep Stage 1 safe: no direct public access to services.
 
 Хорошие первые задачи / Good first issues:
-- [#5 Адаптация под Raspberry Pi 4/5](https://github.com/AlexeyBorovskoy/Nasa_home/issues/5) — только документация / documentation only, no code changes.
-- [#4 HTTPS (Let's Encrypt) для VPS nginx](https://github.com/AlexeyBorovskoy/Nasa_home/issues/4) — самоподписанный сертификат готов / self-signed cert ready, need a domain for Let's Encrypt.
-- [#6 Netdata Telegram alerts](https://github.com/AlexeyBorovskoy/Nasa_home/issues/6) — настроить и описать / configure and document.
+- [#5 Адаптация под Raspberry Pi 4/5](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/issues/5) — только документация / documentation only, no code changes.
+- [#4 HTTPS (Let's Encrypt) для VPS nginx](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/issues/4) — самоподписанный сертификат готов / self-signed cert ready, need a domain for Let's Encrypt.
+- [#6 Netdata Telegram alerts](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/issues/6) — настроить и описать / configure and document.
 - CI shellcheck для всех bash-скриптов / for all bash scripts in `scripts/`.
 - Подключение **USB HDD** как резервного хранилища / as backup storage (Stage 3.1, план в `docs/04_STORAGE_DESIGN.md`).
 

@@ -1,4 +1,4 @@
-# NASA Home Cloud — goss infrastructure test spec
+# NAS_Jetson_Nano — goss infrastructure test spec
 # Run: goss -g tests/goss/goss.yaml validate --format tap
 # Install: curl -fsSL https://github.com/goss-org/goss/releases/download/v0.4.9/goss-linux-arm64 -o /usr/local/bin/goss && chmod +x /usr/local/bin/goss
 
@@ -29,32 +29,32 @@ service:
   docker:
     enabled: true
     running: true
-  nasa-tunnel:
+  nas_jetson_nano-tunnel:
     enabled: true
     running: true
   NetworkManager:
     enabled: true
     running: true
-  nasa-daily-report-telegram.timer:
+  nas_jetson_nano-daily-report-telegram.timer:
     enabled: true
     running: true
 
 file:
-  /usr/local/sbin/nasa-daily-report.sh:
+  /usr/local/sbin/nas_jetson_nano-daily-report.sh:
     exists: true
     mode: "0755"
-  /usr/local/sbin/nasa-send-report-telegram.sh:
+  /usr/local/sbin/nas_jetson_nano-send-report-telegram.sh:
     exists: true
     mode: "0755"
-  /etc/nasa-monitor/telegram.env:
+  /etc/nas_jetson_nano-monitor/telegram.env:
     exists: true
-  /etc/systemd/system/nasa-daily-report-telegram.timer:
+  /etc/systemd/system/nas_jetson_nano-daily-report-telegram.timer:
     exists: true
-  /etc/systemd/system/nasa-tunnel.service:
+  /etc/systemd/system/nas_jetson_nano-tunnel.service:
     exists: true
   /etc/iptables/rules.v4:
     exists: true
-  /var/log/nasa-monitor:
+  /var/log/nas_jetson_nano-monitor:
     exists: true
     filetype: directory
 
@@ -73,7 +73,7 @@ http:
     timeout: 5000
 
 command:
-  systemctl is-active nasa-tunnel:
+  systemctl is-active nas_jetson_nano-tunnel:
     exit-status: 0
     stdout:
     - active

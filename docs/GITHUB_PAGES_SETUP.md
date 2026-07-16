@@ -2,7 +2,7 @@
 
 ## Enable manually
 
-1. Open the repository on GitHub: https://github.com/AlexeyBorovskoy/Nasa_home
+1. Open the repository on GitHub: https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
 2. Go to **Settings**.
 3. Open **Pages** in the left sidebar.
 4. Under **Build and deployment**, choose **Deploy from a branch**.
@@ -13,7 +13,7 @@
 9. Open the site:
 
 ```
-https://alexeyborovskoy.github.io/Nasa_home/
+https://alexeyborovskoy.github.io/NAS_Jetson_Nano/
 ```
 
 ## Verify
@@ -36,6 +36,6 @@ For the first version, `/docs` branch publishing is enough.
 Add a `CNAME` file to `/docs` with your domain name if you have one.
 Example:
 ```
-nasa.yourdomain.com
+nas_jetson_nano.yourdomain.com
 ```
 Then configure the DNS CNAME record to point to `alexeyborovskoy.github.io`.

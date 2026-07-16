@@ -1,0 +1,28 @@
+﻿[Unit]
+Description=NAS_Jetson_Nano reverse SSH tunnel to VPS (bypasses CGNAT)
+Documentation=https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=admin
+EnvironmentFile=/opt/nas_jetson_nano/config/.env
+ExecStart=/usr/bin/autossh -N \
+    -R 18080:localhost:8080 \
+    -R 12283:localhost:2283 \
+    -R 18090:localhost:8090 \
+    -R 18099:localhost:8099 \
+    -R 10022:localhost:22 \
+    -R 45876:localhost:45876 \
+    -o ServerAliveInterval=30 \
+    -o ServerAliveCountMax=3 \
+    -o ExitOnForwardFailure=yes \
+    -o StrictHostKeyChecking=accept-new \
+    -i "${VPS_SSH_KEY}" \
+    "${VPS_USER}@${VPS_HOST}"
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

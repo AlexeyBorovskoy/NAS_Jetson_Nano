@@ -1,4 +1,4 @@
-# Repository Structure — NASA Home Cloud / Структура репозитория
+# Repository Structure — NAS_Jetson_Nano / Структура репозитория
 
 > 🇬🇧 Where things live and why. Follow this guide when adding new files.
 > 🇷🇺 Где лежат файлы и почему. Следуй этому гайду при добавлении новых файлов.
@@ -6,7 +6,7 @@
 ## Top-level layout / Структура верхнего уровня
 
 ```
-Nasa_home/
+NAS_Jetson_Nano/
 ├── README.md                  — project entry point / точка входа
 ├── CHANGELOG.md               — version history / история версий
 ├── CLAUDE.md                  — Claude Code agent instructions / инструкции для агента

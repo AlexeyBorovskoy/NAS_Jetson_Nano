@@ -4,7 +4,7 @@ name: homecloud-coturn
 # Deploy on VPS (193.8.215.130), NOT on Jetson.
 #
 # USAGE on VPS:
-#   cd ~/nasa/docker/compose
+#   cd ~/nas_jetson_nano/docker/compose
 #   docker compose -f docker-compose.coturn.yml --env-file ../../config/.env up -d
 #
 # Ports (must be open in UFW on VPS):

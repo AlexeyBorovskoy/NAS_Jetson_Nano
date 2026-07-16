@@ -6,7 +6,7 @@
 # jetson-nas-mount.service и делает full power cycle всего хаба,
 # давая чипу шанс полностью переинициализироваться.
 #
-# Запускается: systemd (nasa-usb-preboot.service) до монтирования SSD
+# Запускается: systemd (nas_jetson_nano-usb-preboot.service) до монтирования SSD
 
 set -euo pipefail
 
@@ -16,7 +16,7 @@ HUB_USB3="2-1"
 PORT=2
 POWER_OFF_SECS=30
 WAIT_ENUM_SECS=25
-LOG_TAG="nasa-usb-preboot"
+LOG_TAG="nas_jetson_nano-usb-preboot"
 SSD_DEV="/dev/sda"
 
 log()  { echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO]  $*" | systemd-cat -t "$LOG_TAG" -p info;  echo "$*" >&2; }

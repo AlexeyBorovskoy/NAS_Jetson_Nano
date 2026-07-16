@@ -1,8 +1,0 @@
-[Unit]
-Description=Send NASA Home Cloud daily report to Telegram
-After=network-online.target docker.service
-Wants=network-online.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/sbin/nasa-send-report-telegram.sh

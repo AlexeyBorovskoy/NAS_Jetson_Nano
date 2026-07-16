@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# storage_health.sh — check storage health for NASA Home Cloud
+# storage_health.sh — check storage health for NAS_Jetson_Nano
 # ---------------------------------------------------------------------------
 # Returns exit code 1 if storage is critically full or /mnt/storage not mounted.
 # ---------------------------------------------------------------------------

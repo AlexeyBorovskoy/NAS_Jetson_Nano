@@ -38,17 +38,17 @@ VPS → ssh -p 10022 admin@127.0.0.1 → SSH tunnel → Jetson:22
 ```bash
 ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519
 
-# /opt/nasa/config/.env
+# /opt/nas_jetson_nano/config/.env
 VPS_HOST=193.8.215.130
 VPS_USER=root
 VPS_SSH_KEY=/home/admin/.ssh/id_ed25519
 
 # systemd
-sudo cp systemd/nasa-tunnel.service /etc/systemd/system/
-sudo systemctl daemon-reload && sudo systemctl enable --now nasa-tunnel.service
+sudo cp systemd/nas_jetson_nano-tunnel.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now nas_jetson_nano-tunnel.service
 ```
 
-**nasa-tunnel.service:**
+**nas_jetson_nano-tunnel.service:**
 ```ini
 [Service]
 ExecStart=/usr/bin/autossh -N \
@@ -73,6 +73,6 @@ RestartSec=10
 ## Последствия / Consequences
 
 - 🇷🇺 VPS публично открыт на портах 8080/2283/8090 (HTTP) и 8443/2443/9443 (HTTPS, self-signed). / 🇬🇧 VPS publicly open on ports 8080/2283/8090 (HTTP) and 8443/2443/9443 (HTTPS, self-signed).
-- 🇷🇺 При изменении IP VPS: обновить `VPS_HOST` в `.env` на Jetson, перезапустить `nasa-tunnel.service`. / 🇬🇧 If VPS IP changes: update `VPS_HOST` in `.env` on Jetson, restart `nasa-tunnel.service`.
+- 🇷🇺 При изменении IP VPS: обновить `VPS_HOST` в `.env` на Jetson, перезапустить `nas_jetson_nano-tunnel.service`. / 🇬🇧 If VPS IP changes: update `VPS_HOST` in `.env` on Jetson, restart `nas_jetson_nano-tunnel.service`.
 - 🇷🇺 Amnezia VPN не затронут (работает на своих портах). / 🇬🇧 Amnezia VPN not affected (runs on its own ports).
 - 🇷🇺 Управление Jetson из любой точки мира: `ssh -p 10022 admin@127.0.0.1` с VPS. / 🇬🇧 Jetson management from anywhere: `ssh -p 10022 admin@127.0.0.1` from VPS.

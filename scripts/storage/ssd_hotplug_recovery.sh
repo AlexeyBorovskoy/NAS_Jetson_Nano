@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# NASA SSD hotplug auto-recovery
+# NAS_Jetson_Nano SSD hotplug auto-recovery
 # Triggered by udev when /dev/sda1 partition appears (USB SSD connected)
 # Flow: mount /mnt/storage → storage preflight → start Docker → start stopped containers
 set -euo pipefail
 
-LOG_DIR="/var/log/nasa-monitor"
+LOG_DIR="/var/log/nas_jetson_nano-monitor"
 LOG="$LOG_DIR/ssd-recovery.log"
 mkdir -p "$LOG_DIR"
 exec >> "$LOG" 2>&1
@@ -31,7 +31,7 @@ fi
 
 # Storage preflight — guards against read-only or corrupted filesystem
 log "Running storage preflight..."
-PREFLIGHT_OUT=$(bash /home/admin/nasa/scripts/storage/storage_preflight.sh 2>&1)
+PREFLIGHT_OUT=$(bash /home/admin/nas_jetson_nano/scripts/storage/storage_preflight.sh 2>&1)
 echo "$PREFLIGHT_OUT"
 if echo "$PREFLIGHT_OUT" | grep -q "errors=0"; then
     log "Preflight OK"

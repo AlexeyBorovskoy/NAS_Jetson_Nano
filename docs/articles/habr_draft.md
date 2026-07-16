@@ -3,8 +3,8 @@
 > **Платформы:** [Habr.com](https://habr.com)  
 > **Хабы:** Системное администрирование · Open Source · Искусственный интеллект · Self-hosted  
 > **Теги:** `selfhosted` `nextcloud` `immich` `jetson-nano` `docker` `homelab` `claude-code` `ai-assisted-dev` `usb-storage`  
-> **Статус проекта (июнь 2026):** v1.4.0 · NASA API v0.6.0 · семья подключена · goss 40/40  
-> **Репозиторий:** [github.com/AlexeyBorovskoy/Nasa_home](https://github.com/AlexeyBorovskoy/Nasa_home)
+> **Статус проекта (июнь 2026):** v1.4.0 · NAS_Jetson_Nano API v0.6.0 · семья подключена · goss 40/40
+> **Репозиторий:** [github.com/AlexeyBorovskoy/NAS_Jetson_Nano](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano)
 
 ---
 
@@ -108,7 +108,7 @@ Android / Windows / macOS (LAN)
          │   + Talk «Семья» (5 чел)        │
          │ homecloud_immich          :2283  │
          │ homecloud_llm_gateway     :8090  │
-         │ homecloud_nasa_api        :8099  │  ← v0.6.0
+         │ homecloud_nas_jetson_nano_api        :8099  │  ← v0.6.0
          │ homecloud_samba            :445  │
          │ Netdata + Uptime Kuma + Portainer│
          └─────────────┬───────────────────┘
@@ -120,7 +120,7 @@ Android / Windows / macOS (LAN)
   :8080/:8443  Nextcloud
   :2283/:2443  Immich
   :8090/:9443  LLM Gateway
-  :8099        NASA API Swagger
+  :8099        NAS_Jetson_Nano API Swagger
   :8091        Beszel Hub (мониторинг)
 ```
 
@@ -174,9 +174,9 @@ usb-storage.quirks=152d:a583:u usbcore.autosuspend=-1
 
 **Итоговая инфраструктура надёжности USB:**
 
-- `nasa-usb-preboot.service` — power cycle USB-порта при каждом boot (до монтирования)
-- `nasa-usb-monitor.service` — dmesg watcher, Telegram alert при первом `error -71`
-- `nasa-ssd-recovery.service` — udev hotplug: подключил кабель → mount → preflight → Docker start автоматически
+- `nas_jetson_nano-usb-preboot.service` — power cycle USB-порта при каждом boot (до монтирования)
+- `nas_jetson_nano-usb-monitor.service` — dmesg watcher, Telegram alert при первом `error -71`
+- `nas_jetson_nano-ssd-recovery.service` — udev hotplug: подключил кабель → mount → preflight → Docker start автоматически
 
 ---
 
@@ -204,7 +204,7 @@ Immich и Nextcloud нужно добавить в battery whitelist, включ
 
 ---
 
-## Семья подключилась: Talk и NASA API
+## Семья подключилась: Talk и NAS_Jetson_Nano API
 
 ### Nextcloud Talk «Семья»
 
@@ -214,7 +214,7 @@ Nextcloud Talk — встроенный мессенджер. Создал гр�
 
 Каждому члену семьи отправил персональную памятку на одну страницу: URL, логин, шаги настройки на Android.
 
-### NASA API v0.6.0 — 20 эндпоинтов
+### NAS_Jetson_Nano API v0.6.0 — 20 эндпоинтов
 
 Параллельно попросил Claude Code построить REST API поверх всего стека. Зачем? Чтобы скриптовать действия, смотреть статистику и управлять контейнерами без SSH.
 
@@ -227,18 +227,18 @@ Nextcloud Talk — встроенный мессенджер. Создал гр�
 | Фото | Immich: 6484 фото, 210 видео, 4.24 GB |
 | Действия | Restart контейнера, бэкап по запросу |
 
-![NASA API v0.6.0 — Swagger UI](../../assets/screenshots/article/nasa_api_swagger.png)
+![NAS_Jetson_Nano API v0.6.0 — Swagger UI](../../assets/screenshots/article/nas_jetson_nano_api_swagger.png)
 
 Промпт, с которого начался API:
 
 ```
-Создай FastAPI сервис nasa-api. Пусть он умеет авторизоваться
+Создай FastAPI сервис nas_jetson_nano-api. Пусть он умеет авторизоваться
 через Nextcloud OCS, читать состояние Docker-контейнеров,
 отправлять сообщения в Talk и показывать статистику Immich.
 JWT токен — от Nextcloud. Swagger UI обязателен.
 ```
 
-Агент написал 9 роутеров, pydantic-модели, config через pydantic-settings, JWT middleware и OpenAPI-документацию. Всё в `services/nasa-api/`, деплой через Docker Compose.
+Агент написал 9 роутеров, pydantic-модели, config через pydantic-settings, JWT middleware и OpenAPI-документацию. Всё в `services/nas_jetson_nano-api/`, деплой через Docker Compose.
 
 ---
 
@@ -289,15 +289,15 @@ JWT токен — от Nextcloud. Swagger UI обязателен.
 Требования: любой ARM64/x86 с 4+ GB RAM, Docker Compose v2, VPS (опционально для внешнего доступа).
 
 ```bash
-git clone https://github.com/AlexeyBorovskoy/Nasa_home
-cd Nasa_home
+git clone https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
+cd NAS_Jetson_Nano
 cp config/.env.example config/.env
 # Заполнить config/.env — пароли, VPS_HOST, Telegram token
 sudo bash scripts/storage/storage_preflight.sh
 docker compose -f docker/compose/docker-compose.nextcloud.yml --env-file config/.env up -d
 docker compose -f docker/compose/docker-compose.immich.yml --env-file config/.env up -d
 docker compose -f docker/compose/docker-compose.monitoring.yml --env-file config/.env up -d
-docker compose -f docker/compose/docker-compose.nasa-api.yml --env-file config/.env up -d
+docker compose -f docker/compose/docker-compose.nas_jetson_nano-api.yml --env-file config/.env up -d
 ```
 
 Проверка:
@@ -327,4 +327,4 @@ goss validate --gossfile tests/goss/goss.yaml
 - Ollama local AI на Jetson (Stage 3)
 - Let's Encrypt когда появится домен
 
-**GitHub:** [AlexeyBorovskoy/Nasa_home](https://github.com/AlexeyBorovskoy/Nasa_home) — промпты, ADR, Docker Compose, скрипты, памятки пользователей — всё открыто.
+**GitHub:** [AlexeyBorovskoy/NAS_Jetson_Nano](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano) — промпты, ADR, Docker Compose, скрипты, памятки пользователей — всё открыто.

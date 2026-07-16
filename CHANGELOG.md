@@ -19,7 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `docs/index.md` — landing page: highlights, status table, links
   - `docs/pages/architecture.md` · `reliability.md` · `android.md` · `evidence.md`
   - `docs/assets/screenshots/article/redacted/` — 7 редактированных скриншотов (01–07)
-  - URL: https://alexeyborovskoy.github.io/Nasa_home/
+  - URL: https://alexeyborovskoy.github.io/NAS_Jetson_Nano/
 - **Habr article** — публикация в Песочнице https://habr.com/ru/sandbox/291694/
   - `docs/articles/habr_article_ru.md` — канонический вариант для GitHub Pages (пути 01–07)
   - `docs/articles/habr_ready.md` — чистая версия для вставки в Markdown-редактор Хабра
@@ -31,36 +31,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.4.0] — 2026-06-29 · JMS583 USB SSD + Nextcloud Talk + NASA API v0.6.0
+## [1.4.0] — 2026-06-29 · JMS583 USB SSD + Nextcloud Talk + NAS_Jetson_Nano API v0.6.0
 
 ### Added / Добавлено
 
 - **JMS583 USB SSD enclosure** (152d:a583, USB 3.0 SuperSpeed, 5 Gbps) — заменил RTL9210B-CG:
   - Write **250 MB/s**, Read **172 MB/s** подтверждены (`dd bs=1M`)
   - `usb-storage.quirks=152d:a583:u` в `/boot/extlinux/extlinux.conf` — UAS quirk, BOT mode
-  - `scripts/monitoring/jms583_health.sh` + `systemd/nasa-jms583-health.{service,timer}` —
+  - `scripts/monitoring/jms583_health.sh` + `systemd/nas_jetson_nano-jms583-health.{service,timer}` —
     ежечасный мониторинг: USB ошибки, скорость I/O, статус очереди; Telegram-алерт
 - **Nextcloud Talk** — семейный чат на базе Nextcloud spreed v23.0.7:
   - Группа «Семья» (`token: 37pcobmf`), 5 участников: admin, olga, ivan, ulyana, anna
   - Пользователь `anna` (Talk-only) добавлен в Nextcloud
   - `artifacts/users/ANNA_setup.txt` — памятка для Anna (Talk-only)
   - Памятки OLGA/IVAN/ULYANA переписаны: Talk → первый раздел
-- **NASA API v0.6.0** — новые роутеры:
+- **NAS_Jetson_Nano API v0.6.0** — новые роутеры:
   - `GET /v1/talk/rooms` · `GET /v1/talk/rooms/{token}` · `POST /v1/talk/notify` — Talk интеграция
   - `GET /v1/users` · `GET /v1/users/{username}` · `POST /v1/users/{username}/notify` — пользователи
   - `GET /v1/photos/stats` · `GET /v1/photos/users` — статистика Immich (6484 фото, 210 видео, 4.24 GB)
   - `POST /v1/actions/containers/{name}/restart` · `POST /v1/actions/backup/now` · `GET /v1/actions/history`
   - `main.py` v0.6.0: 9 Swagger-секций, `tryItOutEnabled`, `persistAuthorization`
   - `config.py`: `NEXTCLOUD_ADMIN_PASSWORD`, `IMMICH_API_KEY`, `TALK_FAMILY_ROOM`, `RESTARTABLE_CONTAINERS`
-  - `docker-compose.nasa-api.yml`: новые env vars пробрасываются в контейнер
-  - Immich API key `nasa-api-monitor` создан (permission: all), сохранён в `config/secrets.json`
+  - `docker-compose.nas_jetson_nano-api.yml`: новые env vars пробрасываются в контейнер
+  - Immich API key `nas_jetson_nano-api-monitor` создан (permission: all), сохранён в `config/secrets.json`
 - **goss**: 40/40 тестов (было 34) — добавлены тесты для JMS583, Talk, новых systemd-сервисов
-- **`docs/plans/NASA_API_ROADMAP.md`** — дорожная карта NASA API, v0.2.0→v0.6.0
+- **`docs/plans/NAS_Jetson_Nano_API_ROADMAP.md`** — дорожная карта NAS_Jetson_Nano API, v0.2.0→v0.6.0
 
 ### Fixed / Исправлено
 
 - **exec bit loss** — 33 bash-скрипта потеряли exec bit после Windows pull;
-  `git update-index --chmod=+x` для 9 критических; `nasa-ssd-recovery.service` восстановлен
+  `git update-index --chmod=+x` для 9 критических; `nas_jetson_nano-ssd-recovery.service` восстановлен
 - **NEXTCLOUD_ADMIN_PASSWORD** в `.env` на Jetson исправлен (регистр: `all270174bae` → `ALL_270174_bae`)
 - **Nextcloud `overwrite.cli.url`** → `https://193.8.215.130:8443` — исправлен для корректного
   browser redirect при login через Talk/Nextcloud app на Android
@@ -76,23 +76,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added / Добавлено
 
-- **`scripts/storage/ssd_hotplug_recovery.sh`** + **`systemd/nasa-ssd-recovery.service`** —
+- **`scripts/storage/ssd_hotplug_recovery.sh`** + **`systemd/nas_jetson_nano-ssd-recovery.service`** —
   udev hotplug auto-recovery: `sda1 ADD` → mount → preflight → `systemctl start docker` →
-  `docker start` stopped containers. Logs: `/var/log/nasa-monitor/ssd-recovery.log`
+  `docker start` stopped containers. Logs: `/var/log/nas_jetson_nano-monitor/ssd-recovery.log`
 - **udev rule** (in `install_usb_watchdog.sh`): `ACTION=="add", KERNEL=="sda1"` → start recovery service
 - **Family users** — OLGA, IVAN, ULYANA created in Nextcloud and Immich; setup memos: `artifacts/users/`
 - **2151 contacts imported** to Nextcloud via CardDAV PUT (Python script, bulk VCF → individual vCards)
 - **Android apps configured**: Immich ✅ (6719 photos, backup active), Nextcloud ✅, DAVx⁵ ✅ (CalDAV/CardDAV)
 - **Samba `config.yml`** (`configs/samba/config.yml`) — proper YAML config for crazymax/samba;
   shares: `public` (guest OK), `nextcloud` (read-only), `immich` (read-only)
-- **`docs/plans/API_MOBILE_PLAN.md`** — NASA API expansion plan: FastAPI facade + JWT + Flutter MVP
+- **`docs/plans/API_MOBILE_PLAN.md`** — NAS_Jetson_Nano API expansion plan: FastAPI facade + JWT + Flutter MVP
 - **`docs/articles/habr_draft.md`** — Habr article first draft
 
 ### Fixed / Исправлено
 
 - **Immich admin password** — reset via bcrypt + PostgreSQL after rotation; saved to `config/secrets.json`
 - **Samba `config.yml` was a directory** — Docker bind-mount created dir when file missing; fixed + YAML added
-- **SSD mounted at boot** — `nasa-usb-preboot.service` ensures power cycle before `fstab` mount attempt
+- **SSD mounted at boot** — `nas_jetson_nano-usb-preboot.service` ensures power cycle before `fstab` mount attempt
 - **immich-microservices `mem_limit: 512m`** — applied and confirmed on Jetson
 
 ### Security / Безопасность
@@ -135,10 +135,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **`.gitattributes`** — force LF line endings для *.sh, *.service, *.timer, *.yml;
   предотвращает CRLF-коррупцию скриптов при работе из Windows
-- **`scripts/storage/usb_preboot_cycle.sh`** + **`systemd/nasa-usb-preboot.service`** —
+- **`scripts/storage/usb_preboot_cycle.sh`** + **`systemd/nas_jetson_nano-usb-preboot.service`** —
   power cycle USB порта ДО монтирования SSD при каждом boot;
   сбрасывает RTL9210B-CG из crashed-состояния (выживает software reboot)
-- **`scripts/monitoring/usb_error_monitor.sh`** + **`systemd/nasa-usb-monitor.service`** —
+- **`scripts/monitoring/usb_error_monitor.sh`** + **`systemd/nas_jetson_nano-usb-monitor.service`** —
   real-time dmesg watcher: Telegram-алерт при первом `error -71` до того,
   как Docker начнёт падать; немедленно запускает watchdog (не ждать 3 мин)
 - **`scripts/storage/deploy_usb_fix.sh`** — идемпотентный деплой-скрипт
@@ -175,7 +175,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added / Добавлено
 
 - **Immich Android полностью настроен** (сессия 2026-06-26):
-  - Создан admin-аккаунт через API: `admin@nasa.local`
+  - Создан admin-аккаунт через API: `admin@nas_jetson_nano.local`
   - Приложение авторизовано через VPS: `http://193.8.215.130:2283`
   - Выбраны все 31 альбом устройства (6710 фото/видео)
   - Бэкап активирован (toggle "Активировать" = ON)
@@ -188,7 +188,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   error -71 (EPROTO) при каждом boot — аппаратная неисправность порта;
   смена физического порта решила проблему мгновенно
 - **Watchdog PORT=4 → PORT=2** в `scripts/storage/usb_recovery_watchdog.sh`
-  и на Jetson `/usr/local/sbin/nasa-usb-watchdog.sh`
+  и на Jetson `/usr/local/sbin/nas_jetson_nano-usb-watchdog.sh`
 - **SCSI timeout 120s подтверждён**: `cat /sys/block/sda/device/timeout` = 120 ✅
 - **usb-storage.quirks=0bda:9210:rw подтверждён**: dmesg показывает
   `Quirks match for vid 0bda pid 9210: 220` при enumeration
@@ -197,7 +197,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Все 13 Docker контейнеров healthy через 3 мин после boot
 - SSD монтируется при каждом boot (7 boot подряд на порту 2)
-- USB watchdog timer active: `nasa-usb-watchdog.timer`
+- USB watchdog timer active: `nas_jetson_nano-usb-watchdog.timer`
 - Immich API: `GET /api/server/ping` → `{"res":"pong"}`
 
 ---
@@ -212,7 +212,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     чеклист, инструкция по immich-go для массового импорта с метаданными GPS/дата
   - `XIAOMI_MIUI_QUIRKS.md` — whitelist батарея, автозапуск, блокировка в RAM для Immich/DAVx⁵
 - **nginx HTTPS на VPS** — `scripts/setup/install_nginx_vps.sh`:
-  добавляет TLS (самоподписанный, 10 лет) к уже работающему `nasa_nginx` Docker контейнеру;
+  добавляет TLS (самоподписанный, 10 лет) к уже работающему `nas_jetson_nano_nginx` Docker контейнеру;
   открывает порты 8443 (Nextcloud), 2443 (Immich), 9443 (LLM) в ufw;
   без конфликта с Amnezia (443 занят xray → используются alt-порты)
 
@@ -233,7 +233,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `jetson-nano` (127.0.0.1:45876) → status `up`, CPU 17%, RAM 58%
   - `vps-vienna` (127.0.0.1:45877) → status `up`, CPU 2%, RAM 27%
   - `scripts/monitoring/install_beszel_agent_vps.sh` — установщик amd64 агента на VPS;
-    читает Hub pubkey из `/opt/nasa/beszel-hub/data/id_ed25519` автоматически;
+    читает Hub pubkey из `/opt/nas_jetson_nano/beszel-hub/data/id_ed25519` автоматически;
     wrapper-скрипт обходит systemd ExecStart-ограничения при ключе с пробелами
 
 ---
@@ -255,7 +255,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Telegram alert на remove/add `/dev/sda` через VPS SSH relay
   - Root cause: RTL9210B-CG входит в ELPG цикл при USB reset mid-write →
     только физический power cycle выводит. Fix предотвращает сам вход.
-- **Tunnel port 45876** — `systemd/nasa-tunnel.service`: добавлен
+- **Tunnel port 45876** — `systemd/nas_jetson_nano-tunnel.service`: добавлен
   `-R 45876:localhost:45876` для Beszel Agent → Hub через VPS.
 - **GitHub traffic monitoring** — `docs/metrics/GITHUB_TRAFFIC.md`:
   ежедневный лог просмотров, клонов, источников трафика, звёзд.
@@ -280,27 +280,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `jetson-nas-mount.service`; install/enable by default, immediate mount only with
   explicit `--start`.
 - `scripts/storage/install_docker_storage_guard.sh` and
-  `systemd/docker.service.d/10-nasa-storage.conf`: optional strict boot guard
+  `systemd/docker.service.d/10-nas_jetson_nano-storage.conf`: optional strict boot guard
   that makes Docker wait for `/mnt/storage` after power loss or USB failure.
 - `docs/plans/RELIABILITY_AUDIT_2026-06-23.md`: live reliability audit via VPS
   with confirmed Jetson findings, repo mitigations, and SSD recovery paths.
 
 ### Changed / Изменено
 
-- `docker/compose/docker-compose.nasa-api.yml`,
-  `services/nasa-api/app/config.py`, and
-  `scripts/monitoring/nasa-daily-report.sh`: expected containers now use real
+- `docker/compose/docker-compose.nas_jetson_nano-api.yml`,
+  `services/nas_jetson_nano-api/app/config.py`, and
+  `scripts/monitoring/nas_jetson_nano-daily-report.sh`: expected containers now use real
   `homecloud_*` container names instead of stale compose-generated names.
-- `scripts/monitoring/nasa-daily-report.sh`: adds storage mount health,
+- `scripts/monitoring/nas_jetson_nano-daily-report.sh`: adds storage mount health,
   Nextcloud `.ncdata` presence check, recent kernel storage errors, and separate
   VPS checks for Nextcloud, Immich, and LLM Gateway.
 - `scripts/backup/backup_databases.sh`: refuses to write database dumps when
   `${STORAGE_ROOT}` is not a mountpoint, cannot be resolved, points to microSD, or
   is not writable.
-- `systemd/nasa-backup.service` and `systemd/jetson-nas-health.service`: require
+- `systemd/nas_jetson_nano-backup.service` and `systemd/jetson-nas-health.service`: require
   `/mnt/storage` to be a real mountpoint before running.
 - `systemd/jetson-nas-mount.service`: uses `STORAGE_ROOT=/mnt/storage` default,
-  reads `/home/admin/nasa/config/.env`, and avoids unsupported shell-style
+  reads `/home/admin/nas_jetson_nano/config/.env`, and avoids unsupported shell-style
   `${VAR:-default}` expansion in systemd `ExecStart`.
 - `docker/compose/docker-compose.samba.yml`, `docker/compose/docker-compose.stage1.yml`,
   and `docker/vps/docker-compose.yml`: normalized restart policy to `always`.
@@ -309,7 +309,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Top-level and operational docs now reflect the recovered SSD state, intentional
   Nextcloud stop, live DB backup success, and the remaining hardware risk in the
   USB cable/enclosure/power chain.
-- Jetson `~/nasa` checkout synchronized to `6844447`; the pre-sync live diff is
+- Jetson `~/nas_jetson_nano` checkout synchronized to `6844447`; the pre-sync live diff is
   preserved on Jetson as `stash@{0}` for audit/recovery.
 - Nextcloud data/app review completed read-only: 503 traced to the earlier
   read-only storage remount; `.ncdata`, ownership, config and DB checks are
@@ -359,11 +359,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added / Добавлено
 
-- **`systemd/nasa-backup.{service,timer}`**: systemd timer for daily automated
+- **`systemd/nas_jetson_nano-backup.{service,timer}`**: systemd timer for daily automated
   `pg_dump` at 03:00 (±15 min randomized delay); `Persistent=true` so missed
   runs are retried on next boot
 - **`scripts/backup/install_backup_timer.sh`**: one-command installer — copies
-  units, patches `NASA_PROJECT_DIR`, calls `daemon-reload`, enables and starts timer
+  units, patches `NAS_JETSON_NANO_PROJECT_DIR`, calls `daemon-reload`, enables and starts timer
 - **`docs/13_MONITORING_RUNBOOK.md` §12-14**: added operational setup sections:
   backup timer install & verify, Uptime Kuma initial monitor list (5 services),
   Netdata Telegram alerts config via `docker exec`
@@ -374,35 +374,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **Monitoring stack deployed** (Stage 1F): Netdata (19999), Uptime Kuma (3001), Portainer (9000)
   running on Jetson via `docker-compose.monitoring.yml`
-- **nasa-api** (Stage 1G): FastAPI service on port 8099 with Swagger UI at `/docs`
+- **nas_jetson_nano-api** (Stage 1G): FastAPI service on port 8099 with Swagger UI at `/docs`
   — endpoints: `/v1/metrics`, `/v1/containers`, `/v1/logs`, `POST /v1/report/now`
   — pydantic-settings config, JSON structured logging (RotatingFileHandler 10 MB × 5)
-  — `docker/compose/docker-compose.nasa-api.yml`
-- **Telegram daily health report** (09:00): `scripts/monitoring/nasa-daily-report.sh`
+  — `docker/compose/docker-compose.nas_jetson_nano-api.yml`
+- **Telegram daily health report** (09:00): `scripts/monitoring/nas_jetson_nano-daily-report.sh`
   collects RAM, CPU, disk, container states, HTTP checks; sent via VPS SSH relay
-  (`scripts/monitoring/nasa-send-report-telegram.sh`)
-  — systemd timer: `nasa-daily-report-telegram.{service,timer}`
+  (`scripts/monitoring/nas_jetson_nano-send-report-telegram.sh`)
+  — systemd timer: `nas_jetson_nano-daily-report-telegram.{service,timer}`
 - **Docker healthchecks** added to all 10 containers:
   Nextcloud (`curl /status.php`), nextcloud-db/immich-db (`pg_isready`),
   nextcloud-redis/immich-redis (`redis-cli ping` with auth),
-  immich-server (`curl /api/server/ping`), llm-gateway/nasa-api (`python3 urllib`),
+  immich-server (`curl /api/server/ping`), llm-gateway/nas_jetson_nano-api (`python3 urllib`),
   netdata (`curl /api/v1/info`), uptime-kuma (`extra/healthcheck`),
   portainer (`disable: true` — scratch image, no shell)
 - **`depends_on: condition: service_healthy`** for nextcloud and immich stacks
   — containers wait for DB + Redis to be healthy before starting
 - **`mem_limit`** added to all remaining containers:
-  llm-gateway 256m, nasa-api 128m, netdata 256m, uptime-kuma 128m, portainer 128m
-- **`restart: always`** applied to llm-gateway, nasa-api, and all monitoring services
+  llm-gateway 256m, nas_jetson_nano-api 128m, netdata 256m, uptime-kuma 128m, portainer 128m
+- **`restart: always`** applied to llm-gateway, nas_jetson_nano-api, and all monitoring services
 - **`NETDATA_UPDATE_EVERY=5`** — reduces Netdata CPU from 19.5% to ~4%
 - **goss v0.4.9 spec**: `tests/goss/goss.yaml` — 34 tests (ports, services, files, HTTP)
-- **docs/21_LOGGING_API.md**: bilingual documentation for logging subsystem and nasa-api
+- **docs/21_LOGGING_API.md**: bilingual documentation for logging subsystem and nas_jetson_nano-api
 - **docs/22_AUDIT_RESILIENCE.md**: resilience audit report — tools, 10 findings, fixes
 
 ### Fixed / Исправлено
 
-- **F-05 (SC2029)**: `nasa-send-report-telegram.sh` — Telegram token no longer appears
+- **F-05 (SC2029)**: `nas_jetson_nano-send-report-telegram.sh` — Telegram token no longer appears
   in `ps aux` on VPS; passed via ephemeral SSH env file on remote
-- **F-06**: `nasa-daily-report-telegram.service` — added `Restart=on-failure` + `RestartSec=60`
+- **F-06**: `nas_jetson_nano-daily-report-telegram.service` — added `Restart=on-failure` + `RestartSec=60`
 - **F-08 (SC2046)**: `scripts/fetch_external_docs.sh:182` — `$(find ...)` replaced with `xargs`
 - **Immich healthcheck endpoint**: corrected from deprecated `/api/server-info/ping`
   to `/api/server/ping` (Immich v1.100+)
@@ -430,7 +430,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed / Изменено (deep audit 2026-06-20)
 
-- `CHANGELOG.md`: fixed repo URL in footer links (`Nasa_home` not `nasa-home-cloud`)
+- `CHANGELOG.md`: fixed repo URL in footer links (`NAS_Jetson_Nano` not `nas-jetson-nano`)
 - `README.md`: fixed clone URL; Samba marked as implemented (not "planned"); updated
   Stack, Architecture, Stages, Known Limitations tables; added all new compose files to table;
   removed stale `IMMICH_DISABLE_MACHINE_LEARNING` limitation note
@@ -447,14 +447,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Samba SMB layer: `docker/compose/docker-compose.samba.yml` (crazymax/samba, ARM64 native)
   + `configs/samba/config.yml` (YAML config) + `configs/samba/smb.conf` (native reference)
 - `systemd/` directory: `jetson-nas-health.service`, `jetson-nas-health.timer` (6h),
-  `nasa-tunnel.service` (autossh), `jetson-nas-mount.service`
+  `nas_jetson_nano-tunnel.service` (autossh), `jetson-nas-mount.service`
 - `tests/` directory: `test_samba_config.sh`, `test_mount.sh`, `test_healthcheck.sh`
 - `scripts/storage/setup_disk.sh` — USB HDD mount setup with UUID/fstab (NasberryPi pattern)
 - `scripts/storage/benchmark_io.sh` — sequential I/O benchmark (JetsonHacks reference speeds)
 - VPS integration: reverse SSH tunnel architecture (`docs/plans/VPS_INTEGRATION_PLAN.md`)
   - autossh tunnel script for Jetson Nano (`scripts/network/setup_vps_tunnel.sh`)
   - nginx reverse proxy compose for VPS (`docker/vps/docker-compose.yml`)
-  - VPS UFW rules configured (SSH, Amnezia ports, NASA tunnel ports 8080/2283/8090)
+  - VPS UFW rules configured (SSH, Amnezia ports, NAS_Jetson_Nano tunnel ports 8080/2283/8090)
   - Docker Compose v5.1.4 installed on VPS
 - `config/.env.example`: added VPS_HOST, VPS_USER, VPS_SSH_KEY section
 - Monitoring stack analysis and documentation (`docs/17_MONITORING_OBSERVABILITY.md`)
@@ -479,7 +479,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `scripts/diagnostics/storage_health.sh`: added SMART monitoring section (smartctl, USB-SATA bridge handling)
 - `docs/articles/habr_draft.md`: rewritten with "human vision + AI implementation" angle
 - `README.md` переписан по стандартам GitHub open-source проектов: badges, двуязычные секции, ASCII-диаграмма, таблицы стека и документации, Quick Start / README.md rewritten to GitHub open-source standards
-- `AGENTS.md` дополнен разделом сетевых ограничений (Amnezia, nasa-lan, Tailscale)
+- `AGENTS.md` дополнен разделом сетевых ограничений (Amnezia, nas_jetson_nano-lan, Tailscale)
 - `docs/13_MONITORING_RUNBOOK.md` расширен: ссылки на мониторинг-стек, таблица алертов
 - `docs/16_GITHUB_PUBLICATION.md` дополнен: GitHub Actions, Issue templates, pre-release checklist
 - `docker/compose/docker-compose.stage1.yml`: добавлен `immich-microservices`, `IMMICH_DISABLE_MACHINE_LEARNING`, `container_name` для всех сервисов
@@ -497,7 +497,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `docs/01A_JETSON_SD_BOOTSTRAP.md` — Jetson Nano microSD bootstrap recipe
   - `docs/03_ARCHITECTURE.md` — architecture overview
   - `docs/04_STORAGE_DESIGN.md` — USB HDD storage design
-  - `docs/05_NETWORKING_VPN.md` — networking and VPN setup (wg-nasa, EU VPS)
+  - `docs/05_NETWORKING_VPN.md` — networking and VPN setup (wg-nas_jetson_nano, EU VPS)
   - `docs/06_NEXTCLOUD_DESIGN.md` — Nextcloud deployment design
   - `docs/07_IMMICH_DESIGN.md` — Immich deployment design (Jetson-safe mode)
   - `docs/08_LLM_GATEWAY_DEEPSEEK.md` — LLM Gateway and DeepSeek API integration
@@ -545,13 +545,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `.github/workflows/secrets-check.yml` — CI secret scanner on push/PR
   - `.github/workflows/validate-compose.yml` — CI Docker Compose validation
 
-[Unreleased]: https://github.com/AlexeyBorovskoy/Nasa_home/compare/v1.4.0...HEAD
-[1.4.0]: https://github.com/AlexeyBorovskoy/Nasa_home/compare/v1.3.9...v1.4.0
-[1.3.9]: https://github.com/AlexeyBorovskoy/Nasa_home/compare/v1.3.8...v1.3.9
-[1.3.8]: https://github.com/AlexeyBorovskoy/Nasa_home/compare/v1.3.7...v1.3.8
-[1.3.4]: https://github.com/AlexeyBorovskoy/Nasa_home/compare/v1.3.3...v1.3.4
-[1.3.3]: https://github.com/AlexeyBorovskoy/Nasa_home/compare/v1.3.2...v1.3.3
-[1.3.2]: https://github.com/AlexeyBorovskoy/Nasa_home/compare/v1.3.1...v1.3.2
-[1.3.1]: https://github.com/AlexeyBorovskoy/Nasa_home/compare/v1.3.0...v1.3.1
-[1.3.0]: https://github.com/AlexeyBorovskoy/Nasa_home/releases/tag/v1.3.0
-[0.1.0]: https://github.com/AlexeyBorovskoy/Nasa_home/releases/tag/v0.1.0
+[Unreleased]: https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/compare/v1.3.9...v1.4.0
+[1.3.9]: https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/compare/v1.3.8...v1.3.9
+[1.3.8]: https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/compare/v1.3.7...v1.3.8
+[1.3.4]: https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/compare/v1.3.3...v1.3.4
+[1.3.3]: https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/compare/v1.3.2...v1.3.3
+[1.3.2]: https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/compare/v1.3.1...v1.3.2
+[1.3.1]: https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/releases/tag/v1.3.0
+[0.1.0]: https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/releases/tag/v0.1.0

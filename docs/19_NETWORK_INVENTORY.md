@@ -1,8 +1,8 @@
 # 19. Network Inventory / Инвентаризация сети
 
-> 🇬🇧 This document records the home network layout for the NASA Home Cloud test stand. It is a sanitized public inventory: real Wi-Fi passwords, router serial numbers, router MAC addresses, and private credentials must stay in `config/.env` (gitignored).
+> 🇬🇧 This document records the home network layout for the NAS_Jetson_Nano test stand. It is a sanitized public inventory: real Wi-Fi passwords, router serial numbers, router MAC addresses, and private credentials must stay in `config/.env` (gitignored).
 >
-> 🇷🇺 Документ фиксирует сетевую топологию тестового стенда NASA Home Cloud. Публичная версия: реальные пароли Wi-Fi, серийные номера, MAC-адреса и учётные данные хранятся только в `config/.env` (gitignored).
+> 🇷🇺 Документ фиксирует сетевую топологию тестового стенда NAS_Jetson_Nano. Публичная версия: реальные пароли Wi-Fi, серийные номера, MAC-адреса и учётные данные хранятся только в `config/.env` (gitignored).
 >
 > Updated / Обновлено: 2026-06-27.
 
@@ -40,7 +40,7 @@ Gateway: 192.168.0.1
     |      Wi-Fi client, current observed IP: 192.168.0.106
     |
     +-- Jetson Nano
-           eth0: nasa-lan, static 192.168.0.50/24
+           eth0: nas_jetson_nano-lan, static 192.168.0.50/24
            gateway: 192.168.0.1
            services: LAN-only
            |
@@ -59,7 +59,7 @@ VPS 193.8.215.130 — nginx (network_mode: host)
     |
     v (SSH reverse tunnel, autossh)
 Jetson Nano 192.168.0.50
-    Tunnel: nasa-tunnel.service (enabled, autostart)
+    Tunnel: nas_jetson_nano-tunnel.service (enabled, autostart)
     SSH management from VPS: ssh -p 10022 admin@127.0.0.1
 
 VPS:
@@ -87,7 +87,7 @@ VPS:
 | Wi-Fi 5 GHz | SSID | `HOME_WIFI_SSID_5G` | Router label photo | Secret, stored locally |
 | Wi-Fi | Password / PIN | `HOME_WIFI_PASSWORD` | Router label photo | Secret, stored locally |
 | Admin workstation | Current Wi-Fi IP | `192.168.0.106` | Windows network config | Observed |
-| Jetson Nano | LAN profile | `nasa-lan` | ADR-0003 | Accepted, do not delete |
+| Jetson Nano | LAN profile | `nas_jetson_nano-lan` | ADR-0003 | Accepted, do not delete |
 | Jetson Nano | LAN IP | `192.168.0.50/24` | ADR-0003 + local secrets | Target / needs LAN re-check |
 | Jetson Nano | Gateway | `192.168.0.1` | ADR-0003 | Target / needs LAN re-check |
 | Jetson Nano | USB recovery SSH | `admin@fe80::1%<ifIndex>` | Verified USB device-mode flow | Verified pattern |
@@ -108,7 +108,7 @@ VPS:
 | External access | Implemented path | VPS 193.8.215.130 + autossh | ADR-0005 | ✅ Live |
 | VPS | Host | 193.8.215.130 (Vienna, AEZA) | observed | ✅ Active |
 | VPS nginx | Public ports | 8080/2283/8090 (HTTP) | docker/vps/ | ✅ Active; Nextcloud upstream live |
-| SSH tunnel | nasa-tunnel.service | -R 18080/12283/18090/10022 | systemd/nasa-tunnel.service | ✅ Active |
+| SSH tunnel | nas_jetson_nano-tunnel.service | -R 18080/12283/18090/10022 | systemd/nas_jetson_nano-tunnel.service | ✅ Active |
 | Public port forwarding | Home router | none for Stage 1 | ADR-0003 | Required safe default |
 
 ## 5. Router UI Status
@@ -165,7 +165,7 @@ From Jetson after LAN cable is connected:
 ```bash
 ip -br addr show eth0
 ip route
-nmcli connection show nasa-lan
+nmcli connection show nas_jetson_nano-lan
 ping -c 3 192.168.0.1
 ```
 
@@ -186,7 +186,7 @@ sudo bash scripts/storage/storage_preflight.sh
 | Jetson LAN SSH | ✅ Verified: `admin@192.168.0.50:22` works | — |
 | VPS external access | ✅ Live: nginx+tunnel, ports 8080/2283/8090 | — |
 | USB storage incident | 250 GB device recovered as `/dev/sda1` and mounted at `/mnt/storage`, but prior `error -71`/ext4 errors show hardware risk | Keep preflight/boot guard; replace suspect cable/enclosure/power if errors return |
-| HDD partition | Target ext4 partition for NAS is active: label `nasa-storage`, UUID tracked in fstab | Keep read-only fsck path for future incidents; destructive format only with explicit confirmation |
+| HDD partition | Target ext4 partition for NAS is active: label `nas_jetson_nano-storage`, UUID tracked in fstab | Keep read-only fsck path for future incidents; destructive format only with explicit confirmation |
 | External access | ✅ Implemented via VPS reverse tunnel (ADR-0005) | — |
 
 ## 8. Rollback

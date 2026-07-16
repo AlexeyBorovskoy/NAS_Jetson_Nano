@@ -1,4 +1,4 @@
-# NASA Home Cloud — force LF line endings for all shell scripts and configs
+# NAS_Jetson_Nano — force LF line endings for all shell scripts and configs
 # Without this, git on Windows converts LF→CRLF, which breaks bash shebangs
 # (#!/usr/bin/env bash\r → systemd 203/EXEC "No such file or directory")
 

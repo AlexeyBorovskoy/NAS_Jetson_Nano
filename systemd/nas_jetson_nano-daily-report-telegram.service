@@ -1,0 +1,8 @@
+[Unit]
+Description=Send NAS_Jetson_Nano daily report to Telegram
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/nas_jetson_nano-send-report-telegram.sh

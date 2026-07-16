@@ -41,17 +41,17 @@ Scripts edited on Windows had `\r\n` endings. Jetson bash saw `#!/bin/bash\r` an
 | `usbcore.autosuspend=-1` | Disable USB power management globally (kernel cmdline) |
 | `usb-storage.quirks=152d:a583:u` | Switch JMS583 to BOT mode, disable UAS |
 | SCSI timeout 120s (udev rule) | Prevent premature I/O failure on slow responses |
-| `nasa-usb-preboot.service` | Power cycle USB port 2 before mounting, every boot |
-| `nasa-usb-watchdog.timer` | Periodic check; restores power to port 2 if SSD disappears |
-| `nasa-usb-monitor.service` | Detects dmesg USB errors (-71, stream errors), sends Telegram alert |
-| `nasa-ssd-recovery.service` | udev trigger on `sda1`: mount → preflight → Docker → 13 containers |
+| `nas_jetson_nano-usb-preboot.service` | Power cycle USB port 2 before mounting, every boot |
+| `nas_jetson_nano-usb-watchdog.timer` | Periodic check; restores power to port 2 if SSD disappears |
+| `nas_jetson_nano-usb-monitor.service` | Detects dmesg USB errors (-71, stream errors), sends Telegram alert |
+| `nas_jetson_nano-ssd-recovery.service` | udev trigger on `sda1`: mount → preflight → Docker → 13 containers |
 
 ### Self-healing on SSD disconnect
 
 If the SSD cable is physically unplugged and replugged:
 
 1. udev detects `sda1` appearing
-2. `nasa-ssd-recovery.service` runs automatically
+2. `nas_jetson_nano-ssd-recovery.service` runs automatically
 3. Mounts `/mnt/storage`, runs preflight
 4. Starts Docker daemon and all containers
 
@@ -63,7 +63,7 @@ Infrastructure tested with [goss](https://github.com/goss-org/goss) (ARM64 binar
 
 ```bash
 # Run all tests:
-cd ~/nasa && goss -g tests/goss/goss.yaml validate
+cd ~/nas_jetson_nano && goss -g tests/goss/goss.yaml validate
 ```
 
 Test categories:
@@ -80,7 +80,7 @@ Current result: **40/40 passing**.
 Every morning at 09:00 the monitoring script sends:
 
 ```
-NASA HOME CLOUD — Daily Report
+NAS_JETSON_NANO — Daily Report
 SYSTEM: Uptime 18h | RAM 2.3/3.9G | Disk 7G/229G | Temp 41°C
 CONTAINERS: ✅ all 13 running (restarts: 0)
 LOCAL HTTP: ✅ Nextcloud 302 ✅ Immich 200

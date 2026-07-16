@@ -1,0 +1,17 @@
+[Unit]
+Description=NAS_Jetson_Nano USB Error Monitor (real-time dmesg watcher for USB SSD errors)
+Documentation=https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10s
+ExecStart=/usr/local/sbin/nas_jetson_nano-usb-monitor.sh
+EnvironmentFile=-/etc/nas_jetson_nano-monitor/watchdog.env
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nas_jetson_nano-usb-monitor
+
+[Install]
+WantedBy=multi-user.target

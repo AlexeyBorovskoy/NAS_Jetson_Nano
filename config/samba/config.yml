@@ -13,8 +13,8 @@ auth:
     password_file: /run/secrets/samba_password
 
 global:
-  - "server string = NASA Home Cloud NAS on %h"
-  - "netbios name = jetson-nasa"
+  - "server string = NAS_Jetson_Nano NAS on %h"
+  - "netbios name = jetson-nas_jetson_nano"
   - "workgroup = WORKGROUP"
   - "security = user"
   - "map to guest = never"

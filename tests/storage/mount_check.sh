@@ -47,7 +47,7 @@ FAIL=0
 WARN=0
 REPORT_LINES=()
 
-echo "=== NASA Storage Mount Check ($TIMESTAMP) ==="
+echo "=== NAS_Jetson_Nano Storage Mount Check ($TIMESTAMP) ==="
 echo "Mount point: $MOUNT_POINT"
 echo ""
 

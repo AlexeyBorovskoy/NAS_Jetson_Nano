@@ -111,10 +111,10 @@ Using goss (ARM64 binary) for infrastructure testing — ports, services, files,
 
 Docker Compose files, systemd units, goss tests, monitoring scripts, architecture decisions (ADR), and the agent prompts used during development:
 
-👉 https://github.com/AlexeyBorovskoy/Nasa_home
+👉 https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
 
 The repo also has a GitHub Pages site with architecture docs:
-👉 https://alexeyborovskoy.github.io/Nasa_home/
+👉 https://alexeyborovskoy.github.io/NAS_Jetson_Nano/
 
 ---
 

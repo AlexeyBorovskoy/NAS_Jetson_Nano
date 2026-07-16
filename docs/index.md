@@ -1,4 +1,4 @@
-# NASA Home Cloud
+# NAS_Jetson_Nano
 
 _Old Hardware Must Live._
 
@@ -14,7 +14,7 @@ Nextcloud, Immich, Android clients, monitoring and AI-assisted reliability engin
 - **Reverse SSH tunnel** through VPS for CGNAT bypass (no port forwarding needed)
 - **Monitoring** with Beszel / Uptime Kuma / Telegram daily reports
 - **Reliability story** around USB SSD failures and automated recovery
-- **NASA API** — custom REST API over the full stack (FastAPI, 20 endpoints, JWT)
+- **NAS_Jetson_Nano API** — custom REST API over the full stack (FastAPI, 20 endpoints, JWT)
 - Open-source documentation, agent prompts and evidence
 
 ## Read
@@ -39,4 +39,4 @@ Nextcloud, Immich, Android clients, monitoring and AI-assisted reliability engin
 
 ## Repository
 
-GitHub: [AlexeyBorovskoy/Nasa_home](https://github.com/AlexeyBorovskoy/Nasa_home)
+GitHub: [AlexeyBorovskoy/NAS_Jetson_Nano](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano)

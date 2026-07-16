@@ -1,6 +1,6 @@
 ﻿name: homecloud-samba
 
-# SMB/CIFS file sharing layer for NASA Home Cloud
+# SMB/CIFS file sharing layer for NAS_Jetson_Nano
 # Image: crazymax/samba — multi-arch including linux/arm64 (Jetson Nano)
 # Docs: https://github.com/crazy-max/docker-samba
 #

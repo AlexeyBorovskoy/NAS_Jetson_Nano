@@ -20,8 +20,8 @@ PORT=2
 MAX_SOFT_RETRIES=2
 POWER_OFF_SECS=45
 WAIT_ENUM_SECS=30
-STATE_FILE="/var/lib/nasa-usb-watchdog.state"
-LOG_TAG="nasa-usb-watchdog"
+STATE_FILE="/var/lib/nas_jetson_nano-usb-watchdog.state"
+LOG_TAG="nas_jetson_nano-usb-watchdog"
 
 # --- Telegram (опционально — берём из env если есть) ---
 TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"

@@ -111,7 +111,7 @@ Runtime-артефакты не коммитятся:
 В проект перенесён локальный каталог внешних материалов:
 
 ```text
-/home/alexey/work/NASA/external_docs/jatson
+/home/alexey/work/NAS_Jetson_Nano/external_docs/jatson
 ```
 
 Он не коммитится в GitHub, потому что содержит большие сторонние бинарные
@@ -220,7 +220,7 @@ sudo eject /dev/sdX
 Рекомендуемый hostname:
 
 ```text
-nasa-jetson
+nas_jetson_nano-jetson
 ```
 
 ## 11.1. Текущий стенд: USB + USB-Ethernet direct-link
@@ -288,7 +288,7 @@ nmap -sn 192.168.1.0/24
 Переход к домашнему роутеру разрешён только после контрольных условий:
 
 - Jetson успешно загружается с microSD;
-- создан пользователь и задан hostname `nasa-jetson`;
+- создан пользователь и задан hostname `nas_jetson_nano-jetson`;
 - SSH работает в direct-link схеме;
 - выполнен минимальный hardware audit без HDD;
 - нет необходимости менять firewall или port forwarding на роутере.
@@ -321,12 +321,12 @@ readlink "$R/etc/systemd/system/default.target"    # nv-oem-config.target => м�
 
 3. От root (chroot не нужен и невозможен без `qemu-aarch64-static` — правим файлы
    напрямую; `useradd --root` спотыкается об отсутствие `$R/dev/null`). Бэкап
-   исходных файлов сохранить рядом как `*.nasabak`:
+   исходных файлов сохранить рядом как `*.nas_jetson_nanobak`:
 
 ```bash
-U=admin; HOSTN=nasa-jetson
+U=admin; HOSTN=nas_jetson_nano-jetson
 HASH=$(openssl passwd -6)                 # введёт пароль интерактивно
-for f in passwd shadow group; do sudo cp -a "$R/etc/$f" "$R/etc/$f.nasabak"; done
+for f in passwd shadow group; do sudo cp -a "$R/etc/$f" "$R/etc/$f.nas_jetson_nanobak"; done
 # /etc/passwd:  admin:x:1000:1000:admin,,,:/home/admin:/bin/bash
 # /etc/shadow:  admin:$HASH:19500:0:99999:7:::
 # /etc/group:   создать admin:x:1000: и добавить admin в
@@ -363,7 +363,7 @@ df -h /                                            # ~13G -> ~59G
 ```
 
 Реквизиты доступа — в `config/.env` (`JETSON_*`, gitignored) и `.master.env`
-(`NASA_JETSON_*`). Откат — восстановить `/etc/*.nasabak` на карте.
+(`NAS_JETSON_NANO_JETSON_*`). Откат — восстановить `/etc/*.nas_jetson_nanobak` на карте.
 
 ## 12. Проверка первого запуска
 

@@ -67,7 +67,7 @@ ACTION=="add", SUBSYSTEMS=="usb", DRIVERS=="usb-storage", \
 **RAM:** 2.0GB used / 3.9GB total at steady state with everything running.
 
 Full repo with Docker Compose, systemd units, goss tests, scripts:  
-👉 https://github.com/AlexeyBorovskoy/Nasa_home
+👉 https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
 
 ---
 

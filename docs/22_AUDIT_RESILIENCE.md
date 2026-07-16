@@ -1,8 +1,8 @@
 # 22. Аудит надёжности и устойчивости / Resilience Audit
 
-> 🇷🇺 Документ фиксирует результаты аудита инфраструктуры NASA Home Cloud (Jetson Nano, ARM64, Ubuntu 18.04 JetPack): тесты состояния через goss, статический анализ скриптов и Dockerfile, симуляцию отказов контейнеров и туннеля. Всего зафиксировано 11 находок. Актуализировано: 2026-06-29. **goss: 40/40 (v1.4.0). JMS583 заменил RTL9210B-CG.**
+> 🇷🇺 Документ фиксирует результаты аудита инфраструктуры NAS_Jetson_Nano (Jetson Nano, ARM64, Ubuntu 18.04 JetPack): тесты состояния через goss, статический анализ скриптов и Dockerfile, симуляцию отказов контейнеров и туннеля. Всего зафиксировано 11 находок. Актуализировано: 2026-06-29. **goss: 40/40 (v1.4.0). JMS583 заменил RTL9210B-CG.**
 >
-> 🇬🇧 This document records the results of a NASA Home Cloud infrastructure audit (Jetson Nano, ARM64, Ubuntu 18.04 JetPack): goss state tests, static analysis of scripts and Dockerfiles, container/tunnel failure simulation. 11 findings total. Updated: 2026-06-29. **goss: 40/40 (v1.4.0). JMS583 replaced RTL9210B-CG.**
+> 🇬🇧 This document records the results of a NAS_Jetson_Nano infrastructure audit (Jetson Nano, ARM64, Ubuntu 18.04 JetPack): goss state tests, static analysis of scripts and Dockerfiles, container/tunnel failure simulation. 11 findings total. Updated: 2026-06-29. **goss: 40/40 (v1.4.0). JMS583 replaced RTL9210B-CG.**
 
 ---
 
@@ -12,10 +12,10 @@
 
 ## 1. Мотивация
 
-Цель аудита — убедиться, что NASA Home Cloud способен пережить типовые сбои:
+Цель аудита — убедиться, что NAS_Jetson_Nano способен пережить типовые сбои:
 перезагрузку сервисов, падение контейнера, разрыв VPN-туннеля, нехватку RAM.
 Проверялись 11 контейнеров (Nextcloud, Immich, LLM Gateway, Netdata, Uptime Kuma,
-Portainer, nasa-api и их зависимости), 14 bash-скриптов, 3 Dockerfile и
+Portainer, nas_jetson_nano-api и их зависимости), 14 bash-скриптов, 3 Dockerfile и
 738 строк Python-кода. Дополнительно — systemd-юниты, iptables и доступность
 портов.
 
@@ -43,9 +43,9 @@ Portainer, nasa-api и их зависимости), 14 bash-скриптов, 3
 | F-01 | **CRITICAL** | Docker | Docker 20.10.7 (2021) — устаревший, известные CVE. Актуальная версия: 27.x | Open |
 | F-02 | **MEDIUM** | Resilience | `docker kill` на Nextcloud → контейнер остаётся `Exited` при `restart: unless-stopped`. Баг Docker 20.10: SIGKILL трактуется как явная остановка. Смягчено переходом на `restart: always`. Полное исправление — обновление Docker (F-01). | Mitigated |
 | F-03 | HIGH | OOM | `mem_limit` добавлен всем 11 контейнерам. Immich-server: 1024m, Nextcloud: 512m, БД: 256–384m, Redis: 64m, мониторинг: 128–256m. Суммарный бюджет: 1453 МБ из 3964 МБ + 1980 МБ zram. | **Fixed** |
-| F-04 | HIGH | Observability | Docker healthcheck добавлен всем контейнерам: Nextcloud (`status.php`), DB (`pg_isready`), Redis (`redis-cli ping`), LLM GW + nasa-api (`urllib`), Immich (`api ping`), Netdata/Uptime Kuma/Portainer. | **Fixed** |
-| F-05 | HIGH | Security | SC2029: `nasa-send-report-telegram.sh` раскрывает `TELEGRAM_BOT_TOKEN` на стороне клиента в строке SSH-команды → токен виден в `ps aux` на VPS во время выполнения. | **Fixed** |
-| F-06 | MEDIUM | Reliability | `nasa-daily-report-telegram.service` — добавлен `Restart=on-failure` + `RestartSec=60`. systemd повторит попытку при тайм-ауте сети. | **Fixed** |
+| F-04 | HIGH | Observability | Docker healthcheck добавлен всем контейнерам: Nextcloud (`status.php`), DB (`pg_isready`), Redis (`redis-cli ping`), LLM GW + nas_jetson_nano-api (`urllib`), Immich (`api ping`), Netdata/Uptime Kuma/Portainer. | **Fixed** |
+| F-05 | HIGH | Security | SC2029: `nas_jetson_nano-send-report-telegram.sh` раскрывает `TELEGRAM_BOT_TOKEN` на стороне клиента в строке SSH-команды → токен виден в `ps aux` на VPS во время выполнения. | **Fixed** |
+| F-06 | MEDIUM | Reliability | `nas_jetson_nano-daily-report-telegram.service` — добавлен `Restart=on-failure` + `RestartSec=60`. systemd повторит попытку при тайм-ауте сети. | **Fixed** |
 | F-07 | MEDIUM | Performance | Netdata потреблял 19.5% CPU. Добавлен `NETDATA_UPDATE_EVERY=5` — сбор метрик раз в 5 сек вместо 1. Вступит в силу после `docker compose up -d --no-deps netdata`. | **Fixed** |
 | F-08 | MEDIUM | Code | SC2046 в `scripts/fetch_external_docs.sh:182`: неэкранированный `$(find ...)` → word splitting для имён файлов с пробелами. | **Fixed** |
 | F-09 | LOW | Code | SC2016 в `scripts/diagnostics/hardware_audit.sh`: ложное срабатывание — markdown-бэктики внутри одинарных кавычек. | Accepted |
@@ -73,12 +73,12 @@ Portainer, nasa-api и их зависимости), 14 bash-скриптов, 3
 ## 5. Что прошло успешно
 
 - **goss**: 40/40 теста инфраструктуры прошли — порты 8080, 2283, 8090, 8099, 19999, 3001, 9000 слушают.
-- **hadolint**: 3/3 Dockerfile чистые (backup-api, llm-gateway, nasa-api).
+- **hadolint**: 3/3 Dockerfile чистые (backup-api, llm-gateway, nas_jetson_nano-api).
 - **bandit**: 0 проблем безопасности в 738 строках Python-кода.
 - **shellcheck**: 11/14 скриптов чистые.
 - **iptables**: правила Samba сохранены в `/etc/iptables/rules.v4`, переживают перезагрузку.
 - **Uptime Kuma**: восстановился менее чем за 10 сек после `docker restart`.
-- **Туннель**: `nasa-tunnel.service` — `restart=always`, статус active.
+- **Туннель**: `nas_jetson_nano-tunnel.service` — `restart=always`, статус active.
 - **RAM**: 2117 МБ свободно + 1980 МБ swap (zram).
 - **Диск**: 38 ГБ свободно на `/` (35% занято).
 - **Storage incident 2026-06-23**: `/mnt/storage` снова смонтирован, read-only
@@ -86,7 +86,7 @@ Portainer, nasa-api и их зависимости), 14 bash-скриптов, 3
   не создаёт дампы на microSD вместо внешнего диска.
 
 > **Единственный провальный goss-тест:** `http://localhost:8099/health` вернул
-> не-200 статус — возможна проблема с эндпойнтом nasa-api или временный глюк во время
+> не-200 статус — возможна проблема с эндпойнтом nas_jetson_nano-api или временный глюк во время
 > аудита. Требует отдельной проверки.
 
 ---
@@ -161,7 +161,7 @@ services:
       retries: 3
       start_period: 30s
 
-  nasa-api:
+  nas_jetson_nano-api:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8099/health"]
       interval: 30s
@@ -178,7 +178,7 @@ services:
 
 ### F-06 — Повтор при сбое Telegram-сервиса
 
-В `/etc/systemd/system/nasa-daily-report-telegram.service` изменить:
+В `/etc/systemd/system/nas_jetson_nano-daily-report-telegram.service` изменить:
 
 ```ini
 [Service]
@@ -262,10 +262,10 @@ goss -g tests/goss/goss.yaml validate --format json
 |---|---|
 | Порты | 8080, 2283, 8090, 8099, 19999, 3001, 9000 слушают |
 | HTTP | `/status.php` Nextcloud, `/health` LLM Gateway |
-| Сервисы | `docker`, `autossh`, `nasa-tunnel.service` активны |
+| Сервисы | `docker`, `autossh`, `nas_jetson_nano-tunnel.service` активны |
 | Файлы | `/etc/iptables/rules.v4`, `tests/goss/goss.yaml` существуют |
 
-> Добавить запуск goss в cron или в `nasa-daily-report-telegram.service`
+> Добавить запуск goss в cron или в `nas_jetson_nano-daily-report-telegram.service`
 > для автоматической регрессионной проверки инфраструктуры.
 
 ---
@@ -277,10 +277,10 @@ goss -g tests/goss/goss.yaml validate --format json
 
 ## 1. Motivation
 
-The goal of this audit is to verify that NASA Home Cloud can survive typical
+The goal of this audit is to verify that NAS_Jetson_Nano can survive typical
 failures: service restarts, container crashes, VPN tunnel drops, and RAM
 exhaustion. The audit covered 11 containers (Nextcloud, Immich, LLM Gateway,
-Netdata, Uptime Kuma, Portainer, nasa-api and their dependencies), 14 bash
+Netdata, Uptime Kuma, Portainer, nas_jetson_nano-api and their dependencies), 14 bash
 scripts, 3 Dockerfiles, and 738 lines of Python code. Additionally: systemd
 units, iptables persistence, and port availability.
 
@@ -313,9 +313,9 @@ HTTP 200 again. Database backups fail closed if storage preflight fails again.
 | F-01 | **CRITICAL** | Docker | Docker 20.10.7 (2021) — outdated, known CVEs. Current version: 27.x | Open |
 | F-02 | **CRITICAL** | Resilience | `docker kill` on Nextcloud → container stays `Exited` for 60s+ despite `restart: unless-stopped`. Docker 20.10 bug: SIGKILL is treated as an explicit stop. A natural process crash WOULD trigger restart. | Open |
 | F-03 | HIGH | OOM | No `mem_limit` on any of 11 containers. Immich-server: 748 MB. Total container RAM: 1453 MB. No OOM barrier — a runaway container can kill all others. | Open |
-| F-04 | HIGH | Observability | No Docker healthcheck on 8 of 11 containers (missing: Nextcloud, Nextcloud-DB, Nextcloud-Redis, LLM Gateway, Portainer, nasa-api). Docker cannot detect "running but not responding" state. | Open |
-| F-05 | HIGH | Security | SC2029: `nasa-send-report-telegram.sh` expands `TELEGRAM_BOT_TOKEN` client-side in the SSH command string → token appears in `ps aux` on VPS during execution. | **Fixed** |
-| F-06 | MEDIUM | Reliability | `nasa-daily-report-telegram.service` has `Restart=no` — if the send fails (network timeout), systemd will not retry. | Open |
+| F-04 | HIGH | Observability | No Docker healthcheck on 8 of 11 containers (missing: Nextcloud, Nextcloud-DB, Nextcloud-Redis, LLM Gateway, Portainer, nas_jetson_nano-api). Docker cannot detect "running but not responding" state. | Open |
+| F-05 | HIGH | Security | SC2029: `nas_jetson_nano-send-report-telegram.sh` expands `TELEGRAM_BOT_TOKEN` client-side in the SSH command string → token appears in `ps aux` on VPS during execution. | **Fixed** |
+| F-06 | MEDIUM | Reliability | `nas_jetson_nano-daily-report-telegram.service` has `Restart=no` — if the send fails (network timeout), systemd will not retry. | Open |
 | F-07 | MEDIUM | Performance | Netdata is using 19.5% CPU continuously — unusually high. Needs tuning. | Open |
 | F-08 | MEDIUM | Code | SC2046 in `scripts/fetch_external_docs.sh:182`: unquoted `$(find ...)` → word splitting on filenames with spaces. | **Fixed** |
 | F-09 | LOW | Code | SC2016 in `scripts/diagnostics/hardware_audit.sh`: harmless false positive (markdown backticks inside single-quoted strings). | Accepted |
@@ -343,12 +343,12 @@ HTTP 200 again. Database backups fail closed if storage preflight fails again.
 ## 5. Passed Checks
 
 - **goss**: 40/40 infrastructure tests passed — ports 8080, 2283, 8090, 8099, 19999, 3001, 9000 are listening.
-- **hadolint**: 3/3 Dockerfiles clean (backup-api, llm-gateway, nasa-api).
+- **hadolint**: 3/3 Dockerfiles clean (backup-api, llm-gateway, nas_jetson_nano-api).
 - **bandit**: 0 security issues in 738 lines of Python code.
 - **shellcheck**: 11/14 scripts clean.
 - **iptables**: Samba rules saved in `/etc/iptables/rules.v4`, survive reboots.
 - **Uptime Kuma**: recovered in <10s after `docker restart`.
-- **Tunnel**: `nasa-tunnel.service` — `restart=always`, status active.
+- **Tunnel**: `nas_jetson_nano-tunnel.service` — `restart=always`, status active.
 - **RAM**: 2117 MB available + 1980 MB swap (zram).
 - **Disk**: 38 GB free on `/` (35% used).
 - **Storage incident 2026-06-23**: `/mnt/storage` is mounted again; read-only
@@ -356,7 +356,7 @@ HTTP 200 again. Database backups fail closed if storage preflight fails again.
   instead of writing dumps to the microSD fallback directory.
 
 > **The one failing goss test:** `http://localhost:8099/health` returned a non-200
-> status — possible nasa-api endpoint issue or transient glitch during audit.
+> status — possible nas_jetson_nano-api endpoint issue or transient glitch during audit.
 > Requires a follow-up check.
 
 ---
@@ -430,7 +430,7 @@ services:
       retries: 3
       start_period: 30s
 
-  nasa-api:
+  nas_jetson_nano-api:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8099/health"]
       interval: 30s
@@ -447,7 +447,7 @@ than being expanded into the SSH command string. The token no longer appears in
 
 ### F-06 — Retry on Telegram service failure
 
-In `/etc/systemd/system/nasa-daily-report-telegram.service`, change to:
+In `/etc/systemd/system/nas_jetson_nano-daily-report-telegram.service`, change to:
 
 ```ini
 [Service]
@@ -526,8 +526,8 @@ Tests covered (40/40 passed):
 |---|---|
 | Ports | 8080, 2283, 8090, 8099, 19999, 3001, 9000 are listening |
 | HTTP | Nextcloud `/status.php`, LLM Gateway `/health` |
-| Services | `docker`, `autossh`, `nasa-tunnel.service` are active |
+| Services | `docker`, `autossh`, `nas_jetson_nano-tunnel.service` are active |
 | Files | `/etc/iptables/rules.v4`, `tests/goss/goss.yaml` exist |
 
-> Consider adding goss to cron or to `nasa-daily-report-telegram.service`
+> Consider adding goss to cron or to `nas_jetson_nano-daily-report-telegram.service`
 > for automated infrastructure regression testing.

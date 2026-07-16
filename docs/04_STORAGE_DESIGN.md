@@ -76,14 +76,14 @@ find /mnt/hdd-check -mindepth 1 -maxdepth 1 | wc -l
 ### Ситуация
 
 На HDD есть нужные файлы (фото, документы, архивы), объём большой — переносить некуда.
-Форматировать нельзя. При этом HDD нужен как основное хранилище NASA Home Cloud.
+Форматировать нельзя. При этом HDD нужен как основное хранилище NAS_Jetson_Nano.
 
 ### Решение: два раздела на одном диске
 
 ```
 HDD 2 TB (пример)
 ├── /dev/sda1  NTFS  1.4 TB  — старые файлы (данные сохраняются!)
-└── /dev/sda2  ext4   600 GB — NASA Home Cloud данные (Docker, БД, бэкапы)
+└── /dev/sda2  ext4   600 GB — NAS_Jetson_Nano данные (Docker, БД, бэкапы)
 ```
 
 NTFS-раздел монтируется отдельно → доступен через **Samba** со всей домашней сети.
@@ -119,7 +119,7 @@ sudo fdisk /dev/sda
 # fdisk сам возьмёт нераспределённое пространство
 
 # Отформатировать новый раздел (обычно /dev/sda2)
-sudo mkfs.ext4 -L nasa-storage /dev/sda2
+sudo mkfs.ext4 -L nas_jetson_nano-storage /dev/sda2
 
 # Получить UUID
 sudo blkid /dev/sda2
@@ -132,7 +132,7 @@ sudo blkid /dev/sda2
 sudo apt install ntfs-3g
 
 # Создать точки монтирования
-sudo mkdir -p /mnt/storage     # ext4 — для Docker/NASA
+sudo mkdir -p /mnt/storage     # ext4 — для Docker/NAS_Jetson_Nano
 sudo mkdir -p /mnt/hdd-ntfs   # NTFS — старые файлы
 
 # Получить UUID обоих разделов
@@ -142,7 +142,7 @@ sudo blkid /dev/sda2  # ext4
 
 Добавить в `/etc/fstab`:
 ```text
-# NASA storage (ext4) — Docker volumes, databases, backups
+# NAS_Jetson_Nano storage (ext4) — Docker volumes, databases, backups
 UUID=<ext4-UUID>  /mnt/storage   ext4  defaults,noatime,nofail  0 2
 
 # Old data (NTFS) — existing files, accessible via Samba
@@ -188,7 +188,7 @@ share:
 
 После изменения конфига перезапустить Samba:
 ```bash
-ssh admin@192.168.0.50 "docker compose -f ~/nasa/docker/compose/docker-compose.samba.yml --env-file ~/nasa/config/.env restart"
+ssh admin@192.168.0.50 "docker compose -f ~/nas_jetson_nano/docker/compose/docker-compose.samba.yml --env-file ~/nas_jetson_nano/config/.env restart"
 ```
 
 ### Итог: что где хранится

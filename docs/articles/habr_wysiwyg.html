@@ -77,7 +77,7 @@
     Nextcloud    :8080   — файлы, фото, контакты
     Immich       :2283   — фотоархив
     LLM Gateway  :8090   — AI-ассистент
-    NASA API     :8099   — управление и статистика
+    NAS_Jetson_Nano API     :8099   — управление и статистика
     Samba        :445    — только LAN
     Netdata      :19999  — метрики
     Uptime Kuma  :3001   — мониторинг
@@ -108,7 +108,7 @@
     <tr><td>immich_redis</td><td>redis:7-alpine</td><td>—</td><td>64m</td></tr>
     <tr><td>immich_microservices</td><td>immich-server:release</td><td>—</td><td>512m</td></tr>
     <tr><td>llm_gateway</td><td>custom FastAPI</td><td>8090</td><td>256m</td></tr>
-    <tr><td>nasa_api</td><td>custom FastAPI</td><td>8099</td><td>128m</td></tr>
+    <tr><td>nas_jetson_nano_api</td><td>custom FastAPI</td><td>8099</td><td>128m</td></tr>
     <tr><td>samba</td><td>crazymax/samba</td><td>445</td><td>—</td></tr>
     <tr><td>netdata</td><td>netdata:latest</td><td>19999</td><td>256m</td></tr>
     <tr><td>uptime_kuma</td><td>louislam/uptime-kuma</td><td>3001</td><td>128m</td></tr>
@@ -200,7 +200,7 @@ curl -s http://localhost:2283/api/server/ping</code></pre>
 
 <p>Хотел понимать, что происходит с системой ночью, когда я сплю. В итоге каждое утро в 09:00 приходит Telegram-сообщение:</p>
 
-<pre><code>NASA HOME CLOUD — Daily Report
+<pre><code>NAS_JETSON_NANO — Daily Report
 
 SYSTEM
 Uptime: 18h | RAM: 2.3/3.9G | Disk: 7G/229G (3%)
@@ -236,9 +236,9 @@ goss validate --gossfile tests/goss/goss.yaml</code></pre>
 <p>Выяснилось, что Immich на Android требует HTTPS для автобэкапа, а DAVx⁵ отказывается синхронизировать контакты по HTTP. Без доменного имени сделал self-signed сертификат и прописал IP в SAN:</p>
 
 <pre><code>openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
-  -keyout /opt/nasa/nginx/ssl/nasa.key \
-  -out /opt/nasa/nginx/ssl/nasa.crt \
-  -subj "/CN=nasa-home-cloud" \
+  -keyout /opt/nas_jetson_nano/nginx/ssl/nas_jetson_nano.key \
+  -out /opt/nas_jetson_nano/nginx/ssl/nas_jetson_nano.crt \
+  -subj "/CN=nas-jetson-nano" \
   -addext "subjectAltName=IP:ваш_VPS_IP, IP:192.168.x.x"</code></pre>
 
 <p>nginx на VPS добавил HTTPS-блоки на alt-портах. Приложение один раз спрашивает «доверять сертификату?» — после этого работает как обычно.</p>
@@ -292,7 +292,7 @@ Swagger UI обязателен.</code></pre>
 
 <p>Зачем это, если есть Portainer? Portainer — для ручного управления через браузер. API нужен для автоматизации: скрипты, cron, внешние интеграции. Например, перезапуск конкретного контейнера из Telegram-бота одной командой.</p>
 
-<div class="img-placeholder">📷 ИЗОБРАЖЕНИЕ 03 — загрузить файл: <strong>03_nasa_api_swagger_redacted.png</strong><br>Подпись: NASA API v0.6.0 — Swagger UI со всеми группами эндпоинтов</div>
+<div class="img-placeholder">📷 ИЗОБРАЖЕНИЕ 03 — загрузить файл: <strong>03_nas_jetson_nano_api_swagger_redacted.png</strong><br>Подпись: NAS_Jetson_Nano API v0.6.0 — Swagger UI со всеми группами эндпоинтов</div>
 
 <h2>Безопасность: что закрыто</h2>
 
@@ -301,7 +301,7 @@ Swagger UI обязателен.</code></pre>
   <li><strong>Amnezia VPN</strong> на VPS изолирован — его контейнеры не затронуты проектом.</li>
   <li><strong>Нет открытых портов на Jetson</strong> — только reverse tunnel, инициированный изнутри LAN.</li>
   <li><strong>Samba только в LAN</strong> — не проброшен через туннель.</li>
-  <li><strong>JWT авторизация</strong> в NASA API — каждый запрос требует токен.</li>
+  <li><strong>JWT авторизация</strong> в NAS_Jetson_Nano API — каждый запрос требует токен.</li>
   <li><strong>secrets-check перед каждым push</strong> — <code>check_no_secrets.sh</code> в pre-commit.</li>
 </ul>
 
@@ -365,7 +365,7 @@ Swagger UI обязателен.</code></pre>
 
 <p>Промпты агентов, ADR, Docker Compose, скрипты, памятки пользователей — всё открыто:</p>
 
-<p><strong><a href="https://github.com/AlexeyBorovskoy/Nasa_home">github.com/AlexeyBorovskoy/Nasa_home</a></strong></p>
+<p><strong><a href="https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano">github.com/AlexeyBorovskoy/NAS_Jetson_Nano</a></strong></p>
 
 </body>
 </html>

@@ -1,7 +1,7 @@
 # Old Hardware Must Live: Jetson Nano Home Cloud
 
 **Platform:** NVIDIA Jetson Nano 4GB (ARM64)  
-**Repository:** [github.com/AlexeyBorovskoy/Nasa_home](https://github.com/AlexeyBorovskoy/Nasa_home)
+**Repository:** [github.com/AlexeyBorovskoy/NAS_Jetson_Nano](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano)
 
 ---
 
@@ -55,7 +55,7 @@ The USB enclosure story is the most interesting part — see **Reliability story
    :8443 Nextcloud
    :2443 Immich
    :9443 LLM
-   :8099 NASA API
+   :8099 NAS_Jetson_Nano API
         |
         | reverse SSH tunnel (autossh, initiated by Jetson)
         v
@@ -63,7 +63,7 @@ The USB enclosure story is the most interesting part — see **Reliability story
    Nextcloud    :8080
    Immich       :2283
    LLM Gateway  :8090
-   NASA API     :8099
+   NAS_Jetson_Nano API     :8099
    Samba        :445 (LAN only)
    Netdata      :19999
    Uptime Kuma  :3001
@@ -177,7 +177,7 @@ The implementation used Claude Code — an AI agent with filesystem and SSH acce
 **Telegram daily report** at 09:00:
 
 ```
-NASA HOME CLOUD — Daily Report
+NAS_JETSON_NANO — Daily Report
 SYSTEM: Uptime 18h | RAM 2.3/3.9G | Disk 7G/229G | Temp 41°C
 CONTAINERS: ✅ all 13 running (restarts: 0)
 LOCAL HTTP: ✅ Nextcloud 302 ✅ Immich 200
@@ -188,7 +188,7 @@ EXTERNAL: ✅ Nextcloud VPS ✅ Immich VPS
 
 ---
 
-## NASA API
+## NAS_Jetson_Nano API
 
 Custom REST API (FastAPI) over the full stack — 20 endpoints, JWT auth via Nextcloud:
 
@@ -217,7 +217,7 @@ Swagger UI: `VPS_IP:8099/docs`
 
 Full documentation, Docker Compose files, systemd units, scripts, agent prompts, ADRs, family guides:
 
-**[github.com/AlexeyBorovskoy/Nasa_home](https://github.com/AlexeyBorovskoy/Nasa_home)**
+**[github.com/AlexeyBorovskoy/NAS_Jetson_Nano](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano)**
 
 ---
 
@@ -228,7 +228,7 @@ Full documentation, Docker Compose files, systemd units, scripts, agent prompts,
 - [x] HTTPS with self-signed TLS
 - [x] Android clients (Immich, Nextcloud, DAVx⁵)
 - [x] USB SSD incidents and recovery automation
-- [x] NASA API v0.6.0 (Talk, Photos, Users, Actions)
+- [x] NAS_Jetson_Nano API v0.6.0 (Talk, Photos, Users, Actions)
 - [x] Monitoring (Beszel, Uptime Kuma, Telegram)
 - [ ] Off-site backup (restic + 2 TB HDD)
 - [ ] Domain + Caddy + Let's Encrypt

@@ -1,8 +1,8 @@
 ﻿# 17. Мониторинг и наблюдаемость / Monitoring & Observability
 
-> 🇷🇺 Документ описывает выбор инструментов мониторинга для NASA Home Cloud на Jetson Nano (ARM64, 4 GB RAM) и стратегию их поэтапного развёртывания. Актуализировано: 2026-06-27.
+> 🇷🇺 Документ описывает выбор инструментов мониторинга для NAS_Jetson_Nano на Jetson Nano (ARM64, 4 GB RAM) и стратегию их поэтапного развёртывания. Актуализировано: 2026-06-27.
 >
-> 🇬🇧 This document describes monitoring tool selection for NASA Home Cloud on Jetson Nano (ARM64, 4 GB RAM) and phased deployment strategy. Updated: 2026-06-27.
+> 🇬🇧 This document describes monitoring tool selection for NAS_Jetson_Nano on Jetson Nano (ARM64, 4 GB RAM) and phased deployment strategy. Updated: 2026-06-27.
 >
 > Compose-файл / Compose file: `docker/compose/docker-compose.monitoring.yml`.
 > Промпт агента / Agent prompt: `docs/prompts/CODEX_MONITORING_PROMPT.md`.
@@ -201,7 +201,7 @@ email, Slack, Telegram, PagerDuty и другие. Конфиги алертов
 - Уведомления: Telegram, Email (SMTP), Slack, Discord, Webhook и 90+ интеграций
 - История uptime, SLA-статистика, статус-страница
 
-**Для NASA Home Cloud:** Мониторинг Nextcloud (:8080), Immich (:2283),
+**Для NAS_Jetson_Nano:** Мониторинг Nextcloud (:8080), Immich (:2283),
 LLM Gateway (:8090) с уведомлением в Telegram при недоступности.
 
 **Вывод: РЕКОМЕНДОВАН для Stage 1. Telegram-уведомление за 5 минут настройки.**
@@ -313,7 +313,7 @@ Zabbix-агент на Jetson (~10 MB RAM). В этом случае Jetson не
 
 ---
 
-## 4. Метрики для мониторинга в контексте NASA Home Cloud
+## 4. Метрики для мониторинга в контексте NAS_Jetson_Nano
 
 ### Критические метрики
 
@@ -550,7 +550,7 @@ alternative to UptimeRobot. Monitors HTTP endpoints, TCP ports, DNS.
 - Port: 3001 (HTTP, built-in authentication)
 - Notifications: Telegram, Email (SMTP), Slack, Discord, Webhook, 90+ integrations
 
-**For NASA Home Cloud:** monitors Nextcloud (:8080), Immich (:2283), LLM Gateway
+**For NAS_Jetson_Nano:** monitors Nextcloud (:8080), Immich (:2283), LLM Gateway
 (:8090/health) with Telegram notification on failure.
 
 **Conclusion: RECOMMENDED for Stage 1. Telegram alert in 5 minutes of setup.**
@@ -657,7 +657,7 @@ the LAN, with only the Zabbix agent (~10 MB RAM) on Jetson.
 
 ---
 
-## 4. Metrics to Monitor in the NASA Home Cloud Context
+## 4. Metrics to Monitor in the NAS_Jetson_Nano Context
 
 ### Critical Metrics
 

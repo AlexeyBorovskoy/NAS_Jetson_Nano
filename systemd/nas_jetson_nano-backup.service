@@ -1,0 +1,19 @@
+[Unit]
+Description=NAS_Jetson_Nano — database backup (pg_dump)
+Documentation=https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
+After=local-fs.target network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+RequiresMountsFor=/mnt/storage
+ConditionPathIsMountPoint=/mnt/storage
+
+[Service]
+Type=oneshot
+# Adjust NAS_JETSON_NANO_PROJECT_DIR if repo is not at /home/admin/nas_jetson_nano
+Environment=NAS_JETSON_NANO_PROJECT_DIR=/home/admin/nas_jetson_nano
+ExecStartPre=/bin/mountpoint -q /mnt/storage
+ExecStart=/bin/bash "${NAS_JETSON_NANO_PROJECT_DIR}/scripts/backup/backup_databases.sh"
+User=admin
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nas_jetson_nano-backup

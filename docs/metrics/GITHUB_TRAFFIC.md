@@ -1,14 +1,14 @@
-# GitHub Traffic Metrics — NASA Home Cloud
+# GitHub Traffic Metrics — NAS_Jetson_Nano
 
 Ежедневный мониторинг посещаемости и вовлечённости репозитория.
 Данные берём через `gh api` (14-дневное окно GitHub).
 
 **Команды для обновления:**
 ```bash
-gh api repos/AlexeyBorovskoy/Nasa_home/traffic/views --jq '{views: .count, uniques: .uniques}'
-gh api repos/AlexeyBorovskoy/Nasa_home/traffic/clones --jq '{clones: .count, uniques: .uniques}'
-gh api repos/AlexeyBorovskoy/Nasa_home/traffic/popular/referrers
-gh api repos/AlexeyBorovskoy/Nasa_home --jq '{stars: .stargazers_count, forks: .forks_count, watchers: .watchers_count}'
+gh api repos/AlexeyBorovskoy/NAS_Jetson_Nano/traffic/views --jq '{views: .count, uniques: .uniques}'
+gh api repos/AlexeyBorovskoy/NAS_Jetson_Nano/traffic/clones --jq '{clones: .count, uniques: .uniques}'
+gh api repos/AlexeyBorovskoy/NAS_Jetson_Nano/traffic/popular/referrers
+gh api repos/AlexeyBorovskoy/NAS_Jetson_Nano --jq '{stars: .stargazers_count, forks: .forks_count, watchers: .watchers_count}'
 ```
 
 ---

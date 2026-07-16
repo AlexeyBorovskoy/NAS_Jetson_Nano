@@ -1,6 +1,6 @@
 Ты работаешь как senior open-source maintainer, repository architect, DevOps reviewer и technical writer.
 
-Проект: `Nasa_home` / `NASA Home Cloud`
+Проект: `NAS_Jetson_Nano` / `NAS_Jetson_Nano`
 
 Идея проекта:
 
@@ -107,7 +107,7 @@ tree -a -L 4
 Целевая структура верхнего уровня:
 
 ```text
-Nasa_home/
+NAS_Jetson_Nano/
 ├── README.md
 ├── LICENSE
 ├── CHANGELOG.md
@@ -297,7 +297,7 @@ config/
 ├── nginx/
 │   └── site.conf.example
 ├── systemd/
-│   └── nasa-home-cloud.service.example
+│   └── nas-jetson-nano.service.example
 ├── smartd/
 │   └── smartd.conf.example
 └── README.md

@@ -10,9 +10,9 @@
 └── 192.168.0.x       ноутбуки / laptops
 ```
 
-> 🇷🇺 Gateway `192.168.0.1` и модель роутера подтверждены инвентаризацией. Jetson использует профиль `nasa-lan` со статикой `192.168.0.50/24`; профиль не удалять.
+> 🇷🇺 Gateway `192.168.0.1` и модель роутера подтверждены инвентаризацией. Jetson использует профиль `nas_jetson_nano-lan` со статикой `192.168.0.50/24`; профиль не удалять.
 >
-> 🇬🇧 Gateway `192.168.0.1` and router model confirmed by current inventory. Jetson uses the `nasa-lan` profile with static `192.168.0.50/24`; do not remove this profile.
+> 🇬🇧 Gateway `192.168.0.1` and router model confirmed by current inventory. Jetson uses the `nas_jetson_nano-lan` profile with static `192.168.0.50/24`; do not remove this profile.
 
 ## 1.1. Stage 0 — прямое подключение / Direct link
 
@@ -117,12 +117,12 @@ autossh -R 18080:localhost:8080                  sshd: 127.0.0.1:18080
                                                   :8090 → 127.0.0.1:18090
 ```
 
-🇷🇺 Статус (2026-06-27): `nasa-tunnel.service` — active (running), enabled.
-🇬🇧 Status (2026-06-27): `nasa-tunnel.service` — active (running), enabled.
+🇷🇺 Статус (2026-06-27): `nas_jetson_nano-tunnel.service` — active (running), enabled.
+🇬🇧 Status (2026-06-27): `nas_jetson_nano-tunnel.service` — active (running), enabled.
 
 🇷🇺 Что нельзя менять / What must not be changed:
 - **Amnezia-контейнеры на VPS** — не трогать (семейный VPN ~25 клиентов) / do not touch (family VPN ~25 clients)
-- **`nasa-lan` профиль** на Jetson (eth0, 192.168.0.50/24) — не удалять / do not remove
+- **`nas_jetson_nano-lan` профиль** на Jetson (eth0, 192.168.0.50/24) — не удалять / do not remove
 
 ## 3.1. WireGuard контур (исторический референс) / WireGuard circuit (historical reference)
 
@@ -131,8 +131,8 @@ Yandex VM                 WireGuard                 EU VPS
 wg-eu 10.210.0.1/30  <-------------------->  wg-yandex 10.210.0.2/30
 ```
 
-🇷🇺 Возможно использование для NASA позже как controlled admin path. Не открывать без отдельного risk-документа.
-🇬🇧 Could be used for NASA later as a controlled admin path. Do not use without a separate risk document.
+🇷🇺 Возможно использование для NAS_Jetson_Nano позже как controlled admin path. Не открывать без отдельного risk-документа.
+🇬🇧 Could be used for NAS_Jetson_Nano later as a controlled admin path. Do not use without a separate risk document.
 
 ## 3.2. EU VPS — VPN-endpoint
 
@@ -148,7 +148,7 @@ wg-eu 10.210.0.1/30  <-------------------->  wg-yandex 10.210.0.2/30
 > 🇷🇺 Секреты вне репозитория. SSH-ключ и WireGuard ключи в git не хранятся.
 > 🇬🇧 Secrets outside repository. SSH key and WireGuard keys are not in git.
 
-## 3.3. wg-nasa (тест 2026-05-31, откачено / rolled back)
+## 3.3. wg-nas_jetson_nano (тест 2026-05-31, откачено / rolled back)
 
 > ⚠️ 🇷🇺 Статус: откачено 2026-06-13 из-за нестабильности через CGNAT. Раздел оставлен для истории.
 > ⚠️ 🇬🇧 Status: rolled back 2026-06-13 due to CGNAT instability. Section kept for reference.

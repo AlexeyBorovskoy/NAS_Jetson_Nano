@@ -1,11 +1,11 @@
-# План: NASA API для мобильных приложений / NASA API Plan for Mobile Apps
+# План: NAS_Jetson_Nano API для мобильных приложений / NAS_Jetson_Nano API Plan for Mobile Apps
 
-> 🇷🇺 План расширения nasa-api до единого фасада для семейных приложений.
-> 🇬🇧 Plan to extend nasa-api into a unified facade for family apps.
+> 🇷🇺 План расширения nas_jetson_nano-api до единого фасада для семейных приложений.
+> 🇬🇧 Plan to extend nas_jetson_nano-api into a unified facade for family apps.
 
 ## Текущее состояние / Current State
 
-`nasa-api` уже работает на `192.168.0.50:8099` с Swagger UI (`/docs`).
+`nas_jetson_nano-api` уже работает на `192.168.0.50:8099` с Swagger UI (`/docs`).
 Написан на FastAPI (Python). Покрывает: статус системы, healthcheck, диагностика.
 
 ## Концепция / Concept
@@ -15,7 +15,7 @@
       │
       ▼
 ┌─────────────────────────────────┐
-│      nasa-api  :8099            │  ← единая точка входа
+│      nas_jetson_nano-api  :8099            │  ← единая точка входа
 │      FastAPI + Swagger          │  ← авторизация: один токен
 └──────┬──────┬──────┬────────────┘
        │      │      │
@@ -24,7 +24,7 @@
    :8080    :2283   (docker, storage)
 ```
 
-Мобильное приложение общается только с nasa-api — не с Nextcloud/Immich напрямую.
+Мобильное приложение общается только с nas_jetson_nano-api — не с Nextcloud/Immich напрямую.
 Один логин, один токен, один URL.
 
 ## Модули API / API Modules
@@ -80,7 +80,7 @@ FastAPI генерирует Swagger автоматически:
 **Рекомендуется: Flutter** (один код → Android + iOS)
 
 ```
-flutter create nasa_family_app
+flutter create nas_jetson_nano_family_app
 # Генерация клиента из OpenAPI:
 openapi-generator generate -i http://192.168.0.50:8099/openapi.json \
   -g dart -o lib/api_client
@@ -109,12 +109,12 @@ openapi-generator generate -i http://192.168.0.50:8099/openapi.json \
 - JWT токены с TTL 24ч, refresh токен 30 дней
 - Все эндпоинты через HTTPS (уже есть :9443 на VPS)
 - Rate limiting (уже есть в nginx)
-- Логи запросов в /var/log/nasa-monitor/api-access.log
+- Логи запросов в /var/log/nas_jetson_nano-monitor/api-access.log
 - Пароли никогда не проксируются — только токены
 
 ## Следующий шаг
 
-Реализовать Auth модуль в `services/nasa-api/app/`:
+Реализовать Auth модуль в `services/nas_jetson_nano-api/app/`:
 - Добавить `/api/auth/login` с проверкой через Nextcloud LDAP/Basic Auth
 - Возвращать JWT
 - Добавить middleware `verify_token` на все защищённые эндпоинты

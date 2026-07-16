@@ -1,4 +1,4 @@
-# Gitleaks configuration for NASA Home Cloud repo
+# Gitleaks configuration for NAS_Jetson_Nano repo
 # Extends built-in ruleset; adds allowlist for placeholder patterns.
 
 [extend]

@@ -63,7 +63,7 @@ HTTPS without a domain: self-signed TLS on alt-ports (:8443/:2443) with IP in SA
 
 Full Docker Compose files, systemd units, scripts, architecture decisions, and even the agent prompts used during development:
 
-👉 https://github.com/AlexeyBorovskoy/Nasa_home
+👉 https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
 
 Happy to answer questions about the Jetson Nano constraints, the USB quirk, or the reverse tunnel setup.
 

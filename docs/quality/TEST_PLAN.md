@@ -1,4 +1,4 @@
-﻿# План тестирования / Test Plan: NASA Home Cloud
+﻿# План тестирования / Test Plan: NAS_Jetson_Nano
 
 **Version:** 1.0  
 **Date:** 2026-06-27  
@@ -71,7 +71,7 @@
 - Immich: /api/server/ping -> HTTP 200
 - LLM Gateway: /health -> HTTP 200
 - Beszel Agent: systemctl is-active
-- nasa-usb-watchdog.timer: active
+- nas_jetson_nano-usb-watchdog.timer: active
 
 ### T4: Storage
 - mountpoint -q /mnt/storage
@@ -137,7 +137,7 @@
 | Static (CI) | Every push/PR | GitHub Actions |
 | Network + Service | After each deploy | Admin (manual or script) |
 | Storage + SMART | Weekly | systemd timer or manual |
-| Backup/Restore | Weekly | nasa-backup.timer |
+| Backup/Restore | Weekly | nas_jetson_nano-backup.timer |
 | Android | After app updates | Admin (manual) |
 | Load test | After major changes | Admin (manual, k6) |
 

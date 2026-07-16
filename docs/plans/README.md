@@ -7,7 +7,7 @@
 Документы перенесены из:
 
 ```text
-/home/alexey/shared_vm/plans_nasa
+/home/alexey/shared_vm/plans_nas_jetson_nano
 ```
 
 Текущий путь:

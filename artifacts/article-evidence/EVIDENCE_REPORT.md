@@ -1,4 +1,4 @@
-# EVIDENCE_REPORT — NASA Home Cloud Article
+# EVIDENCE_REPORT — NAS_Jetson_Nano Article
 > Generated: 2026-06-29  
 > Purpose: Pre-publication evidence collection for Habr article  
 > SSH collection status: **SSH UNAVAILABLE** — Windows host cannot reach Jetson LAN (192.168.0.50) directly. Manual collection required via `ssh root@VPS_IP` tunnel.
@@ -41,7 +41,7 @@ Known container list (from article + docker-compose files):
 | immich_redis | up |
 | immich_microservices | up |
 | llm_gateway | up |
-| nasa_api | up |
+| nas_jetson_nano_api | up |
 | samba | up |
 | netdata | up |
 | uptime_kuma | up |
@@ -58,7 +58,7 @@ Expected (from CLAUDE.md and article):
 |---|---|---|
 | Nextcloud | http://JETSON_LAN_IP:8080/status.php | 200 |
 | Immich | http://JETSON_LAN_IP:2283/api/server/ping | 200 |
-| NASA API | http://JETSON_LAN_IP:8099/healthcheck | 200 |
+| NAS_Jetson_Nano API | http://JETSON_LAN_IP:8099/healthcheck | 200 |
 | Nextcloud (VPS) | http://VPS_IP:8080 | 302 |
 | Immich (VPS) | http://VPS_IP:2283 | 200 |
 
@@ -123,8 +123,8 @@ ssh root@VPS_IP "ssh -p 10022 admin@127.0.0.1 'cat /proc/cmdline && lsblk -o NAM
 |---|---|---|
 | Total items uploaded (Android) | Article (Шаг 5) | 6 697 |
 | Total in Immich queue (Checkpoint) | CLAUDE.md | 6 710 |
-| Immich: photos | NASA API Фото endpoint | 6 484 |
-| Immich: videos | NASA API Фото endpoint | 210 |
+| Immich: photos | NAS_Jetson_Nano API Фото endpoint | 6 484 |
+| Immich: videos | NAS_Jetson_Nano API Фото endpoint | 210 |
 | Immich total (photos+videos) | Computed | 6 694 |
 | Immich: total objects (API) | Article: "6719" (screenshot caption) | 6 719 |
 | Contacts (DAVx5/CardDAV) | Article | 2 151 |
@@ -143,7 +143,7 @@ Notes:
 
 To verify:
 ```bash
-ssh root@VPS_IP "ssh -p 10022 admin@127.0.0.1 'cd ~/nasa && goss validate --gossfile tests/goss/goss.yaml'"
+ssh root@VPS_IP "ssh -p 10022 admin@127.0.0.1 'cd ~/nas_jetson_nano && goss validate --gossfile tests/goss/goss.yaml'"
 ```
 
 ---
@@ -157,7 +157,7 @@ ssh root@VPS_IP "ssh -p 10022 admin@127.0.0.1 'cd ~/nasa && goss validate --goss
 - Immich DB password: REDACTED
 - Redis password: REDACTED
 - DeepSeek API key: REDACTED
-- Immich NASA API key: REDACTED
+- Immich NAS_Jetson_Nano API key: REDACTED
 - Family user passwords: REDACTED
 
 **secrets.json is in .gitignore — confirmed NOT committed.**
@@ -175,7 +175,7 @@ ssh root@VPS_IP "ssh -p 10022 admin@127.0.0.1 'cd ~/nasa && goss validate --goss
 - nextcloud_dashboard.png
 - nextcloud_talk.png
 - immich_web.png
-- nasa_api_swagger.png
+- nas_jetson_nano_api_swagger.png
 
 **Found in `docs/articles/publication/screenshots/` (8 files — Habr upload set):**
 - beszel_systems_overview.png
@@ -184,7 +184,7 @@ ssh root@VPS_IP "ssh -p 10022 admin@127.0.0.1 'cd ~/nasa && goss validate --goss
 - android_davx5_caldav.jpg
 - nextcloud_talk.png
 - nextcloud_dashboard.png
-- nasa_api_swagger.png
+- nas_jetson_nano_api_swagger.png
 - immich_web.png
 
 **Missing from publication set:**

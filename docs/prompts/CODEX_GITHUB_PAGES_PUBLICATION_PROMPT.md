@@ -1,6 +1,6 @@
 # CODEX: GitHub Pages Publication Prompt
 
-**Purpose:** Prepare full publication structure for NASA Home Cloud:
+**Purpose:** Prepare full publication structure for NAS_Jetson_Nano:
 `README.md → docs/articles/ → GitHub Pages`
 
 **Session where this was executed:** 2026-06-29
@@ -31,7 +31,7 @@
 5. **Image filename mapping** (images_ready → article):
    - `01_beszel_systems_overview.png`
    - `02_beszel_jetson_metrics.png`
-   - `03_nasa_api_swagger_redacted.png`
+   - `03_nas_jetson_nano_api_swagger_redacted.png`
    - `04_nextcloud_dashboard_redacted.png`
    - `05_nextcloud_talk_redacted.png`
    - `06_android_clients_card_redacted.png`
@@ -55,7 +55,7 @@
 
 - НЕ коммитить реальные `.env`, пароли, токены, ключи.
 - НЕ трогать Amnezia VPN контейнеры на VPS.
-- НЕ удалять сетевой профиль `nasa-lan`.
+- НЕ удалять сетевой профиль `nas_jetson_nano-lan`.
 - Все публичные статьи: IP-адреса заменены на плейсхолдеры, имена участников не раскрываются.
 
 ---
@@ -77,4 +77,4 @@ cat docs/_config.yml
 ```
 
 Then enable GitHub Pages: Settings → Pages → Deploy from branch → main → /docs → Save.
-URL: https://alexeyborovskoy.github.io/Nasa_home/
+URL: https://alexeyborovskoy.github.io/NAS_Jetson_Nano/

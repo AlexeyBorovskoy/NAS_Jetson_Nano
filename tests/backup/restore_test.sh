@@ -17,14 +17,14 @@ Options:
                        Example: /mnt/storage/backups/database-dumps
   --restore-dir <dir>  Temporary directory for restore test (required)
                        Must NOT be /, /home, or system directories.
-                       Example: /tmp/nasa-restore-test
+                       Example: /tmp/nas_jetson_nano-restore-test
   --output <file>      Save Markdown report (optional)
   --help               Show this help
 
 Examples:
   $SCRIPT_NAME \\
     --source /mnt/storage/backups/database-dumps \\
-    --restore-dir /tmp/nasa-restore-\$(date +%Y%m%d)
+    --restore-dir /tmp/nas_jetson_nano-restore-\$(date +%Y%m%d)
 
 Note: Restore dir is created and cleaned up automatically.
       Only creates files within --restore-dir.
@@ -72,7 +72,7 @@ PASS=0
 FAIL=0
 REPORT_LINES=()
 
-echo "=== NASA Backup Restore Test ($TIMESTAMP) ==="
+echo "=== NAS_Jetson_Nano Backup Restore Test ($TIMESTAMP) ==="
 echo "Source: $SOURCE"
 echo "Restore dir: $RESTORE_DIR"
 echo ""

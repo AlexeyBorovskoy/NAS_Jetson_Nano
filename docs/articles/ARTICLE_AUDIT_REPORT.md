@@ -1,16 +1,16 @@
-# ARTICLE_AUDIT_REPORT — NASA Home Cloud
+# ARTICLE_AUDIT_REPORT — NAS_Jetson_Nano
 
 **Аудитор:** Claude Code (claude-sonnet-4-6)  
 **Дата аудита:** 2026-06-28 (обновлено 2026-06-29)  
 **Версия проекта:** v1.4.0  
-**Репозиторий:** https://github.com/AlexeyBorovskoy/Nasa_home  
+**Репозиторий:** https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
 **Режим:** READ-ONLY audit + report generation  
 
 ---
 
 ## 1. Executive Summary
 
-NASA Home Cloud — это рабочий семейный self-hosted облачный сервер на базе NVIDIA Jetson Nano 4 GB + USB SSD (232 GB, DEXP/Realtek RTL9210B-CG). Проект заменяет Google Photos (Immich), Google Drive + Яндекс.Диск (Nextcloud), облачный NAS (Samba). Реализован совместно с Claude Code — AI-агент генерировал код, systemd-юниты, Docker Compose, документацию и диагностические скрипты; владелец принимал решения и проверял результат.
+NAS_Jetson_Nano — это рабочий семейный self-hosted облачный сервер на базе NVIDIA Jetson Nano 4 GB + USB SSD (232 GB, DEXP/Realtek RTL9210B-CG). Проект заменяет Google Photos (Immich), Google Drive + Яндекс.Диск (Nextcloud), облачный NAS (Samba). Реализован совместно с Claude Code — AI-агент генерировал код, systemd-юниты, Docker Compose, документацию и диагностические скрипты; владелец принимал решения и проверял результат.
 
 **Состояние на момент аудита:** Stage 1 полностью работает. 13 Docker-контейнеров up/healthy. Android-клиенты подключены. Система пережила 3 инцидента с USB SSD и выработала механизм авто-восстановления через udev hotplug + systemd. 
 
@@ -36,7 +36,7 @@ NASA Home Cloud — это рабочий семейный self-hosted обла�
 | Контакты Nextcloud | 2 151 (синхронизируются через DAVx⁵) |
 | Android-статус | Immich ✅ Nextcloud ✅ DAVx⁵ ✅ **Talk ✅** |
 | Семейный чат | Nextcloud Talk «Семья» (token: 37pcobmf) · 5 участников |
-| NASA API | **v0.6.0** · 20 endpoints · Talk + Users + Photos + Actions |
+| NAS_Jetson_Nano API | **v0.6.0** · 20 endpoints · Talk + Users + Photos + Actions |
 | VPS | 193.8.215.130 (Vienna) · nginx reverse proxy · HTTPS self-signed 10y |
 | Мониторинг | Beszel Hub VPS:8091 + Telegram daily report 09:00 |
 | CI | 4 GitHub Actions workflows активны |
@@ -70,18 +70,18 @@ Internet
     +-- Nextcloud (8080) · PostgreSQL 16 · Redis 7
     +-- Immich (2283) · pgvecto-rs · Redis 7 · IMMICH_DISABLE_MACHINE_LEARNING=true
     +-- LLM Gateway / FastAPI (8090) · DeepSeek API · PII redaction
-    +-- nasa-api / FastAPI (8099) · Swagger UI
+    +-- nas_jetson_nano-api / FastAPI (8099) · Swagger UI
     +-- Samba NAS (445) · LAN only via iptables
     +-- Netdata (19999) · Uptime Kuma (3001) · Portainer (9000)
     +-- Beszel Agent (45876)
     |
-    +-- systemd: nasa-tunnel.service (autossh, restart=always)
-    +-- systemd: nasa-daily-report-telegram.timer (09:00 daily)
-    +-- systemd: nasa-backup.timer (03:00 daily, pg_dump)
-    +-- systemd: nasa-usb-preboot.service (power cycle before mount)
-    +-- systemd: nasa-usb-monitor.service (dmesg watcher, Telegram alert on error -71)
-    +-- systemd: nasa-ssd-recovery.service (udev hotplug auto-recovery)
-    +-- nasa-api / FastAPI (8099) · Swagger UI · v0.6.0
+    +-- systemd: nas_jetson_nano-tunnel.service (autossh, restart=always)
+    +-- systemd: nas_jetson_nano-daily-report-telegram.timer (09:00 daily)
+    +-- systemd: nas_jetson_nano-backup.timer (03:00 daily, pg_dump)
+    +-- systemd: nas_jetson_nano-usb-preboot.service (power cycle before mount)
+    +-- systemd: nas_jetson_nano-usb-monitor.service (dmesg watcher, Telegram alert on error -71)
+    +-- systemd: nas_jetson_nano-ssd-recovery.service (udev hotplug auto-recovery)
+    +-- nas_jetson_nano-api / FastAPI (8099) · Swagger UI · v0.6.0
     |     Talk · Users · Photos · Actions endpoints live
     +-- Nextcloud Talk (spreed v23.0.7) · группа «Семья» · 5 участников
     +-- udev: usb-storage.quirks=152d:a583:u (JMS583 UAS quirk, extlinux.conf)
@@ -103,24 +103,24 @@ Internet
 | Версия | Изменение | Причина |
 |---|---|---|
 | v0.1.0 | Начальная структура: Docker Compose, docs, scripts | Старт проекта |
-| v1.3.0 | Добавлены mem_limit, healthchecks, goss, NASA API, Telegram report | Resilience audit (Stage 1H) |
+| v1.3.0 | Добавлены mem_limit, healthchecks, goss, NAS_Jetson_Nano API, Telegram report | Resilience audit (Stage 1H) |
 | v1.3.2 | CLAUDE.md, GitHub CLI, Discussions, good first issues | Open-source публикация |
 | v1.3.4 | Beszel Hub/Agent, USB watchdog (udev + autosuspend) | USB SSD error -71 инцидент |
 | v1.3.4 | autossh tunnel port +45876 (Beszel) | Мониторинг через VPS |
 | v1.3.5 | HTTPS: self-signed TLS на alt-портах (:8443/:2443/:9443) | Требование Android-приложений |
 | v1.3.5 | Nextcloud trusted proxy (occ) | Корректные HTTPS-заголовки |
 | v1.3.6 | USB SSD: порт 4 (сломан) → порт 2 | Аппаратный дефект порта |
-| v1.3.7 | nasa-usb-preboot.service (power cycle до монтирования) | RTL9210B-CG crashed state через software reboot |
-| v1.3.7 | nasa-usb-monitor.service (dmesg watcher) | Telegram alert при первом error -71 |
+| v1.3.7 | nas_jetson_nano-usb-preboot.service (power cycle до монтирования) | RTL9210B-CG crashed state через software reboot |
+| v1.3.7 | nas_jetson_nano-usb-monitor.service (dmesg watcher) | Telegram alert при первом error -71 |
 | v1.3.7 | .gitattributes: LF enforce | CRLF→bash shebang corruption на Windows |
 | v1.3.8 | git filter-repo: удалён leaked password hash из 87 коммитов | Security incident |
 | v1.3.8 | Ротация паролей (4 сервиса) | После git history rewrite |
 | v1.3.8 | immich-microservices mem_limit 512m | OOM protection |
 | v1.3.8 | Repo structure refactor: assets/, artifacts/, docs/prompts/ | Open-source conventions |
-| v1.3.9 | nasa-ssd-recovery.service (udev hotplug auto-recovery) | Автовосстановление при подключении SSD |
+| v1.3.9 | nas_jetson_nano-ssd-recovery.service (udev hotplug auto-recovery) | Автовосстановление при подключении SSD |
 | **v1.4.0** | **JMS583** (152d:a583) заменил RTL9210B-CG | USB 3.0 SuperSpeed, write 250 MB/s, UAS quirk |
 | **v1.4.0** | **Nextcloud Talk** «Семья», 5 участников (+ anna) | Семейный чат, история на SSD |
-| **v1.4.0** | **NASA API v0.6.0**: Talk/Users/Photos/Actions (11 новых endpoints) | Control + chat + stats API |
+| **v1.4.0** | **NAS_Jetson_Nano API v0.6.0**: Talk/Users/Photos/Actions (11 новых endpoints) | Control + chat + stats API |
 | **v1.4.0** | goss 40/40 (+6 тестов) | Покрытие JMS583, Talk, новых сервисов |
 | Отменено | WireGuard через VPS | DKMS несовместим с Tegra kernel 4.9 (ADR-0003) |
 | Отменено | Tailscale | Конфликт VPN-профиля с Amnezia на Android (ADR-0004) |
@@ -172,7 +172,7 @@ Internet
 | homecloud_immich_redis | redis:7-alpine | — | 64m | redis-cli ping | always | ✅ |
 | homecloud_immich_microservices | immich-server:release | — | 512m | (нет) | always | ✅ |
 | homecloud_llm_gateway | custom FastAPI | 8090 | 256m | /health | always | ✅ |
-| homecloud_nasa_api | custom FastAPI | 8099 | 128m | /healthcheck | always | ✅ |
+| homecloud_nas_jetson_nano_api | custom FastAPI | 8099 | 128m | /healthcheck | always | ✅ |
 | homecloud_samba | crazymax/samba | 445/139 | не задан | (нет) | always | ✅ LAN only |
 | homecloud_netdata | netdata:latest | 19999 | 256m | /api/v1/info | always | ✅ |
 | homecloud_uptime_kuma | louislam/uptime-kuma:1 | 3001 | 128m | built-in | always | ✅ 5 monitors |
@@ -255,7 +255,7 @@ VPS public ports:
 | 2026-06-26 | error -71 при boot | Порт 4 (1-2.4) аппаратно сломан | Переткнут в порт 2 (1-2.2) |
 | 2026-06-26 | CRLF в shebang | git на Windows конвертировал LF→CRLF | .gitattributes LF enforce + dos2unix |
 | 2026-06-27 | Всё работает стабильно | preboot + monitor + port 2 | 7 boot подряд без инцидентов |
-| 2026-06-28 | nasa-ssd-recovery.service (udev hotplug) | Автовосстановление при горячем подключении | udev → mount → preflight → docker start |
+| 2026-06-28 | nas_jetson_nano-ssd-recovery.service (udev hotplug) | Автовосстановление при горячем подключении | udev → mount → preflight → docker start |
 
 ### off-site backup
 
@@ -340,11 +340,11 @@ VPS public ports:
 
 | Тип | Инструмент | Покрытие | Статус |
 |---|---|---|---|
-| Infrastructure state | goss v0.4.9 | 34 теста (порты, сервисы, файлы, HTTP) | 33/34 прошли (1 — nasa-api /health transient) |
+| Infrastructure state | goss v0.4.9 | 34 теста (порты, сервисы, файлы, HTTP) | 33/34 прошли (1 — nas_jetson_nano-api /health transient) |
 | Shell scripts | shellcheck | scripts/ (**/*.sh) | CI, 11/14 чистые |
 | Python code | bandit | services/ (738 строк) | 0 проблем безопасности |
 | Dockerfiles | hadolint | 3 Dockerfile | 3/3 чистые |
-| Service smoke | curl | Nextcloud, Immich, LLM GW, nasa-api | ✅ скрипты в tests/service/ |
+| Service smoke | curl | Nextcloud, Immich, LLM GW, nas_jetson_nano-api | ✅ скрипты в tests/service/ |
 | Storage mount | mountpoint + df | /mnt/storage | ✅ скрипты в tests/storage/ |
 | SMART | smartctl | /dev/sda | ⚠️ заблокирован RTL9210B-CG (docs в smart_check.sh) |
 | Load test (k6) | k6 | nextcloud-smoke.js (5 VU/2min) | Скрипт готов, live не запускался |
@@ -396,7 +396,7 @@ VPS public ports:
 
 **Пробелы, которые нужно закрыть до публикации:**
 
-1. **Скриншоты частично готовы.** Сделаны: Immich web, Nextcloud dashboard, Nextcloud Talk, Telegram report, Immich Android (галерея + профиль + бэкап), Nextcloud Android, DAVx⁵. Ещё нужны (LAN only): Portainer (13 контейнеров), Beszel Hub (CPU/RAM графики), Uptime Kuma (5 мониторов), NASA API Swagger UI. Все в `assets/screenshots/article/`.
+1. **Скриншоты частично готовы.** Сделаны: Immich web, Nextcloud dashboard, Nextcloud Talk, Telegram report, Immich Android (галерея + профиль + бэкап), Nextcloud Android, DAVx⁵. Ещё нужны (LAN only): Portainer (13 контейнеров), Beszel Hub (CPU/RAM графики), Uptime Kuma (5 мониторов), NAS_Jetson_Nano API Swagger UI. Все в `assets/screenshots/article/`.
 
 2. **Live замеры производительности не задокументированы.** I/O benchmark (`scripts/storage/benchmark_io.sh` существует, но результатов нет). 40 MB/s на RTL9210B-CG — цифра есть в README, источник неясен.
 
@@ -443,7 +443,7 @@ VPS public ports:
 - [x] Скриншот Beszel Hub — обзор систем → `beszel_systems_overview.png`
 - [x] Скриншот Beszel Hub — Jetson CPU/RAM/Docker метрики → `beszel_jetson_metrics.png`
 - [ ] Скриншот Uptime Kuma — 5 мониторов (все green) *(LAN only :3001)*
-- [x] Скриншот NASA API Swagger UI v0.6.0 → `nasa_api_swagger.png`
+- [x] Скриншот NAS_Jetson_Nano API Swagger UI v0.6.0 → `nas_jetson_nano_api_swagger.png`
 - [x] Фото физического стенда (уже есть: `assets/photos/test_sys.jpg`)
 - [ ] Результат `goss validate` — 34/34 pass после JMS583
 - [ ] Результат `docker stats --no-stream` — RAM usage всех 13 контейнеров
@@ -494,8 +494,8 @@ VPS public ports:
 - Решение 1: autosuspend=off через udev, SCSI timeout 120s
 - Инцидент 2 (2026-06-26): порт 4 сломан аппаратно → переткнуть в порт 2
 - Инцидент 3 (CRLF в bash shebang): watchdog не работал 4+ часов из-за Windows git → .gitattributes
-- nasa-usb-preboot.service: power cycle ДО монтирования при каждом boot
-- nasa-ssd-recovery.service: udev hotplug → mount → preflight → docker start
+- nas_jetson_nano-usb-preboot.service: power cycle ДО монтирования при каждом boot
+- nas_jetson_nano-ssd-recovery.service: udev hotplug → mount → preflight → docker start
 - Итог: 7 boot подряд без инцидентов на порту 2
 
 **§5. Android-интеграция: миграция с Google**

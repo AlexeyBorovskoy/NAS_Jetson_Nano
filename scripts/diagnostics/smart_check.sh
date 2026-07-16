@@ -9,12 +9,12 @@
 set -uo pipefail
 
 DEV="${1:-/dev/sda}"
-LOG_TAG="nasa-smart-check"
-LOG_FILE="/var/log/nasa-monitor/smart-check.log"
+LOG_TAG="nas_jetson_nano-smart-check"
+LOG_FILE="/var/log/nas_jetson_nano-monitor/smart-check.log"
 
 TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
 TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}"
-[[ -f /etc/nasa-monitor/telegram.env ]] && source /etc/nasa-monitor/telegram.env
+[[ -f /etc/nas_jetson_nano-monitor/telegram.env ]] && source /etc/nas_jetson_nano-monitor/telegram.env
 
 HOSTNAME_SHORT="$(hostname -s)"
 

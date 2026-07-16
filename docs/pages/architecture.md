@@ -17,7 +17,7 @@ title: Architecture
    :8443 Nextcloud
    :2443 Immich
    :9443 LLM
-   :8099 NASA API
+   :8099 NAS_Jetson_Nano API
         |
         | reverse SSH tunnel (autossh, Restart=always)
         v
@@ -25,7 +25,7 @@ title: Architecture
    Nextcloud    :8080
    Immich       :2283
    LLM Gateway  :8090
-   NASA API     :8099
+   NAS_Jetson_Nano API     :8099
    Samba        :445  (LAN only)
    Netdata      :19999
    Uptime Kuma  :3001
@@ -68,7 +68,7 @@ Chosen stack: lightweight images with explicit `mem_limit` per container.
 | `docker-compose.nextcloud.yml` | Nextcloud, MariaDB, Redis |
 | `docker-compose.immich.yml` | Immich server, microservices, Redis, PostgreSQL |
 | `docker-compose.monitoring.yml` | Netdata, Uptime Kuma, Portainer, Beszel Agent |
-| `docker-compose.nasa-api.yml` | NASA API (FastAPI) |
+| `docker-compose.nas_jetson_nano-api.yml` | NAS_Jetson_Nano API (FastAPI) |
 | `docker-compose.llm.yml` | LLM Gateway |
 
 All services write to `/mnt/storage` (USB SSD).  

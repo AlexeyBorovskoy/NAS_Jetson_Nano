@@ -173,3 +173,19 @@ llm.home.arpa    -> 192.168.0.50
 2. 🇷🇺 Закрепить IP `192.168.0.50` / 🇬🇧 Reserve IP `192.168.0.50`
 3. 🇷🇺 Проверить ping из LAN / 🇬🇧 Verify ping from LAN
 4. 🇷🇺 Не включать port forwarding на первом этапе / 🇬🇧 Do not enable port forwarding in Stage 1
+
+### 5.1. Планируемый усилитель Wi-Fi / Planned Wi-Fi extender
+
+🇷🇺 Физическое устройство Keenetic Omni KN-1410 добавлено в инвентаризацию
+2026-07-17, но ещё не подключено и не настроено. Целевая роль — дополнительный
+узел `Extender / Repeater` в существующей сети `192.168.0.0/24`; DHCP, gateway,
+firewall и NAT остаются на основном TP-Link / Aginet EC220-G5.
+
+🇬🇧 A physical Keenetic Omni KN-1410 was added to inventory on 2026-07-17 but
+has not yet been connected or configured. Its target role is an additional
+`Extender / Repeater` node in the existing `192.168.0.0/24` LAN; DHCP, gateway,
+firewall, and NAT remain on the TP-Link / Aginet EC220-G5 main router.
+
+Полная карточка, safety gate, проверка и rollback / Full device card, safety
+gate, validation, and rollback:
+[`25_KEENETIC_OMNI_KN1410.md`](25_KEENETIC_OMNI_KN1410.md).

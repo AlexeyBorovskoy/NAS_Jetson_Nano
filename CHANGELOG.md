@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added / Добавлено
+
+- Added a sanitized inventory and commissioning runbook for the physical
+  Keenetic Omni KN-1410 planned as a Wi-Fi extender:
+  `docs/25_KEENETIC_OMNI_KN1410.md`.
+- Linked the planned extender into `docs/19_NETWORK_INVENTORY.md` and
+  `docs/05_NETWORKING_VPN.md`, `README.md`, `docs/index.md`, and `CLAUDE.md`;
+  added public-only placeholders to `config/.env.example` without copying label
+  credentials or unique identifiers.
+
 ### Corrected / Исправлено
 
 - 🇷🇺 Исправлено недостоверное заявление о публикации статьи на Habr: статья не опубликована; в репозитории находятся только черновики и материалы подготовки.

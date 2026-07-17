@@ -20,6 +20,7 @@
 | Компонент | Статус | Детали |
 |---|---|---|
 | Jetson Nano | ✅ up | 192.168.0.50 |
+| Keenetic Omni KN-1410 | 📋 planned extender | Physical device inventoried; not connected/configured; see `docs/25_KEENETIC_OMNI_KN1410.md` |
 | SSD `/dev/sda1` → `/mnt/storage` | ✅ **mounted** | 229G, ~3% use |
 | USB SSD энклоужер | ✅ **JMS583** (152d:a583) | USB 3.0 SuperSpeed, порт 2-1.3, 5000 Mbps |
 | USB SSD порт | ✅ **порт 2** | preboot service делает power cycle при boot |
@@ -70,6 +71,7 @@
 | SSH через VPS | `ssh root@193.8.215.130` → `ssh -p 10022 admin@127.0.0.1` | текущий рабочий путь из внешней сети |
 | sudo на Jetson | `sudo -S <cmd>` | пароль брать только из приватного runtime/local secret storage; не коммитить |
 | VPS (Vienna) | `193.8.215.130` | `ssh -i ~/.ssh/borovskoy_new_ed25519 root@193.8.215.130` |
+| Keenetic Omni KN-1410 | IP pending | Planned Wi-Fi extender; label secrets stay local; factory reset only after explicit confirmation |
 | Репо на Jetson | `~/nas_jetson_nano` | `/home/admin/nas_jetson_nano` |
 
 ## GitHub CLI (gh)
@@ -185,6 +187,7 @@ Jetson уже добавлен: `jetson-nano` → `127.0.0.1:45876`, status=up
 4. **НЕ открывать** сервисы напрямую в интернет без отдельного решения.
 5. **Destructive команды** (rm -rf, форматирование, DROP DATABASE) — только с явного подтверждения.
 6. Перед push: `./scripts/security/check_no_secrets.sh`
+7. Keenetic Omni KN-1410 сначала подключать изолированно к workstation: не вводить в production LAN с активным DHCP и не делать factory reset без явного подтверждения.
 
 ## Workflow (стандартная процедура)
 

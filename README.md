@@ -517,6 +517,7 @@ IMMICH_DISABLE_MACHINE_LEARNING=true   # обязательно для Jetson Na
 | [docs/22_AUDIT_RESILIENCE.md](docs/22_AUDIT_RESILIENCE.md) | Аудит надёжности: goss, shellcheck, итоги |
 | [docs/23_GITHUB_INTEGRATION.md](docs/23_GITHUB_INTEGRATION.md) | GitHub CLI + Claude Code интеграция, AI DevOps workflow |
 | [docs/24_CLIENT_SETUP.md](docs/24_CLIENT_SETUP.md) | **Подключение устройств: Android, Windows, Linux** |
+| [docs/25_KEENETIC_OMNI_KN1410.md](docs/25_KEENETIC_OMNI_KN1410.md) | **Keenetic Omni KN-1410: карточка усилителя Wi-Fi, настройка, проверка и rollback** |
 | [docs/android/ANDROID_SETUP.md](docs/android/ANDROID_SETUP.md) | **Настройка Xiaomi MIUI/HyperOS** — Immich, Nextcloud, DAVx⁵, HTTPS через VPS |
 | [docs/android/GOOGLE_MIGRATION.md](docs/android/GOOGLE_MIGRATION.md) | **Миграция с Google** — Google Takeout → Immich/Nextcloud/DAVx⁵, чеклист |
 | [docs/android/XIAOMI_MIUI_QUIRKS.md](docs/android/XIAOMI_MIUI_QUIRKS.md) | Специфика MIUI/HyperOS — battery whitelist, автозапуск, блокировка в RAM |

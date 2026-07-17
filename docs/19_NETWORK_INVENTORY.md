@@ -4,7 +4,7 @@
 >
 > 🇷🇺 Документ фиксирует сетевую топологию тестового стенда NAS_Jetson_Nano. Публичная версия: реальные пароли Wi-Fi, серийные номера, MAC-адреса и учётные данные хранятся только в `config/.env` (gitignored).
 >
-> Updated / Обновлено: 2026-06-27.
+> Updated / Обновлено: 2026-07-17.
 
 Scope of this step:
 
@@ -40,13 +40,18 @@ Gateway: 192.168.0.1
     |      Wi-Fi client, current observed IP: 192.168.0.106
     |
     +-- Jetson Nano
-           eth0: nas_jetson_nano-lan, static 192.168.0.50/24
-           gateway: 192.168.0.1
-           services: LAN-only
-           |
-           +-- USB storage
-                  data disk attached directly to Jetson over USB
-                  not a network device
+    |      eth0: nas_jetson_nano-lan, static 192.168.0.50/24
+    |      gateway: 192.168.0.1
+    |      services: LAN-only
+    |      |
+    |      +-- USB storage
+    |             data disk attached directly to Jetson over USB
+    |             not a network device
+    |
+    +-- Keenetic Omni KN-1410 (planned, not configured)
+           target mode: Wi-Fi Extender / Repeater
+           management: DHCP address from the home router
+           DHCP/NAT: disabled in additional mode
 
 External access (implemented 2026-06-21):
 
@@ -86,6 +91,19 @@ VPS:
 | Wi-Fi 2.4 GHz | SSID | `HOME_WIFI_SSID_2G` | Router label photo | Secret, stored locally |
 | Wi-Fi 5 GHz | SSID | `HOME_WIFI_SSID_5G` | Router label photo | Secret, stored locally |
 | Wi-Fi | Password / PIN | `HOME_WIFI_PASSWORD` | Router label photo | Secret, stored locally |
+| Planned extender | Vendor / model | Keenetic Omni `KN-1410` | Device label photo + official guide | Observed |
+| Planned extender | Intended role | Wi-Fi Extender / Repeater | User request | Planned; not configured |
+| Planned extender | Mode selector | `A/B`; target `B` | Official model guide | Verify physically before change |
+| Planned extender | Management name | `my.keenetic.net` in Router mode | Device label | Observed; not live-verified |
+| Planned extender | Isolated service IP | `192.168.1.3` in additional mode without DHCP | Official guide | Recovery path only |
+| Planned extender | Target LAN IP | `KEENETIC_OMNI_LAN_IP` from main-router DHCP | Local secret inventory | Pending |
+| Planned extender | Factory SSID | `KEENETIC_OMNI_FACTORY_SSID` | Device label photo | Secret; do not commit |
+| Planned extender | Factory Wi-Fi password | `KEENETIC_OMNI_FACTORY_WIFI_PASSWORD` | Device label photo | Exposed; rotate during setup |
+| Planned extender | Service code | `KEENETIC_OMNI_SERVICE_CODE` | Device label photo | Secret; do not commit |
+| Planned extender | Serial number | `KEENETIC_OMNI_SERIAL` | Device label photo | Secret; do not commit |
+| Planned extender | WAN MAC | `KEENETIC_OMNI_WAN_MAC` | Device label photo | Secret; do not commit |
+| Planned extender | Power | `12 V DC, 1 A` | Device label + official guide | Observed |
+| Planned extender | Support status | End of Support; no updates | Official Keenetic support | Accepted risk; LAN-only |
 | Admin workstation | Current Wi-Fi IP | `192.168.0.106` | Windows network config | Observed |
 | Jetson Nano | LAN profile | `nas_jetson_nano-lan` | ADR-0003 | Accepted, do not delete |
 | Jetson Nano | LAN IP | `192.168.0.50/24` | ADR-0003 + local secrets | Target / needs LAN re-check |
@@ -139,12 +157,25 @@ available, inspect only these read-only pages:
 
 Do not save or apply any router setting changes during this inventory.
 
+### 5.1 Planned Keenetic extender
+
+The Keenetic Omni KN-1410 was inventoried from its label photo on 2026-07-17.
+It has not yet been connected, reset, or configured. Its full sanitized device
+card and controlled commissioning procedure are in
+[`25_KEENETIC_OMNI_KN1410.md`](25_KEENETIC_OMNI_KN1410.md).
+
+The source photo exposed a factory Wi-Fi password plus unique device identifiers.
+Those values must remain outside Git and the factory Wi-Fi password must be
+rotated during commissioning.
+
 ## 6. Validation Commands
 
 From Windows admin workstation:
 
 ```powershell
 Get-NetIPConfiguration
+Get-NetAdapter
+Get-NetRoute -DestinationPrefix 0.0.0.0/0
 Test-NetConnection 192.168.0.1 -Port 80
 Test-NetConnection 192.168.0.1 -Port 443
 Test-NetConnection 192.168.0.50 -Port 22
@@ -188,10 +219,15 @@ sudo bash scripts/storage/storage_preflight.sh
 | USB storage incident | 250 GB device recovered as `/dev/sda1` and mounted at `/mnt/storage`, but prior `error -71`/ext4 errors show hardware risk | Keep preflight/boot guard; replace suspect cable/enclosure/power if errors return |
 | HDD partition | Target ext4 partition for NAS is active: label `nas_jetson_nano-storage`, UUID tracked in fstab | Keep read-only fsck path for future incidents; destructive format only with explicit confirmation |
 | External access | ✅ Implemented via VPS reverse tunnel (ADR-0005) | — |
+| Keenetic Omni KN-1410 extender | Physical device observed; firmware, current IP, link speed, and mode not yet verified | Connect in isolation by LAN; inspect read-only; configure only after safety gate |
 
 ## 8. Rollback
 
 This inventory step does not change router or Jetson network settings.
+
+The Keenetic inventory addition is documentation-only. If a future extender
+session causes a conflict, disconnect it from the production LAN first and
+restore the Windows adapter to automatic DHCP/DNS before any further action.
 
 If a future router UI session accidentally opens an edit form, leave the page
 without saving. If a future Jetson LAN change breaks access, use USB recovery:

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -6,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import logging_setup
 from app.config import settings
-from app.routers import actions, auth, health, logs, photos, storage, system, talk, users
+from app.routers import actions, auth, health, logs, photos, storage, system, talk, talk_bot, users
 
 log = logging.getLogger("nas_jetson_nano_api")
 
@@ -137,7 +138,23 @@ async def lifespan(_app: FastAPI):
         backup_count=settings.log_backup_count,
     )
     log.info("nas_jetson_nano-api starting", extra={"fields": {"port": settings.api_port}})
+
+    bot_task: asyncio.Task | None = None
+    if settings.talk_bot_enabled:
+        bot_task = asyncio.create_task(talk_bot.run_bot_loop())
+        log.info(
+            "Talk bot enabled",
+            extra={"fields": {"room": settings.talk_bot_room or settings.talk_family_room}},
+        )
+
     yield
+
+    if bot_task is not None:
+        bot_task.cancel()
+        try:
+            await bot_task
+        except asyncio.CancelledError:
+            pass
     log.info("nas_jetson_nano-api stopped")
 
 
@@ -173,6 +190,7 @@ app.include_router(auth.router)
 app.include_router(system.router)
 app.include_router(storage.router)
 app.include_router(talk.router)
+app.include_router(talk_bot.router)
 app.include_router(users.router)
 app.include_router(photos.router)
 app.include_router(logs.router)

@@ -60,6 +60,20 @@ class Settings(BaseSettings):
     # Talk (Nextcloud spreed) — default family room token
     talk_family_room: str = "37pcobmf"
 
+    # ── Talk AI bot (Phase A, polling) ──────────────────────────────────────
+    # Disabled by default: enabling starts a background long-poll loop that
+    # reads the family room and answers simple commands (ping, статус, диск, фото).
+    talk_bot_enabled: bool = False
+    # Room the bot listens to; empty → falls back to talk_family_room.
+    talk_bot_room: str = ""
+    # Optional command prefix (e.g. "нас" → "нас статус"). Empty = match a
+    # known command as the first word of the message.
+    talk_bot_trigger: str = ""
+    # Display name the bot posts replies under.
+    talk_bot_display_name: str = "NAS Bot"
+    # Server-side long-poll timeout in seconds (how long a read call waits).
+    talk_bot_poll_timeout: int = 30
+
     # Immich internal URL and API key
     immich_internal_url: str = "http://host.docker.internal:2283"
     immich_api_key: str = ""  # Set via IMMICH_API_KEY (generate in Immich → API Keys)

@@ -43,6 +43,12 @@ services:
       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
       TALK_FAMILY_ROOM: ${TALK_FAMILY_ROOM:-37pcobmf}
       IMMICH_API_KEY: ${IMMICH_API_KEY}
+      # Talk AI bot (Phase A). Disabled by default; set TALK_BOT_ENABLED=true in .env to activate.
+      TALK_BOT_ENABLED: ${TALK_BOT_ENABLED:-false}
+      TALK_BOT_ROOM: ${TALK_BOT_ROOM:-}
+      TALK_BOT_TRIGGER: ${TALK_BOT_TRIGGER:-}
+      TALK_BOT_DISPLAY_NAME: ${TALK_BOT_DISPLAY_NAME:-NAS Bot}
+      TALK_BOT_POLL_TIMEOUT: ${TALK_BOT_POLL_TIMEOUT:-30}
     healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8099/healthcheck', timeout=3)\""]
       interval: 30s

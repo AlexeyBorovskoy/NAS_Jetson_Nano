@@ -15,23 +15,34 @@
 
 ## Операционное состояние
 
-**Состояние на 2026-06-28: v1.4.0 — JMS583 ✅ подключён (USB 3.0, 5 Gbps). Docker ✅ все 13 контейнеров up. goss 40/40. UAS quirk добавлен в extlinux.conf — нужен reboot для применения.**
+**Состояние на 2026-08-01 (live-аудит через VPS-jump): v1.4.0 — JMS583 ✅ подключён (USB 3.0, 5 Gbps). Docker ✅ все 13 контейнеров up (healthy). UAS quirk активен в ядре. Talk-бот (Phase A) ✅ running.**
+
+> ⚠️ **Расхождение git ↔ устройство.** Живой Jetson работает на СТАРОМ, до-переименовочном деплое. Rename `NASA → NAS_Jetson_Nano` сделан только в git — **на устройство не выкатан**. Фактически на устройстве:
+> - Репо: **`~/nasa`**, remote `github.com/AlexeyBorovskoy/Nasa_home.git` (HEAD `0f9fd0f`, ветка `main`)
+> - Контейнеры: префикс **`homecloud_*`** (не `nas_jetson_nano_*`), API-контейнер `homecloud_nasa_api`
+> - systemd-юниты: префикс **`nasa-*`** (не `nas_jetson_nano-*`)
+> - Логи мониторинга: **`/var/log/nasa-monitor/`**
+> - LAN `192.168.0.50:22` НЕ доступен с Windows-машины — только через VPS-jump (см. «Железо и доступ»).
+> Полная миграция устройства на переименованный layout — отдельная неначатая задача (backup + окно обслуживания).
 
 | Компонент | Статус | Детали |
 |---|---|---|
 | Jetson Nano | ✅ up | 192.168.0.50 |
 | Keenetic Omni KN-1410 | 📋 planned extender | Physical device inventoried; not connected/configured; see `docs/25_KEENETIC_OMNI_KN1410.md` |
-| SSD `/dev/sda1` → `/mnt/storage` | ✅ **mounted** | 229G, ~3% use |
+| SSD `/dev/sda1` → `/mnt/storage` | ✅ **mounted** | 229G, 5% use (9.6G) |
 | USB SSD энклоужер | ✅ **JMS583** (152d:a583) | USB 3.0 SuperSpeed, порт 2-1.3, 5000 Mbps |
 | USB SSD порт | ✅ **порт 2** | preboot service делает power cycle при boot |
 | SCSI timeout | ✅ **120s** | udev правило активно |
 | `usbcore.autosuspend=-1` | ✅ **kernel** | `/proc/cmdline` |
 | `usb-storage.quirks=...,152d:a583:u` | ✅ **active** | UAS отключён, usb-storage BOT. Write **250 MB/s**, Read 172 MB/s. Нет USB ошибок. |
-| USB watchdog timer | ✅ **active (waiting)** | `nas_jetson_nano-usb-watchdog.timer` включён |
-| USB pre-boot service | ✅ active | `nas_jetson_nano-usb-preboot.service` — power cycle до монтирования |
-| USB error monitor | ✅ active | `nas_jetson_nano-usb-monitor.service` — Telegram при USB ошибках (error -71 + JMS583 stream errors) |
-| SSD hotplug auto-recovery | ✅ active | `nas_jetson_nano-ssd-recovery.service` — udev(`sda1`) → mount → preflight → Docker → контейнеры |
-| Docker daemon | ✅ **active** | 13 контейнеров up, healthy |
+| USB watchdog timer | ✅ **active (waiting)** | `nasa-usb-watchdog.timer` включён |
+| USB pre-boot service | ✅ active | `nasa-usb-preboot.service` — power cycle до монтирования |
+| USB error monitor | ✅ active | `nasa-usb-monitor.service` — Telegram при USB ошибках (error -71 + JMS583 stream errors) |
+| JMS583 health timer | ✅ **enabled** | `nasa-jms583-health.timer` (service disabled, запускается таймером) |
+| SSD hotplug auto-recovery | ✅ active | `nasa-ssd-recovery.service` — udev(`sda1`) → mount → preflight → Docker → контейнеры |
+| VPS reverse tunnel | ✅ **enabled** | `nasa-tunnel.service` — API :8099 наружу через VPS |
+| Docker daemon | ✅ **active** | 13 контейнеров `homecloud_*` up, healthy |
+| Talk-бот (Phase A) | ✅ **running** | `homecloud_nasa_api`, room `37pcobmf`, триггер `нас`. Хирургический backport на `~/nasa` (см. память). |
 | immich-microservices | ✅ **mem_limit 512m** | Применён и перезапущен 2026-06-28 |
 | Beszel Hub (VPS:8091) | ✅ up | admin@nas_jetson_nano.local / пароль в config/secrets.json |
 | Beszel Agent Jetson (45876) | ✅ up | status=up |
@@ -47,11 +58,11 @@
 
 **🔧 Если SSD упал — восстановление АВТОМАТИЧЕСКОЕ:**
 > Просто физически переткни кабель SSD. Система сделает остальное сама:
-> udev(`sda1`) → `nas_jetson_nano-ssd-recovery.service` → mount → preflight → Docker → все 13 контейнеров
-> Лог: `journalctl -u nas_jetson_nano-ssd-recovery` или `/var/log/nas_jetson_nano-monitor/ssd-recovery.log`
+> udev(`sda1`) → `nasa-ssd-recovery.service` → mount → preflight → Docker → все 13 контейнеров
+> Лог: `journalctl -u nasa-ssd-recovery` или `/var/log/nasa-monitor/ssd-recovery.log`
 >
 > Если авто-recovery не сработал (маловероятно):
-> 1. `ssh admin@192.168.0.50 'echo "PASS" | sudo -S systemctl start nas_jetson_nano-ssd-recovery.service'`
+> 1. (через VPS-jump) `sudo -S systemctl start nasa-ssd-recovery.service`
 >    PASS — из `config/secrets.json`
 
 **🔜 Ближайшие задачи:**
@@ -72,7 +83,7 @@
 | sudo на Jetson | `sudo -S <cmd>` | пароль брать только из приватного runtime/local secret storage; не коммитить |
 | VPS (Vienna) | `193.8.215.130` | `ssh -i ~/.ssh/borovskoy_new_ed25519 root@193.8.215.130` |
 | Keenetic Omni KN-1410 | IP pending | Planned Wi-Fi extender; label secrets stay local; factory reset only after explicit confirmation |
-| Репо на Jetson | `~/nas_jetson_nano` | `/home/admin/nas_jetson_nano` |
+| Репо на Jetson | `~/nasa` | `/home/admin/nasa` (remote `Nasa_home.git`; rename не выкатан) |
 
 ## GitHub CLI (gh)
 
@@ -119,12 +130,12 @@ ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no admin@192.168.0.50 "ком�
 
 ### Git pull на Jetson
 ```bash
-ssh admin@192.168.0.50 "cd ~/nas_jetson_nano && git pull --ff-only"
+ssh admin@192.168.0.50 "cd ~/nasa && git pull --ff-only"
 ```
 
 ### Docker Compose на Jetson
 ```bash
-ssh admin@192.168.0.50 "cd ~/nas_jetson_nano && docker compose -f docker/compose/docker-compose.monitoring.yml --env-file config/.env up -d"
+ssh admin@192.168.0.50 "cd ~/nasa && docker compose -f docker/compose/docker-compose.monitoring.yml --env-file config/.env up -d"
 ```
 
 ### Создать GitHub issue
@@ -169,7 +180,7 @@ archive/legacy/   — устаревшие файлы (не удалять, хр
 | Nextcloud | 8080 | http://192.168.0.50:8080 · live after controlled start |
 | Immich | 2283 | http://192.168.0.50:2283 |
 | LLM Gateway | 8090 | http://192.168.0.50:8090 |
-| nas_jetson_nano-api + Swagger | 8099 | http://192.168.0.50:8099/docs |
+| API (`homecloud_nasa_api`) + Swagger | 8099 | http://192.168.0.50:8099/docs |
 | Netdata | 19999 | http://192.168.0.50:19999 |
 | Uptime Kuma | 3001 | http://192.168.0.50:3001 |
 | Portainer | 9000 | http://192.168.0.50:9000 |
@@ -194,7 +205,7 @@ Jetson уже добавлен: `jetson-nano` → `127.0.0.1:45876`, status=up
 1. Изменения в файлах проекта (Windows)
 2. `git add` + `git commit` (с Co-Authored-By)
 3. `git push`
-4. `ssh admin@192.168.0.50 "cd ~/nas_jetson_nano && git pull --ff-only"` или через VPS `ssh root@193.8.215.130 "ssh -p 10022 admin@127.0.0.1 'cd ~/nas_jetson_nano && git pull --ff-only'"` (если нужно применить на Jetson)
+4. `ssh admin@192.168.0.50 "cd ~/nasa && git pull --ff-only"` или через VPS `ssh root@193.8.215.130 "ssh -p 10022 admin@127.0.0.1 'cd ~/nasa && git pull --ff-only'"` (если нужно применить на Jetson)
 5. Перед запуском Nextcloud/Immich/backup: `sudo bash scripts/storage/storage_preflight.sh`
 6. Перезапуск затронутых контейнеров (если compose-файлы изменились и preflight прошёл)
 7. После крупных изменений: `git tag` + `gh release create`

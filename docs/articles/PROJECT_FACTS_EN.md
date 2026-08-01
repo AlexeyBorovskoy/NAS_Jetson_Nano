@@ -24,7 +24,7 @@
 | Swap (zram) | 4× zram ≈ **2.0 GB total**, ~712 MB used (no disk swap) | `tegrastats` (SWAP 712/1982MB) |
 | GPU load | **0%** (idle — GPU is unused; this is the core "GPU sits idle" point) | `tegrastats` (GR3D_FREQ 0%) |
 | Temps (idle) | CPU 43.5 °C · GPU 42 °C · PMIC 50 °C | `tegrastats` / thermal zones |
-| Power draw (W) | `TODO: not measured` — this L4T `tegrastats` build did not print POM_5V_IN; needs a wattmeter or a build that exposes the INA3221 rail | — |
+| Power draw (W) | `pending` (NOT blocked) — the on-board **INA3221 rail exists** at `…/6-0040/iio:device0/in_power0_input`; this `tegrastats` build omits POM_5V_IN, and reading the sysfs rail needs **root** (non-root = Permission denied). A single `sudo cat` + a short sampling loop yields it — **no wattmeter needed**. 10-min idle/load average still `TODO`. | probed 2026-08-01 |
 
 ## 2. Storage — `lsblk`, `df`, quirks @ 2026-08-01
 | Fact | Value | Source |

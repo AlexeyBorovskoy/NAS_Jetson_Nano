@@ -40,5 +40,7 @@ See [reddit/](reddit/) folder:
 
 ## Статус публикаций / Publication status
 
-- Habr: не опубликовано / not published
+- Habr — Часть 1 / Part 1: **опубликовано / published** → https://habr.com/ru/articles/1062914/ (2026-07-25)
+- Habr — Часть 2 / Part 2: в подготовке / in preparation (Шаг 2 — см. `docs/plans/POST_HABR_FEEDBACK_2026-08.md`)
 - GitHub Pages: https://alexeyborovskoy.github.io/NAS_Jetson_Nano/articles/habr_article_ru.html
+- Подробнее / Details: [publication_status.md](publication_status.md)

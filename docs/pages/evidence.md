@@ -48,7 +48,7 @@ Test matrix: [docs/quality/test_matrix.md](../quality/test_matrix.md)
 ## Links
 
 - GitHub repository: [AlexeyBorovskoy/NAS_Jetson_Nano](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano)
-- Habr article / Статья Habr: not published / не опубликована
+- Habr article / Статья Habr: **published / опубликована** (Part 1 / Часть 1) → https://habr.com/ru/articles/1062914/
 
 ---
 

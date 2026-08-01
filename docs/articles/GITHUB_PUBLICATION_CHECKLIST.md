@@ -39,5 +39,6 @@
 ## Publication links
 
 - GitHub Pages: https://alexeyborovskoy.github.io/NAS_Jetson_Nano/
-- Habr: не опубликовано / not published (ранее записанная ссылка Песочницы возвращает HTTP 404 / the previously recorded Sandbox URL returns HTTP 404)
+- Habr — Часть 1 / Part 1: **опубликовано / published** → https://habr.com/ru/articles/1062914/ (2026-07-25)
+- Habr — Часть 2 / Part 2: в подготовке / in preparation (Шаг 2)
 - Hackaday.io: TBD (see `docs/articles/hackaday_project_en.md`)

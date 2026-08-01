@@ -1,9 +1,9 @@
 # GitHub Traffic Tracker — базовая линия перед возможной публикацией / baseline before possible publication
 
 Отслеживаем трафик репозитория [AlexeyBorovskoy/NAS_Jetson_Nano](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano)
-для сравнения с будущей публикацией. Статья на Habr не опубликована.
+для сравнения с будущей публикацией. **Обновление 2026-08-01: статья (Часть 1) опубликована — https://habr.com/ru/articles/1062914/. Снимки ниже — исторический базовый уровень ДО публикации.**
 
-This file records a historical traffic baseline for comparison with a possible future publication. The Habr article has not been published.
+This file records a historical traffic baseline for comparison with a possible future publication. **Update 2026-08-01: Part 1 is now published — https://habr.com/ru/articles/1062914/. The snapshots below are the historical pre-publication baseline.**
 
 > 🇷🇺 Числа и объяснения источников трафика ниже — исторические записи. Утверждения о том, кому принадлежал каждый просмотр или клон, не доказаны и должны читаться как гипотезы.
 >

@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added / Добавлено
 
+- 🇷🇺 **Шаг 2 (развитие проекта):** разбор отзывов с Habr и дорожная карта
+  (`docs/plans/POST_HABR_FEEDBACK_2026-08.md`, двуязычный); решение ввести старый
+  Dell Vostro 15 (2018) как выделенный Immich ML-узел
+  (`docs/plans/VOSTRO_ML_NODE_ONBOARDING.md`, двуязычный); раздел «Шаг 2» в README;
+  трекинг — issue #9.
+- 🇬🇧 **Step 2 (project evolution):** Habr feedback review and roadmap
+  (`docs/plans/POST_HABR_FEEDBACK_2026-08.md`, bilingual); decision to add the old
+  Dell Vostro 15 (2018) as a dedicated Immich ML node
+  (`docs/plans/VOSTRO_ML_NODE_ONBOARDING.md`, bilingual); a "Step 2" section in README;
+  tracked in issue #9.
 - Added a sanitized inventory and commissioning runbook for the physical
   Keenetic Omni KN-1410 planned as a Wi-Fi extender:
   `docs/25_KEENETIC_OMNI_KN1410.md`.
@@ -20,8 +30,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Corrected / Исправлено
 
-- 🇷🇺 Исправлено недостоверное заявление о публикации статьи на Habr: статья не опубликована; в репозитории находятся только черновики и материалы подготовки.
-- 🇬🇧 Corrected the unsupported claim that the Habr article had been published: it is unpublished; the repository contains drafts and preparation materials only.
+- 🇷🇺 Исправлено недостоверное заявление о публикации статьи на Habr: статья не опубликована; в репозитории находятся только черновики и материалы подготовки. **(Обновление 2026-08-01: статья Часть 1 опубликована — https://habr.com/ru/articles/1062914/; статусные доки приведены в соответствие.)**
+- 🇬🇧 Corrected the unsupported claim that the Habr article had been published: it is unpublished; the repository contains drafts and preparation materials only. **(Update 2026-08-01: Part 1 is now published — https://habr.com/ru/articles/1062914/; status docs updated accordingly.)**
 
 ---
 

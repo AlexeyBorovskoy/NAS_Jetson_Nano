@@ -626,7 +626,7 @@ CI автоматически проверяет секреты / CI automatical
 
 ## Статьи и публикации / Articles
 
-🇷🇺 **Habr — Часть 1 (запуск):** опубликована → **[habr.com/ru/articles/1062914](https://habr.com/ru/articles/1062914/)**. 9 комментариев; отзывы читателей легли в основу [Шага 2](#шаг-2--развитие-проекта--step-2--project-evolution).
+🇷🇺 **Habr — Часть 1 (запуск):** опубликована → **[«Старому Jetson Nano — домашнее облако: Nextcloud, Immich, CGNAT и три USB-сбоя»](https://habr.com/ru/articles/1062914/)**. 9 комментариев; отзывы читателей легли в основу [Шага 2](#шаг-2--развитие-проекта--step-2--project-evolution).
 **Habr — Часть 2 (развитие):** в подготовке — ML-узел Vostro, безопасность, хранилище.
 
 🇬🇧 **Habr — Part 1 (launch):** published → **[habr.com/ru/articles/1062914](https://habr.com/ru/articles/1062914/)**. 9 comments; reader feedback seeded [Step 2](#шаг-2--развитие-проекта--step-2--project-evolution).

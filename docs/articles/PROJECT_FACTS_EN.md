@@ -55,9 +55,12 @@
 
 - **Immich ML: DISABLED** — `IMMICH_DISABLE_MACHINE_LEARNING=true`, no `immich-machine-learning` container exists.
   This is the single biggest reader criticism of Part 1.
-- API endpoint count: `TODO: count from code` (Part 1 claimed "20 operations" — verify against v0.6.0 source).
-- Immich asset count / Nextcloud users & files: `TODO: not captured` (a DB query returned empty on 2.7.5; the Part 1
-  draft cited ~6,710 photos — reconcile against the **published** article and a fresh count).
+- **API endpoints: 21** (15 GET + 6 POST) across 9 router modules (actions, auth, health, logs, photos, storage,
+  system, talk, talk_bot). Verified two ways on 2026-08-01: source grep of `@router.*` AND `/openapi.json` — both = 21.
+  (Part 1 said "20 operations"; the live API v0.6.0 has 21.)
+- **Immich library: 7,098 assets = 6,686 photos + 412 videos** (`select type,count(*) from asset`, 2026-08-01;
+  DB role `immich`). The Part 1 draft cited ~6,710 photos; the live count is now 7,098.
+- **Nextcloud users: 5** (`occ user:list`; the "family" group). Files count: `TODO`.
 
 ## 4. systemd units (device, `nasa-*`)
 `nasa-tunnel` (autossh reverse SSH), `nasa-usb-preboot`, `nasa-usb-monitor`, `nasa-usb-watchdog.timer`,
@@ -70,6 +73,15 @@
 - VPS nginx (Docker, host network) port map → tunnel → Jetson: `:8080/:8443` Nextcloud · `:2283/:2443` Immich ·
   `:8090/:9443` LLM Gateway · `:10022` SSH. **Self-signed TLS (10-year)**.
 - Samba is LAN-only (iptables 192.168.0.0/24 → 445/139). Nothing exposed beyond the tunnel: `TODO: confirm ss -tulpn`.
+
+### 5a. Latency & the cost of the tunnel (`curl -w time_total`, 3 samples each, 2026-08-01)
+| Path | Nextcloud (`/status.php`) | Immich (`/api/server/ping`) |
+|---|---|---|
+| On the Jetson (no tunnel) | **~45 ms** | **~7 ms** |
+| Via reverse tunnel (VPS → Jetson) | **~230 ms** (140–290) | **~220 ms** (210–230) |
+| Public HTTPS on VPS `:8443` (incl. TLS) | **~260 ms** (250–280) | — |
+- **Cost of the tunnel ≈ +185–210 ms round-trip**, dominated by the geographic RTT to the VPS (Vienna) — not by the
+  Jetson. Local service latency itself is low (Immich 7 ms, Nextcloud 45 ms). Good honest number for the article.
 
 ## 6. Step 2 — second node (Dell Vostro 15 3568), confirmed by Dell service tag `H7YB9L2`
 | Fact | Value |

@@ -577,6 +577,8 @@ IMMICH_DISABLE_MACHINE_LEARNING=true   # обязательно для Jetson Na
 | [docs/plans/VPS_INTEGRATION_PLAN.md](docs/plans/VPS_INTEGRATION_PLAN.md) | План интеграции VPS + тоннель |
 | [docs/plans/POST_HABR_FEEDBACK_2026-08.md](docs/plans/POST_HABR_FEEDBACK_2026-08.md) | **Шаг 2:** разбор отзывов с Habr + дорожная карта развития / Habr feedback + Step 2 roadmap |
 | [docs/plans/VOSTRO_ML_NODE_ONBOARDING.md](docs/plans/VOSTRO_ML_NODE_ONBOARDING.md) | **Шаг 2:** ввод Dell Vostro 15 как Immich ML-узла / Vostro ML node onboarding |
+| [docs/plans/SYSTEM_AUDIT_2026-08-01.md](docs/plans/SYSTEM_AUDIT_2026-08-01.md) | **Live-аудит 2026-08-01:** питание (2.3/4.2 Вт), стабильность, снятые противоречия + 2 находки (экспозиция, бэкапы) / Live system audit |
+| [docs/articles/MEASUREMENTS_EN.md](docs/articles/MEASUREMENTS_EN.md) · [GAPS_EN.md](docs/articles/GAPS_EN.md) · [PROJECT_FACTS_EN.md](docs/articles/PROJECT_FACTS_EN.md) | Детальные замеры, блокеры и фактура (EN) / Measurements, gaps, facts |
 | [AGENTS.md](AGENTS.md) | Правила для Codex/агентов |
 | [docs/PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md) | Зафиксированные решения и ограничения |
 | [docs/architecture_nas_jetson_nano.md](docs/architecture_nas_jetson_nano.md) | Полная архитектурная карта (Mermaid) |

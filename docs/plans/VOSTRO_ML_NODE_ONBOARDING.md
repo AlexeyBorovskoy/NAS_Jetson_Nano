@@ -9,18 +9,34 @@
 > Decision made: 2026-08-01. The ZTN project is on hold → the laptop is free.
 
 ## Зачем / Why
-- 🇷🇺 **Immich ML** (распознавание лиц + smart search/CLIP) — главный запрос читателей Habr. Jetson Nano её не тянет (CUDA 10.2, 4 ГБ); Vostro (x86-64, 4C/8T) — тянет. Разгрузка Jetson по RAM. Без покупок.
-- 🇬🇧 **Immich ML** (face recognition + smart search/CLIP) — the top request from Habr readers. The Jetson Nano can't handle it (CUDA 10.2, 4 GB); the Vostro (x86-64, 4C/8T) can. It also relieves the Jetson's RAM. No purchases.
+- 🇷🇺 **Immich ML** (распознавание лиц + smart search/CLIP) — главный запрос читателей Habr. Jetson Nano её не тянет (13 контейнеров делят 4 ГБ). Vostro (x86-64, 2 ядра, 4 ГБ **выделенных** под ML) — пробуем как CPU-only узел. Разгрузка Jetson по RAM. Без покупок. См. «Честную переоценку роли» ниже.
+- 🇬🇧 **Immich ML** (face recognition + smart search/CLIP) — the top request from Habr readers. The Jetson Nano can't handle it (13 containers share 4 GB). The Vostro (x86-64, 2 cores, 4 GB **dedicated** to ML) is worth trying as a CPU-only node. It also relieves the Jetson's RAM. No purchases. See the "Honest role re-assessment" below.
 - 🇷🇺/🇬🇧 См. / See [POST_HABR_FEEDBACK_2026-08.md](POST_HABR_FEEDBACK_2026-08.md).
 
 ## Железо / Hardware
 
-| Параметр / Parameter | Значение / Value | Статус / Status |
-|---|---|---|
-| Модель / Model | Dell **Vostro 15** (5000-серия / series), MFG 2018 | с таблички / from label |
-| Service Tag | `H7YB9L2` | с таблички / from label |
-| CPU / RAM / GPU / диск / disk | **уточнить на сайте Dell по service tag** / **confirm via Dell site by service tag**; ожидаемо / expected i5-8250U класс, 8 ГБ, iGPU или NVIDIA MX | TBD |
-| Прежняя роль / Prior role | ZTN: QEMU/KVM-хост Континента (192.168.75.177) | освобождён / freed |
+> 🇷🇺 Подтверждено по service tag `H7YB9L2` (заводская конфигурация Dell). 🇬🇧 Confirmed via service tag `H7YB9L2` (Dell factory config).
+
+| Параметр / Parameter | Значение / Value |
+|---|---|
+| Модель / Model | Dell **Vostro 15 3568** (3000-серия / series, бюджетная / budget), MFG 2018 |
+| CPU | Intel **Core i3-6006U** — Skylake, **2 ядра / 4 потока / 2 cores / 4 threads**, 2.0 ГГц, **без turbo / no turbo** |
+| RAM | **4 ГБ** DDR4-2400 (1 модуль / 1 stick; 2-й слот свободен, max 16 ГБ / 1 free slot) |
+| GPU | AMD **Radeon 520** 2 ГБ GDDR5 + Intel HD 520 — **нет CUDA / no CUDA** |
+| Накопитель / Storage | **1 ТБ HDD 5400 rpm** SATA (не SSD / not an SSD) |
+| Дисплей / Display, сеть / net | 15.6″ HD 1366×768; Wi-Fi 802.11ac 1×1 (QCA9377) |
+| Прежняя роль / Prior role | ZTN: QEMU/KVM-хост Континента (192.168.75.177) — освобождён / freed |
+
+### Честная переоценка роли / Honest role re-assessment
+
+- 🇷🇺 Реальность скромнее ожиданий: **4 ГБ RAM (как у Jetson), CPU 2 ядра, GPU без CUDA, медленный HDD.** GPU-ускорение Immich ML **невозможно** (нет CUDA; AMD Radeon 520 не поддерживается). Остаётся **только CPU-путь**.
+- 🇬🇧 Reality is more modest than hoped: **4 GB RAM (same as the Jetson), a 2-core CPU, a non-CUDA GPU, a slow HDD.** GPU-accelerated Immich ML is **not possible** (no CUDA; AMD Radeon 520 unsupported). **CPU path only.**
+- 🇷🇺 **Единственное преимущество для ML:** здесь 4 ГБ отданы ТОЛЬКО под ML (на Jetson те же 4 ГБ делят 13 контейнеров). Поэтому выделенный CPU-only ML **пробовать стоит**, но ожидания реалистичные: медленно, бэклог за несколько ночей, не в реальном времени.
+- 🇬🇧 **Its one ML advantage:** here 4 GB is dedicated to ML alone (on the Jetson the same 4 GB is shared by 13 containers). So a dedicated CPU-only ML node **is worth trying**, but with realistic expectations: slow, backlog over several nights, not real-time.
+- 🇷🇺 **Лучшая вторая роль:** 1 ТБ HDD → **цель для restic-бэкапа** (см. Фаза 3). Ресурсов почти не требует, ценность реальная.
+- 🇬🇧 **Best secondary role:** the 1 TB HDD → a **restic backup target** (see Phase 3). Nearly zero resource cost, real value.
+- 🇷🇺 **Опционально (это покупка!):** +8 ГБ DDR4-2400 SO-DIMM во 2-й слот (~10–15$ б/у) превращает ноут в полноценный ML-узел; замена HDD→SSD ускоряет I/O. Только если решишь ослабить правило «без покупок».
+- 🇬🇧 **Optional (this is a purchase!):** an +8 GB DDR4-2400 SO-DIMM in the free slot (~$10–15 used) turns it into a proper ML node; an HDD→SSD swap speeds up I/O. Only if you relax the "no purchases" rule.
 
 ## Сетевой план / Network plan
 
@@ -40,8 +56,8 @@
 lscpu | grep -E 'Model name|^CPU\(s\)|Thread'; free -h | head -2; \
 lspci | grep -iE 'vga|3d|nvidia'; lsblk -d -o NAME,SIZE,MODEL | grep -v loop
 ```
-🇷🇺 От результата зависит: CPU-путь или GPU-ускорение ML; хватит ли RAM (нужно ≥8 ГБ комфортно).
-🇬🇧 The result decides: CPU path vs GPU-accelerated ML; whether RAM is enough (≥8 GB comfortable).
+🇷🇺 Спеки уже известны из service tag (см. выше) — GPU-путь исключён (нет CUDA), только CPU. L0 подтверждает живое состояние и реальный запас RAM под выделенный ML на 4 ГБ.
+🇬🇧 Specs are already known from the service tag (above) — GPU path is ruled out (no CUDA), CPU only. L0 confirms the live state and the real free-RAM headroom for dedicated ML on 4 GB.
 
 ### L1 — ОС, сеть, работа 24/7 с закрытой крышкой / OS, network, 24/7 lid-closed
 - 🇷🇺 **ОС:** рекомендуется чистая **Ubuntu 24.04 Server** (headless — крышка закрыта, экран не нужен); заодно уходят ZTN-артефакты (QEMU, br0/tap0). Альтернатива — upgrade 20.04→22.04/24.04 (20.04 уже EOL).

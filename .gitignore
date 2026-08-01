@@ -63,3 +63,6 @@ dist/
 
 # Raw unredacted article screenshots (real IPs visible) - never commit
 artifacts/phpto/
+
+# Dell service-tag / serial-number exports (sensitive hardware identifiers)
+docs/prompts/*.csv

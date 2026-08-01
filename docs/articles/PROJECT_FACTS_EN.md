@@ -24,13 +24,14 @@
 | Swap (zram) | 4× zram ≈ **2.0 GB total**, ~712 MB used (no disk swap) | `tegrastats` (SWAP 712/1982MB) |
 | GPU load | **0%** (idle — GPU is unused; this is the core "GPU sits idle" point) | `tegrastats` (GR3D_FREQ 0%) |
 | Temps (idle) | CPU 43.5 °C · GPU 42 °C · PMIC 50 °C | `tegrastats` / thermal zones |
-| Power draw (W) | `pending` (NOT blocked) — the on-board **INA3221 rail exists** at `…/6-0040/iio:device0/in_power0_input`; this `tegrastats` build omits POM_5V_IN, and reading the sysfs rail needs **root** (non-root = Permission denied). A single `sudo cat` + a short sampling loop yields it — **no wattmeter needed**. 10-min idle/load average still `TODO`. | probed 2026-08-01 |
+| Power draw (board) | ✅ **idle avg 2.30 W** (120×1 s; min 1.33, max 4.36) · **load avg 4.17 W** (4× `yes`, all cores) — INA3221 rail0 `…/iio:device0/in_power0_input` (root). SSD draw not included; full-build ≈ 3.5–4.5 W idle. See `MEASUREMENTS_EN.md`. | measured 2026-08-01 |
 
 ## 2. Storage — `lsblk`, `df`, quirks @ 2026-08-01
 | Fact | Value | Source |
 |---|---|---|
 | Data disk | USB SSD in a **JMS583** enclosure (152d:a583), USB 3.0 (5 Gbps) → `/dev/sda1`, **229 GB ext4** | `lsblk` / `lsusb` |
-| Data usage | **9.6 GB used of 229 GB (5%)**, mounted `rw,noatime` at `/mnt/storage` | `df -h /mnt/storage` |
+| Data usage | **9.6 GB used of 229 GB (4–5%)**, mounted `rw,noatime` at `/mnt/storage` | `df -h /mnt/storage` |
+| Breakdown (root `du`) | immich **8.9 GB** · Postgres DBs **349 MB** · Nextcloud data **254 MB** · backups **150 MB** | `du -sh` 2026-08-01 |
 | System disk | microSD 64 GB → `/`, **23 GB used of 60 GB (40%)** | `df -h /` |
 | USB mode | **UAS disabled** via `usb-storage.quirks=...,152d:a583:u` + `usbcore.autosuspend=-1` (kernel) → usb-storage BOT | `/proc/cmdline` |
 | Sequential write | **~250 MB/s** (prior measurement, CLAUDE.md) — `TODO: re-verify with fio` | historical |
@@ -65,14 +66,22 @@
 ## 4. systemd units (device, `nasa-*`)
 `nasa-tunnel` (autossh reverse SSH), `nasa-usb-preboot`, `nasa-usb-monitor`, `nasa-usb-watchdog.timer`,
 `nasa-ssd-recovery`, `nasa-jms583-health.timer`, `nasa-backup.timer`, `nasa-daily-report-telegram.timer`.
-- Tunnel restarts in 30 days: `TODO: journalctl`.
-- Backup duration / size / last success / restore-tested: `TODO`.
+- Stability (30 d): uptime 23 d; **0 OOM**, **0 container restarts**; `nasa-tunnel` service restarted 6× (~160
+  autossh reconnect lines); `nasa-ssd-recovery` fired 1×; `nasa-usb-monitor` 2×.
+- Backups: daily `pg_dump` (immich + nextcloud, ~2.6 MB each, 7-day rotation, 150 MB total). ⚠️ **Newest =
+  2026-07-24 → STALE ~8 days**; the timer is active but writes appear to have stopped ~Jul 24 — **needs
+  investigation**. Restore-tested: no evidence.
 
 ## 5. Network / external access
 - Jetson LAN `192.168.0.50`, behind **CGNAT**. External access only via **autossh reverse tunnel** to VPS `<VPS_IP>`.
 - VPS nginx (Docker, host network) port map → tunnel → Jetson: `:8080/:8443` Nextcloud · `:2283/:2443` Immich ·
   `:8090/:9443` LLM Gateway · `:10022` SSH. **Self-signed TLS (10-year)**.
-- Samba is LAN-only (iptables 192.168.0.0/24 → 445/139). Nothing exposed beyond the tunnel: `TODO: confirm ss -tulpn`.
+- Samba is LAN-only (iptables 192.168.0.0/24 → 445/139).
+- ⚠️ **Exposure (resolved 2026-08-01):** the "nothing exposed beyond the tunnel" claim is **FALSE**. On the VPS,
+  `ss -tuln` shows public `0.0.0.0` listeners for Nextcloud (8080/8443), Immich (2283/2443), LLM (8090/9443),
+  **nas-api (8099)**, Beszel (8091). Services **are** reachable from the internet; the "open ports" criticism is
+  **correct**. Nextcloud/Immich have app-login, but the admin API and LLM gateway being public is a real gap. See
+  `MEASUREMENTS_EN.md` §F1 and `GAPS_EN.md`.
 
 ### 5a. Latency & the cost of the tunnel (`curl -w time_total`, 3 samples each, 2026-08-01)
 | Path | Nextcloud (`/status.php`) | Immich (`/api/server/ping`) |

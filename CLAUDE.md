@@ -83,6 +83,7 @@
 | sudo на Jetson | `sudo -S <cmd>` | пароль брать только из приватного runtime/local secret storage; не коммитить |
 | VPS (Vienna) | `193.8.215.130` | `ssh -i ~/.ssh/borovskoy_new_ed25519 root@193.8.215.130` |
 | Keenetic Omni KN-1410 | IP pending | Planned Wi-Fi extender; label secrets stay local; factory reset only after explicit confirmation |
+| Vostro 15 ML-узел | `192.168.0.60` (план) | 🔧 onboarding: Dell Vostro 15 (2018, tag `H7YB9L2`) → always-on Immich ML-узел. См. `docs/plans/VOSTRO_ML_NODE_ONBOARDING.md` |
 | Репо на Jetson | `~/nasa` | `/home/admin/nasa` (remote `Nasa_home.git`; rename не выкатан) |
 
 ## GitHub CLI (gh)

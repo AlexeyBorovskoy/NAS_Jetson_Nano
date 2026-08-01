@@ -86,6 +86,7 @@ docker compose -f docker/compose/docker-compose.immich.yml   --env-file config/.
 - [О проекте / About](#о-проекте--about)
 - [Для кого / Who is this for](#для-кого--who-is-this-for)
 - [Что работает прямо сейчас / What's running](#что-работает-прямо-сейчас--whats-running)
+- [Шаг 2 — Развитие проекта / Step 2 — Project Evolution](#шаг-2--развитие-проекта--step-2--project-evolution)
 - [Архитектура / Architecture](#архитектура--architecture)
 - [Стек / Stack](#стек--stack)
 - [Требования / Prerequisites](#требования--prerequisites)
@@ -193,6 +194,43 @@ Principles:
 > `e2fsck -f -n` вернул `0`, `storage_preflight.sh` завершился без ошибок / completed without errors.
 > История инцидента / Incident log: [docs/plans/STORAGE_INCIDENT_2026-06-23.md](docs/plans/STORAGE_INCIDENT_2026-06-23.md).
 > Аудит надёжности / Reliability audit: [docs/plans/RELIABILITY_AUDIT_2026-06-23.md](docs/plans/RELIABILITY_AUDIT_2026-06-23.md).
+
+---
+
+## Шаг 2 — Развитие проекта / Step 2 — Project Evolution
+
+> 🇷🇺 **Шаг 1** — запуск: из простаивавшего Jetson Nano собран рабочий домашний облак (эта история — в [первой статье на Habr](https://habr.com/ru/articles/1062914/)).
+> **Шаг 2** — развитие: проект растёт по обратной связи от читателей и превращается из одноплатника в маленький кластер, собранный целиком из железа, которое лежало без дела.
+>
+> 🇬🇧 **Step 1** — launch: an idle Jetson Nano became a working home cloud (that story is in the [first Habr article](https://habr.com/ru/articles/1062914/)).
+> **Step 2** — evolution: driven by reader feedback, the project grows from a single board into a small cluster built entirely from hardware that was gathering dust.
+
+### Что подтолкнуло / What triggered it
+
+> 🇷🇺 Главная претензия в комментариях к статье (3 читателя из 4): **Immich работает без распознавания (ML)**, а ведь смысл Jetson именно в GPU. «Immich без ML — деньги на ветер». Честный разбор подтвердил: читатели правы по сути, но GPU Nano (Maxwell, CUDA 10.2, 4 ГБ) современный Immich ML не потянет, а покупать отдельный GPU-бокс — против принципа проекта «старое железо должно жить».
+>
+> 🇬🇧 The top criticism in the article comments (3 of 4 readers): **Immich runs without machine learning**, yet the GPU is the whole point of a Jetson. "Immich without ML is money down the drain." An honest review confirmed they're right in spirit — but the Nano's GPU (Maxwell, CUDA 10.2, 4 GB) can't run modern Immich ML, and buying a separate GPU box would break the project's core rule: *old hardware should live*.
+
+### Идея Шага 2 / The Step 2 idea
+
+> 🇷🇺 Дать кластеру «мозг», не купив ничего: подключить **ещё одну простаивавшую машину** — ноутбук **Dell Vostro 15 (2018)**, освободившийся после закрытия другого проекта, — как выделенный **always-on ML-узел**. Immich на Jetson отгружает распознавание лиц и smart-поиск на него через `IMMICH_MACHINE_LEARNING_URL`. Nano остаётся хранилищем и сервером, ноутбук считает нейросети — заодно разгружается скромная RAM Jetson.
+>
+> 🇬🇧 Give the cluster a "brain" without buying anything: bring in **another idle machine** — a **2018 Dell Vostro 15** laptop, freed up after another project wrapped — as a dedicated **always-on ML node**. Immich on the Jetson offloads face recognition and smart search to it via `IMMICH_MACHINE_LEARNING_URL`. The Nano stays the storage/server; the laptop runs the neural nets — and the Jetson's tight RAM gets some breathing room.
+
+### Дорожная карта Шага 2 / Step 2 roadmap
+
+| Направление / Track | Что / What | Статус / Status |
+|---|---|---|
+| 🧠 ML-узел / ML node | Dell Vostro 15 → remote `immich-machine-learning` | 🔧 Onboarding |
+| 🔒 Безопасность / Security | Сервисы за VPN (Tailscale/Amnezia), fail2ban / services behind VPN | 📋 План / Planned |
+| 💾 Хранилище / Storage | 2 ТБ HDD + restic off-site backup | 📋 План / Planned |
+| 🌡️ Здоровье SSD / SSD health | Температура SSD (SMART 194) → Telegram alert | 📋 План / Planned |
+
+> 🇷🇺 📋 Полный разбор отзывов и план: [docs/plans/POST_HABR_FEEDBACK_2026-08.md](docs/plans/POST_HABR_FEEDBACK_2026-08.md) · 🖥️ Ввод ML-узла: [docs/plans/VOSTRO_ML_NODE_ONBOARDING.md](docs/plans/VOSTRO_ML_NODE_ONBOARDING.md) · 🗒️ Трекинг: [issue #9](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/issues/9)
+> 🇬🇧 📋 Full feedback review and plan: [docs/plans/POST_HABR_FEEDBACK_2026-08.md](docs/plans/POST_HABR_FEEDBACK_2026-08.md) · 🖥️ ML node onboarding: [docs/plans/VOSTRO_ML_NODE_ONBOARDING.md](docs/plans/VOSTRO_ML_NODE_ONBOARDING.md) · 🗒️ Tracking: [issue #9](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/issues/9)
+>
+> 🇷🇺 О результатах Шага 2 будет **вторая статья на Habr** (в подготовке).
+> 🇬🇧 Step 2 results will be covered in a **second Habr article** (in preparation).
 
 ---
 
@@ -492,6 +530,17 @@ IMMICH_DISABLE_MACHINE_LEARNING=true   # обязательно для Jetson Na
 | Stage 3.1 | USB HDD: резервное расширение хранилища (NTFS + ext4 гибрид) | 📋 Готово к подключению |
 | Stage 4 | Analytics, RAG, fallback LLM providers | 📋 Будущее |
 
+**Шаг 2 — Развитие (по отзывам читателей Habr) / Step 2 — Evolution (from Habr reader feedback):**
+
+| Направление / Track | Содержание / Content | Статус / Status |
+|---|---|---|
+| Шаг 2 · ML | Dell Vostro 15 → выделенный Immich ML-узел (remote ML) / dedicated Immich ML node | 🔧 Onboarding · [plan](docs/plans/VOSTRO_ML_NODE_ONBOARDING.md) |
+| Шаг 2 · Security | Сервисы за VPN (Tailscale/Amnezia), fail2ban / services behind VPN | 📋 Планируется / Planned |
+| Шаг 2 · Storage | 2 ТБ HDD + restic off-site | 📋 Планируется / Planned |
+| Шаг 2 · SSD health | Температура SSD (SMART 194) → Telegram | 📋 Планируется / Planned |
+
+> Разбор и трекинг / Review & tracking: [POST_HABR_FEEDBACK_2026-08.md](docs/plans/POST_HABR_FEEDBACK_2026-08.md) · [issue #9](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/issues/9)
+
 ---
 
 ## Документация / Documentation
@@ -526,6 +575,8 @@ IMMICH_DISABLE_MACHINE_LEARNING=true   # обязательно для Jetson Na
 | [docs/plans/STORAGE_INCIDENT_2026-06-23.md](docs/plans/STORAGE_INCIDENT_2026-06-23.md) | USB storage incident: `error -71`, recovery status, Nextcloud controlled start |
 | [docs/plans/RELIABILITY_AUDIT_2026-06-23.md](docs/plans/RELIABILITY_AUDIT_2026-06-23.md) | Live reliability audit: fsck/preflight, boot guard, restart policy, remaining risks |
 | [docs/plans/VPS_INTEGRATION_PLAN.md](docs/plans/VPS_INTEGRATION_PLAN.md) | План интеграции VPS + тоннель |
+| [docs/plans/POST_HABR_FEEDBACK_2026-08.md](docs/plans/POST_HABR_FEEDBACK_2026-08.md) | **Шаг 2:** разбор отзывов с Habr + дорожная карта развития / Habr feedback + Step 2 roadmap |
+| [docs/plans/VOSTRO_ML_NODE_ONBOARDING.md](docs/plans/VOSTRO_ML_NODE_ONBOARDING.md) | **Шаг 2:** ввод Dell Vostro 15 как Immich ML-узла / Vostro ML node onboarding |
 | [AGENTS.md](AGENTS.md) | Правила для Codex/агентов |
 | [docs/PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md) | Зафиксированные решения и ограничения |
 | [docs/architecture_nas_jetson_nano.md](docs/architecture_nas_jetson_nano.md) | Полная архитектурная карта (Mermaid) |
@@ -575,18 +626,21 @@ CI автоматически проверяет секреты / CI automatical
 
 ## Статьи и публикации / Articles
 
-🇷🇺 **Habr:** статья **не опубликована**. В репозитории хранится только черновик и материалы подготовки. Ранее указанный адрес Песочницы на 16.07.2026 возвращает HTTP 404 и не является доказательством публикации.
+🇷🇺 **Habr — Часть 1 (запуск):** опубликована → **[habr.com/ru/articles/1062914](https://habr.com/ru/articles/1062914/)**. 9 комментариев; отзывы читателей легли в основу [Шага 2](#шаг-2--развитие-проекта--step-2--project-evolution).
+**Habr — Часть 2 (развитие):** в подготовке — ML-узел Vostro, безопасность, хранилище.
 
-🇬🇧 **Habr:** the article is **not published**. The repository contains only a draft and preparation materials. The previously recorded Sandbox URL returned HTTP 404 on 2026-07-16 and is not evidence of publication.
+🇬🇧 **Habr — Part 1 (launch):** published → **[habr.com/ru/articles/1062914](https://habr.com/ru/articles/1062914/)**. 9 comments; reader feedback seeded [Step 2](#шаг-2--развитие-проекта--step-2--project-evolution).
+**Habr — Part 2 (evolution):** in preparation — Vostro ML node, security, storage.
 
 🇬🇧 **GitHub Pages:** [alexeyborovskoy.github.io/NAS_Jetson_Nano](https://alexeyborovskoy.github.io/NAS_Jetson_Nano/) — project site with architecture, reliability story, evidence.
 
-| Материал | Язык | Ссылка |
+| Материал / Material | Язык / Lang | Ссылка / Link |
 |---|---|---|
-| Черновик статьи для Habr / Habr article draft | RU | [docs/articles/habr_article_ru.md](docs/articles/habr_article_ru.md) |
+| Habr — Часть 1 (запуск) / Part 1 (launch) | RU | [habr.com/ru/articles/1062914](https://habr.com/ru/articles/1062914/) |
+| Habr — Часть 2 (развитие) / Part 2 (evolution) | RU | 🔜 в подготовке / in preparation |
+| Разбор отзывов + план Шага 2 / Feedback & Step 2 plan | RU | [docs/plans/POST_HABR_FEEDBACK_2026-08.md](docs/plans/POST_HABR_FEEDBACK_2026-08.md) |
 | GitHub Pages | EN/RU | [alexeyborovskoy.github.io/NAS_Jetson_Nano](https://alexeyborovskoy.github.io/NAS_Jetson_Nano/) |
 | Hackaday.io | EN | [docs/articles/hackaday_project_en.md](docs/articles/hackaday_project_en.md) |
-| Архив версий статьи | — | [docs/articles/README.md](docs/articles/README.md) |
 
 ---
 

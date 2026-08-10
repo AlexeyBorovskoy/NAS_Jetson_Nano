@@ -257,19 +257,28 @@ def _match_llm(text: str) -> str | None:
     return question.strip() or None
 
 
-def _llm_quota_left() -> bool:
-    """Second budget guard, at bot level. The gateway enforces the real one."""
+def _llm_quota_left(user: str) -> bool:
+    """Per-person reply cap at bot level. The gateway enforces the token budget."""
     limit = settings.talk_bot_llm_daily_replies
-    if limit <= 0:
-        return True
     today = time.strftime("%Y-%m-%d")
     if _STATE.get("llm_day") != today:
         _STATE["llm_day"] = today
         _STATE["llm_day_replies"] = 0
-    return _STATE["llm_day_replies"] < limit
+        _STATE["llm_by_user"] = {}
+    if limit <= 0:
+        return True
+    used = _STATE.setdefault("llm_by_user", {}).get(user, 0)
+    return used < limit
 
 
-async def _ask_llm(question: str) -> str:
+def _count_llm_reply(user: str) -> None:
+    _STATE["llm_replied"] = _STATE.get("llm_replied", 0) + 1
+    _STATE["llm_day_replies"] = _STATE.get("llm_day_replies", 0) + 1
+    by_user = _STATE.setdefault("llm_by_user", {})
+    by_user[user] = by_user.get(user, 0) + 1
+
+
+async def _ask_llm(question: str, user: str) -> str:
     """Send a free-form question through the redaction gateway.
 
     This is the ONLY place in the bot that talks to the outside world. It goes
@@ -283,13 +292,22 @@ async def _ask_llm(question: str) -> str:
         "task": "family_chat_question",
         "prompt": question,
         "mode": "safe",
+        # Who asked — the gateway bills and rate-limits per person.
+        "user": user,
     }
     async with httpx.AsyncClient(timeout=settings.talk_bot_llm_timeout) as client:
         r = await client.post(settings.talk_bot_llm_url, json=payload)
 
     if r.status_code == 429:
-        _STATE["llm_refused"] += 1
-        return "🐕 Лимит запросов на сегодня исчерпан. Спросите завтра."
+        _STATE["llm_refused"] = _STATE.get("llm_refused", 0) + 1
+        detail = ""
+        try:
+            detail = (r.json() or {}).get("detail", "")
+        except Exception:
+            pass
+        if "personal daily limit" in detail:
+            return "🐕 У тебя закончился дневной лимит вопросов. Продолжим завтра."
+        return "🐕 Общий лимит на сегодня исчерпан. Спросите завтра."
     if r.status_code != 200:
         _STATE["llm_last_error"] = f"HTTP {r.status_code}"
         return f"🐕 Не смог спросить — шлюз ответил {r.status_code}."
@@ -351,6 +369,11 @@ async def _poll_once(token: str, last_id: int) -> tuple[list[dict], int]:
     return messages, new_last
 
 
+def _actor(m: dict) -> str:
+    """Who wrote the message. actorId is stable; display name is a fallback."""
+    return (m.get("actorId") or m.get("actorDisplayName") or "unknown").strip() or "unknown"
+
+
 async def _handle_messages(token: str, messages: list[dict]) -> None:
     for m in messages:
         _STATE["processed"] += 1
@@ -382,8 +405,9 @@ async def _handle_messages(token: str, messages: list[dict]) -> None:
         # 2) LLM callsign — the family explicitly asked to go outside.
         question = _match_llm(text)
         if question:
-            if not _llm_quota_left():
-                _STATE["llm_refused"] += 1
+            user = _actor(m)
+            if not _llm_quota_left(user):
+                _STATE["llm_refused"] = _STATE.get("llm_refused", 0) + 1
                 await _send(
                     token,
                     "🐕 На сегодня лимит вопросов исчерпан.",
@@ -391,17 +415,17 @@ async def _handle_messages(token: str, messages: list[dict]) -> None:
                 )
                 continue
             try:
-                reply = await _ask_llm(question)
+                reply = await _ask_llm(question, user)
             except Exception as exc:
                 log.exception("talk bot LLM call failed")
                 _STATE["llm_last_error"] = str(exc)
                 reply = "🐕 Не смог получить ответ — попробуйте позже."
             await _send(token, reply, settings.talk_bot_llm_display_name)
-            _STATE["llm_replied"] += 1
-            _STATE["llm_day_replies"] = _STATE.get("llm_day_replies", 0) + 1
+            _count_llm_reply(user)
             log.info(
                 "talk bot LLM replied",
-                extra={"fields": {"room": token, "chars": len(question), "outbound": True}},
+                extra={"fields": {"room": token, "user": user,
+                                  "chars": len(question), "outbound": True}},
             )
 
 
@@ -416,48 +440,68 @@ async def _send(token: str, message: str, display_name: str) -> None:
         log.exception("talk bot failed to send reply")
 
 
-async def run_bot_loop() -> None:
-    """Background task: baseline, then long-poll and answer commands forever."""
-    token = settings.talk_bot_room or settings.talk_family_room
-    callsign = settings.talk_bot_llm_trigger.strip()
-    _STATE.update({
-        "enabled": True,
-        "running": True,
-        "room": token,
-        "started_at": time.time(),
-        "llm_enabled": bool(callsign),
-        "llm_trigger": callsign,
-    })
-    log.info(
-        "talk bot started, room=%s trigger=%r llm_trigger=%r",
-        token,
-        settings.talk_bot_trigger,
-        callsign or None,
-    )
+def _room_tokens() -> list[str]:
+    """Rooms to listen to. Several = each family member gets a private chat."""
+    rooms = [t for t in settings.talk_bot_rooms.split() if t]
+    if rooms:
+        return rooms
+    return [settings.talk_bot_room or settings.talk_family_room]
 
-    # Baseline: start from the latest message so we don't replay old chat.
+
+async def _room_loop(token: str) -> None:
+    """Long-poll one room forever. One task per room."""
     try:
         last_id = await _fetch_baseline_id(token)
     except Exception as exc:
-        log.warning("talk bot baseline failed (%s), starting from 0", exc)
+        log.warning("talk bot baseline failed for %s (%s), starting from 0", token, exc)
         last_id = 0
-    _STATE["last_message_id"] = last_id
+    _STATE.setdefault("rooms", {})[token] = {"last_message_id": last_id, "error": None}
 
     while True:
         try:
             messages, last_id = await _poll_once(token, last_id)
+            _STATE["rooms"][token] = {"last_message_id": last_id, "error": None}
             _STATE["last_message_id"] = last_id
             _STATE["last_error"] = None
             if messages:
                 await _handle_messages(token, messages)
         except asyncio.CancelledError:
-            log.info("talk bot loop cancelled")
-            _STATE["running"] = False
+            log.info("talk bot loop cancelled for room %s", token)
             raise
         except Exception as exc:
+            _STATE["rooms"][token] = {"last_message_id": last_id, "error": str(exc)}
             _STATE["last_error"] = str(exc)
-            log.warning("talk bot loop error: %s", exc)
+            log.warning("talk bot loop error in room %s: %s", token, exc)
             await asyncio.sleep(10)  # back off on transient failures
+
+
+async def run_bot_loop() -> None:
+    """Background task: poll every configured room in parallel."""
+    rooms = _room_tokens()
+    callsign = settings.talk_bot_llm_trigger.strip()
+    _STATE.update({
+        "enabled": True,
+        "running": True,
+        "room": rooms[0],
+        "rooms": {},
+        "room_count": len(rooms),
+        "started_at": time.time(),
+        "llm_enabled": bool(callsign),
+        "llm_trigger": callsign,
+        "llm_by_user": {},
+    })
+    log.info(
+        "talk bot started, rooms=%s trigger=%r llm_trigger=%r",
+        rooms,
+        settings.talk_bot_trigger,
+        callsign or None,
+    )
+
+    try:
+        await asyncio.gather(*(_room_loop(t) for t in rooms))
+    except asyncio.CancelledError:
+        _STATE["running"] = False
+        raise
 
 
 @router.get(

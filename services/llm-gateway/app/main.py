@@ -140,33 +140,105 @@ def _estimated_cost_usd(tokens: int) -> float:
     return round(tokens / 1_000_000 * price_per_m, 4)
 
 
-def _check_budget() -> None:
-    """Fail-closed budget gate, evaluated before any outbound call."""
+# ── Per-user accounting ─────────────────────────────────────────────────────────
+#
+# Every request carries a `user`. Without it everything lands in "unknown", which
+# is deliberate: it stays visible in /v1/usage instead of quietly vanishing, so a
+# caller that forgot to identify itself is easy to spot.
+
+DEFAULT_USER = "unknown"
+
+
+def _user_limits() -> dict[str, int]:
+    """Per-user daily token limits: "olga:5000 ivan:20000 anna:3000"."""
+    limits: dict[str, int] = {}
+    for item in re.split(r"[,\s]+", os.getenv("LLM_USER_LIMITS", "")):
+        if not item or ":" not in item:
+            continue
+        name, _, value = item.partition(":")
+        try:
+            limits[name.strip().lower()] = int(value)
+        except ValueError:
+            continue
+    return limits
+
+
+def _user_daily_limit(user: str) -> int:
+    """Personal limit if set, otherwise the shared per-user default."""
+    limits = _user_limits()
+    explicit = limits.get(user.strip().lower())
+    if explicit is not None:
+        return explicit
+    return int(os.getenv("LLM_USER_DAILY_TOKEN_LIMIT", "0") or 0)
+
+
+def _user_bucket(usage: dict, user: str) -> dict:
+    """Fetch (and roll over) one user's counters inside the usage document."""
+    users = usage.setdefault("users", {})
+    bucket = users.setdefault(user, {})
+    if bucket.get("day") != _today():
+        bucket["day"] = _today()
+        bucket["day_tokens"] = 0
+        bucket["day_calls"] = 0
+    if bucket.get("month") != _month():
+        bucket["month"] = _month()
+        bucket["month_tokens"] = 0
+        bucket["month_calls"] = 0
+    return bucket
+
+
+def _check_budget(user: str = DEFAULT_USER) -> None:
+    """Fail-closed budget gate, evaluated before any outbound call.
+
+    Three independent ceilings, checked cheapest first:
+      1. this user's daily tokens,
+      2. the household's daily tokens,
+      3. the household's monthly cost.
+    """
+    user = (user or DEFAULT_USER).strip() or DEFAULT_USER
     daily_limit = int(os.getenv("LLM_DAILY_TOKEN_LIMIT", "0") or 0)
     monthly_cost_limit = float(os.getenv("LLM_MONTHLY_COST_LIMIT_USD", "0") or 0)
+
     with _usage_lock:
         usage = _current_usage()
-    if daily_limit and usage.get("day_tokens", 0) >= daily_limit:
+        bucket = _user_bucket(usage, user)
+        user_spent = bucket.get("day_tokens", 0)
+        total_day = usage.get("day_tokens", 0)
+        total_month = usage.get("month_tokens", 0)
+
+    user_limit = _user_daily_limit(user)
+    if user_limit and user_spent >= user_limit:
         raise HTTPException(
             status_code=429,
-            detail=f"daily token limit reached ({usage['day_tokens']}/{daily_limit})",
+            detail=f"personal daily limit reached for '{user}' ({user_spent}/{user_limit} tokens)",
+        )
+    if daily_limit and total_day >= daily_limit:
+        raise HTTPException(
+            status_code=429,
+            detail=f"household daily token limit reached ({total_day}/{daily_limit})",
         )
     if monthly_cost_limit:
-        spent = _estimated_cost_usd(usage.get("month_tokens", 0))
+        spent = _estimated_cost_usd(total_month)
         if spent >= monthly_cost_limit:
             raise HTTPException(
                 status_code=429,
-                detail=f"monthly cost limit reached (~${spent}/${monthly_cost_limit})",
+                detail=f"household monthly cost limit reached (~${spent}/${monthly_cost_limit})",
             )
 
 
-def _record_usage(tokens: int) -> None:
+def _record_usage(tokens: int, user: str = DEFAULT_USER) -> None:
+    user = (user or DEFAULT_USER).strip() or DEFAULT_USER
     with _usage_lock:
         usage = _current_usage()
         usage["day_tokens"] = usage.get("day_tokens", 0) + tokens
         usage["day_calls"] = usage.get("day_calls", 0) + 1
         usage["month_tokens"] = usage.get("month_tokens", 0) + tokens
         usage["month_calls"] = usage.get("month_calls", 0) + 1
+        bucket = _user_bucket(usage, user)
+        bucket["day_tokens"] = bucket.get("day_tokens", 0) + tokens
+        bucket["day_calls"] = bucket.get("day_calls", 0) + 1
+        bucket["month_tokens"] = bucket.get("month_tokens", 0) + tokens
+        bucket["month_calls"] = bucket.get("month_calls", 0) + 1
         _save_usage(usage)
 
 
@@ -265,6 +337,103 @@ def _call_gigachat(system: str, user: str, model: str) -> tuple[str, int]:
     return content, tokens
 
 
+_IMG_TAG_RE = re.compile(r'<img\s+src="([^"]+)"', re.IGNORECASE)
+
+
+def _gigachat_download_file(file_id: str) -> bytes:
+    """Fetch a generated/stored file's binary content."""
+    token = _gigachat_access_token()
+    base = os.getenv("GIGACHAT_BASE_URL", "https://gigachat.devices.sberbank.ru/api/v1").rstrip("/")
+    try:
+        r = httpx.get(
+            f"{base}/files/{file_id}/content",
+            headers={"Authorization": f"Bearer {token}", "Accept": "application/jpg"},
+            verify=_gigachat_verify(),
+            timeout=120.0,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"GigaChat file download error: {exc}") from exc
+    if r.status_code != 200:
+        raise HTTPException(status_code=502, detail=f"GigaChat file download: HTTP {r.status_code} {r.text[:200]}")
+    return r.content
+
+
+def _gigachat_upload_file(filename: str, data: bytes, mime: str = "image/jpeg") -> str:
+    """Upload a file to GigaChat storage; returns its id."""
+    token = _gigachat_access_token()
+    base = os.getenv("GIGACHAT_BASE_URL", "https://gigachat.devices.sberbank.ru/api/v1").rstrip("/")
+    try:
+        r = httpx.post(
+            f"{base}/files",
+            headers={"Authorization": f"Bearer {token}"},
+            files={"file": (filename, data, mime)},
+            data={"purpose": "general"},
+            verify=_gigachat_verify(),
+            timeout=180.0,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"GigaChat upload error: {exc}") from exc
+    if r.status_code not in (200, 201):
+        raise HTTPException(status_code=502, detail=f"GigaChat upload: HTTP {r.status_code} {r.text[:300]}")
+    file_id = (r.json() or {}).get("id", "")
+    if not file_id:
+        raise HTTPException(status_code=502, detail="GigaChat upload returned no file id")
+    return file_id
+
+
+def _gigachat_image(user_prompt: str, attachments: Optional[list[str]] = None) -> tuple[bytes, str, int]:
+    """Ask Kandinsky (via GigaChat's built-in text2image) for an image.
+
+    Returns (image_bytes, file_id, tokens). `attachments` carries an uploaded
+    source image for editing/restoration instead of generating from scratch.
+    """
+    token = _gigachat_access_token()
+    base = os.getenv("GIGACHAT_BASE_URL", "https://gigachat.devices.sberbank.ru/api/v1").rstrip("/")
+    # ⚠️ Verified 2026-08-10: only GigaChat-2-Max accepts an image on input.
+    # Plain "GigaChat" answers 422 "Model does not support image" — so the image
+    # model is deliberately a SEPARATE setting from the chat model.
+    model = os.getenv("GIGACHAT_IMAGE_MODEL", "GigaChat-2-Max")
+
+    message: dict = {"role": "user", "content": user_prompt}
+    if attachments:
+        message["attachments"] = attachments
+
+    body = {
+        "model": model,
+        # Lets the model decide to invoke the built-in text2image function.
+        "function_call": "auto",
+        "messages": [
+            {"role": "system", "content": "Ты — художник. Выполняй запрос пользователя по изображению."},
+            message,
+        ],
+    }
+    try:
+        r = httpx.post(
+            f"{base}/chat/completions",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json=body,
+            verify=_gigachat_verify(),
+            timeout=300.0,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"GigaChat image transport error: {exc}") from exc
+    if r.status_code != 200:
+        raise HTTPException(status_code=502, detail=f"GigaChat image error: HTTP {r.status_code} {r.text[:300]}")
+
+    data = r.json()
+    content = (data.get("choices") or [{}])[0].get("message", {}).get("content", "") or ""
+    tokens = (data.get("usage") or {}).get("total_tokens", 0) or 0
+
+    match = _IMG_TAG_RE.search(content)
+    if not match:
+        raise HTTPException(
+            status_code=502,
+            detail=f"GigaChat returned no image (text answer instead): {content[:300]}",
+        )
+    file_id = match.group(1)
+    return _gigachat_download_file(file_id), file_id, tokens
+
+
 def _call_deepseek(system: str, user: str, model: str) -> tuple[str, int]:
     if OpenAI is None:
         raise HTTPException(status_code=500, detail="openai SDK is not installed")
@@ -298,6 +467,8 @@ class ChatRequest(BaseModel):
     reasoning: bool = False
     # Per-request provider override; falls back to LLM_PROVIDER.
     provider: Optional[Literal["deepseek", "gigachat"]] = None
+    # Who is asking — drives per-user quotas and the /v1/usage breakdown.
+    user: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
@@ -327,10 +498,31 @@ def health():
 
 
 @app.get("/v1/usage")
-def usage():
-    """Current budget consumption — what the family has spent today/this month."""
+def usage(user: Optional[str] = None):
+    """Who spent what. Pass ?user=<name> for one person, omit for everyone."""
     with _usage_lock:
         data = _current_usage()
+        buckets = dict(data.get("users", {}))
+
+    def _person(name: str, bucket: dict) -> dict:
+        limit = _user_daily_limit(name)
+        day_tokens = bucket.get("day_tokens", 0) if bucket.get("day") == _today() else 0
+        month_tokens = bucket.get("month_tokens", 0) if bucket.get("month") == _month() else 0
+        return {
+            "user": name,
+            "day_tokens": day_tokens,
+            "day_calls": bucket.get("day_calls", 0) if bucket.get("day") == _today() else 0,
+            "day_limit": limit,
+            "day_left": max(limit - day_tokens, 0) if limit else None,
+            "month_tokens": month_tokens,
+            "month_cost_usd_est": _estimated_cost_usd(month_tokens),
+        }
+
+    if user:
+        return _person(user, buckets.get(user, {}))
+
+    people = [_person(name, b) for name, b in buckets.items()]
+    people.sort(key=lambda p: p["month_tokens"], reverse=True)
     return {
         "day": data.get("day"),
         "day_tokens": data.get("day_tokens", 0),
@@ -341,6 +533,8 @@ def usage():
         "month_calls": data.get("month_calls", 0),
         "month_cost_usd_est": _estimated_cost_usd(data.get("month_tokens", 0)),
         "month_cost_limit_usd": float(os.getenv("LLM_MONTHLY_COST_LIMIT_USD", "0") or 0),
+        "per_user_default_limit": int(os.getenv("LLM_USER_DAILY_TOKEN_LIMIT", "0") or 0),
+        "users": people,
     }
 
 
@@ -386,7 +580,8 @@ def chat(payload: ChatRequest):
         )
 
     # Budget first, then redaction — both apply to every provider.
-    _check_budget()
+    user = payload.user or DEFAULT_USER
+    _check_budget(user)
 
     context = payload.context or ""
     full = f"Task: {payload.task}\n\nContext:\n{context}\n\nPrompt:\n{payload.prompt}"
@@ -397,7 +592,7 @@ def chat(payload: ChatRequest):
     else:
         content, tokens = _call_deepseek(SYSTEM_PROMPT, safe_full, model)
 
-    _record_usage(tokens)
+    _record_usage(tokens, user)
     return ChatResponse(provider=provider, model=model, redacted=True, content=content, tokens=tokens)
 
 
@@ -405,3 +600,148 @@ def chat(payload: ChatRequest):
 def explain_diagnostics(payload: ChatRequest):
     payload.task = "explain_anonymized_diagnostics"
     return chat(payload)
+
+
+# ── Images (Kandinsky via GigaChat) ─────────────────────────────────────────────
+#
+# Two endpoints with deliberately DIFFERENT privacy weight:
+#
+#   /v1/image/generate — only a text prompt leaves the house. No personal data.
+#   /v1/image/restore  — sends AN ACTUAL PHOTO to the provider. Gated by
+#                        LLM_ALLOW_IMAGE_ANALYSIS, which is false by default,
+#                        because the whole point of this project is that family
+#                        photos stay home. Turning it on is a conscious decision.
+
+
+class ImageRequest(BaseModel):
+    prompt: str
+    # Optional: where to write the result on the server side.
+    save_path: Optional[str] = None
+    user: Optional[str] = None
+
+
+# Ready-made instructions for the common cases. Restoration is just one of them —
+# the same upload path also does stylisation, which is what a family actually asks for.
+IMAGE_PRESETS: dict[str, str] = {
+    "restore": (
+        "Отреставрируй фотографию: убери шум, царапины и повреждения, "
+        "восстанови чёткость и естественный цвет. Сохрани черты лица без изменений."
+    ),
+    "colorize": "Раскрась эту чёрно-белую фотографию в естественные, реалистичные цвета.",
+    "glamour": (
+        "Сделай гламурный студийный портрет по этой фотографии: мягкий выразительный свет, "
+        "аккуратная ретушь кожи, красивый фон. Сохрани узнаваемость человека."
+    ),
+    "anime": "Преобразуй фотографию в иллюстрацию в стиле аниме, сохранив узнаваемость.",
+    "cartoon": "Преобразуй фотографию в рисунок в мультипликационном стиле.",
+    "upscale": "Увеличь резкость и детализацию фотографии, убери размытие.",
+}
+
+
+class ImageEditRequest(BaseModel):
+    # Source photo as base64 — the caller decides what to send, one file at a time.
+    image_base64: str
+    filename: str = "photo.jpg"
+    # Either pick a preset or write your own instruction; instruction wins.
+    preset: Optional[str] = None
+    instruction: Optional[str] = None
+    save_path: Optional[str] = None
+    user: Optional[str] = None
+
+
+class ImageResponse(BaseModel):
+    provider: str
+    file_id: str
+    tokens: int
+    bytes: int
+    image_base64: Optional[str] = None
+    saved_to: Optional[str] = None
+
+
+def _finish_image(raw: bytes, file_id: str, tokens: int, save_path: Optional[str],
+                  user: str = DEFAULT_USER) -> ImageResponse:
+    import base64 as _b64
+
+    saved = None
+    if save_path:
+        try:
+            p = Path(save_path)
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_bytes(raw)
+            saved = str(p)
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"cannot save image: {exc}") from exc
+    _record_usage(tokens, user)
+    return ImageResponse(
+        provider="gigachat",
+        file_id=file_id,
+        tokens=tokens,
+        bytes=len(raw),
+        image_base64=None if saved else _b64.b64encode(raw).decode("ascii"),
+        saved_to=saved,
+    )
+
+
+@app.post("/v1/image/generate", response_model=ImageResponse)
+def image_generate(payload: ImageRequest):
+    """Generate an image from a text prompt. Nothing personal leaves the house."""
+    if not os.getenv("GIGACHAT_AUTH_KEY", "").strip():
+        raise HTTPException(status_code=400, detail="GigaChat is not configured")
+    user = payload.user or DEFAULT_USER
+    _check_budget(user)
+    safe_prompt = redact(payload.prompt)
+    raw, file_id, tokens = _gigachat_image(safe_prompt)
+    return _finish_image(raw, file_id, tokens, payload.save_path, user)
+
+
+@app.get("/v1/image/presets")
+def image_presets():
+    """What the family can ask for without writing an instruction by hand."""
+    return {"presets": IMAGE_PRESETS}
+
+
+@app.post("/v1/image/edit", response_model=ImageResponse)
+def image_edit(payload: ImageEditRequest):
+    """Restore or restyle a real photo. THIS SENDS THE PHOTO TO THE PROVIDER.
+
+    Covers restoration, colorisation, a glamour portrait, anime/cartoon styling —
+    they are all the same upload path and carry the same privacy weight.
+
+    Refused unless LLM_ALLOW_IMAGE_ANALYSIS=true — an explicit, conscious opt-in,
+    because family photos staying home is the founding premise of this project.
+    """
+    if os.getenv("LLM_ALLOW_IMAGE_ANALYSIS", "false").lower() not in ("true", "1", "yes"):
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "image analysis is disabled by policy (LLM_ALLOW_IMAGE_ANALYSIS=false). "
+                "This endpoint uploads a real photo to the provider — enable it deliberately."
+            ),
+        )
+    if not os.getenv("GIGACHAT_AUTH_KEY", "").strip():
+        raise HTTPException(status_code=400, detail="GigaChat is not configured")
+
+    instruction = payload.instruction
+    if not instruction:
+        preset = (payload.preset or "restore").lower()
+        instruction = IMAGE_PRESETS.get(preset)
+        if not instruction:
+            raise HTTPException(
+                status_code=400,
+                detail=f"unknown preset '{preset}'; known: {', '.join(IMAGE_PRESETS)}",
+            )
+
+    import base64 as _b64
+
+    try:
+        data = _b64.b64decode(payload.image_base64, validate=True)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"image_base64 is not valid base64: {exc}") from exc
+    if not data:
+        raise HTTPException(status_code=400, detail="empty image")
+
+    user = payload.user or DEFAULT_USER
+    _check_budget(user)
+    file_id_in = _gigachat_upload_file(payload.filename, data)
+    raw, file_id, tokens = _gigachat_image(redact(instruction), attachments=[file_id_in])
+    return _finish_image(raw, file_id, tokens, payload.save_path, user)

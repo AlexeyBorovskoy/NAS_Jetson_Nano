@@ -51,6 +51,7 @@ services:
       TALK_BOT_POLL_TIMEOUT: ${TALK_BOT_POLL_TIMEOUT:-30}
       # Talk AI bot (Phase C) — free-form questions to the provider.
       # Empty callsign = off; the bot stays local-only.
+      TALK_BOT_ROOMS: ${TALK_BOT_ROOMS:-}
       TALK_BOT_LLM_TRIGGER: ${TALK_BOT_LLM_TRIGGER:-}
       TALK_BOT_LLM_DISPLAY_NAME: ${TALK_BOT_LLM_DISPLAY_NAME:-Бобик}
       TALK_BOT_LLM_URL: ${TALK_BOT_LLM_URL:-http://host.docker.internal:8090/v1/chat}

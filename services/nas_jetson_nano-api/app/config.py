@@ -79,6 +79,10 @@ class Settings(BaseSettings):
     # you type: `talk_bot_trigger` answers from local data and never leaves the
     # house; this one goes out to the provider through the redaction gateway.
     # Empty = feature off (the bot stays local-only).
+    # Space-separated room tokens. Each family member can have their OWN private
+    # room with the bot; the bot polls them all in parallel. Empty → single room
+    # from talk_bot_room / talk_family_room.
+    talk_bot_rooms: str = ""
     talk_bot_llm_trigger: str = ""  # e.g. "@бобик"
     # Display name used for LLM replies, so the family can tell them apart.
     talk_bot_llm_display_name: str = "Бобик"

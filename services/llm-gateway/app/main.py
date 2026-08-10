@@ -67,13 +67,25 @@ def _name_patterns() -> list[re.Pattern]:
     for name in re.split(r"[,\s]+", raw):
         name = name.strip()
         if len(name) < 3:
+            NAMES_DROPPED.append(name or "<empty>")
             continue
         stem = re.sub(r"[аеёиоуыэюяьйАЕЁИОУЫЭЮЯЬЙ]$", "", name)
-        if len(stem) < 3:
+        if len(stem) < 2:
+            NAMES_DROPPED.append(name)
             continue
-        patterns.append(re.compile(rf"\b{re.escape(stem)}\w{{0,3}}\b", re.IGNORECASE | re.UNICODE))
+        alt = "|".join(NAME_ENDINGS)
+        patterns.append(re.compile(rf"\b{re.escape(stem)}(?:{alt})\b", re.IGNORECASE | re.UNICODE))
     return patterns
 
+
+# Russian case endings, longest first so the alternation is greedy where it matters.
+# An explicit list beats a wildcard: "\bОл\w{0,3}\b" also swallows "Олег", while
+# "Ол(ой|ей|а|е|и|ю|я|ь|…)" does not — "ег" is not a case ending.
+NAME_ENDINGS = ["ой", "ою", "ей", "ею", "ом", "ем", "ём", "а", "у", "е", "ы", "и", "ю", "я", "ь", ""]
+
+# Names the filter could NOT build a pattern for — surfaced in /health so a
+# silently ignored name is impossible to miss.
+NAMES_DROPPED: list[str] = []
 
 NAME_PATTERNS = _name_patterns()
 
@@ -490,6 +502,8 @@ def health():
         "provider": os.getenv("LLM_PROVIDER", "deepseek"),
         "redaction": os.getenv("LLM_REDACT_PERSONAL_DATA", "true"),
         "names_configured": len(NAME_PATTERNS),
+        # Non-empty means a name in LLM_REDACT_NAMES is NOT being filtered.
+        "names_dropped": NAMES_DROPPED,
         "providers": {
             "deepseek": bool(deepseek_key) and deepseek_key != "replace_me",
             "gigachat": bool(os.getenv("GIGACHAT_AUTH_KEY", "").strip()),

@@ -49,38 +49,88 @@
 
 > 🇷🇺 Приоритет: сначала безопасность и стабильность, затем — оживление GPU/ML.
 > 🇬🇧 Priority: security and stability first, then reviving GPU/ML.
+>
+> **Статус фаз на 2026-08-10 / Phase status as of 2026-08-10:**
+>
+> | Фаза | Статус | Чем закрыта |
+> |---|---|---|
+> | 1 — Безопасность | ✅ **выполнена** | ufw на VPS: сервисные порты только из VPN |
+> | 2 — Оптимизация RAM | 🔄 в работе | лимиты выставлены, три контейнера на 85–92 % |
+> | 3 — Хранилище и бэкап | ✅ **выполнена** (HDD) | 2 ТБ подключён; restic off-site — остаётся |
+> | 4 — Температура SSD | ⛔ **невозможна** | структурное ограничение, см. ниже |
+> | 5 — Immich ML на Vostro | 📋 переработана | узел остаётся в корпоративной сети |
+> | 6 — Оркестратор и API | 📋 план | без изменений |
 
-### Фаза 1 — Безопасность / Phase 1 — Security
-- 🇷🇺 Увести Nextcloud/Immich/LLM с публичного nginx **за VPN** (Tailscale / Amnezia); fail2ban на VPS; ужесточить nginx; при появлении домена — Let's Encrypt. Итог: правило №4 реально соблюдается.
-- 🇬🇧 Move Nextcloud/Immich/LLM off public nginx **behind a VPN** (Tailscale / Amnezia); fail2ban on the VPS; harden nginx; Let's Encrypt once a domain exists. Result: rule #4 is actually honored.
+### Фаза 1 — Безопасность / Phase 1 — Security ✅ ВЫПОЛНЕНА 2026-08-07
+- 🇷🇺 **Сделано:** сервисные порты (8080/8443/2283/2443/8090/9443/**8099**/8091) на VPS закрыты для интернета — `ufw` пускает их только с `172.29.172.0/24` и `10.8.1.0/24`. Наружу остались 22 (нужен для реверс-туннелей), 443 и 40568/udp. Правило №4 реально соблюдается. Замечание tklim снято.
+- 🇬🇧 **Done:** service ports on the VPS are VPN-only now; only 22, 443 and 40568/udp remain world-reachable. Rule #4 is genuinely honored. tklim's point is closed.
+- 🇷🇺 **Остаётся:** fail2ban на VPS; Let's Encrypt при появлении домена. И отдельно — **внутри домашней LAN сегментации по-прежнему нет** (см. Фазу 7).
 
-### Фаза 2 — Оптимизация RAM / Phase 2 — RAM optimization
+### Фаза 2 — Оптимизация RAM / Phase 2 — RAM optimization 🔄
 - 🇷🇺 Аудит `mem_limit` всех 13 контейнеров; вынести часть мониторинга (netdata/uptime-kuma/portainer) на VPS или на ML-узел; тюнинг zram. Итог: появляется бюджет RAM под ML.
-- 🇬🇧 Audit `mem_limit` across all 13 containers; move some monitoring (netdata/uptime-kuma/portainer) to the VPS or the ML node; tune zram. Result: RAM budget frees up for ML.
+- 🇬🇧 Audit `mem_limit` across all 13 containers; move some monitoring to the VPS or the ML node; tune zram.
+- 🇷🇺 **Замер 2026-08-10:** `uptime_kuma` 92 %, `immich_microservices` 88 %, `netdata` 85 % своих лимитов; сумма лимитов превышает физическую RAM. Кандидаты на вынос — первые и третий.
 
-### Фаза 3 — Хранилище и бэкап / Phase 3 — Storage and backup
-- 🇷🇺 Подключить 2 ТБ HDD (уже в наличии); restic off-site backup. Итог: закрыт вопрос ёмкости и оффлайн-копий.
-- 🇬🇧 Attach the 2 TB HDD (already owned); restic off-site backup. Result: capacity and off-site copies covered.
+### Фаза 3 — Хранилище и бэкап / Phase 3 — Storage and backup ✅ ЧАСТИЧНО ВЫПОЛНЕНА
+- 🇷🇺 **Сделано 2026-08-09:** подключён HDD 2 ТБ — WD20EADS, NTFS сохранён (1.4 ТБ семейного архива), `/mnt/hdd2tb`, доступен через Nextcloud `/HDD-2TB` и Samba `hdd2tb`. Мосту RTL9201 потребовался тот же UAS-quirk, что и SSD.
+- 🇬🇧 **Done 2026-08-09:** the 2 TB HDD is attached, NTFS preserved, published via Nextcloud and Samba.
+- 🇷🇺 **Остаётся:** restic off-site backup. Кандидат для цели — 1 ТБ HDD ноутбука Vostro.
+- 🇷🇺 **Бонусом закрыто:** обнаружена и устранена поломка бэкапов БД (16 дней молчания из-за незакавыченного значения в `.env`); **восстановление проверено впервые**.
 
-### Фаза 4 — Мониторинг накопителя / Phase 4 — Drive monitoring
-- 🇷🇺 Снимать температуру SSD через `smartctl -d sat -a` (attr 194) в рамках `nasa-jms583-health.timer`; Telegram-алерт при пороге. Итог: тезис о перегреве подтверждается/снимается данными.
-- 🇬🇧 Read SSD temperature via `smartctl -d sat -a` (attr 194) within `nasa-jms583-health.timer`; Telegram alert on threshold. Result: the overheating claim is settled with data.
+### Фаза 4 — Мониторинг накопителя / Phase 4 — Drive monitoring ⛔ НЕВОЗМОЖНА
+- 🇷🇺 **Честный итог, готовый для Части 2 статьи:** снять температуру SSD **нельзя в принципе**. Kernel-quirk `152d:a583:u`, без которого мост JMS583 роняет диск с шины, переводит его в режим **usb-storage BOT**, а BOT не пропускает ATA/SCSI passthrough, на котором держится SMART. Перебрано всё: `-d sat`, `sat,12`, `sat,16`, `usbjmicron`, `-T permissive` — везде `unsupported scsi opcode`. `-d scsi -H` даёт разовый `SMART Health Status: OK`, но `-d scsi -s on` возвращает `unable to fetch IEC (SMART) mode page`, а без включённой IEC-страницы `smartd` отказывается регистрировать устройство. Поэтому `smartd` **отключён намеренно**.
+- 🇬🇧 **Honest outcome:** SSD temperature cannot be read at all. The UAS quirk required for stability forces usb-storage BOT mode, which blocks the ATA passthrough SMART needs. `smartd` is disabled by design.
+- 🇷🇺 **Чем закрыт мониторинг вместо SMART:** `nasa-jms583-health.timer` ежечасно (драйвер, активность quirk, USB-ошибки) и `nasa-usb-monitor.service` (dmesg → Telegram в реальном времени). На 2026-08-10 — 0 ошибок с момента загрузки.
+- 🇷🇺 **Ответ tklim:** тезис о перегреве не подтверждён и не опровергнут — измерить нечем. Косвенно: SoC 45 °C, за 30 дней ни одного теплового сбоя, 0 USB-ошибок.
 
-### Фаза 5 — Immich ML на выделенном узле Vostro 15 / Phase 5 — Immich ML on a dedicated Vostro 15 node
-- 🇷🇺 **Решение (2026-08-01):** в проект вводится старый ноутбук **Dell Vostro 15 (2018)** как выделенный always-on ML-узел (ZTN закрыт → ноут свободен). Это снимает ограничение Jetson (CUDA 10.2, 4 ГБ) без покупок — то, что советовал falcon4fun, но на своём железе. `immich-machine-learning` крутится на Vostro (`192.168.0.60:3003`), Immich на Jetson указывает через `IMMICH_MACHINE_LEARNING_URL`. Бонус: ML уходит с Nano → разгрузка RAM. Полный план — [VOSTRO_ML_NODE_ONBOARDING.md](VOSTRO_ML_NODE_ONBOARDING.md).
-- 🇬🇧 **Decision (2026-08-01):** bring the old **Dell Vostro 15 (2018)** laptop into the project as a dedicated always-on ML node (ZTN wrapped up → the laptop is free). This lifts the Jetson's limit (CUDA 10.2, 4 GB) with no purchase — falcon4fun's advice, on our own hardware. `immich-machine-learning` runs on the Vostro (`192.168.0.60:3003`); the Jetson's Immich points to it via `IMMICH_MACHINE_LEARNING_URL`. Bonus: ML leaves the Nano → RAM relief. Full plan — [VOSTRO_ML_NODE_ONBOARDING.md](VOSTRO_ML_NODE_ONBOARDING.md).
+### Фаза 5 — Immich ML на узле Vostro 15 / Phase 5 — Immich ML on the Vostro 15 node 📋 ПЕРЕРАБОТАНА 2026-08-10
+- 🇷🇺 **Решение (2026-08-01):** в проект вводится старый ноутбук **Dell Vostro 15 (2018)** как выделенный always-on ML-узел. Это снимает ограничение Jetson (CUDA 10.2, 4 ГБ) без покупок — то, что советовал falcon4fun, но на своём железе.
+- 🇷🇺 **Изменение (2026-08-10):** ноутбук **остаётся в корпоративной сети** `192.168.75.177`, а не переезжает домой. Значит, ML-узел удалённый: связь строится **исходящим SSH-туннелем Vostro → VPS**, а Jetson забирает порт обратно через свой уже работающий туннель. Прямого LAN-пути `192.168.0.60:3003` не будет.
+- 🇷🇺 **Цена:** задержка ML-запроса ≈ 200–400 мс (через Франкфурт) и ~1.5–2 ГБ разового трафика на бэклог 7098 ассетов. Для асинхронной фоновой очереди это приемлемо.
+- 🇷🇺 **Ограничения узла:** нет CUDA (AMD Radeon 520) → только CPU; 2 ядра без turbo; RAM 3.7 ГБ; HDD 5400 rpm. Обработка бэклога растянется на несколько ночей.
+- 🇬🇧 **Revised 2026-08-10:** the laptop stays in the corporate network; the ML node becomes remote, connected via an outbound SSH tunnel to the VPS. CPU-only, expect a multi-night backlog run.
+- 🇷🇺/🇬🇧 Полный план / full plan — [VOSTRO_ML_NODE_ONBOARDING.md](VOSTRO_ML_NODE_ONBOARDING.md).
 
 ### Фаза 6 — Оркестратор и API / Phase 6 — Orchestrator and API
 - 🇷🇺 Довести оркестрацию сервисов и `homecloud_nasa_api` (см. `NAS_Jetson_Nano_API_ROADMAP.md`).
 - 🇬🇧 Advance service orchestration and `homecloud_nasa_api` (see `NAS_Jetson_Nano_API_ROADMAP.md`).
 
+### Фаза 7 — Перестройка домашней сети / Phase 7 — Home network rebuild 📋 НОВАЯ 2026-08-10
+
+- 🇷🇺 **Решение владельца:** домашняя сеть переводится на mesh **TP-Link Deco E4** с
+  **полной заменой роутера** EC220-G5. Полный регламент — [`docs/27_HOME_NETWORK_MESH.md`](../27_HOME_NETWORK_MESH.md).
+- 🇬🇧 **Owner's decision:** the home network moves to a TP-Link Deco E4 mesh, fully
+  replacing the EC220-G5 router. Runbook — [`docs/27_HOME_NETWORK_MESH.md`](../27_HOME_NETWORK_MESH.md).
+
+**Что это закрывает из отзывов и рисков проекта:**
+
+| Проблема | Как закрывается |
+|---|---|
+| 🔴 **Внутри LAN сегментации нет** — Immich, Nextcloud, Portainer, admin-API `:8099`, Samba открыты любому, кто знает пароль Wi-Fi | **Гостевая сеть Deco** изолирует гостей, ТВ и IoT от подсети NAS. Это вторая половина замечания tklim про открытые порты — внешний контур уже закрыт в Фазе 1, теперь внутренний |
+| Автозагрузка Immich рвётся при переходе по квартире | **Единый SSID + Fast Roaming.** Прямое попадание в главную функцию проекта: 6710 фото перестанут перезапускать очередь |
+| Телефоны залипают на 2.4 ГГц (3–5 МБ/с вместо 17) | Smart Connect уводит на 5 ГГц автоматически |
+| Сигнал 48 % у рабочей станции — одна точка не покрывает квартиру | Два модуля с бесшовным роумингом |
+| Ручная статика для новых узлов | Address Reservation (доступен только в режиме роутера — это и определило выбор режима) |
+
+**Чего перестройка НЕ решает — и это важно сказать честно:**
+
+- 🔴 **Jetson теряет гигабит:** порты Deco аппаратно 10/100, линк упадёт 1000 → 100 Мбит/с.
+  Wi-Fi → NAS станет ≈ 94 Мбит/с вместо измеренных 141. Владелец принял это осознанно:
+  интернет-тариф ≤ 100 Мбит/с, а узким местом становится сеть, а не диски (SSD отдаёт 250 МБ/с).
+  Путь отхода — гигабитный свитч между Deco и проводными устройствами.
+- 🔴 **CGNAT никуда не девается:** проброс портов бесполезен при любой топологии.
+  Внешний доступ был и остаётся через реверс-туннель на VPS (ADR-0005).
+- 🟠 **Управление только через приложение и аккаунт TP-Link** — веб-интерфейса нет.
+  Для проекта «уход от облаков» это осознанный компромисс, и его стоит назвать в статье.
+
 ## Сводка «замечание → действие» / Summary "comment → action"
 
-| Замечание / Comment | Фаза / Phase | Ограничение / Constraint |
+| Замечание / Comment | Фаза / Phase | Статус на 2026-08-10 / Status |
 |---|---|---|
-| GPU простаивает / GPU idle (vvzvlad, dE1l) | 5 | CUDA 10.2 → нет офиц. GPU-ускорения; CPU-путь или offload / no official GPU accel; CPU or offload |
-| 4 ГБ мало / 4 GB low (tklim) | 2 | без покупок, только оптимизация / no purchases, optimization only |
-| Перегрев SSD / SSD overheating (tklim) | 4 | измерить, а не спорить / measure, don't argue |
-| Открытые порты / Open ports (tklim) | 1 | Tailscale/Amnezia — no-purchase |
-| ML offload (falcon4fun) | 5 | вместо покупки — Vostro 15 / Vostro 15 instead of buying |
-| Ёмкость/бэкап / Capacity & backup (автор/author) | 3 | 2 ТБ HDD уже есть / already owned |
+| Открытые порты / Open ports (tklim) | 1 | ✅ **закрыто** — сервисы на VPS только из VPN; внутри LAN закроет гостевая сеть (Фаза 7) |
+| Ёмкость/бэкап / Capacity & backup (автор/author) | 3 | ✅ **HDD 2 ТБ подключён**; restic off-site остаётся |
+| Перегрев SSD / SSD overheating (tklim) | 4 | ⛔ **измерить невозможно** — UAS-quirk → BOT-режим → нет ATA passthrough. Косвенно: SoC 45 °C, 0 сбоев за 30 д |
+| 4 ГБ мало / 4 GB low (tklim) | 2 | 🔄 лимиты выставлены; три контейнера на 85–92 %; вынос мониторинга — кандидат |
+| ML offload (falcon4fun) | 5 | 📋 Vostro 15, но **удалённо** через VPS-туннель — ноутбук остаётся в корпоративной сети |
+| GPU простаивает / GPU idle (vvzvlad, dE1l) | 5 | 📋 техдолг: CUDA 10.2 → офиц. GPU-ускорения нет; сетью не решается |
+| Роуминг и покрытие / roaming & coverage (наше) | 7 | 📋 Deco E4 заменяет роутер; цена — Jetson 1000 → 100 Мбит/с |

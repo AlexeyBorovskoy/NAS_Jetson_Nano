@@ -1,110 +1,265 @@
-# Ввод в эксплуатацию: Dell Vostro 15 как ML-узел / Onboarding: Dell Vostro 15 as an ML node
+# Ввод в эксплуатацию: Dell Vostro 15 как удалённый ML-узел / Onboarding: Dell Vostro 15 as a remote ML node
 
 > 🇷🇺 Включение старого ноутбука Dell Vostro 15 (2018) в проект NAS_Jetson_Nano
-> в роли **выделенного always-on узла машинного обучения Immich** и вспомогательного сервера.
-> Решение принято: 2026-08-01. Проект ZTN временно закрыт → ноутбук свободен.
+> в роли **выделенного always-on узла машинного обучения Immich**.
+> Решение о вводе: 2026-08-01. **Пересмотр размещения: 2026-08-10.**
 >
 > 🇬🇧 Bringing the old Dell Vostro 15 (2018) laptop into the NAS_Jetson_Nano project
-> as a **dedicated always-on Immich machine-learning node** and auxiliary server.
-> Decision made: 2026-08-01. The ZTN project is on hold → the laptop is free.
+> as a **dedicated always-on Immich machine-learning node**.
+> Decision: 2026-08-01. **Placement revised: 2026-08-10.**
 
-## Зачем / Why
-- 🇷🇺 **Immich ML** (распознавание лиц + smart search/CLIP) — главный запрос читателей Habr. Jetson Nano её не тянет (13 контейнеров делят 4 ГБ). Vostro (x86-64, 2 ядра, 4 ГБ **выделенных** под ML) — пробуем как CPU-only узел. Разгрузка Jetson по RAM. Без покупок. См. «Честную переоценку роли» ниже.
-- 🇬🇧 **Immich ML** (face recognition + smart search/CLIP) — the top request from Habr readers. The Jetson Nano can't handle it (13 containers share 4 GB). The Vostro (x86-64, 2 cores, 4 GB **dedicated** to ML) is worth trying as a CPU-only node. It also relieves the Jetson's RAM. No purchases. See the "Honest role re-assessment" below.
-- 🇷🇺/🇬🇧 См. / See [POST_HABR_FEEDBACK_2026-08.md](POST_HABR_FEEDBACK_2026-08.md).
+## 🔄 Что изменилось 2026-08-10
 
-## Железо / Hardware
+Прежняя редакция исходила из того, что ноутбук **переедет домой** на `192.168.0.60`
+и будет в одной LAN с Jetson. Владелец решил иначе: **ноутбук остаётся там, где стоит
+сейчас — в корпоративной сети `192.168.75.0/24`.**
 
-> 🇷🇺 Подтверждено по service tag `H7YB9L2` (заводская конфигурация Dell). 🇬🇧 Confirmed via service tag `H7YB9L2` (Dell factory config).
+Это меняет проект принципиально, потому что ML-узел становится **удалённым**:
+прямой связи «Jetson → Vostro по локальной сети» больше нет, и её нужно построить.
+
+| Что | Было (план 08-01) | Стало (08-10) |
+|---|---|---|
+| Размещение | домашняя LAN `192.168.0.60` | **корпоративная сеть `192.168.75.177`** |
+| Связь с Jetson | напрямую по LAN | **через реверс-туннель на VPS** |
+| Задержка ML-запроса | < 1 мс | **≈ 200–400 мс** (через Франкфурт) |
+| ОС | предполагалась переустановка с 20.04 | **уже Ubuntu 24.04 LTS** — переустановка не нужна |
+| Загруженность | считался свободным | **был занят стендом ZTN**; стенд закрыт 2026-08-10 |
+
+## Согласовано с владельцем (2026-08-10)
+
+- ✅ Постоянный исходящий туннель с этой машины на личный VPS **допустим**: машина
+  принадлежит владельцу.
+- ✅ Стенд ZTN (виртуальная машина шлюза на QEMU/KVM) **больше не нужен** —
+  ресурсы можно освобождать.
+
+> 🔒 **Что намеренно не попадает в этот публичный репозиторий:** состав, адреса и
+> назначение корпоративной инфраструктуры, к которой ноутбук был подключён, имена
+> рабочих проектов и любые учётные данные. Здесь фиксируется только то, что нужно для
+> работы NAS-проекта: адрес самого ноутбука, его характеристики и способ связи с Jetson.
+> Первоисточник сетевых параметров — локальный, вне git.
+
+---
+
+## 1. Железо / Hardware
+
+> 🇷🇺 Подтверждено по service tag `H7YB9L2` и по живым данным из `E:\Belgorod_platform\infra\network.md`.
 
 | Параметр / Parameter | Значение / Value |
 |---|---|
-| Модель / Model | Dell **Vostro 15 3568** (3000-серия / series, бюджетная / budget), MFG 2018 |
-| CPU | Intel **Core i3-6006U** — Skylake, **2 ядра / 4 потока / 2 cores / 4 threads**, 2.0 ГГц, **без turbo / no turbo** |
-| RAM | **4 ГБ** DDR4-2400 (1 модуль / 1 stick; 2-й слот свободен, max 16 ГБ / 1 free slot) |
-| GPU | AMD **Radeon 520** 2 ГБ GDDR5 + Intel HD 520 — **нет CUDA / no CUDA** |
-| Накопитель / Storage | **1 ТБ HDD 5400 rpm** SATA (не SSD / not an SSD) |
-| Дисплей / Display, сеть / net | 15.6″ HD 1366×768; Wi-Fi 802.11ac 1×1 (QCA9377) |
-| Прежняя роль / Prior role | ZTN: QEMU/KVM-хост Континента (192.168.75.177) — освобождён / freed |
+| Модель / Model | Dell **Vostro 15 3568**, MFG 2018 |
+| Hostname | `alexey-Vostro-15-3568` |
+| CPU | Intel **Core i3-6006U** — Skylake, **2 ядра / 4 потока**, 2.0 ГГц, без turbo |
+| RAM | **4 ГБ** DDR4-2400 (доступно ~3.7 ГБ; 2-й слот свободен, max 16 ГБ) |
+| GPU | AMD **Radeon 520** 2 ГБ + Intel HD 520 — **нет CUDA** |
+| Накопитель / Storage | **1 ТБ HDD 5400 rpm** SATA, свободно ~847 ГБ |
+| ОС / OS | **Ubuntu 24.04 LTS**, Python 3.12.3 |
+| Сеть / Network | `192.168.75.177` (корпоративная LAN); Wi-Fi 802.11ac 1×1 (QCA9377) |
+| SSH | пользователь `alexey`, порт 22 |
+| Прежняя роль / Prior role | ZTN: QEMU/KVM-хост тестового стенда — **освобождается** |
 
-### Честная переоценка роли / Honest role re-assessment
+### Честная оценка возможностей
 
-- 🇷🇺 Реальность скромнее ожиданий: **4 ГБ RAM (как у Jetson), CPU 2 ядра, GPU без CUDA, медленный HDD.** GPU-ускорение Immich ML **невозможно** (нет CUDA; AMD Radeon 520 не поддерживается). Остаётся **только CPU-путь**.
-- 🇬🇧 Reality is more modest than hoped: **4 GB RAM (same as the Jetson), a 2-core CPU, a non-CUDA GPU, a slow HDD.** GPU-accelerated Immich ML is **not possible** (no CUDA; AMD Radeon 520 unsupported). **CPU path only.**
-- 🇷🇺 **Единственное преимущество для ML:** здесь 4 ГБ отданы ТОЛЬКО под ML (на Jetson те же 4 ГБ делят 13 контейнеров). Поэтому выделенный CPU-only ML **пробовать стоит**, но ожидания реалистичные: медленно, бэклог за несколько ночей, не в реальном времени.
-- 🇬🇧 **Its one ML advantage:** here 4 GB is dedicated to ML alone (on the Jetson the same 4 GB is shared by 13 containers). So a dedicated CPU-only ML node **is worth trying**, but with realistic expectations: slow, backlog over several nights, not real-time.
-- 🇷🇺 **Лучшая вторая роль:** 1 ТБ HDD → **цель для restic-бэкапа** (см. Фаза 3). Ресурсов почти не требует, ценность реальная.
-- 🇬🇧 **Best secondary role:** the 1 TB HDD → a **restic backup target** (see Phase 3). Nearly zero resource cost, real value.
-- 🇷🇺 **Опционально (это покупка!):** +8 ГБ DDR4-2400 SO-DIMM во 2-й слот (~10–15$ б/у) превращает ноут в полноценный ML-узел; замена HDD→SSD ускоряет I/O. Только если решишь ослабить правило «без покупок».
-- 🇬🇧 **Optional (this is a purchase!):** an +8 GB DDR4-2400 SO-DIMM in the free slot (~$10–15 used) turns it into a proper ML node; an HDD→SSD swap speeds up I/O. Only if you relax the "no purchases" rule.
+- 🔴 **GPU-ускорение Immich ML невозможно** — нет CUDA, AMD Radeon 520 не поддерживается.
+  Только **CPU-путь**.
+- 🟠 **RAM 3.7 ГБ** — столько же, сколько у Jetson. Единственное преимущество: здесь эта
+  память отдана **только под ML**, тогда как на Jetson её делят 13 контейнеров.
+  После остановки QEMU освободится ещё 1–2 ГБ, которые занимал стенд ZTN.
+- 🟠 **HDD 5400 rpm** — загрузка моделей и кэш будут медленными. Разово, но заметно.
+- 🟡 **2 ядра без turbo** — обработка бэклога 7098 фото растянется на несколько ночей.
+  Это фоновая пакетная задача, не реального времени.
+- ✅ **1 ТБ свободного диска** — вторая роль: цель для restic-бэкапа (Фаза L5).
 
-## Сетевой план / Network plan
+---
 
-| Параметр / Parameter | Значение / Value |
-|---|---|
-| Подключение / Connection | LAN-кабель в домашний роутер / LAN cable to home router (`192.168.0.0/24`, gw `192.168.0.1`) |
-| Статический IP / Static IP | **`192.168.0.60`** (Jetson = .50) — netplan или / or DHCP-reservation |
-| Имя / Hostname | `vostro-ml` |
-| Доступ / Access | SSH-ключ с Windows-dev и Jetson / SSH key from Windows-dev and Jetson |
-| ML-порт / ML port | `3003/tcp` (immich-machine-learning), только LAN / LAN only |
+## 2. Сетевая архитектура: как удалённый узел встраивается в проект
 
-## Фазы ввода / Onboarding phases
+### 2.1. Задача
 
-### L0 — Снять реальные спеки / Capture real specs (перед всем / before everything)
-🇷🇺 На ноуте / 🇬🇧 On the laptop:
-```bash
-lscpu | grep -E 'Model name|^CPU\(s\)|Thread'; free -h | head -2; \
-lspci | grep -iE 'vga|3d|nvidia'; lsblk -d -o NAME,SIZE,MODEL | grep -v loop
+Корпоративная сеть **не принимает входящие соединения** — пробросить порт до Vostro
+невозможно и не нужно пытаться. Значит, связь поднимает **сам Vostro, исходящим
+соединением**.
+
+Дополнительно: Jetson тоже за CGNAT и тоже ходит наружу сам. Значит, встречаются они
+не напрямую, а **на VPS** — единственной точке, куда обе стороны могут дозвониться.
+
+### 2.2. Решение — двойной SSH-туннель через VPS
+
+Используется **та же машинерия, что уже работает** для Jetson (`nasa-tunnel.service`,
+autossh): никаких новых протоколов, только исходящий TCP/22.
+
 ```
-🇷🇺 Спеки уже известны из service tag (см. выше) — GPU-путь исключён (нет CUDA), только CPU. L0 подтверждает живое состояние и реальный запас RAM под выделенный ML на 4 ГБ.
-🇬🇧 Specs are already known from the service tag (above) — GPU path is ruled out (no CUDA), CPU only. L0 confirms the live state and the real free-RAM headroom for dedicated ML on 4 GB.
+  Корпоративная сеть                 VPS Frankfurt                Домашняя сеть
+  192.168.75.0/24                   95.163.176.103                192.168.0.0/24
 
-### L1 — ОС, сеть, работа 24/7 с закрытой крышкой / OS, network, 24/7 lid-closed
-- 🇷🇺 **ОС:** рекомендуется чистая **Ubuntu 24.04 Server** (headless — крышка закрыта, экран не нужен); заодно уходят ZTN-артефакты (QEMU, br0/tap0). Альтернатива — upgrade 20.04→22.04/24.04 (20.04 уже EOL).
-- 🇬🇧 **OS:** recommend a clean **Ubuntu 24.04 Server** (headless — lid closed, no screen needed); this also removes ZTN leftovers (QEMU, br0/tap0). Alternative — upgrade 20.04→22.04/24.04 (20.04 is already EOL).
-- 🇷🇺/🇬🇧 **Статический IP / Static IP** (netplan, интерфейс / interface вероятно / likely `enp3s0`):
-  ```yaml
-  # /etc/netplan/01-nas.yaml
-  network:
-    version: 2
-    ethernets:
-      enp3s0:
-        addresses: [192.168.0.60/24]
-        routes: [{to: default, via: 192.168.0.1}]
-        nameservers: {addresses: [192.168.0.1, 1.1.1.1]}
-  ```
-  `sudo netplan apply`
-- 🇷🇺/🇬🇧 **Работа с закрытой крышкой / Lid-closed operation** (`/etc/systemd/logind.conf`):
-  ```ini
-  HandleLidSwitch=ignore
-  HandleLidSwitchDocked=ignore
-  HandleLidSwitchExternalPower=ignore
-  ```
-  `sudo systemctl restart systemd-logind`
-- 🇷🇺/🇬🇧 **Запрет сна / Disable sleep:**
-  `sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target`
-- 🇷🇺 **Питание:** держать в сети; (опц.) ограничить заряд батареи. 🇬🇧 **Power:** keep plugged in; (opt.) cap battery charge.
+  ┌──────────────┐                 ┌──────────────┐              ┌──────────────┐
+  │ Vostro       │                 │              │              │ Jetson Nano  │
+  │ .177         │──autossh -R────►│ 127.0.0.1:   │◄───autossh───│ .50          │
+  │              │  исходящий      │   13003      │   -L 3003    │              │
+  │ immich-ml    │  TCP/22         │              │   исходящий  │ immich-server│
+  │ :3003        │                 │              │   TCP/22     │              │
+  └──────────────┘                 └──────────────┘              └──────────────┘
 
-### L2 — База сервера / Server base
-- 🇷🇺/🇬🇧 SSH-ключи / SSH keys (Windows-dev + Jetson), отключить пароль-логин / disable password login.
+  Vostro:3003 ──► VPS loopback:13003 ──► Jetson localhost:3003
+```
+
+- **Vostro** поднимает обратный проброс: свой `3003` → `127.0.0.1:13003` на VPS.
+- **Jetson** в уже существующем туннеле добавляет прямой проброс: `13003` с VPS →
+  свой локальный `3003` (на адрес docker-моста, чтобы его видел контейнер Immich).
+- Порт `13003` живёт **только на loopback VPS** — наружу не открыт, правки `ufw` не нужны.
+- Для Immich это выглядит как обычный локальный ML-сервер.
+
+### 2.3. Настройки Immich
+
+На Jetson, в `config/.env`:
+
+```ini
+IMMICH_MACHINE_LEARNING_URL=http://172.17.0.1:3003
+```
+
+`172.17.0.1` — адрес docker-моста, по которому контейнер видит хост. Проброс на Jetson
+должен слушать именно этот адрес, а не `127.0.0.1`, иначе контейнер до него не достучится.
+
+### 2.4. Цена решения — честно
+
+| Параметр | Оценка | Комментарий |
+|---|---|---|
+| Задержка запроса | **≈ 200–400 мс** | измеренная цена туннеля Jetson→VPS ≈ +190 мс, плюс участок VPS→Vostro |
+| Трафик разового бэклога | **≈ 1.5–2 ГБ** | 7098 ассетов × ~200–300 КБ превью, через VPS |
+| Трафик в установившемся режиме | единицы МБ в день | новые фото по мере съёмки |
+| Нагрузка на VPS | умеренная, разовая | 2 ГБ на прогон бэклога |
+| Приемлемость | ✅ **да** | ML в Immich — асинхронная фоновая очередь, задержка на неё не влияет |
+
+### 2.5. Если корпоративная сеть режет исходящий TCP/22
+
+Проверяется на шаге **L0**. Варианты по возрастанию сложности:
+
+1. SSH на **443** — на VPS уже слушает XRay, поэтому нужен отдельный порт, например
+   `2222`; открыть его в `ufw` и использовать в autossh.
+2. **AmneziaWG-клиент** на Vostro (UDP 40568) — тот же протокол, что у семейных пиров.
+   Требует `amneziawg-tools` на Ubuntu; обычный WireGuard с обфусцированным сервером
+   не соединится.
+3. Отказаться от связи с Jetson и оставить Vostro автономную роль (см. Фаза L5).
+
+---
+
+## 3. Фазы ввода / Onboarding phases
+
+### L0 — Снять живое состояние / Capture live state
+
+```bash
+ssh alexey@192.168.75.177 "
+  lscpu | grep -E 'Model name|^CPU\(s\)|Thread';
+  free -h | head -2;
+  lsblk -d -o NAME,SIZE,MODEL | grep -v loop;
+  df -h / /home;
+  lsb_release -d; uptime;
+  echo '--- ZTN-артефакты ---';
+  virsh list --all 2>/dev/null; ip -br link show | grep -E 'br0|tap';
+  systemctl is-active libvirtd 2>/dev/null;
+  echo '--- исходящий доступ ---';
+  timeout 8 nc -zv 95.163.176.103 22; echo \"rc=\$?\"
+"
+```
+
+Цель: подтвердить свободную RAM, наличие остатков ZTN и — главное — **проходит ли
+исходящий TCP/22 на VPS**. От последнего зависит вся архитектура раздела 2.
+
+### L1 — Освободить ресурсы от стенда ZTN
+
+> Стенд закрыт решением владельца 2026-08-10. Действия обратимы: образы ВМ не удаляем.
+
+```bash
+# Остановить и снять с автозапуска ВМ тестового стенда
+sudo virsh shutdown <vm-name>          # мягко
+sudo virsh autostart --disable <vm-name>
+sudo systemctl disable --now libvirtd
+```
+
+- Образы ВМ и профили ZTN **оставить на диске** (846 ГБ свободно — места хватает).
+- Сетевые мосты `br0`/`tap0` убрать из автозагрузки, чтобы не мешали Docker.
+- ⚠️ **Не удалять** содержимое стенда: проект ZTN может вернуться,
+  а восстановить КШ с нуля дорого.
+
+### L2 — Работа 24/7 с закрытой крышкой
+
+`/etc/systemd/logind.conf`:
+
+```ini
+HandleLidSwitch=ignore
+HandleLidSwitchDocked=ignore
+HandleLidSwitchExternalPower=ignore
+```
+
+```bash
+sudo systemctl restart systemd-logind
+sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+```
+
+Питание — постоянно в сети. Опционально ограничить максимальный заряд батареи, чтобы
+она не деградировала от постоянных 100 %.
+
+### L3 — База сервера
+
+- SSH-ключи с Windows-dev (она в той же подсети `192.168.75.x` — доступ прямой).
 - `sudo apt install docker.io docker-compose-plugin`
-- 🇷🇺/🇬🇧 UFW: SSH + `3003/tcp` только из LAN / LAN only. Добавить в мониторинг / add to monitoring (Beszel / Uptime Kuma).
+- UFW: разрешить SSH из `192.168.75.0/24`; порт `3003` **не открывать наружу вообще** —
+  он нужен только локально, туннель ходит через loopback.
 
-### L3 — Immich ML remote-сервер / Immich ML remote server
-- 🇷🇺 Узнать версию Immich на Jetson (`docker inspect homecloud_immich_server | grep -i image`) — образ ML **должен совпадать по версии**. 🇬🇧 Get the Immich version on the Jetson — the ML image **must match the version**.
-- 🇷🇺/🇬🇧 Поднять / run `ghcr.io/immich-app/immich-machine-learning:<версия/version>` (порт/port 3003, том кэша моделей / model cache volume).
-  - 🇷🇺 Если есть **NVIDIA GPU**: драйвер + `nvidia-container-toolkit`, образ `:...-cuda`. Иначе — CPU-образ. 🇬🇧 If an **NVIDIA GPU** is present: driver + `nvidia-container-toolkit`, `:...-cuda` image. Otherwise — CPU image.
-- 🇷🇺/🇬🇧 На Jetson / on the Jetson: `IMMICH_MACHINE_LEARNING_URL=http://192.168.0.60:3003`, перезапуск / restart `immich-server` + `immich-microservices`.
-- 🇷🇺/🇬🇧 Запустить Job'ы / run jobs: Smart Search + Face Detection → обработать бэклог / process backlog (~6710 фото / photos).
+### L4 — Immich ML + туннель
 
-### L4 — Дополнительные роли / Extra roles (опционально / optional)
-- 🇷🇺/🇬🇧 restic backup target; разгрузка мониторинга с Jetson / offload monitoring from the Jetson.
+1. Узнать версию Immich на Jetson — образ ML **обязан совпадать**:
+   ```bash
+   ssh admin@192.168.0.50 "docker inspect homecloud_immich_server --format '{{.Config.Image}}'"
+   ```
+   На 2026-08-10 это Immich **2.7.5**.
+2. Поднять на Vostro CPU-образ `ghcr.io/immich-app/immich-machine-learning:v2.7.5`
+   (порт 3003, том под кэш моделей, `mem_limit` ~2.5 ГБ).
+3. Настроить autossh-юнит по образцу `nasa-tunnel.service` с обратным пробросом
+   `-R 13003:127.0.0.1:3003`.
+4. На Jetson добавить прямой проброс `-L 172.17.0.1:3003:127.0.0.1:13003` в существующий
+   туннель и прописать `IMMICH_MACHINE_LEARNING_URL`.
+5. Перезапустить `immich-server` и `immich-microservices`.
+6. Проверка сквозного пути:
+   ```bash
+   ssh admin@192.168.0.50 "curl -s -m 20 http://172.17.0.1:3003/ping"
+   ```
+7. Запустить Job'ы Smart Search + Face Detection, обработать бэклог 7098 ассетов.
+   **Ожидание: несколько ночей.** Следить за очередью в web-интерфейсе Immich.
 
-## Открытые вопросы / Open questions
-- 🇷🇺/🇬🇧 ОС / OS: чистая / clean Ubuntu 24.04 Server (по умолчанию / default) vs upgrade 20.04.
-- 🇷🇺/🇬🇧 IP `192.168.0.60` — если занят, выбрать другой / pick another if taken.
-- 🇷🇺/🇬🇧 GPU-ускорение / GPU acceleration — зависит от L0 / depends on L0.
+### L5 — Дополнительные роли (опционально)
 
-## Что дальше / Next
-🇷🇺 После подключения к домашней LAN и назначения IP `192.168.0.60` узел доступен по SSH — настройку L2–L3 выполняем удалённо.
-🇬🇧 Once connected to the home LAN with IP `192.168.0.60`, the node is reachable over SSH — L2–L3 setup proceeds remotely.
+- **restic backup target** на 1 ТБ HDD — но помнить: это off-site копия **через VPS**,
+  и первая полная выгрузка (~10 ГБ Immich + БД) пойдёт по тому же каналу.
+- Разгрузка мониторинга с Jetson: `netdata` и `uptime-kuma` сейчас занимают 85 % и 92 %
+  своих лимитов на Jetson. Перенос освободит RAM под основные сервисы.
+
+---
+
+## 4. Риски
+
+| # | Риск | Митигация |
+|---|---|---|
+| 1 | 🔴 Исходящий TCP/22 закрыт корпоративным периметром | Проверяется в L0. Запасные варианты — раздел 2.5 |
+| 2 | 🟠 RAM 3.7 ГБ впритык под CLIP-модель | Освободить память от QEMU (L1); жёсткий `mem_limit`; при нехватке — планка +8 ГБ (это покупка) |
+| 3 | 🟠 Ноутбук могут выключить/унести — он в чужом помещении | Узел не критичен: без него Immich работает, просто без распознавания. Не класть на него ничего единственного |
+| 4 | 🟠 Весь ML-трафик идёт через личный VPS | Разово ~2 ГБ. Следить за трафиком VPS во время прогона бэклога |
+| 5 | 🟡 HDD 5400 rpm тормозит загрузку моделей | Разовая цена при старте контейнера; кэш моделей на постоянном томе |
+| 6 | 🟡 Обработка растянется на дни | Ожидание зафиксировано; это фоновая очередь |
+
+---
+
+## 5. Открытые вопросы
+
+- Проходит ли исходящий TCP/22 из корпоративной сети на `95.163.176.103` (решается в L0).
+- Имя ВМ стенда для корректной остановки (`virsh list --all` в L0).
+- Нужна ли роль restic-таргета сейчас или после переезда ноутбука домой.
+- Останется ли ноутбук в корпоративной сети надолго — если переедет домой,
+  вся конструкция из раздела 2 упрощается до прямого LAN-адреса `192.168.0.60`
+  (адрес уже зарезервирован в `docs/27_HOME_NETWORK_MESH.md`).
+
+## 6. Связанные документы
+
+- `docs/27_HOME_NETWORK_MESH.md` — новая домашняя сеть; там зарезервирован `192.168.0.60`
+- `docs/plans/POST_HABR_FEEDBACK_2026-08.md` — Фаза 5, откуда растёт эта задача
+- `E:\Belgorod_platform\infra\network.md` — источник сетевых параметров ноутбука
+- ADR-0005 — реверс-туннель на VPS, по образцу которого строится связь

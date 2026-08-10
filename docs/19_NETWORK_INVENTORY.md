@@ -263,8 +263,9 @@ sudo bash scripts/storage/storage_preflight.sh
 | Service ports exposed to internet | ✅ Closed 2026-08-07: ufw allows service ports only from `172.29.172.0/24` and `10.8.1.0/24` | — |
 | VPS IP blocked from RU ISPs | Old `193.8.215.130` unreachable; migrated to `95.163.176.103` | Keep `172.29.172.1` (in-tunnel) as the fallback path |
 | No LAN segmentation | Every service is reachable by anyone with the Wi-Fi password | Guest network during the home-network rebuild (`26_DECO_E4_NETWORK.md`) |
-| Keenetic Omni KN-1410 extender | Physical device observed; firmware, current IP, link speed, and mode not yet verified | Connect in isolation by LAN; inspect read-only; configure only after safety gate |
-| TP-Link Deco E4 mesh (2 units) | Purchased 2026-08; **100 Mbit Ethernet ports** — Jetson must stay on the EC220-G5 gigabit port | Decision pending; plan in [`26_DECO_E4_NETWORK.md`](26_DECO_E4_NETWORK.md). Access Point mode only |
+| Keenetic Omni KN-1410 extender | ⛔ **Plan cancelled 2026-08-10** — superseded by the Deco E4 mesh | Keep as a cold spare; do not commission |
+| TP-Link Deco E4 mesh (2 units) | ✅ **Decided 2026-08-10: Deco replaces the router entirely** (Router mode, LAN IP set to `192.168.0.1`). Cost accepted: Jetson link drops 1000 → 100 Mbit/s | Follow the runbook in [`27_HOME_NETWORK_MESH.md`](27_HOME_NETWORK_MESH.md). Capture the WAN connection type from the EC220-G5 **before** removing it |
+| Vostro 15 ML node | ✅ **Decided 2026-08-10: stays in the corporate network** `192.168.75.177`, does not move home. Becomes a **remote** ML node reached through the VPS | Plan in [`plans/VOSTRO_ML_NODE_ONBOARDING.md`](plans/VOSTRO_ML_NODE_ONBOARDING.md). First check outbound TCP/22 from the corporate LAN |
 
 ## 8. Rollback
 

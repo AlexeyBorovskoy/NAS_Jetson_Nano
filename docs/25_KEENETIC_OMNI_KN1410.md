@@ -6,16 +6,35 @@
 > EN: Physical-device inventory, safe network-introduction plan, and Wi-Fi
 > extender configuration runbook.
 >
-> Updated / Обновлено: 2026-07-17.
+> Updated / Обновлено: 2026-08-10.
+
+## 0. ⛔ План закрыт / Plan closed (2026-08-10)
+
+🇷🇺 **Ввод Keenetic Omni KN-1410 в сеть отменён.** Куплен комплект TP-Link Deco E4,
+который решает ту же задачу лучше: бесшовный роуминг вместо простого репитера, единый
+SSID, гостевая сеть, резервирование адресов. Более того, EC220-G5, к которому этот план
+предполагал подключать усилитель, **выводится из эксплуатации** — Deco становится
+основным роутером. См. [`27_HOME_NETWORK_MESH.md`](27_HOME_NETWORK_MESH.md).
+
+🇬🇧 **Commissioning of the Keenetic Omni KN-1410 is cancelled.** A TP-Link Deco E4 mesh
+kit was purchased and covers the same need better. The EC220-G5 this plan attached to is
+being decommissioned. See [`27_HOME_NETWORK_MESH.md`](27_HOME_NETWORK_MESH.md).
+
+**Судьба устройства:** остаётся холодным резервом, в сеть не вводится. Документ сохранён
+как карточка железа и на случай, если резерв понадобится.
+
+**Что остаётся в силе:** правило безопасности — при любом будущем вводе подключать
+изолированно к workstation, не вводить в production LAN с активным DHCP и не делать
+factory reset без явного подтверждения (правило №9 в `CLAUDE.md`).
 
 ## 1. Current status / Текущий статус
 
 | Field / Поле | Value / Значение |
 |---|---|
 | Inventory state | Observed from label photo on 2026-07-17 |
-| Operational state | **Planned; not connected or configured yet** |
-| Intended role | Wi-Fi repeater/extender for the existing home LAN |
-| Main router | TP-Link / Aginet EC220-G5, `192.168.0.1` |
+| Operational state | ⛔ **Cancelled 2026-08-10; cold spare, will not be commissioned** |
+| Intended role | ~~Wi-Fi repeater/extender~~ — superseded by TP-Link Deco E4 mesh |
+| Main router | ~~TP-Link / Aginet EC220-G5, `192.168.0.1`~~ — being decommissioned; Deco E4 becomes the router |
 | Target LAN | `192.168.0.0/24`; DHCP remains on the main router |
 | Public exposure | Forbidden; management must remain LAN-only |
 | Change authority | Factory reset and mode changes require explicit user confirmation |

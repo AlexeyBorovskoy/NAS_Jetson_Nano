@@ -636,19 +636,33 @@ class ImageRequest(BaseModel):
 
 # Ready-made instructions for the common cases. Restoration is just one of them —
 # the same upload path also does stylisation, which is what a family actually asks for.
+# 🔴 ПРОВЕРЕНО 2026-08-10 — ЧИТАТЬ ПЕРЕД ИСПОЛЬЗОВАНИЕМ.
+#
+# GigaChat API НЕ РЕДАКТИРУЕТ фотографии. Прямой запрос на ретушь модель
+# отклоняет словами «Я не могу редактировать изображения» и советует Photoshop.
+#
+# Реально работает связка из двух независимых шагов:
+#   1. GigaChat-2-Max СМОТРИТ на фото и составляет его текстовое описание;
+#   2. Kandinsky (text2image) РИСУЕТ НОВОЕ изображение по этому описанию.
+#
+# Значит, на выходе — не ваша фотография, а другая картинка на её мотив:
+# другие лица, другой фон. Для «нарисуй в стиле» это приемлемо, для
+# «отреставрируй бабушкино фото» или «отретушируй меня» — НЕТ.
+#
+# Пресеты, обещавшие сохранить человека (restore/colorize/glamour), убраны:
+# выполнить это обещание через данный API невозможно.
 IMAGE_PRESETS: dict[str, str] = {
-    "restore": (
-        "Отреставрируй фотографию: убери шум, царапины и повреждения, "
-        "восстанови чёткость и естественный цвет. Сохрани черты лица без изменений."
-    ),
-    "colorize": "Раскрась эту чёрно-белую фотографию в естественные, реалистичные цвета.",
-    "glamour": (
-        "Сделай гламурный студийный портрет по этой фотографии: мягкий выразительный свет, "
-        "аккуратная ретушь кожи, красивый фон. Сохрани узнаваемость человека."
-    ),
-    "anime": "Преобразуй фотографию в иллюстрацию в стиле аниме, сохранив узнаваемость.",
-    "cartoon": "Преобразуй фотографию в рисунок в мультипликационном стиле.",
-    "upscale": "Увеличь резкость и детализацию фотографии, убери размытие.",
+    "anime": "Нарисуй новое изображение в стиле аниме по мотивам этой фотографии.",
+    "cartoon": "Нарисуй новое изображение в мультипликационном стиле по мотивам этой фотографии.",
+    "artistic": "Нарисуй художественную иллюстрацию по мотивам этой фотографии.",
+}
+
+# Что попросить нельзя — с объяснением, чтобы вызывающая сторона не гадала.
+IMAGE_UNSUPPORTED: dict[str, str] = {
+    "restore": "реставрация",
+    "colorize": "раскрашивание",
+    "glamour": "ретушь/гламур",
+    "upscale": "повышение резкости",
 }
 
 
@@ -716,10 +730,11 @@ def image_presets():
 
 @app.post("/v1/image/edit", response_model=ImageResponse)
 def image_edit(payload: ImageEditRequest):
-    """Restore or restyle a real photo. THIS SENDS THE PHOTO TO THE PROVIDER.
+    """Draw a NEW image inspired by a photo. THIS SENDS THE PHOTO TO THE PROVIDER.
 
-    Covers restoration, colorisation, a glamour portrait, anime/cartoon styling —
-    they are all the same upload path and carry the same privacy weight.
+    ⚠️ NOT an editor. The provider looks at the photo, describes it in words, and
+    generates a fresh picture from that description — faces and background will
+    differ. Retouching/restoration is impossible here; see IMAGE_PRESETS above.
 
     Refused unless LLM_ALLOW_IMAGE_ANALYSIS=true — an explicit, conscious opt-in,
     because family photos staying home is the founding premise of this project.
@@ -738,6 +753,15 @@ def image_edit(payload: ImageEditRequest):
     instruction = payload.instruction
     if not instruction:
         preset = (payload.preset or "restore").lower()
+        if preset in IMAGE_UNSUPPORTED:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"'{preset}' ({IMAGE_UNSUPPORTED[preset]}) невозможно: GigaChat API "
+                    "не редактирует фотографии, а только генерирует новые по описанию. "
+                    f"Доступно: {', '.join(IMAGE_PRESETS)}"
+                ),
+            )
         instruction = IMAGE_PRESETS.get(preset)
         if not instruction:
             raise HTTPException(

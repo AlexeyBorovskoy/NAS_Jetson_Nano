@@ -489,8 +489,11 @@ async def _share_image_to_room(token: str, data: bytes, filename: str) -> None:
 async def _handle_image_request(token: str, m: dict, question: str, user: str) -> None:
     """Photo + instruction → processed photo back into the same chat."""
     att = _image_attachment(m)
-    await _send(token, "🐕 Взял фотографию в работу, это займёт около минуты…",
-                settings.talk_bot_llm_display_name)
+    await _send(
+        token,
+        "🐕 Рисую новую картинку по мотивам фото, это займёт около минуты. ⚠️ Это НЕ обработка вашего снимка: провайдер не умеет редактировать фотографии. Он посмотрит на фото, опишет его словами и нарисует НОВОЕ изображение по описанию — лица и фон будут другими.",
+        settings.talk_bot_llm_display_name,
+    )
     try:
         raw = await _download_attachment(user, att.get("path", ""))
     except Exception as exc:
@@ -518,6 +521,14 @@ async def _handle_image_request(token: str, m: dict, question: str, user: str) -
                     settings.talk_bot_llm_display_name)
         return
 
+    if r.status_code == 422:
+        detail = ""
+        try:
+            detail = (r.json() or {}).get("detail", "")
+        except Exception:
+            pass
+        await _send(token, f"🐕 {detail}", settings.talk_bot_llm_display_name)
+        return
     if r.status_code == 403:
         await _send(token,
                     "🐕 Обработка фотографий выключена в настройках "

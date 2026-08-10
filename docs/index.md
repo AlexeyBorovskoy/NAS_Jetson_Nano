@@ -38,6 +38,7 @@ Nextcloud, Immich, Android clients, monitoring and AI-assisted reliability engin
   ML node → offloading the Jetson → GPU experiment → conversational bot → article
 - [Health audit 2026-08-10](plans/SYSTEM_AUDIT_2026-08-10.md) — the state we start from
 - [Habr feedback and phase status](plans/POST_HABR_FEEDBACK_2026-08.md)
+- [Photo processing — what our hardware can actually do](plans/PHOTO_PROCESSING_FEASIBILITY.md)
 
 ## Historical status snapshot / Исторический снимок состояния
 

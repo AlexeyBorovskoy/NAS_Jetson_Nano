@@ -172,6 +172,12 @@ Principles:
 > 22, 443 и 40568/udp, всё остальное — через VPN. Адрес VPS сменился на **`95.163.176.103`**
 > (прежний заблокирован российскими ISP).
 >
+> 🤖 **Семейный ИИ-помощник (2026-08-10):** в Nextcloud Talk у каждого своя комната с ботом.
+> Два позывных, и граница приватности проходит по слову: `нас <команда>` считается **дома**
+> и наружу не уходит, `@бобик <вопрос>` — уходит через шлюз с вырезанием имён, телефонов и
+> почты. Два провайдера (DeepSeek + GigaChat) за одним редактированием и одним бюджетом,
+> с персональным лимитом токенов на каждого члена семьи.
+>
 > Исторический снимок / Historical snapshot (2026-06-29): NAS_Jetson_Nano API **v0.6.0**, Talk, Users, Photos and Actions endpoints, goss 40/40.
 
 | Сервис / Service | Порт / Port | Доступ / Access | Статус / Status |
@@ -594,6 +600,7 @@ IMMICH_DISABLE_MACHINE_LEARNING=true   # обязательно для Jetson Na
 | [docs/plans/VOSTRO_ML_NODE_ONBOARDING.md](docs/plans/VOSTRO_ML_NODE_ONBOARDING.md) | **Шаг 2:** ввод Dell Vostro 15 как Immich ML-узла / Vostro ML node onboarding |
 | [docs/plans/SYSTEM_AUDIT_2026-08-01.md](docs/plans/SYSTEM_AUDIT_2026-08-01.md) | **Live-аудит 2026-08-01:** питание (2.3/4.2 Вт), стабильность, снятые противоречия + 2 находки (экспозиция, бэкапы) / Live system audit |
 | [docs/plans/SYSTEM_AUDIT_2026-08-10.md](docs/plans/SYSTEM_AUDIT_2026-08-10.md) | **Аудит работоспособности 2026-08-10:** обе находки предыдущего аудита закрыты, оба диска, restore проверен, остаточные риски / Health audit |
+| [docs/plans/PHOTO_PROCESSING_FEASIBILITY.md](docs/plans/PHOTO_PROCESSING_FEASIBILITY.md) | **Обработка фото: что реально возможно на нашем железе** — почему облачный путь не редактирует, что поедет на RTX 3050 Ti / Photo processing feasibility |
 | [docs/plans/ROADMAP_STEP2_2026-08.md](docs/plans/ROADMAP_STEP2_2026-08.md) | **План развития (Шаг 2): 6 волн от страховки до статьи** — сеть, ML-узел, разгрузка, GPU-эксперимент, Talk B/C/E, с критериями приёмки / Step 2 roadmap |
 | [docs/articles/MEASUREMENTS_EN.md](docs/articles/MEASUREMENTS_EN.md) · [GAPS_EN.md](docs/articles/GAPS_EN.md) · [PROJECT_FACTS_EN.md](docs/articles/PROJECT_FACTS_EN.md) | Детальные замеры, блокеры и фактура (EN) / Measurements, gaps, facts |
 | [AGENTS.md](AGENTS.md) | Правила для Codex/агентов |

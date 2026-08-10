@@ -32,6 +32,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added / Добавлено (2026-08-10)
 
+- 🇷🇺 **`docs/plans/ROADMAP_STEP2_2026-08.md` — сквозной план развития проекта (Шаг 2).**
+  Шесть волн с жёсткими зависимостями: страховка (git↔устройство, restic off-site,
+  проверка авто-восстановления реальным отвалом SSD, guard от повторения истории с `.env`)
+  → сеть → ML-узел → разгрузка Jetson → GPU-эксперимент с таймбоксом → Talk B/C/E → статья.
+  У каждой волны — измеримый критерий приёмки, оценка риска, критерий отката и материал
+  для Части 2 статьи. Отдельным разделом зафиксировано, что **сознательно не делается**
+  в Шаге 2 и почему.
+- 🇬🇧 **`docs/plans/ROADMAP_STEP2_2026-08.md` — the Step 2 roadmap:** six waves with hard
+  dependencies, measurable acceptance criteria per wave, rollback criteria, and the article
+  material each wave produces; plus an explicit out-of-scope list.
 - `docs/27_HOME_NETWORK_MESH.md` — регламент перевода домашней сети на Deco E4:
   проверенные по спецификации возможности режимов Router/AP, замеры «до», целевая
   топология, адресный план, пошаговая настройка с сохранением доступа к NAS,

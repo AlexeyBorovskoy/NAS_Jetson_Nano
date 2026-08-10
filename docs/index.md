@@ -30,6 +30,14 @@ Nextcloud, Immich, Android clients, monitoring and AI-assisted reliability engin
 - [Keenetic Omni KN-1410 extender inventory](25_KEENETIC_OMNI_KN1410.md) — plan cancelled, cold spare
 - [TP-Link Deco E4 scouting analysis](26_DECO_E4_NETWORK.md) — superseded by document 27
 - [Home network on Deco E4 — full router replacement runbook](27_HOME_NETWORK_MESH.md)
+- [Remote Immich ML node on a Dell Vostro 15](plans/VOSTRO_ML_NODE_ONBOARDING.md)
+
+## Where the project is going / Куда движется проект
+
+- **[Step 2 roadmap — six waves](plans/ROADMAP_STEP2_2026-08.md)** — safety net → network →
+  ML node → offloading the Jetson → GPU experiment → conversational bot → article
+- [Health audit 2026-08-10](plans/SYSTEM_AUDIT_2026-08-10.md) — the state we start from
+- [Habr feedback and phase status](plans/POST_HABR_FEEDBACK_2026-08.md)
 
 ## Historical status snapshot / Исторический снимок состояния
 

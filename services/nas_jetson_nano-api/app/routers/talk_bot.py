@@ -430,12 +430,24 @@ async def _handle_messages(token: str, messages: list[dict]) -> None:
 
 
 async def _send(token: str, message: str, display_name: str) -> None:
-    """Post a reply, swallowing transport errors so the loop survives."""
+    """Post a reply, swallowing transport errors so the loop survives.
+
+    Posts FORM-ENCODED, not JSON. The shared `_ocs_post` helper sends `json=`,
+    which Nextcloud OCS rejects with HTTP 404 / statuscode 998 "Invalid query" —
+    that is why this bot counted `processed` but never `replied` since Phase A.
+    Verified against the live server: `-d "message=..."` works, JSON does not.
+    """
+    url = f"{settings.nextcloud_internal_url.rstrip('/')}/ocs/v2.php/apps/spreed/api/v1/chat/{token}"
     try:
-        await _ocs_post(
-            f"chat/{token}",
-            {"message": message, "actorDisplayName": display_name},
-        )
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            r = await client.post(
+                url,
+                auth=_admin_auth(),
+                headers=_OCS_HEADERS,
+                data={"message": message, "actorDisplayName": display_name},
+            )
+        if r.status_code not in (200, 201):
+            log.warning("talk bot send → HTTP %d: %s", r.status_code, r.text[:200])
     except Exception:
         log.exception("talk bot failed to send reply")
 

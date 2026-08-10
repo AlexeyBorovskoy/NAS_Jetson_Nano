@@ -2,3 +2,5 @@ fastapi==0.115.12
 uvicorn[standard]==0.34.2
 openai==1.82.1
 pydantic==2.11.5
+# Used directly for the GigaChat provider (OAuth + custom TLS bundle).
+httpx==0.28.1

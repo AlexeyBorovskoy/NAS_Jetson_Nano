@@ -18,10 +18,13 @@ import json
 import os
 import re
 import threading
+import time
+import uuid
 from datetime import date
 from pathlib import Path
 from typing import Literal, Optional
 
+import httpx
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
@@ -30,7 +33,7 @@ try:
 except Exception:  # pragma: no cover
     OpenAI = None
 
-app = FastAPI(title="Home Cloud LLM Gateway", version="0.2.0")
+app = FastAPI(title="Home Cloud LLM Gateway", version="0.3.0")
 
 # ── Redaction ───────────────────────────────────────────────────────────────────
 
@@ -167,6 +170,123 @@ def _record_usage(tokens: int) -> None:
         _save_usage(usage)
 
 
+# ── Providers ───────────────────────────────────────────────────────────────────
+#
+# Both providers go through the SAME redaction and the SAME budget. Adding a
+# provider must never open a second, unguarded door — that is the whole reason
+# this gateway exists.
+
+_gigachat_token: dict = {"value": "", "expires_at": 0.0}
+_token_lock = threading.Lock()
+
+
+def _gigachat_verify():
+    """TLS setting for Sber endpoints.
+
+    Sber signs its certificates with the Russian Ministry of Digital Development
+    CA, which is not in the default trust store. Preferred: mount the root
+    certificate and point GIGACHAT_CA_BUNDLE at it. Disabling verification is
+    supported for a first connectivity check only.
+    """
+    bundle = os.getenv("GIGACHAT_CA_BUNDLE", "").strip()
+    if bundle:
+        return bundle
+    return os.getenv("GIGACHAT_VERIFY_SSL", "true").lower() not in ("false", "0", "no")
+
+
+def _gigachat_access_token() -> str:
+    """Fetch and cache an OAuth token. Sber tokens live 30 minutes."""
+    with _token_lock:
+        if _gigachat_token["value"] and time.time() < _gigachat_token["expires_at"] - 60:
+            return _gigachat_token["value"]
+
+        auth_key = os.getenv("GIGACHAT_AUTH_KEY", "").strip()
+        if not auth_key:
+            raise HTTPException(status_code=500, detail="GIGACHAT_AUTH_KEY is not configured")
+
+        oauth_url = os.getenv("GIGACHAT_OAUTH_URL", "https://ngw.devices.sberbank.ru:9443/api/v2/oauth")
+        scope = os.getenv("GIGACHAT_SCOPE", "GIGACHAT_API_PERS")
+        try:
+            r = httpx.post(
+                oauth_url,
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Accept": "application/json",
+                    "RqUID": str(uuid.uuid4()),
+                    "Authorization": f"Basic {auth_key}",
+                },
+                data={"scope": scope},
+                verify=_gigachat_verify(),
+                timeout=30.0,
+            )
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"GigaChat OAuth transport error: {exc}") from exc
+
+        if r.status_code != 200:
+            raise HTTPException(status_code=502, detail=f"GigaChat OAuth failed: HTTP {r.status_code} {r.text[:200]}")
+
+        data = r.json()
+        token = data.get("access_token", "")
+        if not token:
+            raise HTTPException(status_code=502, detail="GigaChat OAuth returned no access_token")
+        # expires_at comes in milliseconds; fall back to the documented 30 min.
+        expires_at = data.get("expires_at")
+        _gigachat_token["value"] = token
+        _gigachat_token["expires_at"] = (expires_at / 1000) if expires_at else (time.time() + 1800)
+        return token
+
+
+def _call_gigachat(system: str, user: str, model: str) -> tuple[str, int]:
+    token = _gigachat_access_token()
+    base = os.getenv("GIGACHAT_BASE_URL", "https://gigachat.devices.sberbank.ru/api/v1").rstrip("/")
+    try:
+        r = httpx.post(
+            f"{base}/chat/completions",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json={
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+            },
+            verify=_gigachat_verify(),
+            timeout=120.0,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"GigaChat transport error: {exc}") from exc
+
+    if r.status_code != 200:
+        raise HTTPException(status_code=502, detail=f"GigaChat error: HTTP {r.status_code} {r.text[:200]}")
+
+    data = r.json()
+    content = (data.get("choices") or [{}])[0].get("message", {}).get("content", "") or ""
+    tokens = (data.get("usage") or {}).get("total_tokens", 0) or 0
+    return content, tokens
+
+
+def _call_deepseek(system: str, user: str, model: str) -> tuple[str, int]:
+    if OpenAI is None:
+        raise HTTPException(status_code=500, detail="openai SDK is not installed")
+    api_key = os.getenv("DEEPSEEK_API_KEY", "")
+    base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+    client = OpenAI(api_key=api_key, base_url=base_url)
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            stream=False,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"LLM provider error: {exc}") from exc
+    content = response.choices[0].message.content or ""
+    tokens = getattr(getattr(response, "usage", None), "total_tokens", 0) or 0
+    return content, tokens
+
+
 # ── Models ──────────────────────────────────────────────────────────────────────
 
 
@@ -176,6 +296,8 @@ class ChatRequest(BaseModel):
     context: Optional[str] = None
     mode: Literal["safe", "raw"] = "safe"
     reasoning: bool = False
+    # Per-request provider override; falls back to LLM_PROVIDER.
+    provider: Optional[Literal["deepseek", "gigachat"]] = None
 
 
 class ChatResponse(BaseModel):
@@ -191,11 +313,16 @@ class ChatResponse(BaseModel):
 
 @app.get("/health")
 def health():
+    deepseek_key = os.getenv("DEEPSEEK_API_KEY", "")
     return {
         "status": "ok",
         "provider": os.getenv("LLM_PROVIDER", "deepseek"),
         "redaction": os.getenv("LLM_REDACT_PERSONAL_DATA", "true"),
         "names_configured": len(NAME_PATTERNS),
+        "providers": {
+            "deepseek": bool(deepseek_key) and deepseek_key != "replace_me",
+            "gigachat": bool(os.getenv("GIGACHAT_AUTH_KEY", "").strip()),
+        },
     }
 
 
@@ -224,50 +351,51 @@ def redact_endpoint(payload: ChatRequest):
     return {"redacted_text": redact(src)}
 
 
+SYSTEM_PROMPT = (
+    "You are an infrastructure assistant. "
+    "Do not request or expose secrets or personal data."
+)
+
+
 @app.post("/v1/chat", response_model=ChatResponse)
 def chat(payload: ChatRequest):
-    provider = os.getenv("LLM_PROVIDER", "deepseek")
-    base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
-    api_key = os.getenv("DEEPSEEK_API_KEY", "")
-    model = os.getenv("DEEPSEEK_REASONER_MODEL" if payload.reasoning else "DEEPSEEK_MODEL", "deepseek-chat")
+    provider = (payload.provider or os.getenv("LLM_PROVIDER", "deepseek")).lower()
 
     if payload.mode != "safe":
         raise HTTPException(status_code=400, detail="raw mode is disabled in Stage 1")
 
-    if not api_key or api_key == "replace_me":
+    if provider == "gigachat":
+        model = os.getenv("GIGACHAT_MODEL", "GigaChat")
+        configured = bool(os.getenv("GIGACHAT_AUTH_KEY", "").strip())
+    elif provider == "deepseek":
+        model = os.getenv(
+            "DEEPSEEK_REASONER_MODEL" if payload.reasoning else "DEEPSEEK_MODEL",
+            "deepseek-chat",
+        )
+        api_key = os.getenv("DEEPSEEK_API_KEY", "")
+        configured = bool(api_key) and api_key != "replace_me"
+    else:
+        raise HTTPException(status_code=400, detail=f"unknown provider: {provider}")
+
+    if not configured:
         return ChatResponse(
             provider=provider,
             model="mock",
             redacted=True,
-            content="LLM Gateway mock response: DEEPSEEK_API_KEY is not configured.",
+            content=f"LLM Gateway mock response: {provider} credentials are not configured.",
         )
 
-    if OpenAI is None:
-        raise HTTPException(status_code=500, detail="openai SDK is not installed")
-
+    # Budget first, then redaction — both apply to every provider.
     _check_budget()
 
-    prompt = payload.prompt
     context = payload.context or ""
-    full = f"Task: {payload.task}\n\nContext:\n{context}\n\nPrompt:\n{prompt}"
+    full = f"Task: {payload.task}\n\nContext:\n{context}\n\nPrompt:\n{payload.prompt}"
     safe_full = redact(full)
 
-    client = OpenAI(api_key=api_key, base_url=base_url)
-    try:
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": "You are an infrastructure assistant. Do not request or expose secrets or personal data."},
-                {"role": "user", "content": safe_full},
-            ],
-            stream=False,
-        )
-        content = response.choices[0].message.content or ""
-        tokens = getattr(getattr(response, "usage", None), "total_tokens", 0) or 0
-    except HTTPException:
-        raise
-    except Exception as exc:  # pragma: no cover
-        raise HTTPException(status_code=502, detail=f"LLM provider error: {exc}") from exc
+    if provider == "gigachat":
+        content, tokens = _call_gigachat(SYSTEM_PROMPT, safe_full, model)
+    else:
+        content, tokens = _call_deepseek(SYSTEM_PROMPT, safe_full, model)
 
     _record_usage(tokens)
     return ChatResponse(provider=provider, model=model, redacted=True, content=content, tokens=tokens)

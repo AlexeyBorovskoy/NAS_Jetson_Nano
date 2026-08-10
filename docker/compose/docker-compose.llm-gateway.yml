@@ -14,6 +14,14 @@ services:
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
       DEEPSEEK_MODEL: ${DEEPSEEK_MODEL}
       DEEPSEEK_REASONER_MODEL: ${DEEPSEEK_REASONER_MODEL}
+      # GigaChat / Sber — второй провайдер за тем же редактированием и бюджетом.
+      GIGACHAT_AUTH_KEY: ${GIGACHAT_AUTH_KEY:-}
+      GIGACHAT_SCOPE: ${GIGACHAT_SCOPE:-GIGACHAT_API_PERS}
+      GIGACHAT_OAUTH_URL: ${GIGACHAT_OAUTH_URL:-https://ngw.devices.sberbank.ru:9443/api/v2/oauth}
+      GIGACHAT_BASE_URL: ${GIGACHAT_BASE_URL:-https://gigachat.devices.sberbank.ru/api/v1}
+      GIGACHAT_MODEL: ${GIGACHAT_MODEL:-GigaChat}
+      GIGACHAT_CA_BUNDLE: ${GIGACHAT_CA_BUNDLE:-/certs/russian_trusted_bundle.pem}
+      GIGACHAT_VERIFY_SSL: ${GIGACHAT_VERIFY_SSL:-true}
       LLM_DAILY_TOKEN_LIMIT: ${LLM_DAILY_TOKEN_LIMIT}
       LLM_MONTHLY_COST_LIMIT_USD: ${LLM_MONTHLY_COST_LIMIT_USD:-10}
       LLM_PRICE_USD_PER_MTOKEN: ${LLM_PRICE_USD_PER_MTOKEN:-0.5}
@@ -25,6 +33,9 @@ services:
     volumes:
       # Persist budget counters so a restart does not reset the day's spend.
       - llm_usage:/data
+      # Russian Trusted CA bundle — required for GigaChat TLS verification.
+      # Public root certificates, not secrets; read-only.
+      - ../../config/certs:/certs:ro
     healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8090/health', timeout=3)\""]
       interval: 30s

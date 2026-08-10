@@ -75,3 +75,12 @@ docs/prompts/Востановление общения.md
 
 # Retail label with order number and pickup point (personal data)
 docs/new_ping/photo_2026-08-09_18-49-48.jpg
+
+# Provider credentials kept locally — MUST NEVER be committed (public repo)
+gigachat/
+**/gigachat.md
+
+# Exception to the blanket `*.pem` rule above: the Russian Trusted CA bundle is
+# a PUBLIC root certificate, not a key. It is committed so that deploying the
+# GigaChat provider is reproducible. See config/certs/README.md.
+!config/certs/russian_trusted_bundle.pem

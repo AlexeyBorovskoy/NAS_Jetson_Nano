@@ -16,10 +16,67 @@
 - 🇷🇺 сложность смены провайдера / 🇬🇧 hard to switch providers
 - 🇷🇺 невозможность аудита / 🇬🇧 no audit trail
 
-## 3. Провайдер / Provider
+## 3. Провайдеры / Providers
 
-🇷🇺 DeepSeek API поддерживает формат, совместимый с OpenAI/Anthropic API. Это позволяет использовать OpenAI-compatible SDK и в будущем заменить провайдера без полной переработки логики.
-🇬🇧 DeepSeek API uses an OpenAI/Anthropic-compatible format. This allows using OpenAI-compatible SDKs and swapping providers in the future without a full rewrite.
+🇷🇺 Шлюз поддерживает **двух** провайдеров. Ключевой инвариант: оба ходят через
+**одно и то же** редактирование и **один и тот же** бюджет. Добавление провайдера
+не должно открывать вторую, неохраняемую дверь — ради этого шлюз и существует.
+
+🇬🇧 Two providers, one door: both go through the same redaction and the same budget.
+
+| Провайдер | Значение `LLM_PROVIDER` | Транспорт | Статус |
+|---|---|---|---|
+| **DeepSeek** | `deepseek` | OpenAI-совместимый SDK | ✅ проверен вживую |
+| **GigaChat (Сбер)** | `gigachat` | OAuth + REST, OpenAI-совместимый формат | ✅ проверен вживую 2026-08-10 |
+
+Провайдера можно выбрать **на конкретный запрос** полем `provider` в `POST /v1/chat` —
+удобно для честного сравнения ответов на одной задаче.
+
+### 3а. GigaChat — как устроено подключение
+
+🇷🇺 Схема авторизации отличается от DeepSeek: не постоянный ключ, а обмен
+Authorization key на **временный токен**.
+
+1. `POST https://ngw.devices.sberbank.ru:9443/api/v2/oauth`
+   с заголовками `Authorization: Basic <base64(client_id:client_secret)>`,
+   `RqUID: <uuid4>` и телом `scope=GIGACHAT_API_PERS`.
+2. Ответ содержит `access_token`, **живущий 30 минут**. Шлюз кэширует его и
+   обновляет сам за минуту до истечения — вызывающей стороне об этом знать не нужно.
+3. `POST https://gigachat.devices.sberbank.ru/api/v1/chat/completions`
+   с `Authorization: Bearer <token>`, тело в OpenAI-совместимом формате.
+
+### 3б. 🔴 Грабля TLS, на которой спотыкаются все
+
+🇷🇺 Эндпоинты Сбера подписаны **НУЦ Минцифры**, которого нет в стандартном
+хранилище доверия Python/Debian. Первый же запрос падает так:
+
+```
+[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed:
+self-signed certificate in certificate chain
+```
+
+Массовый совет в интернете — `verify=False`. **Так делать не надо:** это снимает
+проверку подлинности сервера целиком, а мы через этот канал отправляем семейные данные.
+
+**Правильное решение:** положить корневой и промежуточный сертификаты и указать бандл.
+Сделано в `config/certs/` (см. README там же), путь передаётся переменной
+`GIGACHAT_CA_BUNDLE`. Проверено 2026-08-10: с бандлом OAuth и `chat/completions`
+проходят **с включённой проверкой TLS**.
+
+`GIGACHAT_VERIFY_SSL=false` оставлен только как аварийный путь для диагностики —
+чтобы отличить «неверные ключи» от «нет сертификата».
+
+## 4. Модели / Models
+
+🇷🇺 GigaChat / 🇬🇧 GigaChat:
+
+```env
+LLM_PROVIDER=gigachat
+GIGACHAT_AUTH_KEY=<base64(client_id:client_secret)>
+GIGACHAT_SCOPE=GIGACHAT_API_PERS      # физлица; для организаций — _B2B / _CORP
+GIGACHAT_MODEL=GigaChat               # также GigaChat-Pro, GigaChat-Max
+GIGACHAT_CA_BUNDLE=/certs/russian_trusted_bundle.pem
+```
 
 ## 4. Модели / Models
 

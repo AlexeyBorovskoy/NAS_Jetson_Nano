@@ -4,7 +4,48 @@
 >
 > 🇷🇺 Документ фиксирует сетевую топологию тестового стенда NAS_Jetson_Nano. Публичная версия: реальные пароли Wi-Fi, серийные номера, MAC-адреса и учётные данные хранятся только в `config/.env` (gitignored).
 >
-> Updated / Обновлено: 2026-07-17.
+> Updated / Обновлено: 2026-08-10.
+
+## 1а. Current measured state / Текущее измеренное состояние (2026-08-10)
+
+| Параметр | Значение | Как получено |
+|---|---|---|
+| Шлюз | TP-Link / Aginet **EC220-G5**, `192.168.0.1`, гигабит | web UI |
+| Подсеть | `192.168.0.0/24` | `ip route` на Jetson |
+| Jetson eth0 | `192.168.0.50`, **1000 Мбит/с Full**, 0 ошибок RX/TX | `ethtool eth0` |
+| Jetson MAC | `00:04:4b:e6:88:dc` | `ip link` |
+| SSID | `TP-Link_828C` (2.4) и `TP-Link_828C_5G` (5) — **разные имена** | `netsh wlan` |
+| Рабочая станция | 802.11ac, 5 ГГц, канал 48, сигнал **48 %** | `netsh wlan` |
+| Wi-Fi → NAS, реально | **17.6 МБ/с (141 Мбит/с)**, 400 МБ за 23.8 с | HTTP-загрузка с Jetson |
+| Диски NAS | SSD 250 МБ/с запись; HDD 106 МБ/с чтение | `dd` |
+
+**Вывод:** узкое место сегодня — Wi-Fi, а не диски и не Ethernet (141 Мбит/с против 800+,
+которые способны отдать диски). Сигнал 48 % означает, что одна точка квартиру не покрывает.
+
+### 🔴 Смена внешнего IP (2026-08-07)
+
+Прежний адрес VPS `193.8.215.130` **заблокирован российскими ISP** — per-IP stateful-блок:
+новые потоки (TCP и UDP, любой порт) дропаются, уже установленные продолжают работать.
+Рабочий адрес — **`95.163.176.103`**; дополнительно поднят IPv6 `2a12:5940:665a::2/48`.
+
+Практическое следствие для доступа:
+
+| Путь | Когда использовать |
+|---|---|
+| `95.163.176.103` | обычный, работает |
+| `172.29.172.1` (внутренний адрес VPS в VPN-туннеле) | если публичный IP снова заблокируют |
+
+Хост туннеля на Jetson правится в **root-owned** `/opt/nasa/config/.env` (`VPS_HOST=`),
+а не в `~/nasa/config/.env`. После правки — `systemctl restart nasa-tunnel`.
+
+### Периметр (проверено 2026-08-10)
+
+Наружу на VPS открыты только **22/tcp** (нужен для реверс-туннелей), **443/tcp** (XRay)
+и **40568/udp** (AmneziaWG). Все сервисные порты (8080/8443/2283/2443/8090/9443/8099/8091)
+доступны только с `172.29.172.0/24` и `10.8.1.0/24`, то есть через VPN.
+
+⚠️ **Внутри домашней LAN сегментации нет:** Nextcloud, Immich, Portainer, admin-API `:8099`
+и Samba открыты любому, кто знает пароль Wi-Fi. Это остаточный риск, а не закрытый пункт.
 
 Scope of this step:
 
@@ -19,7 +60,7 @@ Scope of this step:
   settings during inventory.
 - Do not expose Nextcloud, Immich, LLM Gateway, Samba, or SSH directly to the
   internet via port forwarding on the home router.
-- Do not touch the Amnezia VPN containers on VPS 193.8.215.130 through SSH or
+- Do not touch the Amnezia VPN containers on VPS 95.163.176.103 through SSH or
   `wg set` — serves ~25 clients.
 - External access implemented via VPS reverse SSH tunnel (ADR-0005). Tailscale
   is archival/alternative documentation only.
@@ -58,7 +99,7 @@ External access (implemented 2026-06-21):
 Internet / mobile client
     |
     v (HTTP)
-VPS 193.8.215.130 — nginx (network_mode: host)
+VPS 95.163.176.103 — nginx (network_mode: host)
     :8080 Nextcloud, :2283 Immich,
     :8090 LLM GW
     |
@@ -68,8 +109,8 @@ Jetson Nano 192.168.0.50
     SSH management from VPS: ssh -p 10022 admin@127.0.0.1
 
 VPS:
-    IP: 193.8.215.130 (Vienna, AEZA GROUP)
-    SSH: ssh -i ~/.ssh/borovskoy_new_ed25519 root@193.8.215.130
+    IP: 95.163.176.103 (Vienna, AEZA GROUP)
+    SSH: ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103
     Caution: Amnezia VPN containers — DO NOT TOUCH.
 ```
 
@@ -123,8 +164,8 @@ VPS:
 | VPS | Host | `VPS_HOST` | `config/.env` | Secret/local operational value |
 | VPS | User | `VPS_USER` | `config/.env` | Secret/local operational value |
 | VPS | SSH key | `VPS_SSH_KEY` | `config/.env` | Secret/local operational value |
-| External access | Implemented path | VPS 193.8.215.130 + autossh | ADR-0005 | ✅ Live |
-| VPS | Host | 193.8.215.130 (Vienna, AEZA) | observed | ✅ Active |
+| External access | Implemented path | VPS 95.163.176.103 + autossh | ADR-0005 | ✅ Live |
+| VPS | Host | 95.163.176.103 (Vienna, AEZA) | observed | ✅ Active |
 | VPS nginx | Public ports | 8080/2283/8090 (HTTP) | docker/vps/ | ✅ Active; Nextcloud upstream live |
 | SSH tunnel | nas_jetson_nano-tunnel.service | -R 18080/12283/18090/10022 | systemd/nas_jetson_nano-tunnel.service | ✅ Active |
 | Public port forwarding | Home router | none for Stage 1 | ADR-0003 | Required safe default |
@@ -218,8 +259,12 @@ sudo bash scripts/storage/storage_preflight.sh
 | VPS external access | ✅ Live: nginx+tunnel, ports 8080/2283/8090 | — |
 | USB storage incident | 250 GB device recovered as `/dev/sda1` and mounted at `/mnt/storage`, but prior `error -71`/ext4 errors show hardware risk | Keep preflight/boot guard; replace suspect cable/enclosure/power if errors return |
 | HDD partition | Target ext4 partition for NAS is active: label `nas_jetson_nano-storage`, UUID tracked in fstab | Keep read-only fsck path for future incidents; destructive format only with explicit confirmation |
-| External access | ✅ Implemented via VPS reverse tunnel (ADR-0005) | — |
+| External access | ✅ Implemented via VPS reverse tunnel (ADR-0005), now pointing at `95.163.176.103` | — |
+| Service ports exposed to internet | ✅ Closed 2026-08-07: ufw allows service ports only from `172.29.172.0/24` and `10.8.1.0/24` | — |
+| VPS IP blocked from RU ISPs | Old `193.8.215.130` unreachable; migrated to `95.163.176.103` | Keep `172.29.172.1` (in-tunnel) as the fallback path |
+| No LAN segmentation | Every service is reachable by anyone with the Wi-Fi password | Guest network during the home-network rebuild (`26_DECO_E4_NETWORK.md`) |
 | Keenetic Omni KN-1410 extender | Physical device observed; firmware, current IP, link speed, and mode not yet verified | Connect in isolation by LAN; inspect read-only; configure only after safety gate |
+| TP-Link Deco E4 mesh (2 units) | Purchased 2026-08; **100 Mbit Ethernet ports** — Jetson must stay on the EC220-G5 gigabit port | Decision pending; plan in [`26_DECO_E4_NETWORK.md`](26_DECO_E4_NETWORK.md). Access Point mode only |
 
 ## 8. Rollback
 

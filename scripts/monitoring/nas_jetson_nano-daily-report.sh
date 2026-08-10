@@ -105,7 +105,7 @@ if [ -f "$VPS_KEY" ]; then
         -o StrictHostKeyChecking=no \
         -o ConnectTimeout=10 \
         -o BatchMode=yes \
-        "${VPS_USER}@${SERVER_IP:-193.8.215.130}" \
+        "${VPS_USER}@${SERVER_IP:-95.163.176.103}" \
         "python3 $BESZEL_SCRIPT 2>/tmp/beszel_warn_\$\$.txt; cat /tmp/beszel_warn_\$\$.txt >&2; rm -f /tmp/beszel_warn_\$\$.txt" \
         2>"$_BESZEL_WARN_LOCAL" || true)"
     BESZEL_REPORT="$BESZEL_RAW"
@@ -123,7 +123,7 @@ fi
 
 # External check via VPS (optional)
 EXTERNAL_REPORT=""
-VPS="${SERVER_IP:-193.8.215.130}"
+VPS="${SERVER_IP:-95.163.176.103}"
 external_check() {
     local port="$1" path="$2" label="$3"
     local code

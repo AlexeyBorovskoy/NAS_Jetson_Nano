@@ -73,9 +73,9 @@
 | Tunnel service active | `systemctl status nas_jetson_nano-tunnel.service` | active (running) |
 | Tunnel ports on VPS | `ss -tlnp \| grep -E '18080\|12283\|18090\|10022'` | 4 порта на 127.0.0.1 |
 | nginx container | `docker ps --filter name=nas_jetson_nano_nginx` | Up, network_mode host |
-| Nextcloud via VPS | `wget -q -O /dev/null -S http://193.8.215.130:8080/` + `/status.php` | root HTTP 302, `/status.php` HTTP 200 |
-| Immich via VPS | `wget -q -O /dev/null -S http://193.8.215.130:2283/` | HTTP 200 |
-| LLM GW via VPS | `wget -q -O /dev/null -S http://193.8.215.130:8090/health` | HTTP 200 |
+| Nextcloud via VPS | `wget -q -O /dev/null -S http://95.163.176.103:8080/` + `/status.php` | root HTTP 302, `/status.php` HTTP 200 |
+| Immich via VPS | `wget -q -O /dev/null -S http://95.163.176.103:2283/` | HTTP 200 |
+| LLM GW via VPS | `wget -q -O /dev/null -S http://95.163.176.103:8090/health` | HTTP 200 |
 | SSH via tunnel | `ssh -p 10022 admin@127.0.0.1` (с VPS) | prompt |
 | Tunnel restart | `systemctl restart nas_jetson_nano-tunnel.service` | re-establishes within 30s |
 | Reboot autorecovery | `sudo systemctl reboot`, then poll tunnel/storage/HTTP | tunnel returns, `/mnt/storage` is mounted, containers healthy, VPS HTTP 200 |

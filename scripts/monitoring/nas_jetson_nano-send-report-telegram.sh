@@ -9,7 +9,7 @@ REPORT_CMD="/usr/local/sbin/nas_jetson_nano-daily-report.sh"
 LOG_DIR="/var/log/nas_jetson_nano-monitor"
 REPORT_FILE="${LOG_DIR}/last-report.txt"
 SEND_LOG="${LOG_DIR}/last-telegram-send.json"
-VPS_HOST="${VPS_HOST:-193.8.215.130}"
+VPS_HOST="${VPS_HOST:-95.163.176.103}"
 VPS_USER="${VPS_USER:-root}"
 VPS_KEY="${VPS_KEY:-/home/admin/.ssh/id_ed25519}"
 

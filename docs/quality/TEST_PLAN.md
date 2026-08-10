@@ -40,7 +40,7 @@
 - Storage: USB SSD /dev/sda1 -> /mnt/storage (229G, ext4)
 - RAM: 4GB LPDDR4 (shared CPU/GPU)
 
-### 3.2 VPS (193.8.215.130)
+### 3.2 VPS (95.163.176.103)
 - Location: Vienna
 - Role: Reverse proxy + autossh tunnel endpoint
 - Services: nginx -> :8080 (Nextcloud), :2283 (Immich), :8090 (LLM Gateway)

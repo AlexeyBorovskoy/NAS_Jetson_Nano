@@ -18,7 +18,7 @@ Options:
 
 Examples:
   $SCRIPT_NAME --url http://192.168.0.50:8080
-  $SCRIPT_NAME --url https://193.8.215.130:8443 --output /tmp/nc-smoke.md
+  $SCRIPT_NAME --url https://95.163.176.103:8443 --output /tmp/nc-smoke.md
 EOF
 }
 

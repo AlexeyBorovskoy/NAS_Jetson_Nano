@@ -6,8 +6,22 @@
 
 🇬🇧 USB HDD/SSD is the primary data storage. microSD is used for the OS and minimal runtime only.
 
-> 🇷🇺 Статус 2026-06-29: SSD 229 GB смонтирован как `/mnt/storage` (ext4). Энклоужер **JMS583** (152d:a583, USB 3.0 SuperSpeed, 5 Gbps). Write **250 MB/s**, Read 172 MB/s. UAS quirk активен (`usb-storage.quirks=152d:a583:u` в extlinux.conf). RTL9210B-CG заменён 2026-06-28.
-> 🇬🇧 Status 2026-06-29: SSD 229 GB mounted at `/mnt/storage` (ext4). Enclosure: **JMS583** (152d:a583, USB 3.0 SuperSpeed, 5 Gbps). Write **250 MB/s**, Read 172 MB/s. UAS quirk active (`usb-storage.quirks=152d:a583:u` in extlinux.conf). RTL9210B-CG replaced on 2026-06-28.
+> 🇷🇺 **Статус 2026-08-10: подключены два диска, оба работают без ошибок.**
+>
+> | Точка | Устройство | ФС | Размер | Занято | Мост | Скорость |
+> |---|---|---|---|---|---|---|
+> | `/mnt/storage` | `/dev/sda1` SSD | ext4 | 229G | 5 % (9.7G) | **JMS583** `152d:a583` | write **250** / read 172 МБ/с |
+> | `/mnt/hdd2tb` | `/dev/sdb1` HDD | **NTFS** (ntfs-3g) | 1.9T | 76 % (1.4T) | **RTL9201** `0bda:9201` | read **106** / write 92 МБ/с |
+>
+> Оба моста требуют отключения UAS. В `/boot/extlinux/extlinux.conf`:
+> `usb-storage.quirks=0bda:9210:rw,152d:a583:u,0bda:9201:u`. Без quirk оба диска
+> отваливались с шины (`uas_eh_abort_handler`, `error -110`, смена буквы устройства).
+> С момента загрузки — **0** USB-ошибок в dmesg. RTL9210B-CG заменён 2026-06-28.
+>
+> 🇬🇧 **Status 2026-08-10: two disks attached, both error-free.** SSD 229G ext4 at
+> `/mnt/storage` (JMS583, 250/172 MB/s) and 2TB HDD at `/mnt/hdd2tb` (RTL9201, NTFS via
+> ntfs-3g, 106/92 MB/s, 1.4 TB of existing family archive — **must not be reformatted**).
+> Both USB bridges need the UAS quirk; zero USB errors since boot.
 
 ## 2. Рекомендуемая файловая система / Recommended Filesystem
 
@@ -211,6 +225,55 @@ ssh admin@192.168.0.50 "docker compose -f ~/nas_jetson_nano/docker/compose/docke
 **Вариант B** — добавить второй USB-носитель (даже 32 ГБ флешка) под ext4 для баз данных.
 
 **Вариант C** — сжать NTFS со стороны Windows и освободить хотя бы 30–50 ГБ.
+
+## 3б. Как это сделано фактически (as-built, 2026-08-09)
+
+🇷🇺 Раздел 3а описывает общий рецепт. В проекте выбран **более простой путь**: разделять диск
+не понадобилось, потому что под данные NAS уже был отдельный SSD.
+
+🇬🇧 Section 3a is the generic recipe. The project took a **simpler route** — no repartitioning
+was needed, because a dedicated SSD already served as NAS storage.
+
+| Диск | Роль | ФС | Точка | Почему так |
+|---|---|---|---|---|
+| SSD 250 ГБ (JMS583) | рабочее хранилище NAS | ext4 | `/mnt/storage` | БД, Docker-тома, бэкапы — им нужен ext4 и скорость |
+| HDD 2 ТБ (RTL9201) | семейный архив | **NTFS целиком** | `/mnt/hdd2tb` | На диске 1.4 ТБ данных, переносить некуда → **не форматируем** |
+
+**Опасения про «FUSE медленный» не подтвердились:** сырое чтение 106 МБ/с, запись через
+ntfs-3g 92 МБ/с, после 5 ГБ трафика — 0 ошибок.
+
+### Фактическая строка `/etc/fstab`
+
+```text
+UUID=8480B9A880B9A0DA /mnt/hdd2tb ntfs-3g defaults,nofail,noatime,uid=33,gid=33,umask=0000,big_writes,allow_other,x-systemd.device-timeout=30 0 0
+```
+
+- `uid/gid=33` = `www-data` (Nextcloud), `umask=0000` — чтобы писал и Samba-пользователь `nas`
+  (uid 1000). У NTFS всё равно нет POSIX-прав.
+- В `/etc/fuse.conf` добавлен `user_allow_other`.
+- Перед первым монтированием прогнан `ntfsfix -d` (снят dirty-флаг).
+
+### Доступ к архиву
+
+| Путь | Как | Откуда |
+|---|---|---|
+| Nextcloud external storage `/HDD-2TB` | `files_external`, backend Local → `/mnt/hdd2tb`, applicable All | из любой точки мира (через VPN) |
+| Samba шара `hdd2tb` | `\\192.168.0.50\hdd2tb`, пользователь `nas`, read-write, guest запрещён | домашняя LAN |
+
+Проброс в контейнер — строка `- /mnt/hdd2tb:/mnt/hdd2tb` в `docker-compose.nextcloud.yml`
+и `docker-compose.samba.yml`.
+
+### ⚠️ Грабли
+
+1. **После правки `/etc/fstab` обязателен `systemctl daemon-reload`** — иначе systemd
+   примонтирует диск по устаревшему сгенерированному юниту со старыми опциями.
+2. **FUSE + Docker:** если хостовое монтирование пересоздаётся, контейнеры продолжают держать
+   мёртвую ссылку и дают `Input/output error`. Лечится только
+   `docker compose up -d --force-recreate` этих контейнеров. При обычной загрузке проблемы нет —
+   fstab монтирует до старта Docker.
+3. **UAS-quirk нужен и этому мосту.** Через ~2 ч работы диск отвалился с шины и переехал
+   `sdb` → `sdc`, контейнеры получили I/O error. Лечится добавлением `0bda:9201:u` в
+   `usb-storage.quirks` (см. раздел 1).
 
 ## 4. Целевая структура
 

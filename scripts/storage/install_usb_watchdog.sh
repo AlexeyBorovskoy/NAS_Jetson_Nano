@@ -19,7 +19,7 @@ cat > "$ALERT_SCRIPT" << 'SCRIPT'
 set -euo pipefail
 
 CONF="/etc/nas_jetson_nano-monitor/telegram.env"
-VPS_HOST="193.8.215.130"
+VPS_HOST="95.163.176.103"
 VPS_USER="root"
 VPS_KEY="/home/admin/.ssh/id_ed25519"
 

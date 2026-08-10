@@ -23,7 +23,7 @@ Options:
 Examples:
   $SCRIPT_NAME --host 192.168.0.50
   $SCRIPT_NAME --host 192.168.0.50 --url http://192.168.0.50:8080/status.php
-  $SCRIPT_NAME --host 193.8.215.130 --url http://193.8.215.130:8080/ --output /tmp/report.md
+  $SCRIPT_NAME --host 95.163.176.103 --url http://95.163.176.103:8080/ --output /tmp/report.md
 EOF
 }
 

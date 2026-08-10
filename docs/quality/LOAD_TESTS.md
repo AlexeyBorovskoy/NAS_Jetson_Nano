@@ -31,7 +31,7 @@ This is a smoke load test only -- NOT a stress or soak test.
 NEXTCLOUD_URL=http://192.168.0.50:8080 k6 run tests/load/nextcloud-smoke.js
 
 # Run against VPS
-NEXTCLOUD_URL=http://193.8.215.130:8080 k6 run tests/load/nextcloud-smoke.js
+NEXTCLOUD_URL=http://95.163.176.103:8080 k6 run tests/load/nextcloud-smoke.js
 ```
 
 ---

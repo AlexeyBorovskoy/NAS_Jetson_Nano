@@ -38,7 +38,7 @@ Your scope: LAN topology, VPN, reverse tunnel, VPS nginx, firewall, DNS.
       │
       │ (CGNAT — нет прямого входящего)
       │
-  EU VPS (193.8.215.130, Wien)
+  EU VPS (95.163.176.103, Wien)
   ├── Amnezia VPN: openvpn, xray, wireguard, awg2  [НЕ ТРОГАТЬ]
   └── NAS_Jetson_Nano nginx:
         :18080 → reverse tunnel → Jetson :8080  (Nextcloud)
@@ -67,7 +67,7 @@ Your scope: LAN topology, VPN, reverse tunnel, VPS nginx, firewall, DNS.
 
 ## VPS — что есть / VPS state
 
-- **IP**: 193.8.215.130 (Vienна, не постоянный — при смене обновить VPS_HOST в config/.env)
+- **IP**: 95.163.176.103 (Vienна, не постоянный — при смене обновить VPS_HOST в config/.env)
 - **Docker Compose**: v5.1.4 установлен в `/usr/local/bin/`
 - **UFW**: включен, outbound ALLOW (Telegram-бот здоровья работает)
 - **NAS_Jetson_Nano nginx**: compose в `/opt/nas_jetson_nano/docker/vps/`, ещё НЕ запущен — `docker compose up -d`

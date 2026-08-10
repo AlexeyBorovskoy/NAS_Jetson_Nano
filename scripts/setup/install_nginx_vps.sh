@@ -12,14 +12,14 @@
 #   :9443  → LLM Gateway HTTPS
 #
 # Run on VPS:
-#   ssh -i ~/.ssh/borovskoy_new_ed25519 root@193.8.215.130 "bash -s" < install_nginx_vps.sh
+#   ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 "bash -s" < install_nginx_vps.sh
 
 set -euo pipefail
 
 NGINX_CONF_DIR="/opt/nas_jetson_nano/nginx/conf.d"
 NGINX_SSL_DIR="/opt/nas_jetson_nano/nginx/ssl"
 NGINX_CONTAINER="nas_jetson_nano_nginx"
-VPS_IP="193.8.215.130"
+VPS_IP="95.163.176.103"
 
 # HTTPS ports (avoid 443 — taken by Amnezia xray)
 NC_HTTPS=8443    # Nextcloud HTTPS

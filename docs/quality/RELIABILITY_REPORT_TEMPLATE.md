@@ -17,7 +17,7 @@ _2-3 sentences: overall system health, any critical findings, recommendation (GO
 | Item | Value |
 |---|---|
 | Jetson Nano IP | 192.168.0.50 |
-| VPS IP | 193.8.215.130 |
+| VPS IP | 95.163.176.103 |
 | Storage | /mnt/storage (USB SSD) |
 | Storage used % | _% |
 | Docker containers | X / 13 up |
@@ -47,8 +47,8 @@ _2-3 sentences: overall system health, any critical findings, recommendation (GO
 | :8080 (Nextcloud) | HTTP | PASS/FAIL | Xms |
 | :2283 (Immich) | HTTP | PASS/FAIL | Xms |
 | :8090 (LLM) | HTTP | PASS/FAIL | Xms |
-| 193.8.215.130:8080 | HTTP | PASS/FAIL | Xms |
-| 193.8.215.130:2283 | HTTP | PASS/FAIL | Xms |
+| 95.163.176.103:8080 | HTTP | PASS/FAIL | Xms |
+| 95.163.176.103:2283 | HTTP | PASS/FAIL | Xms |
 
 ---
 

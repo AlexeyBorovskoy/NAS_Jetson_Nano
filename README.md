@@ -156,32 +156,40 @@ Principles:
 
 ## Что работает прямо сейчас / What's running
 
-> Состояние на 2026-06-29 / State as of 2026-06-29 · **Stage 1 fully operational**
-> Jetson доступен через VPS reverse tunnel. SSD смонтирован в `/mnt/storage` (229 GB, ~222 GB free).
-> `storage_preflight.sh` — errors=0, warnings=0. Все 13 контейнеров `Up (healthy)`.
-> USB autosuspend отключён: `usbcore.autosuspend=-1` **подтверждён после ребута**.
-> Beszel Hub на VPS:8091, оба агента Up (Jetson · VPS).
-> nginx HTTPS: Nextcloud :8443 · Immich :2443 · LLM :9443 (самоподписанный сертификат, 10 лет).
-> Android: Immich ✅ (6484 фото, 210 видео) · Nextcloud ✅ · DAVx⁵ ✅ · Talk ✅.
-> USB SSD: **JMS583** ✅ (152d:a583, USB 3.0 SuperSpeed, 5 Gbps, write 250 MB/s, UAS quirk активен).
-> Nextcloud Talk: группа «Семья» ✅ (5 участников: admin, olga, ivan, ulyana, anna).
-> Исторический снимок / Historical snapshot (2026-06-29): NAS_Jetson_Nano API **v0.6.0**, Talk, Users, Photos and Actions endpoints, goss 40/40. Требуется повторная проверка для подтверждения текущего состояния / A rerun is required to confirm current state.
+> **Состояние на 2026-08-10 / State as of 2026-08-10 · проверено live-аудитом**
+> ([`docs/plans/SYSTEM_AUDIT_2026-08-10.md`](docs/plans/SYSTEM_AUDIT_2026-08-10.md))
+>
+> Все **13 контейнеров** `Up (healthy)`, **0 рестартов, 0 OOM**. Температуры 41–50 °C, eth0 1 Гбит/с.
+> **Два диска:** SSD 229 GB ext4 → `/mnt/storage` (занято 5 %) и HDD 2 ТБ NTFS → `/mnt/hdd2tb`
+> (1.4 ТБ семейного архива, доступен через Nextcloud `/HDD-2TB` и Samba `hdd2tb`).
+> **0 USB-ошибок** с момента загрузки; UAS-quirk активен для обоих мостов.
+> **Бэкапы БД** идут по расписанию (последний 2026-08-10 03:02), **восстановление проверено**
+> накатом дампов во временную БД: счётчики сошлись с live один-в-один.
+> Реверс-туннель на VPS активен; Immich 2.7.5 (**7098 ассетов**: 6686 фото + 412 видео, 23 альбома),
+> Nextcloud 33.0.4 (5 пользователей), LLM Gateway healthy, Talk-бот running.
+>
+> 🔒 **Периметр:** сервисы больше **не открыты в интернет** — снаружи на VPS доступны только
+> 22, 443 и 40568/udp, всё остальное — через VPN. Адрес VPS сменился на **`95.163.176.103`**
+> (прежний заблокирован российскими ISP).
+>
+> Исторический снимок / Historical snapshot (2026-06-29): NAS_Jetson_Nano API **v0.6.0**, Talk, Users, Photos and Actions endpoints, goss 40/40.
 
 | Сервис / Service | Порт / Port | Доступ / Access | Статус / Status |
 |---|---|---|---|
-| Nextcloud | 8080 / **8443** | VPS `193.8.215.130:8080` · HTTPS `:8443` + LAN | ✅ Live |
-| Immich | 2283 / **2443** | VPS `193.8.215.130:2283` · HTTPS `:2443` + LAN | ✅ Live |
-| LLM Gateway | 8090 / **9443** | VPS `193.8.215.130:8090` · HTTPS `:9443` + LAN | ✅ Live |
-| DAVx⁵ CardDAV/CalDAV | 8443 | `https://193.8.215.130:8443/remote.php/dav` | ✅ Live · Android sync |
-| nas_jetson_nano-api (Swagger) | 8099 | LAN `192.168.0.50:8099/docs` | ✅ Live |
-| Samba NAS | 445/139 | LAN only (192.168.0.0/24) | ✅ Live, storage-backed |
+| Nextcloud | 8080 / **8443** | LAN + VPS `95.163.176.103` **только через VPN / VPN only** | ✅ Live · v33.0.4 |
+| Immich | 2283 / **2443** | LAN + VPS `95.163.176.103` **только через VPN / VPN only** | ✅ Live · v2.7.5 |
+| LLM Gateway | 8090 / **9443** | LAN + VPS `95.163.176.103` **только через VPN / VPN only** | ✅ Live · DeepSeek |
+| DAVx⁵ CardDAV/CalDAV | 8443 | `https://95.163.176.103:8443/remote.php/dav` (через VPN) | ✅ Live · Android sync |
+| nas_jetson_nano-api (Swagger) | 8099 | LAN `192.168.0.50:8099/docs` (снаружи — через VPN) | ✅ Live |
+| Samba NAS | 445/139 | LAN only (192.168.0.0/24) | ✅ Live · шары `public` + **`hdd2tb`** |
+| HDD 2 ТБ архив | — | Nextcloud `/HDD-2TB` · Samba `\\192.168.0.50\hdd2tb` | ✅ Live · 1.4 ТБ, NTFS |
 | Netdata | 19999 | LAN `192.168.0.50:19999` | ✅ Live |
 | Uptime Kuma | 3001 | LAN `192.168.0.50:3001` | ✅ Live · 5 monitors configured |
 | Portainer | 9000 | LAN `192.168.0.50:9000` | ✅ Live · admin configured |
-| Beszel Hub | 8091 | VPS `193.8.215.130:8091` | ✅ Live · Jetson 17% CPU · VPS 2% CPU |
+| Beszel Hub | 8091 | VPS `95.163.176.103:8091` (через VPN) | ✅ Live · Jetson 17% CPU · VPS 2% CPU |
 | Beszel Agent Jetson | 45876 | Jetson internal | ✅ Live · systemd, arm64 v0.18.7 |
 | Beszel Agent VPS | 45877 | VPS internal | ✅ Live · systemd, amd64 v0.18.7 |
-| VPS nginx (HTTP+HTTPS) | — | VPS 193.8.215.130 | ✅ Live · self-signed TLS 10y |
+| VPS nginx (HTTP+HTTPS) | — | VPS 95.163.176.103 | ✅ Live · self-signed TLS 10y |
 | autossh tunnel | — | Jetson → VPS persistent | ✅ Live |
 | Telegram daily report | — | Bot → personal chat | ✅ Live (09:00) + Beszel data |
 | DB backup timer | — | pg_dump → /mnt/storage/backups | ✅ Live; fail-closed guard |
@@ -189,9 +197,14 @@ Principles:
 | Android mobile sync | — | Immich app + DAVx⁵ + Nextcloud + Talk | ✅ Immich (6484 фото/210 видео) · Nextcloud · DAVx⁵ · Talk |
 | Nextcloud Talk | 8080/8443 | Семейный чат, 5 участников | ✅ Live · группа «Семья» (admin, olga, ivan, ulyana, anna) |
 
-> **Хранилище / Storage:** `/mnt/storage` — JMS583 USB 3.0 SSD (152d:a583, 229 GB ext4, write 250 MB/s, UAS quirk активен).
-> После переподключения / After reconnect: виден как / visible as `/dev/sda1`, смонтирован / mounted `rw,noatime`.
-> `e2fsck -f -n` вернул `0`, `storage_preflight.sh` завершился без ошибок / completed without errors.
+> **Хранилище / Storage (2026-08-10):**
+> `/mnt/storage` — JMS583 USB 3.0 SSD (`152d:a583`, 229 GB ext4, write 250 / read 172 MB/s), занято 5 %.
+> `/mnt/hdd2tb` — WD 2 TB через RTL9201 (`0bda:9201`, **NTFS** / ntfs-3g, read 106 / write 92 MB/s),
+> занято 76 % — 1.4 ТБ существующего семейного архива, **форматированию не подлежит**.
+> Оба моста требуют UAS-quirk: `usb-storage.quirks=0bda:9210:rw,152d:a583:u,0bda:9201:u`.
+> USB-ошибок с момента загрузки — **0**.
+> ⚠️ SMART недоступен структурно: quirk переводит мосты в usb-storage BOT, который не пропускает
+> ATA passthrough → `smartd` отключён намеренно, здоровье закрывают почасовой таймер и USB-монитор.
 > История инцидента / Incident log: [docs/plans/STORAGE_INCIDENT_2026-06-23.md](docs/plans/STORAGE_INCIDENT_2026-06-23.md).
 > Аудит надёжности / Reliability audit: [docs/plans/RELIABILITY_AUDIT_2026-06-23.md](docs/plans/RELIABILITY_AUDIT_2026-06-23.md).
 
@@ -241,7 +254,7 @@ Principles:
         |
         | (публичный IP / public IP)
         v
-  [ VPS 193.8.215.130 — Вена / Vienna ]
+  [ VPS 95.163.176.103 — Вена / Vienna ]
         |
         |  nginx (host network, docker) — HTTP + HTTPS (self-signed TLS)
         |  :8080 / :8443  → 127.0.0.1:18080 → tunnel → Jetson:8080  (Nextcloud)
@@ -567,6 +580,7 @@ IMMICH_DISABLE_MACHINE_LEARNING=true   # обязательно для Jetson Na
 | [docs/23_GITHUB_INTEGRATION.md](docs/23_GITHUB_INTEGRATION.md) | GitHub CLI + Claude Code интеграция, AI DevOps workflow |
 | [docs/24_CLIENT_SETUP.md](docs/24_CLIENT_SETUP.md) | **Подключение устройств: Android, Windows, Linux** |
 | [docs/25_KEENETIC_OMNI_KN1410.md](docs/25_KEENETIC_OMNI_KN1410.md) | **Keenetic Omni KN-1410: карточка усилителя Wi-Fi, настройка, проверка и rollback** |
+| [docs/26_DECO_E4_NETWORK.md](docs/26_DECO_E4_NETWORK.md) | **TP-Link Deco E4: анализ выигрыша/потерь для NAS, топология, регламент настройки, откат** (решение не принято) |
 | [docs/android/ANDROID_SETUP.md](docs/android/ANDROID_SETUP.md) | **Настройка Xiaomi MIUI/HyperOS** — Immich, Nextcloud, DAVx⁵, HTTPS через VPS |
 | [docs/android/GOOGLE_MIGRATION.md](docs/android/GOOGLE_MIGRATION.md) | **Миграция с Google** — Google Takeout → Immich/Nextcloud/DAVx⁵, чеклист |
 | [docs/android/XIAOMI_MIUI_QUIRKS.md](docs/android/XIAOMI_MIUI_QUIRKS.md) | Специфика MIUI/HyperOS — battery whitelist, автозапуск, блокировка в RAM |
@@ -578,6 +592,7 @@ IMMICH_DISABLE_MACHINE_LEARNING=true   # обязательно для Jetson Na
 | [docs/plans/POST_HABR_FEEDBACK_2026-08.md](docs/plans/POST_HABR_FEEDBACK_2026-08.md) | **Шаг 2:** разбор отзывов с Habr + дорожная карта развития / Habr feedback + Step 2 roadmap |
 | [docs/plans/VOSTRO_ML_NODE_ONBOARDING.md](docs/plans/VOSTRO_ML_NODE_ONBOARDING.md) | **Шаг 2:** ввод Dell Vostro 15 как Immich ML-узла / Vostro ML node onboarding |
 | [docs/plans/SYSTEM_AUDIT_2026-08-01.md](docs/plans/SYSTEM_AUDIT_2026-08-01.md) | **Live-аудит 2026-08-01:** питание (2.3/4.2 Вт), стабильность, снятые противоречия + 2 находки (экспозиция, бэкапы) / Live system audit |
+| [docs/plans/SYSTEM_AUDIT_2026-08-10.md](docs/plans/SYSTEM_AUDIT_2026-08-10.md) | **Аудит работоспособности 2026-08-10:** обе находки предыдущего аудита закрыты, оба диска, restore проверен, остаточные риски / Health audit |
 | [docs/articles/MEASUREMENTS_EN.md](docs/articles/MEASUREMENTS_EN.md) · [GAPS_EN.md](docs/articles/GAPS_EN.md) · [PROJECT_FACTS_EN.md](docs/articles/PROJECT_FACTS_EN.md) | Детальные замеры, блокеры и фактура (EN) / Measurements, gaps, facts |
 | [AGENTS.md](AGENTS.md) | Правила для Codex/агентов |
 | [docs/PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md) | Зафиксированные решения и ограничения |

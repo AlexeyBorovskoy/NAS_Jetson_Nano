@@ -41,8 +41,8 @@
 - [ ] Nextcloud: `curl -sf http://192.168.0.50:8080/status.php` returns HTTP 200 with `{"installed":true}`
 - [ ] Immich: `curl -sf http://192.168.0.50:2283/api/server/ping` returns HTTP 200
 - [ ] LLM Gateway: `curl -sf http://192.168.0.50:8090/health` returns HTTP 200
-- [ ] VPS Nextcloud proxy: `curl -sf http://193.8.215.130:8080/status.php` returns HTTP 200
-- [ ] VPS Immich proxy: `curl -sf http://193.8.215.130:2283/api/server/ping` returns HTTP 200
+- [ ] VPS Nextcloud proxy: `curl -sf http://95.163.176.103:8080/status.php` returns HTTP 200
+- [ ] VPS Immich proxy: `curl -sf http://95.163.176.103:2283/api/server/ping` returns HTTP 200
 
 ---
 

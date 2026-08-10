@@ -36,7 +36,7 @@
 | POST | `/v1/actions/backup/now` | JWT | ✅ fire-and-forget |
 | GET | `/v1/actions/history` | JWT | ✅ |
 
-**Live:** `http://192.168.0.50:8099/docs` · `http://193.8.215.130:8099/docs`
+**Live:** `http://192.168.0.50:8099/docs` · `http://95.163.176.103:8099/docs`
 
 ---
 

@@ -36,10 +36,52 @@ docker ps --format "{{.Names}}\t{{.Status}}"  # healthcheck-статусы
 sudo dmesg | grep -i -E "error|reset|fail|i/o" | tail -20
 ```
 
-## 3. Проверка HDD / HDD Check
+## 3. Проверка дисков / Disk Check
+
+### 3.1. 🔴 SMART недоступен — и это не чинится конфигом
+
+🇷🇺 `smartd.service` **отключён намеренно** (`systemctl disable smartd`, 2026-08-09). Причина
+структурная: kernel-quirk `152d:a583:u`, нужный для стабильности SSD, переводит мост JMS583 в
+режим **usb-storage BOT**, а BOT не пропускает ATA/SCSI passthrough, на котором держится SMART.
+
+🇬🇧 `smartd` is disabled **by design**: the UAS quirk that keeps the SSD stable forces
+usb-storage BOT mode, which blocks the ATA/SCSI passthrough SMART depends on.
+
+Перебрано 2026-08-09 — не работает **ничего**:
+
+| Режим | Результат |
+|---|---|
+| `-d sat`, `-d sat,12`, `-d sat,16` | `unsupported scsi opcode` / `unsupported field in scsi command` |
+| `-d usbjmicron`, `,0`, `,x` | `unsupported field in scsi command` |
+| `-d sat -T permissive -A` | `Read Device Identity failed`, атрибутов нет |
+| `-d scsi -i` | ✅ только паспорт: `JMicron Tech`, S/N, 250 GB |
+| `-d scsi -H` | ✅ `SMART Health Status: OK` (разово) |
+| `-d scsi -s on` | ❌ `unable to fetch IEC (SMART) mode page` |
+
+Последнее и убивает идею: `smartd` требует включённой IEC mode page, а мост её не отдаёт →
+`IE (SMART) not enabled, skip device`. Разовый `-H` проходит, непрерывный мониторинг — нет.
+
+**Quirk снимать нельзя** — без него сыпались USB-ошибки и диск отваливался с шины.
+Пересмотреть только при обновлении `smartmontools` (сейчас 6.6 от 2016 года).
+
+### 3.2. Чем закрыт мониторинг здоровья вместо SMART
+
+| Механизм | Период | Что проверяет |
+|---|---|---|
+| `nasa-jms583-health.timer` | ежечасно | драйвер, активность quirk, USB-ошибки; пишет `errors=N warnings=N` |
+| `nasa-usb-monitor.service` | реальное время | следит за dmesg (`error -71`, stream errors) → Telegram |
+| `jetson-nas-health.timer` | каждые 6 ч | storage/mountpoint |
 
 ```bash
-sudo smartctl -a /dev/sda || sudo smartctl -a -d sat /dev/sda
+# Ежечасный отчёт о здоровье моста
+tail -20 /var/log/nasa-monitor/jms583-health.log
+
+# Разовый паспорт диска (работает даже в BOT-режиме)
+sudo smartctl -d scsi -i /dev/sda
+sudo smartctl -d scsi -H /dev/sda
+
+# USB-ошибки с момента загрузки — здоровая система даёт 0
+dmesg -T | grep -Eic "error -71|uas_eh|I/O error|usb disconnect"
 ```
 
 ## 4. Веб-интерфейсы мониторинга / Monitoring Web UIs

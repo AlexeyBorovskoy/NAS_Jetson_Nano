@@ -85,7 +85,7 @@ docker logs homecloud_coturn
 
 Создать `/etc/nas_jetson_nano-monitor/talk.env` на Jetson:
 ```bash
-TURN_SERVER=193.8.215.130:3478
+TURN_SERVER=95.163.176.103:3478
 TURN_SECRET=твой_секрет_из_шага_2a
 ```
 
@@ -96,7 +96,7 @@ bash ~/nas_jetson_nano/scripts/setup/install_nextcloud_talk.sh
 
 Или настроить вручную:  
 Nextcloud → Настройки → Talk → TURN-серверы:
-- URL: `turn:193.8.215.130:3478`
+- URL: `turn:95.163.176.103:3478`
 - Секрет: твой секрет
 - Протоколы: UDP и TCP
 
@@ -108,7 +108,7 @@ Nextcloud → Настройки → Talk → TURN-серверы:
 
 **Настройка:**
 1. Открыть → вход через Nextcloud
-2. Адрес: `https://193.8.215.130:8443`
+2. Адрес: `https://95.163.176.103:8443`
 3. Логин / пароль: те же что в Nextcloud
 4. Принять сертификат
 
@@ -128,7 +128,7 @@ docker exec homecloud_nextcloud php occ app:list | grep spreed
 nc -uzv stun.l.google.com 19302
 
 # Проверить TURN (с любого хоста, если установлен turnutils):
-turnutils_stunclient 193.8.215.130
+turnutils_stunclient 95.163.176.103
 ```
 
 ---

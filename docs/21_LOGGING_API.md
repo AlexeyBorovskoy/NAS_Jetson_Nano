@@ -103,7 +103,7 @@ FastAPI-сервис (`services/nas_jetson_nano-api/`) со Swagger UI. След
 | Порт | 8099 |
 | Swagger UI | `http://192.168.0.50:8099/docs` |
 | OpenAPI JSON | `http://192.168.0.50:8099/openapi.json` |
-| Через VPS | `http://193.8.215.130:8099/docs` (после добавления порта) |
+| Через VPS | `http://95.163.176.103:8099/docs` (после добавления порта) |
 | Docker-образ | `python:3.12-slim` |
 | RAM (расчётный) | ~80–100 MB |
 

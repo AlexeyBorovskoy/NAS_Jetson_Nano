@@ -8,7 +8,63 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed / Исправлено
+
+- 🇷🇺 **Бэкапы БД не создавались 16 дней (24.07 → 09.08) — исправлено.** Причина: строка
+  `TALK_BOT_DISPLAY_NAME=NAS Bot` в `config/.env` **без кавычек**; `source` под
+  `set -euo pipefail` падал с кодом 127 до первого `pg_dump`, а systemd рапортовал
+  `Result=success`. Тем же обрывом были сломаны `storage_preflight.sh`,
+  `nasa-ssd-recovery.service` (автовосстановление при hotplug SSD) и `jetson-nas-health`.
+  **Восстановление из дампов проверено впервые** — накатом во временную БД, счётчики сошлись
+  с live один-в-один. Методика и правило проверки записаны в `docs/12_BACKUP_RESTORE.md`.
+- 🇬🇧 **Nightly DB backups were silently dead for 16 days — fixed.** An unquoted value in
+  `config/.env` killed every script that sources it under `set -e`, including the SSD
+  hotplug auto-recovery. Restore verified for the first time; procedure documented.
+- 🇷🇺 **Реверс-туннель смотрел на заблокированный IP VPS — исправлено.** `193.8.215.130`
+  заблокирован российскими ISP; переведён на `95.163.176.103`. Хост живёт в root-owned
+  `/opt/nasa/config/.env`, а не в `~/nasa/config/.env`.
+- 🇬🇧 **Reverse tunnel was dialing a blocked VPS IP — fixed** (`95.163.176.103`).
+- 🇷🇺 Погашен забытый тестовый `python3 -m http.server` на порту 8123, висевший 14 ч и
+  слушавший всю домашнюю сеть (остаток от замеров скорости Wi-Fi).
+
+### Security / Безопасность
+
+- 🇷🇺 **Сервисы уведены из интернета** (закрыта находка №1 аудита 2026-08-01): ufw на VPS
+  пускает 8080/8443/2283/2443/8090/9443/**8099**/8091/8765/8766 только с `172.29.172.0/24`
+  и `10.8.1.0/24`. Наружу остались 22 (нужен для реверс-туннелей), 443 и 40568/udp.
+  Правило №4 проекта соблюдено.
+- 🇬🇧 **Service ports removed from the public internet** — VPN-only access; only 22, 443 and
+  40568/udp remain world-reachable.
+- 🇷🇺 Отмечен остаточный риск: **внутри домашней LAN сегментации нет** — все сервисы
+  доступны любому, кто знает пароль Wi-Fi.
+
 ### Added / Добавлено
+
+- 🇷🇺 **HDD 2 ТБ подключён как семейный архив:** WD20EADS, **NTFS сохранён** (1.4 ТБ
+  существующих данных, форматирование исключено), смонтирован в `/mnt/hdd2tb` и опубликован
+  как Nextcloud external storage `/HDD-2TB` и Samba-шара `hdd2tb`. Мосту RTL9201 потребовался
+  тот же UAS-quirk, что и SSD (`0bda:9201:u`) — без него диск отваливался с шины.
+  As-built описан в `docs/04_STORAGE_DESIGN.md` (раздел 3б).
+- 🇬🇧 **2 TB HDD added as the family archive** — NTFS kept as-is, mounted at `/mnt/hdd2tb`,
+  published via Nextcloud external storage and Samba; needed the same UAS quirk as the SSD.
+- 🇷🇺 **Аудит работоспособности 2026-08-10** — `docs/plans/SYSTEM_AUDIT_2026-08-10.md`:
+  обе находки предыдущего аудита закрыты, замеры по хосту/дискам/контейнерам/сервисам,
+  семь остаточных рисков.
+- 🇷🇺 **План перестройки домашней сети** — `docs/26_DECO_E4_NETWORK.md` (TP-Link Deco E4):
+  🔴 порты 100 Мбит/с → только режим Access Point, Jetson остаётся в гигабитном порту.
+  Решение не принято.
+- 🇷🇺 Задокументировано, почему **`smartd` отключён намеренно**: UAS-quirk переводит мосты в
+  usb-storage BOT, который не пропускает ATA/SCSI passthrough — SMART недоступен структурно
+  (`docs/13_MONITORING_RUNBOOK.md`, раздел 3).
+
+### Changed / Изменено
+
+- 🇷🇺 Адрес VPS обновлён с `193.8.215.130` на `95.163.176.103` во всей операционной
+  документации, скриптах и тестах. Исторические документы (статьи, ADR, отчёты об инцидентах)
+  оставлены как есть; в ADR-0005 и ADR-0006 добавлены пометки об изменении.
+- 🇷🇺 `CLAUDE.md` полностью переписан под фактическое состояние на 2026-08-10: два диска,
+  закрытый периметр, новые правила (№7 — не форматировать HDD, №8 — кавычки в `.env`,
+  №10 — Deco только в режиме AP) и раздел «Грабли, проверенные на практике».
 
 - 🇷🇺 **Шаг 2 (развитие проекта):** разбор отзывов с Habr и дорожная карта
   (`docs/plans/POST_HABR_FEEDBACK_2026-08.md`, двуязычный); решение ввести старый

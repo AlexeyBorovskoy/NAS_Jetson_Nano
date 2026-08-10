@@ -24,8 +24,8 @@ tests/network/connectivity_check.sh \
 
 # VPS check
 tests/network/connectivity_check.sh \
-  --host 193.8.215.130 \
-  --url http://193.8.215.130:8080/status.php
+  --host 95.163.176.103 \
+  --url http://95.163.176.103:8080/status.php
 ```
 
 ### port_check.sh
@@ -40,7 +40,7 @@ tests/network/port_check.sh \
 
 # Check VPS proxy ports
 tests/network/port_check.sh \
-  --host 193.8.215.130 \
+  --host 95.163.176.103 \
   --ports "8080,2283,8090,8091"
 ```
 
@@ -73,9 +73,9 @@ Expected ports:
 ### T2.3: VPS Proxy
 
 ```bash
-curl -sf http://193.8.215.130:8080/status.php | python3 -m json.tool
-curl -sf http://193.8.215.130:2283/api/server/ping
-curl -sf http://193.8.215.130:8090/health
+curl -sf http://95.163.176.103:8080/status.php | python3 -m json.tool
+curl -sf http://95.163.176.103:2283/api/server/ping
+curl -sf http://95.163.176.103:8090/health
 ```
 
 ### T2.4: DNS
@@ -111,6 +111,6 @@ nslookup jetson-nano.local
 - Check port mapping: `docker inspect homecloud_nextcloud | grep PortBindings`
 
 ### VPS proxy not responding
-- Check tunnel: `ssh root@193.8.215.130 "systemctl status autossh-nas_jetson_nano.service"`
-- Check nginx: `ssh root@193.8.215.130 "nginx -t && systemctl status nginx"`
-- Check tunnel endpoint: `ssh root@193.8.215.130 "ss -tlnp | grep :8080"`
+- Check tunnel: `ssh root@95.163.176.103 "systemctl status autossh-nas_jetson_nano.service"`
+- Check nginx: `ssh root@95.163.176.103 "nginx -t && systemctl status nginx"`
+- Check tunnel endpoint: `ssh root@95.163.176.103 "ss -tlnp | grep :8080"`

@@ -8,7 +8,7 @@
 ```mermaid
 flowchart TB
     Client[Android / браузер / browser]
-    VPS["VPS 193.8.215.130\nnginx :8080/:2283/:8090"]
+    VPS["VPS 95.163.176.103\nnginx :8080/:2283/:8090"]
     Tunnel["SSH reverse tunnel\nnas_jetson_nano-tunnel.service (autossh)"]
     Jetson[Jetson Nano 4GB\n192.168.0.50]
     HDD[USB SSD/HDD]
@@ -58,9 +58,9 @@ flowchart TB
 
 | Сервис / Service | Порт Jetson / Jetson Port | Внешний доступ / External access | Статус / Status |
 |---|---|---|---|
-| Nextcloud | 8080 | `http://193.8.215.130:8080/` | ✅ Live |
-| Immich | 2283 | `http://193.8.215.130:2283/` | ✅ Live |
-| LLM Gateway | 8090 | `http://193.8.215.130:8090/` | ✅ Live |
+| Nextcloud | 8080 | `http://95.163.176.103:8080/` | ✅ Live |
+| Immich | 2283 | `http://95.163.176.103:2283/` | ✅ Live |
+| LLM Gateway | 8090 | `http://95.163.176.103:8090/` | ✅ Live |
 | SSH управление / management | 22 | `ssh -p 10022 admin@127.0.0.1` from VPS | ✅ tunnel |
 | Samba | 445/139 | LAN only (192.168.0.0/24) | ✅ Live |
 
@@ -77,7 +77,7 @@ Jetson → autossh -R 18080:localhost:8080
                  -R 12283:localhost:2283
                  -R 18090:localhost:8090
                  -R 10022:localhost:22
-                 root@193.8.215.130
+                 root@95.163.176.103
 ```
 
 🇷🇺 VPS nginx (`network_mode: host`) проксирует публичные порты на `127.0.0.1:18xxx`.

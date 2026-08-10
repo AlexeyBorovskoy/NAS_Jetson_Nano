@@ -24,7 +24,7 @@ IP обеспечивается через обратный SSH-тоннель �
 flowchart TB
     Phone[Android / браузер]
     Internet[Интернет / CGNAT]
-    VPS["VPS 193.8.215.130\n(Вена, AEZA)"]
+    VPS["VPS 95.163.176.103\n(Вена, AEZA)"]
     NginxVPS["nginx :8080/:2283/:8090\n(network_mode: host)"]
     Tunnel["SSH reverse tunnel\nautossh → nas_jetson_nano-tunnel.service"]
     Router[Домашний роутер\n192.168.0.1]
@@ -85,9 +85,9 @@ flowchart TB
 
 | Сервис | Порт Jetson | Внешний доступ | Механизм |
 |---|---|---|---|
-| Nextcloud | 8080 | `http://193.8.215.130:8080/` | VPS nginx → SSH tunnel; `/status.php` HTTP 200 |
-| Immich | 2283 | `http://193.8.215.130:2283/` | VPS nginx → SSH tunnel |
-| LLM Gateway | 8090 | `http://193.8.215.130:8090/` | VPS nginx → SSH tunnel |
+| Nextcloud | 8080 | `http://95.163.176.103:8080/` | VPS nginx → SSH tunnel; `/status.php` HTTP 200 |
+| Immich | 2283 | `http://95.163.176.103:2283/` | VPS nginx → SSH tunnel |
+| LLM Gateway | 8090 | `http://95.163.176.103:8090/` | VPS nginx → SSH tunnel |
 | SSH (управление) | 22 | `ssh -p 10022 admin@127.0.0.1` с VPS | SSH tunnel -R 10022 |
 | Samba | 445/139 | LAN only (192.168.0.0/24) | iptables + netfilter-persistent |
 
@@ -133,7 +133,7 @@ flowchart TB
 - Redis 7-alpine (`nextcloud-redis`)
 - `nextcloud:apache` (latest)
 - Установлен через `occ maintenance:install` (не через веб-форму)
-- trusted_domains: `192.168.0.50`, `localhost`, `127.0.0.1`, `193.8.215.130`
+- trusted_domains: `192.168.0.50`, `localhost`, `127.0.0.1`, `95.163.176.103`
 - data dir: `/mnt/storage/nextcloud/data` (bind mount → `/var/www/html/data`)
 
 Детали: [docs/06_NEXTCLOUD_DESIGN.md](docs/06_NEXTCLOUD_DESIGN.md).
@@ -175,7 +175,7 @@ Swagger UI: `http://192.168.0.50:8090/docs`.
 ```
 Jetson:        autossh -R 18080:localhost:8080 -R 12283:localhost:2283
                         -R 18090:localhost:8090 -R 10022:localhost:22
-                        root@193.8.215.130
+                        root@95.163.176.103
 VPS sshd:      127.0.0.1:18080 → tunnel → Jetson:8080
 VPS nginx:     :8080 → 127.0.0.1:18080   (network_mode: host!)
 ```

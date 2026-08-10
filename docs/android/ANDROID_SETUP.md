@@ -13,7 +13,7 @@ Xiaomi (дома / at home)
   └── Wi-Fi → 192.168.0.50 (Jetson LAN, прямое подключение / direct)
 
 Xiaomi (вне дома / away from home)
-  └── VPN → VPS 193.8.215.130
+  └── VPN → VPS 95.163.176.103
         └── nginx reverse proxy → SSH tunnel → Jetson 192.168.0.50
 ```
 
@@ -42,7 +42,7 @@ Xiaomi (вне дома / away from home)
 
 ```bash
 # На Windows (Git Bash) / From Windows (Git Bash):
-ssh -i ~/.ssh/borovskoy_new_ed25519 root@193.8.215.130 \
+ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 \
   "bash -s" < scripts/setup/install_nginx_vps.sh
 ```
 
@@ -51,9 +51,9 @@ ssh -i ~/.ssh/borovskoy_new_ed25519 root@193.8.215.130 \
 
 | Сервис / Service | HTTP | HTTPS |
 |---|---|---|
-| Nextcloud | `http://193.8.215.130:8080` | `https://193.8.215.130:8443` |
-| Immich | `http://193.8.215.130:2283` | `https://193.8.215.130:2443` |
-| LLM Gateway | `http://193.8.215.130:8090` | `https://193.8.215.130:9443` |
+| Nextcloud | `http://95.163.176.103:8080` | `https://95.163.176.103:8443` |
+| Immich | `http://95.163.176.103:2283` | `https://95.163.176.103:2443` |
+| LLM Gateway | `http://95.163.176.103:8090` | `https://95.163.176.103:9443` |
 
 > 🇷🇺 Самоподписанный сертификат — принять предупреждение один раз в браузере/приложении.
 > 🇬🇧 Self-signed certificate — accept the warning once in browser/app.
@@ -72,13 +72,13 @@ or APK from [github.com/immich-app/immich/releases](https://github.com/immich-ap
 🇷🇺
 1. Открыть Immich → **Войти** → ввести адрес сервера
 2. **Дома (Wi-Fi):** `http://192.168.0.50:2283`
-   **Вне дома:** `https://193.8.215.130:2443`
+   **Вне дома:** `https://95.163.176.103:2443`
 3. Создать пользователя в Immich или использовать существующего
 
 🇬🇧
 1. Open Immich → **Login** → enter server address
 2. **At home (Wi-Fi):** `http://192.168.0.50:2283`
-   **Away from home:** `https://193.8.215.130:2443`
+   **Away from home:** `https://95.163.176.103:2443`
 3. Create an Immich user or use an existing one
 
 ### Настройка автозагрузки / Configure auto-backup
@@ -112,14 +112,14 @@ or APK from [github.com/immich-app/immich/releases](https://github.com/immich-ap
 🇷🇺
 1. Nextcloud → **Войти** → ввести адрес сервера:
    - Дома: `http://192.168.0.50:8080`
-   - Вне дома: `https://193.8.215.130:8443`
+   - Вне дома: `https://95.163.176.103:8443`
 2. Ввести логин/пароль Nextcloud
 3. Разрешить доступ к файлам
 
 🇬🇧
 1. Nextcloud → **Login** → enter server address:
    - At home: `http://192.168.0.50:8080`
-   - Away: `https://193.8.215.130:8443`
+   - Away: `https://95.163.176.103:8443`
 2. Enter Nextcloud login/password
 3. Allow file access
 
@@ -150,7 +150,7 @@ or free via **[F-Droid](https://f-droid.org/packages/at.bitfire.davdroid/)**
 1. DAVx⁵ → **+** → **Войти с URL**
 2. **Base URL:**
    - Дома: `http://192.168.0.50:8080/remote.php/dav`
-   - Вне дома: `https://193.8.215.130:8443/remote.php/dav`
+   - Вне дома: `https://95.163.176.103:8443/remote.php/dav`
 3. Логин/пароль Nextcloud → **Далее**
 4. DAVx⁵ найдёт: адресную книгу (CardDAV) и календари (CalDAV)
 5. ✅ Включить синхронизацию нужных коллекций
@@ -159,7 +159,7 @@ or free via **[F-Droid](https://f-droid.org/packages/at.bitfire.davdroid/)**
 1. DAVx⁵ → **+** → **Login with URL**
 2. **Base URL:**
    - At home: `http://192.168.0.50:8080/remote.php/dav`
-   - Away: `https://193.8.215.130:8443/remote.php/dav`
+   - Away: `https://95.163.176.103:8443/remote.php/dav`
 3. Nextcloud login/password → **Next**
 4. DAVx⁵ will find: address book (CardDAV) and calendars (CalDAV)
 5. ✅ Enable sync for needed collections

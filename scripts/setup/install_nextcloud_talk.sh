@@ -23,7 +23,7 @@ err() { echo "[$(date '+%H:%M:%S')] ❌ $*" >&2; }
 
 # Load optional TURN config
 [[ -f "$CONF" ]] && source "$CONF"
-TURN_SERVER="${TURN_SERVER:-}"      # e.g. turn:193.8.215.130:3478
+TURN_SERVER="${TURN_SERVER:-}"      # e.g. turn:95.163.176.103:3478
 TURN_SECRET="${TURN_SECRET:-}"      # shared secret (from coturn config)
 
 # ── 1. Check Nextcloud is running ─────────────────────────────────────────────
@@ -91,7 +91,7 @@ if [[ "$STATUS" == "enabled" ]]; then
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "  Nextcloud Talk — setup complete"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "  Web:     https://193.8.215.130:8443/apps/spreed"
+    echo "  Web:     https://95.163.176.103:8443/apps/spreed"
     echo "  Android: Play Store → 'Nextcloud Talk'"
     echo "           (Same Nextcloud credentials)"
     echo ""

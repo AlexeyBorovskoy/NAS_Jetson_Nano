@@ -4,7 +4,7 @@
 > 🇬🇧 Completed 2026-06-21. VPS reverse SSH tunnel implemented (ADR-0005).
 
 **Статус / Status:** ✅ **Завершено / Completed (2026-06-21)**  
-**VPS:** 193.8.215.130 (hostname: borovskoy-new.ptr.network)  
+**VPS:** 95.163.176.103 (hostname: borovskoy-new.ptr.network)  
 **Расположение:** Вена, Австрия (AEZA GROUP)  
 **Важно:** IP-адрес VPS может измениться — при смене обновить `VPS_HOST` в `/opt/nas_jetson_nano/config/.env` на Jetson и перезапустить `nas_jetson_nano-tunnel.service`.
 
@@ -15,9 +15,9 @@
 ## Что работает на VPS (обновлено 2026-06-23)
 
 - `nas_jetson_nano_nginx` контейнер: `network_mode: host`, порты 8080/2283/8090 публичные
-- Nextcloud: `http://193.8.215.130:8080/status.php` → HTTP 200 ✅
-- Immich: `http://193.8.215.130:2283/` → HTTP 200 ✅
-- LLM Gateway: `http://193.8.215.130:8090/health` → HTTP 200 ✅
+- Nextcloud: `http://95.163.176.103:8080/status.php` → HTTP 200 ✅
+- Immich: `http://95.163.176.103:2283/` → HTTP 200 ✅
+- LLM Gateway: `http://95.163.176.103:8090/health` → HTTP 200 ✅
 - SSH управление Jetson: `ssh -p 10022 admin@127.0.0.1` с VPS ✅
 
 Если Nextcloud снова вернёт 502/503, сначала проверять upstream container и
@@ -54,7 +54,7 @@ storage preflight на Jetson; tunnel/nginx уже подтверждены ра
 Телефон/браузер
     |
     v (internet)
-VPS: 193.8.215.130
+VPS: 95.163.176.103
     |  nginx :8080 → 127.0.0.1:18080
     |  nginx :2283 → 127.0.0.1:12283
     |  nginx :8090 → 127.0.0.1:18090
@@ -94,7 +94,7 @@ sudo apt install -y autossh
 ### Шаг 3: На Jetson — запустить туннель (тест)
 
 ```bash
-VPS_HOST="193.8.215.130"   # обновить если IP изменился
+VPS_HOST="95.163.176.103"   # обновить если IP изменился
 autossh -N \
   -R 18080:localhost:8080 \
   -R 12283:localhost:2283 \
@@ -115,9 +115,9 @@ docker compose up -d
 
 С телефона (мобильный интернет, не Wi-Fi):
 ```
-http://193.8.215.130:8080   → Nextcloud
-http://193.8.215.130:2283   → Immich
-http://193.8.215.130:8090   → LLM Gateway
+http://95.163.176.103:8080   → Nextcloud
+http://95.163.176.103:2283   → Immich
+http://95.163.176.103:8090   → LLM Gateway
 ```
 
 ### Шаг 6: На Jetson — systemd-сервис для автозапуска туннеля
@@ -162,7 +162,7 @@ sudo systemctl status nas_jetson_nano-tunnel.service
 Хранить restic-репозиторий на VPS:
 ```bash
 # В config/.env
-RESTIC_REPOSITORY="sftp:root@193.8.215.130:/opt/nas_jetson_nano/backups/restic-repo"
+RESTIC_REPOSITORY="sftp:root@95.163.176.103:/opt/nas_jetson_nano/backups/restic-repo"
 ```
 
 Плюсы: 25GB свободно, offsite (VPS в другой стране), SFTP встроен.
@@ -202,7 +202,7 @@ VPS IP может меняться. При смене:
 ## / VPS Integration Plan (English)
 
 **Status:** Implemented (2026-06-21), Nextcloud recovered after 2026-06-23 USB incident
-**VPS:** 193.8.215.130, Vienna Austria (AEZA GROUP) — IP may change  
+**VPS:** 95.163.176.103, Vienna Austria (AEZA GROUP) — IP may change  
 
 ### Architecture: Reverse SSH Tunnel
 

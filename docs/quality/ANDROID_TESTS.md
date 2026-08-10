@@ -34,7 +34,7 @@
 ### T6.2: Immich Login (Via VPS)
 
 1. Switch to mobile data or use external URL
-2. Enter server URL: `http://193.8.215.130:2283`
+2. Enter server URL: `http://95.163.176.103:2283`
 3. Expected: login succeeds (may be slower via VPS)
 
 ### T6.3: Immich Backup
@@ -46,7 +46,7 @@
 ### T6.4: Nextcloud Login (HTTPS)
 
 1. Open Nextcloud app
-2. Enter server URL: `https://193.8.215.130:8443`
+2. Enter server URL: `https://95.163.176.103:8443`
 3. Accept self-signed certificate warning
 4. Enter credentials: admin / (from config/.env NEXTCLOUD_ADMIN_PASSWORD)
 5. Expected: login succeeds, files visible
@@ -54,7 +54,7 @@
 ### T6.5: DAVx5 Calendar/Contacts Sync
 
 1. Open DAVx5
-2. Add account: `https://193.8.215.130:8443/remote.php/dav`
+2. Add account: `https://95.163.176.103:8443/remote.php/dav`
 3. Accept self-signed certificate
 4. Select calendars and contacts to sync
 5. Expected: sync completes without errors

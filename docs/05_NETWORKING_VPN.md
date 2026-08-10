@@ -84,9 +84,9 @@ Get-Content ~/.ssh/id_ed25519.pub | ssh admin@fe80::1%<ifIndex> `
 
 | Сервис / Service | Jetson порт / Port | Внешний доступ / External access |
 |---|---|---|
-| Nextcloud | 8080 | `http://193.8.215.130:8080/` (VPS nginx) |
-| Immich | 2283 | `http://193.8.215.130:2283/` (VPS nginx) |
-| LLM Gateway | 8090 | `http://193.8.215.130:8090/` (VPS nginx) |
+| Nextcloud | 8080 | `http://95.163.176.103:8080/` (VPS nginx) |
+| Immich | 2283 | `http://95.163.176.103:2283/` (VPS nginx) |
+| LLM Gateway | 8090 | `http://95.163.176.103:8090/` (VPS nginx) |
 | SSH управление / SSH management | 22 | `ssh -p 10022 admin@127.0.0.1` с VPS / from VPS |
 | Samba | 445/139 | **LAN only** — iptables 192.168.0.0/24 |
 
@@ -106,7 +106,7 @@ Get-Content ~/.ssh/id_ed25519.pub | ssh admin@fe80::1%<ifIndex> `
 🇬🇧 Chosen and operational solution. Details: [ADR-0005](decisions/ADR-0005-vps-autossh-reverse-tunnel.md)
 
 ```
-Jetson (CGNAT) ──────────────────────────────→ VPS 193.8.215.130
+Jetson (CGNAT) ──────────────────────────────→ VPS 95.163.176.103
 autossh -R 18080:localhost:8080                  sshd: 127.0.0.1:18080
         -R 12283:localhost:2283                       127.0.0.1:12283
         -R 18090:localhost:8090                       127.0.0.1:18090

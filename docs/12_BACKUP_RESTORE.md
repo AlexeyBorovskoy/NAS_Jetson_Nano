@@ -1,5 +1,51 @@
 # 12. Backup / Restore
 
+> 🇷🇺 **Статус 2026-08-10:** ночные дампы БД идут по расписанию (`nasa-backup.timer`, 03:00),
+> последний — 2026-08-10 03:02. **Восстановление проверено 2026-08-09** (впервые). Off-site
+> копии (restic) пока нет.
+>
+> 🇬🇧 **Status 2026-08-10:** nightly DB dumps run on schedule; restore verified on 2026-08-09
+> for the first time. No off-site (restic) copy yet.
+
+## 0. 🔴 Главное правило проверки / The one check that matters
+
+🇷🇺 **Не верить статусу systemd-юнита. Проверять свежесть файлов.**
+
+🇬🇧 **Never trust the systemd unit status. Check file freshness.**
+
+```bash
+ls -lt /mnt/storage/backups/database-dumps/ | head -5
+```
+
+**Почему.** С 2026-07-24 по 2026-08-09 бэкапы не создавались **16 дней**, при том что
+`systemctl status nasa-backup` показывал `Result=success` каждую ночь. Причина: в
+`config/.env` строка `TALK_BOT_DISPLAY_NAME=NAS Bot` **без кавычек**. Шелл прочитал её как
+`VAR=NAS` + команду `Bot` → `Bot: command not found` (код 127) → `set -euo pipefail` в
+`scripts/backup/backup_databases.sh` убил скрипт до первого `pg_dump`.
+
+**Радиус поражения был шире бэкапов.** Тот же `source config/.env` под `set -e` делают:
+
+| Скрипт / юнит | Что перестало работать |
+|---|---|
+| `nasa-backup.service` | ночные дампы БД |
+| `scripts/storage/storage_preflight.sh` | защитный барьер перед стартом Nextcloud/Immich/бэкапа |
+| `nasa-ssd-recovery.service` | **автовосстановление при hotplug SSD** |
+| `jetson-nas-health.service` | проверка storage/SMART |
+
+То есть страховочная сетка «переткни кабель — система поднимется сама» была мертва 16 дней
+и при реальном отвале SSD не сработала бы.
+
+**Правило на будущее:** любое значение с пробелом в `config/.env` — обязательно в кавычках.
+Быстрая проверка целостности файла:
+
+```bash
+( set -euo pipefail; source ~/nasa/config/.env >/dev/null ) && echo OK || echo BROKEN
+```
+
+⚠️ Отдельно: внутренний бэкап Immich (`/mnt/storage/immich/library/backups/`) всё это время
+**работал** — он делается самим Immich и от `.env` не зависит. У Nextcloud такого дублёра нет,
+его БД не бэкапилась вообще.
+
 ## 1. Правило / Rule
 
 🇷🇺 Хранение фото на одном USB HDD не является резервным копированием. Минимально нужен второй носитель или удалённая копия. На 2026-06-27 backup работает в fail-closed режиме: если `/mnt/storage` не является отдельным mountpoint или указывает на microSD, дампы БД не создаются.
@@ -45,6 +91,43 @@ restic snapshots
 restic restore latest --target /tmp/homecloud-restore-test
 ls -la /tmp/homecloud-restore-test
 ```
+
+### 4а. Проверка дампов БД — безопасная методика (выполнена 2026-08-09)
+
+🇷🇺 Дамп можно накатить **без риска для прода**, если лить его в **новую** БД в том же
+контейнере и удалить её после. Прод не затрагивается вообще.
+
+🇬🇧 A dump can be replayed **without touching production**: load it into a **new** database
+inside the same container, verify, then drop it.
+
+```bash
+# 1. Создать временную БД
+docker exec homecloud_nextcloud_db psql -U nextcloud -d postgres \
+  -c "CREATE DATABASE restore_test_tmp;"
+
+# 2. Накатить дамп
+gunzip -c /mnt/storage/backups/database-dumps/nextcloud_YYYYMMDD_HHMMSS.sql.gz \
+  | docker exec -i homecloud_nextcloud_db psql -U nextcloud -d restore_test_tmp
+
+# 3. Сверить счётчики с живой БД
+docker exec homecloud_nextcloud_db psql -U nextcloud -d restore_test_tmp -tAc \
+  "select (select count(*) from oc_users), (select count(*) from oc_filecache);"
+docker exec homecloud_nextcloud_db psql -U nextcloud -d nextcloud -tAc \
+  "select (select count(*) from oc_users), (select count(*) from oc_filecache);"
+
+# 4. Обязательно удалить
+docker exec homecloud_nextcloud_db psql -U nextcloud -d postgres \
+  -c "DROP DATABASE restore_test_tmp;"
+```
+
+**Результат проверки 2026-08-09:**
+
+| БД | Таблиц | Сверка с live | Ошибок при накате |
+|---|---|---|---|
+| Nextcloud | 153 | `oc_users` 5 = 5, `oc_filecache` 403 = 403 | 0 |
+| Immich | 61 | `asset` 7098 = 7098, `album` 23 = 23 | 0 |
+
+Для Immich та же процедура, но контейнер `homecloud_immich_db` и пользователь `immich`.
 
 ## 5. RPO/RTO
 

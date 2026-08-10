@@ -16,13 +16,13 @@
 | Режим / Mode | Где работает / Where | Адрес / Address |
 |---|---|---|
 | **LAN (домашняя сеть / home network)** | Дома / At home | `192.168.0.50` |
-| **Внешний / External (через VPS / via VPS)** | Везде: 4G, другая сеть / Anywhere | `193.8.215.130` |
+| **Внешний / External (через VPS / via VPS)** | Везде: 4G, другая сеть / Anywhere | `95.163.176.103` |
 
 | Сервис / Service | LAN | Внешний / External (VPS) |
 |---|---|---|
-| Nextcloud | `http://192.168.0.50:8080` | `http://193.8.215.130:8080` |
-| Immich | `http://192.168.0.50:2283` | `http://193.8.215.130:2283` |
-| LLM Gateway | `http://192.168.0.50:8090` | `http://193.8.215.130:8090` |
+| Nextcloud | `http://192.168.0.50:8080` | `http://95.163.176.103:8080` |
+| Immich | `http://192.168.0.50:2283` | `http://95.163.176.103:2283` |
+| LLM Gateway | `http://192.168.0.50:8090` | `http://95.163.176.103:8090` |
 | Samba NAS | `\\192.168.0.50` (SMB) | ❌ только LAN / LAN only |
 | nas_jetson_nano-api / Swagger | `http://192.168.0.50:8099/docs` | ❌ только LAN / LAN only |
 | Netdata | `http://192.168.0.50:19999` | ❌ только LAN / LAN only |
@@ -46,7 +46,7 @@
 1. Установить [Nextcloud](https://play.google.com/store/apps/details?id=com.nextcloud.client) из Play Store или F-Droid
 2. Открыть приложение → "Войти" → ввести адрес сервера:
    - Дома: `http://192.168.0.50:8080`
-   - Везде: `https://193.8.215.130:8443` (HTTPS)
+   - Везде: `https://95.163.176.103:8443` (HTTPS)
 3. Логин/пароль Nextcloud admin (или создать отдельного пользователя)
 4. Включить автозагрузку фото: Профиль → Автозагрузка → выбрать папки
 
@@ -55,21 +55,21 @@
 1. Install [Nextcloud](https://play.google.com/store/apps/details?id=com.nextcloud.client) from Play Store or F-Droid
 2. Open app → "Login" → enter server address:
    - At home: `http://192.168.0.50:8080`
-   - Anywhere: `https://193.8.215.130:8443` (HTTPS, accept self-signed cert)
+   - Anywhere: `https://95.163.176.103:8443` (HTTPS, accept self-signed cert)
 3. Nextcloud admin credentials (or create a separate user)
 4. Enable photo auto-upload: Profile → Auto Upload → select folders
 
 🇷🇺 **Контакты и календарь через DAVx⁵:**
 1. Установить [DAVx⁵](https://play.google.com/store/apps/details?id=at.bitfire.davdroid) (APK v4.5.14 или Play Store)
 2. Добавить аккаунт → "Войти с URL и именем пользователя"
-3. URL: `https://193.8.215.130:8443/remote.php/dav` (HTTPS)
+3. URL: `https://95.163.176.103:8443/remote.php/dav` (HTTPS)
 4. Логин/пароль — те же, что для Nextcloud
 5. DAVx⁵ синхронизирует контакты и календарь с системным аккаунтом Android
 
 🇬🇧 **Contacts and calendar via DAVx⁵:**
 1. Install [DAVx⁵](https://play.google.com/store/apps/details?id=at.bitfire.davdroid) (APK v4.5.14 or Play Store)
 2. Add account → "Login with URL and username"
-3. URL: `https://193.8.215.130:8443/remote.php/dav` (HTTPS)
+3. URL: `https://95.163.176.103:8443/remote.php/dav` (HTTPS)
 4. Same login/password as Nextcloud
 5. DAVx⁵ syncs contacts and calendar with the Android system account
 
@@ -79,7 +79,7 @@
 1. Установить [Immich](https://play.google.com/store/apps/details?id=app.alextran.immich)
 2. Открыть → ввести адрес сервера:
    - Дома: `http://192.168.0.50:2283`
-   - Везде: `http://193.8.215.130:2283`
+   - Везде: `http://95.163.176.103:2283`
 3. Войти с логином/паролем Immich
 4. Профиль → Настройки резервного копирования → включить
 5. Immich будет автоматически загружать новые фото и видео на сервер
@@ -88,7 +88,7 @@
 1. Install [Immich](https://play.google.com/store/apps/details?id=app.alextran.immich)
 2. Open → enter server address:
    - At home: `http://192.168.0.50:2283`
-   - Anywhere: `http://193.8.215.130:2283`
+   - Anywhere: `http://95.163.176.103:2283`
 3. Login with Immich credentials
 4. Profile → Backup Settings → enable
 5. Immich will automatically upload new photos and videos to the server
@@ -133,7 +133,7 @@
 1. Скачать [Nextcloud Desktop](https://nextcloud.com/install/#install-clients) для Windows
 2. Установить → "Войти" → сервер:
    - Дома: `http://192.168.0.50:8080`
-   - Везде: `https://193.8.215.130:8443`
+   - Везде: `https://95.163.176.103:8443`
 3. Выбрать папку для синхронизации (например `C:\Users\<имя>\Nextcloud`)
 4. Отметить папки для синхронизации → ОК
 5. Значок в трее — статус синхронизации
@@ -142,7 +142,7 @@
 1. Download [Nextcloud Desktop](https://nextcloud.com/install/#install-clients) for Windows
 2. Install → "Login" → server:
    - At home: `http://192.168.0.50:8080`
-   - Anywhere: `https://193.8.215.130:8443`
+   - Anywhere: `https://95.163.176.103:8443`
 3. Choose sync folder (e.g. `C:\Users\<name>\Nextcloud`)
 4. Select folders to sync → OK
 5. Tray icon shows sync status
@@ -188,11 +188,11 @@ net use
 
 🇷🇺 Immich на Windows открывается в браузере:
 - Дома: `http://192.168.0.50:2283`
-- Везде: `http://193.8.215.130:2283`
+- Везде: `http://95.163.176.103:2283`
 
 🇬🇧 Immich on Windows opens in a browser:
 - At home: `http://192.168.0.50:2283`
-- Anywhere: `http://193.8.215.130:2283`
+- Anywhere: `http://95.163.176.103:2283`
 
 ### Outlook / Thunderbird — контакты и календарь / Contacts & Calendar (CalDAV/CardDAV)
 

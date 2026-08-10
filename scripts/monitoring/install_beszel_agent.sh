@@ -6,7 +6,7 @@
 #   sudo bash install_beszel_agent.sh <hub-public-key>
 #
 # <hub-public-key> — ed25519 public key from VPS:
-#   ssh root@193.8.215.130 "cat /opt/nas_jetson_nano/beszel-hub/data/ssh_host_ed25519_key.pub"
+#   ssh root@95.163.176.103 "cat /opt/nas_jetson_nano/beszel-hub/data/ssh_host_ed25519_key.pub"
 #
 # After install, add Jetson in Hub UI:
 #   Name: jetson-nano
@@ -28,7 +28,7 @@ if [ -z "$HUB_KEY" ]; then
     echo "Usage: sudo bash $0 '<hub-ssh-public-key>'"
     echo ""
     echo "Get key from VPS:"
-    echo "  ssh root@193.8.215.130 \"cat /opt/nas_jetson_nano/beszel-hub/data/ssh_host_ed25519_key.pub\""
+    echo "  ssh root@95.163.176.103 \"cat /opt/nas_jetson_nano/beszel-hub/data/ssh_host_ed25519_key.pub\""
     exit 1
 fi
 
@@ -100,6 +100,6 @@ fi
 
 echo ""
 echo "Agent installed. Now:"
-echo "  1. Open http://193.8.215.130:8091 in browser"
+echo "  1. Open http://95.163.176.103:8091 in browser"
 echo "  2. Add system: Name=jetson-nano, Host=127.0.0.1:${AGENT_PORT}"
 echo "  3. Status should turn green within 30 seconds"

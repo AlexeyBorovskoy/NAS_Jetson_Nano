@@ -212,7 +212,7 @@ For large volumes use a WebDAV client (Cyberduck, RaiDrive)
 ```
 http://192.168.0.50:8080/remote.php/dav/files/USERNAME/
 или / or
-https://193.8.215.130:8443/remote.php/dav/files/USERNAME/
+https://95.163.176.103:8443/remote.php/dav/files/USERNAME/
 ```
 
 ### 4.3 Настроить авто-синхронизацию / Configure auto-upload

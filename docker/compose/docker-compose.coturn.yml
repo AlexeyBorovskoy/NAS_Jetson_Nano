@@ -1,7 +1,7 @@
 name: homecloud-coturn
 
 # coturn — TURN/STUN server for Nextcloud Talk video calls outside LAN.
-# Deploy on VPS (193.8.215.130), NOT on Jetson.
+# Deploy on VPS (95.163.176.103), NOT on Jetson.
 #
 # USAGE on VPS:
 #   cd ~/nas_jetson_nano/docker/compose

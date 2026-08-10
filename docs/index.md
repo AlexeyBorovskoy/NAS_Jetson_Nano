@@ -28,6 +28,7 @@ Nextcloud, Immich, Android clients, monitoring and AI-assisted reliability engin
 - [Android client](pages/android.md)
 - [Evidence package](pages/evidence.md)
 - [Keenetic Omni KN-1410 extender inventory and runbook](25_KEENETIC_OMNI_KN1410.md)
+- [TP-Link Deco E4 home network rebuild plan](26_DECO_E4_NETWORK.md)
 
 ## Historical status snapshot / Исторический снимок состояния
 

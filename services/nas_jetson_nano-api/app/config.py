@@ -93,6 +93,8 @@ class Settings(BaseSettings):
     talk_bot_llm_max_chars: int = 1000
     # Second budget guard, at bot level: max LLM replies per day. 0 = unlimited.
     talk_bot_llm_daily_replies: int = 50
+    # Картинки генерируются заметно дольше текста.
+    talk_bot_image_timeout: int = 300
 
     # Immich internal URL and API key
     immich_internal_url: str = "http://host.docker.internal:2283"

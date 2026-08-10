@@ -35,8 +35,10 @@ Status endpoint: GET /v1/talk/bot/status
 from __future__ import annotations
 
 import asyncio
+import base64
 import logging
 import time
+from urllib.parse import quote
 
 import httpx
 from fastapi import APIRouter
@@ -414,6 +416,9 @@ async def _handle_messages(token: str, messages: list[dict]) -> None:
                     settings.talk_bot_llm_display_name,
                 )
                 continue
+            if _image_attachment(m):
+                await _handle_image_request(token, m, question, user)
+                continue
             try:
                 reply = await _ask_llm(question, user)
             except Exception as exc:
@@ -427,6 +432,119 @@ async def _handle_messages(token: str, messages: list[dict]) -> None:
                 extra={"fields": {"room": token, "user": user,
                                   "chars": len(question), "outbound": True}},
             )
+
+
+def _image_attachment(m: dict) -> dict | None:
+    """The image shared with this message, if any (Talk puts it in parameters)."""
+    for value in (m.get("messageParameters") or {}).values():
+        if value.get("type") == "file" and str(value.get("mimetype", "")).startswith("image/"):
+            return value
+    return None
+
+
+def _dav_url(user: str, path: str) -> str:
+    base = settings.nextcloud_internal_url.rstrip("/")
+    return f"{base}/remote.php/dav/files/{user}/{quote(path)}"
+
+
+async def _download_attachment(actor: str, path: str) -> bytes:
+    """Fetch a Talk attachment over WebDAV.
+
+    Talk stores a shared file under the SENDER's own `Talk/` folder, so the path
+    is resolved against that user. The bot authenticates as admin, which can read
+    its own uploads; for another user's file this returns 404 and we say so
+    plainly instead of pretending the photo was processed.
+    """
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        r = await client.get(_dav_url(actor, path), auth=_admin_auth())
+    if r.status_code != 200:
+        raise RuntimeError(f"WebDAV {r.status_code} для {actor}/{path}")
+    return r.content
+
+
+async def _share_image_to_room(token: str, data: bytes, filename: str) -> None:
+    """Upload the result and share it into the conversation."""
+    admin_user = settings.nextcloud_admin_user
+    remote_path = f"Talk/{filename}"
+    async with httpx.AsyncClient(timeout=180.0) as client:
+        put = await client.put(
+            _dav_url(admin_user, remote_path),
+            auth=_admin_auth(),
+            content=data,
+            headers={"Content-Type": "image/jpeg"},
+        )
+        if put.status_code not in (200, 201, 204):
+            raise RuntimeError(f"WebDAV PUT {put.status_code}")
+        share = await client.post(
+            f"{settings.nextcloud_internal_url.rstrip('/')}"
+            "/ocs/v2.php/apps/files_sharing/api/v1/shares",
+            auth=_admin_auth(),
+            headers=_OCS_HEADERS,
+            data={"shareType": 10, "shareWith": token, "path": f"/{remote_path}"},
+        )
+        if share.status_code not in (200, 201):
+            raise RuntimeError(f"share {share.status_code}: {share.text[:150]}")
+
+
+async def _handle_image_request(token: str, m: dict, question: str, user: str) -> None:
+    """Photo + instruction → processed photo back into the same chat."""
+    att = _image_attachment(m)
+    await _send(token, "🐕 Взял фотографию в работу, это займёт около минуты…",
+                settings.talk_bot_llm_display_name)
+    try:
+        raw = await _download_attachment(user, att.get("path", ""))
+    except Exception as exc:
+        log.warning("talk bot cannot fetch attachment: %s", exc)
+        await _send(token,
+                    "🐕 Не смог забрать фотографию из чата. "
+                    "Пока умею работать только с теми, что прислали из этой учётной записи.",
+                    settings.talk_bot_llm_display_name)
+        return
+
+    payload = {
+        "image_base64": base64.b64encode(raw).decode("ascii"),
+        "filename": att.get("name", "photo.jpg"),
+        "instruction": question,
+        "user": user,
+    }
+    url = settings.talk_bot_llm_url.replace("/v1/chat", "/v1/image/edit")
+    try:
+        async with httpx.AsyncClient(timeout=settings.talk_bot_image_timeout) as client:
+            r = await client.post(url, json=payload)
+    except Exception as exc:
+        log.exception("talk bot image call failed")
+        _STATE["llm_last_error"] = str(exc)
+        await _send(token, "🐕 Не получилось обработать фотографию.",
+                    settings.talk_bot_llm_display_name)
+        return
+
+    if r.status_code == 403:
+        await _send(token,
+                    "🐕 Обработка фотографий выключена в настройках "
+                    "(LLM_ALLOW_IMAGE_ANALYSIS=false) — фото не покидают дом.",
+                    settings.talk_bot_llm_display_name)
+        return
+    if r.status_code == 429:
+        await _send(token, "🐕 Лимит на сегодня исчерпан.", settings.talk_bot_llm_display_name)
+        return
+    if r.status_code != 200:
+        await _send(token, f"🐕 Шлюз ответил {r.status_code}.", settings.talk_bot_llm_display_name)
+        return
+
+    data = r.json()
+    img = data.get("image_base64")
+    if not img:
+        await _send(token, "🐕 Ответ пришёл без картинки.", settings.talk_bot_llm_display_name)
+        return
+    try:
+        await _share_image_to_room(
+            token, base64.b64decode(img), f"bobik_{int(time.time())}.jpg"
+        )
+        _count_llm_reply(user)
+    except Exception as exc:
+        log.exception("talk bot cannot share result")
+        await _send(token, f"🐕 Картинка готова, но не смог отправить её в чат: {exc}",
+                    settings.talk_bot_llm_display_name)
 
 
 async def _send(token: str, message: str, display_name: str) -> None:

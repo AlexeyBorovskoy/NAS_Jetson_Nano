@@ -15,9 +15,16 @@ services:
       DEEPSEEK_MODEL: ${DEEPSEEK_MODEL}
       DEEPSEEK_REASONER_MODEL: ${DEEPSEEK_REASONER_MODEL}
       LLM_DAILY_TOKEN_LIMIT: ${LLM_DAILY_TOKEN_LIMIT}
+      LLM_MONTHLY_COST_LIMIT_USD: ${LLM_MONTHLY_COST_LIMIT_USD:-10}
+      LLM_PRICE_USD_PER_MTOKEN: ${LLM_PRICE_USD_PER_MTOKEN:-0.5}
+      LLM_USAGE_FILE: ${LLM_USAGE_FILE:-/data/llm_usage.json}
       LLM_REDACT_PERSONAL_DATA: ${LLM_REDACT_PERSONAL_DATA}
+      LLM_REDACT_NAMES: ${LLM_REDACT_NAMES:-}
       LLM_LOG_PROMPTS: ${LLM_LOG_PROMPTS}
       LLM_LOG_RESPONSES: ${LLM_LOG_RESPONSES}
+    volumes:
+      # Persist budget counters so a restart does not reset the day's spend.
+      - llm_usage:/data
     healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8090/health', timeout=3)\""]
       interval: 30s
@@ -26,6 +33,9 @@ services:
       start_period: 20s
     networks:
       - homecloud_internal
+
+volumes:
+  llm_usage:
 
 networks:
   homecloud_internal:

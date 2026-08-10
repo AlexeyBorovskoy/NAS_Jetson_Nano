@@ -52,10 +52,11 @@ DEEPSEEK_REASONER_MODEL=deepseek-reasoner
 ## 6. API шлюза / Gateway API
 
 ```http
-GET /health
+GET  /health          # + сколько имён загружено в фильтр
+GET  /v1/usage        # сколько потрачено сегодня и за месяц
+POST /v1/redact       # показать, что фильтр сделает с текстом (без вызова провайдера)
 POST /v1/chat
 POST /v1/diagnostics/explain
-POST /v1/runbook/generate
 ```
 
 🇷🇺 Пример запроса / 🇬🇧 Example request:
@@ -68,19 +69,68 @@ POST /v1/runbook/generate
 }
 ```
 
+🇷🇺 `mode: "raw"` отвергается с 400 — обойти редактирование через API нельзя.
+
+## 6а. Бюджет / Budget — ЭНФОРСИТСЯ
+
+🇷🇺 До 2026-08-10 переменные лимитов были в `.env.example` и в этом документе,
+но **код их не читал** — потолка не существовало ни на токены, ни на деньги.
+Исправлено: проверка идёт **до** исходящего вызова (fail-closed), при превышении
+шлюз отвечает `429`.
+
+🇬🇧 Until 2026-08-10 the limit variables were documented but **never read by the
+code** — there was no cap at all. Now enforced fail-closed before the call.
+
+| Переменная | Смысл |
+|---|---|
+| `LLM_DAILY_TOKEN_LIMIT` | суточный потолок токенов; `0` = без лимита |
+| `LLM_MONTHLY_COST_LIMIT_USD` | месячный потолок оценочной стоимости |
+| `LLM_PRICE_USD_PER_MTOKEN` | цена для оценки; вынесена в конфиг, потому что меняется |
+| `LLM_USAGE_FILE` | файл счётчиков; том `llm_usage` переживает рестарт |
+
+Счётчики видны в `GET /v1/usage`. Суточный и месячный периоды перекатываются сами.
+
 ## 7. Privacy-фильтр / Privacy filter
 
-🇷🇺 Перед отправкой в DeepSeek сервис должен удалять:
-🇬🇧 Before sending to DeepSeek the service must strip:
+🇷🇺 **Что фильтр делает на самом деле** (сверено с кодом 2026-08-10, а не с намерением):
+🇬🇧 **What the filter actually does** (verified against code, not intent):
 
-- e-mail
-- 🇷🇺 телефоны / 🇬🇧 phone numbers
-- 🇷🇺 токены / 🇬🇧 tokens
-- 🇷🇺 ключи / 🇬🇧 keys
-- 🇷🇺 пароли / 🇬🇧 passwords
-- 🇷🇺 точные адреса / 🇬🇧 exact addresses
-- 🇷🇺 персональные имена / 🇬🇧 personal names
-- 🇷🇺 пути, раскрывающие личные данные / 🇬🇧 paths revealing personal data
+| Категория | Статус | Как реализовано |
+|---|---|---|
+| e-mail | ✅ | регулярное выражение |
+| 🇷🇺 телефоны / phones | ✅ | регулярное выражение |
+| 🇷🇺 токены, ключи, пароли / tokens, keys, passwords | ✅ | `api_key=`, `token=`, `secret=`, `password=`, `bearer` |
+| 🇷🇺 приватные ключи / private keys | ✅ | блок `-----BEGIN … PRIVATE KEY-----` |
+| 🇷🇺 упоминания в чате / chat mentions | ✅ | `@username`, `@"Display Name"` |
+| 🇷🇺 домашние пути / home paths | ✅ | `/home/<user>`, `/Users/<user>` |
+| 🇷🇺 персональные имена / personal names | ⚠️ **список слов** | `LLM_REDACT_NAMES`, склонения выводятся автоматически |
+| 🇷🇺 точные адреса / exact addresses | ❌ **не реализовано** | улицы и дома не распознаются |
+
+### ⚠️ Главное ограничение фильтра имён — проверено тестом
+
+🇷🇺 Это **список слов, а не модель распознавания сущностей**. Склонения строятся
+автоматически от основы (`Ольга` → `Ольге`, `Ольгой`, `Ольгу`), но
+**уменьшительные имена — это другая основа и автоматически НЕ выводятся.**
+
+Проверено прогоном, а не предположением:
+
+```
+IN : Оля спросила: что подарить Ульяне на день рождения?
+OUT: Оля спросила: что подарить [REDACTED_NAME] на день рождения?   ← «Оля» прошла!
+
+IN : Ольгой куплен билет, Алексея не будет
+OUT: [REDACTED_NAME] куплен билет, [REDACTED_NAME] не будет          ← склонения ловятся
+```
+
+🇷🇺 В русском семейном чате говорят именно уменьшительными. Поэтому в
+`LLM_REDACT_NAMES` нужно перечислять **все формы**: `Ольга Оля Ульяна Уля Иван
+Ваня Алексей Лёша`. Иначе фильтр создаёт ложное чувство защиты.
+
+🇬🇧 Diminutives are a different stem and are NOT derived automatically — list
+every form your family actually uses, or the filter gives false confidence.
+
+**Проверить, что фильтр видит именно ваши имена:** `POST /v1/redact` покажет
+результат без обращения к провайдеру, и `GET /health` вернёт `names_configured`.
 
 ## 8. Логирование / Logging
 

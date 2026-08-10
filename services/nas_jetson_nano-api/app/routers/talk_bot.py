@@ -13,8 +13,12 @@ Design notes
   so it does NOT depend on the Nextcloud Talk Bot (webhook) feature.
 * Loop-safe: only messages whose FIRST word is a known command are handled, and
   every reply starts with an emoji, so the bot never reacts to its own replies.
-* Privacy: every command here answers from local data only — nothing is sent to
-  any external LLM. Free-form Q&A (via the redaction gateway) is Phase C.
+* Privacy: TWO separate callsigns, and the boundary is the word you type.
+    - TALK_BOT_TRIGGER (e.g. "нас")     → answered from local data.
+      Nothing leaves the house. No outbound request is made at all.
+    - TALK_BOT_LLM_TRIGGER (e.g. "@бобик") → free-form question, deliberately
+      sent out through the redaction gateway (Phase C).
+  Keeping them separate means a family member always knows which one they used.
 
 Enable (in config/.env):
     TALK_BOT_ENABLED=true
@@ -22,6 +26,9 @@ Enable (in config/.env):
     TALK_BOT_ROOM=37pcobmf
     TALK_BOT_TRIGGER=нас
     TALK_BOT_DISPLAY_NAME=NAS Bot
+    # Phase C — free-form questions to the provider (empty = off):
+    TALK_BOT_LLM_TRIGGER=@бобик
+    TALK_BOT_LLM_DISPLAY_NAME=Бобик
 
 Status endpoint: GET /v1/talk/bot/status
 """
@@ -54,6 +61,14 @@ _STATE: dict = {
     "replied": 0,
     "last_error": None,
     "started_at": None,
+    # Phase C counters — how much actually left the house today.
+    "llm_enabled": False,
+    "llm_trigger": "",
+    "llm_replied": 0,
+    "llm_refused": 0,
+    "llm_day": "",
+    "llm_day_replies": 0,
+    "llm_last_error": None,
 }
 
 # command keyword (first word, lowercased) -> handler name
@@ -81,14 +96,26 @@ def _fmt_uptime(seconds: float) -> str:
 
 
 def _build_help() -> str:
-    return (
-        "🤖 **NAS Bot** — доступные команды:\n"
-        "- `ping` / `пинг` — проверка связи\n"
-        "- `статус` / `status` — RAM, нагрузка, температура, контейнеры\n"
-        "- `диск` / `disk` — SSD и резервные копии\n"
-        "- `фото` / `photos` — статистика Immich\n"
-        "- `помощь` / `help` — этот список"
-    )
+    lines = [
+        "🤖 **NAS Bot** — доступные команды:",
+        "- `ping` / `пинг` — проверка связи",
+        "- `статус` / `status` — RAM, нагрузка, температура, контейнеры",
+        "- `диск` / `disk` — SSD и резервные копии",
+        "- `фото` / `photos` — статистика Immich",
+        "- `помощь` / `help` — этот список",
+        "",
+        "🔒 Эти команды считаются **дома**, наружу ничего не уходит.",
+    ]
+    callsign = settings.talk_bot_llm_trigger.strip()
+    if callsign:
+        lines += [
+            "",
+            f"🐕 **{settings.talk_bot_llm_display_name}** — свободные вопросы: `{callsign} <вопрос>`",
+            f"   Например: `{callsign} что приготовить из курицы и риса?`",
+            "   ⚠️ Такой вопрос **уходит наружу** — в облачную модель, "
+            "после вырезания имён, телефонов и почты.",
+        ]
+    return "\n".join(lines)
 
 
 async def _build_status() -> str:
@@ -199,6 +226,81 @@ def _match_command(text: str) -> str | None:
     return _COMMANDS.get(first)
 
 
+def _match_llm(text: str) -> str | None:
+    """Return the question if the message calls the LLM callsign, else None.
+
+    The callsign must match EXACTLY as configured and stand as the first token.
+    Matching is case-insensitive ("@Бобик" works), but the bare name without the
+    configured prefix does NOT match.
+
+    Why so strict: this is the one path that leaves the house. A loose match
+    means "Бобик хороший пёс" would ship a family message to the provider that
+    nobody meant to send — which defeats the whole point of an explicit
+    callsign. Verified by test; the bare-name fallback was removed because of it.
+    Returns None when the callsign is present but nothing was actually asked.
+    """
+    callsign = settings.talk_bot_llm_trigger.strip().lower()
+    if not callsign:
+        return None
+    text = (text or "").strip()
+    if not text:
+        return None
+
+    if not text.lower().startswith(callsign):
+        return None
+    question = text[len(callsign):]
+    # The callsign must be a standalone token: "@бобиков" is not "@бобик".
+    if question and question[0].isalnum():
+        return None
+    # Allow "@бобик, что..." and "@бобик: что..."
+    question = question.lstrip(" ,:—-\t")
+    return question.strip() or None
+
+
+def _llm_quota_left() -> bool:
+    """Second budget guard, at bot level. The gateway enforces the real one."""
+    limit = settings.talk_bot_llm_daily_replies
+    if limit <= 0:
+        return True
+    today = time.strftime("%Y-%m-%d")
+    if _STATE.get("llm_day") != today:
+        _STATE["llm_day"] = today
+        _STATE["llm_day_replies"] = 0
+    return _STATE["llm_day_replies"] < limit
+
+
+async def _ask_llm(question: str) -> str:
+    """Send a free-form question through the redaction gateway.
+
+    This is the ONLY place in the bot that talks to the outside world. It goes
+    through the gateway rather than the provider directly, so redaction and the
+    budget cannot be bypassed by this caller.
+    """
+    if len(question) > settings.talk_bot_llm_max_chars:
+        question = question[: settings.talk_bot_llm_max_chars]
+
+    payload = {
+        "task": "family_chat_question",
+        "prompt": question,
+        "mode": "safe",
+    }
+    async with httpx.AsyncClient(timeout=settings.talk_bot_llm_timeout) as client:
+        r = await client.post(settings.talk_bot_llm_url, json=payload)
+
+    if r.status_code == 429:
+        _STATE["llm_refused"] += 1
+        return "🐕 Лимит запросов на сегодня исчерпан. Спросите завтра."
+    if r.status_code != 200:
+        _STATE["llm_last_error"] = f"HTTP {r.status_code}"
+        return f"🐕 Не смог спросить — шлюз ответил {r.status_code}."
+
+    data = r.json()
+    content = (data.get("content") or "").strip()
+    if not content:
+        return "🐕 Ответ пришёл пустым."
+    return f"🐕 {content}"
+
+
 # ── OCS chat polling ─────────────────────────────────────────────────────────────
 
 def _chat_url(token: str) -> str:
@@ -257,34 +359,81 @@ async def _handle_messages(token: str, messages: list[dict]) -> None:
             continue
         if m.get("messageType") not in (None, "", "comment"):
             continue
-        handler = _match_command(m.get("message", ""))
-        if not handler:
-            continue
-        try:
-            reply = await _dispatch(handler)
-        except Exception as exc:  # never let one bad command kill the loop
-            log.exception("talk bot handler '%s' failed", handler)
-            reply = f"⚠️ Ошибка при выполнении команды: {exc}"
-        try:
-            await _ocs_post(
-                f"chat/{token}",
-                {"message": reply, "actorDisplayName": settings.talk_bot_display_name},
-            )
+
+        text = m.get("message", "")
+
+        # 1) Local command — answered from local data, nothing leaves the house.
+        handler = _match_command(text)
+        if handler:
+            try:
+                reply = await _dispatch(handler)
+            except Exception as exc:  # never let one bad command kill the loop
+                log.exception("talk bot handler '%s' failed", handler)
+                reply = f"⚠️ Ошибка при выполнении команды: {exc}"
+            await _send(token, reply, settings.talk_bot_display_name)
             _STATE["replied"] += 1
             log.info(
                 "talk bot replied to '%s'",
                 handler,
-                extra={"fields": {"room": token, "command": handler}},
+                extra={"fields": {"room": token, "command": handler, "outbound": False}},
             )
-        except Exception:
-            log.exception("talk bot failed to send reply")
+            continue
+
+        # 2) LLM callsign — the family explicitly asked to go outside.
+        question = _match_llm(text)
+        if question:
+            if not _llm_quota_left():
+                _STATE["llm_refused"] += 1
+                await _send(
+                    token,
+                    "🐕 На сегодня лимит вопросов исчерпан.",
+                    settings.talk_bot_llm_display_name,
+                )
+                continue
+            try:
+                reply = await _ask_llm(question)
+            except Exception as exc:
+                log.exception("talk bot LLM call failed")
+                _STATE["llm_last_error"] = str(exc)
+                reply = "🐕 Не смог получить ответ — попробуйте позже."
+            await _send(token, reply, settings.talk_bot_llm_display_name)
+            _STATE["llm_replied"] += 1
+            _STATE["llm_day_replies"] = _STATE.get("llm_day_replies", 0) + 1
+            log.info(
+                "talk bot LLM replied",
+                extra={"fields": {"room": token, "chars": len(question), "outbound": True}},
+            )
+
+
+async def _send(token: str, message: str, display_name: str) -> None:
+    """Post a reply, swallowing transport errors so the loop survives."""
+    try:
+        await _ocs_post(
+            f"chat/{token}",
+            {"message": message, "actorDisplayName": display_name},
+        )
+    except Exception:
+        log.exception("talk bot failed to send reply")
 
 
 async def run_bot_loop() -> None:
     """Background task: baseline, then long-poll and answer commands forever."""
     token = settings.talk_bot_room or settings.talk_family_room
-    _STATE.update({"enabled": True, "running": True, "room": token, "started_at": time.time()})
-    log.info("talk bot started, room=%s trigger=%r", token, settings.talk_bot_trigger)
+    callsign = settings.talk_bot_llm_trigger.strip()
+    _STATE.update({
+        "enabled": True,
+        "running": True,
+        "room": token,
+        "started_at": time.time(),
+        "llm_enabled": bool(callsign),
+        "llm_trigger": callsign,
+    })
+    log.info(
+        "talk bot started, room=%s trigger=%r llm_trigger=%r",
+        token,
+        settings.talk_bot_trigger,
+        callsign or None,
+    )
 
     # Baseline: start from the latest message so we don't replay old chat.
     try:

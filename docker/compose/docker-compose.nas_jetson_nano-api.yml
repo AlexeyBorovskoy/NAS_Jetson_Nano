@@ -49,6 +49,14 @@ services:
       TALK_BOT_TRIGGER: ${TALK_BOT_TRIGGER:-}
       TALK_BOT_DISPLAY_NAME: ${TALK_BOT_DISPLAY_NAME:-NAS Bot}
       TALK_BOT_POLL_TIMEOUT: ${TALK_BOT_POLL_TIMEOUT:-30}
+      # Talk AI bot (Phase C) — free-form questions to the provider.
+      # Empty callsign = off; the bot stays local-only.
+      TALK_BOT_LLM_TRIGGER: ${TALK_BOT_LLM_TRIGGER:-}
+      TALK_BOT_LLM_DISPLAY_NAME: ${TALK_BOT_LLM_DISPLAY_NAME:-Бобик}
+      TALK_BOT_LLM_URL: ${TALK_BOT_LLM_URL:-http://host.docker.internal:8090/v1/chat}
+      TALK_BOT_LLM_TIMEOUT: ${TALK_BOT_LLM_TIMEOUT:-60}
+      TALK_BOT_LLM_MAX_CHARS: ${TALK_BOT_LLM_MAX_CHARS:-1000}
+      TALK_BOT_LLM_DAILY_REPLIES: ${TALK_BOT_LLM_DAILY_REPLIES:-50}
     healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8099/healthcheck', timeout=3)\""]
       interval: 30s

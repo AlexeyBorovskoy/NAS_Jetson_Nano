@@ -74,6 +74,22 @@ class Settings(BaseSettings):
     # Server-side long-poll timeout in seconds (how long a read call waits).
     talk_bot_poll_timeout: int = 30
 
+    # ── Talk AI bot (Phase C, free-form questions → DeepSeek) ───────────────
+    # A SECOND, deliberately separate callsign. The privacy boundary is the word
+    # you type: `talk_bot_trigger` answers from local data and never leaves the
+    # house; this one goes out to the provider through the redaction gateway.
+    # Empty = feature off (the bot stays local-only).
+    talk_bot_llm_trigger: str = ""  # e.g. "@бобик"
+    # Display name used for LLM replies, so the family can tell them apart.
+    talk_bot_llm_display_name: str = "Бобик"
+    # Redaction gateway endpoint — the ONLY outbound door.
+    talk_bot_llm_url: str = "http://host.docker.internal:8090/v1/chat"
+    talk_bot_llm_timeout: int = 60
+    # Guard against a wall-of-text question inflating the bill.
+    talk_bot_llm_max_chars: int = 1000
+    # Second budget guard, at bot level: max LLM replies per day. 0 = unlimited.
+    talk_bot_llm_daily_replies: int = 50
+
     # Immich internal URL and API key
     immich_internal_url: str = "http://host.docker.internal:2283"
     immich_api_key: str = ""  # Set via IMMICH_API_KEY (generate in Immich → API Keys)

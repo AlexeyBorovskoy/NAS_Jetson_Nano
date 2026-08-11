@@ -141,7 +141,27 @@ POST /v1/image/edit       # ⚠️ отправляет РЕАЛЬНОЕ фот�
 Real-ESRGAN, OpenCV. Разбор в `docs/plans/PHOTO_PROCESSING_FEASIBILITY.md`.
 
 ⚠️ `/v1/image/edit` закрыт флагом `LLM_ALLOW_IMAGE_ANALYSIS` (по умолчанию `false`):
-он отправляет настоящее фото провайдеру. На устройстве включён по явной просьбе владельца.
+он отправляет настоящее фото провайдеру. Флаг **выключен и на устройстве** — с
+2026-08-11: держать открытым канал, по которому семейные фотографии уходят наружу,
+имеет смысл только ради результата, а результата провайдер не даёт (см. выше).
+Эндпоинт отвечает `403`, бот в чате пишет «фото не покидают дом».
+
+Включать обратно — осознанно и на время конкретной задачи:
+
+```bash
+# на устройстве
+sed -i 's/^LLM_ALLOW_IMAGE_ANALYSIS=false$/LLM_ALLOW_IMAGE_ANALYSIS=true/' ~/nasa/config/.env
+docker compose -f docker/compose/docker-compose.llm-gateway.yml \
+  --env-file config/.env up -d --force-recreate
+```
+
+Проверка, что канал действительно закрыт (ожидается `403`):
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' -X POST http://127.0.0.1:8090/v1/image/edit \
+  -H 'Content-Type: application/json' \
+  -d '{"image_base64":"/9j/4AAQSkZJRg==","filename":"t.jpg","instruction":"describe","user":"admin"}'
+```
 
 ### 6в. Кто сколько потратил
 

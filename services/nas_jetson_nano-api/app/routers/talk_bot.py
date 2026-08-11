@@ -9,8 +9,9 @@ Design notes
 ------------
 * Opt-in: only runs when TALK_BOT_ENABLED=true. Default behaviour of the API is
   unchanged, so deploying this code alone is safe.
-* Version-agnostic: uses the admin OCS chat API (v1 read, v4 send via talk.py),
-  so it does NOT depend on the Nextcloud Talk Bot (webhook) feature.
+* Version-agnostic: uses the admin OCS chat API (v1 for both read and send —
+  spreed keeps chat under v1 while rooms live under v4), so it does NOT depend
+  on the Nextcloud Talk Bot (webhook) feature.
 * Loop-safe: only messages whose FIRST word is a known command are handled, and
   every reply starts with an emoji, so the bot never reacts to its own replies.
 * Privacy: TWO separate callsigns, and the boundary is the word you type.
@@ -561,22 +562,15 @@ async def _handle_image_request(token: str, m: dict, question: str, user: str) -
 async def _send(token: str, message: str, display_name: str) -> None:
     """Post a reply, swallowing transport errors so the loop survives.
 
-    Posts FORM-ENCODED, not JSON. The shared `_ocs_post` helper sends `json=`,
-    which Nextcloud OCS rejects with HTTP 404 / statuscode 998 "Invalid query" —
-    that is why this bot counted `processed` but never `replied` since Phase A.
-    Verified against the live server: `-d "message=..."` works, JSON does not.
+    Uses the shared `_ocs_post`, which now sends form data — see the note there
+    about the JSON body that made every OCS POST fail silently.
     """
-    url = f"{settings.nextcloud_internal_url.rstrip('/')}/ocs/v2.php/apps/spreed/api/v1/chat/{token}"
     try:
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            r = await client.post(
-                url,
-                auth=_admin_auth(),
-                headers=_OCS_HEADERS,
-                data={"message": message, "actorDisplayName": display_name},
-            )
-        if r.status_code not in (200, 201):
-            log.warning("talk bot send → HTTP %d: %s", r.status_code, r.text[:200])
+        await _ocs_post(
+            f"chat/{token}",
+            {"message": message, "actorDisplayName": display_name},
+            version="v1",
+        )
     except Exception:
         log.exception("talk bot failed to send reply")
 

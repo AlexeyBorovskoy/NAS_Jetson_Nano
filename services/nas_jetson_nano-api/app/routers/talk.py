@@ -6,7 +6,8 @@ Endpoints:
   GET  /v1/talk/rooms/{token}  — room detail with participant list
   POST /v1/talk/notify         — send message to a room (JWT required)
 
-Uses Nextcloud OCS Talk API v4 with admin credentials from config.
+Uses Nextcloud OCS Talk API with admin credentials from config.
+Rooms are v4; chat is v1 — see _talk_url().
 Admin creds: NEXTCLOUD_ADMIN_USER / NEXTCLOUD_ADMIN_PASSWORD env vars.
 """
 from __future__ import annotations
@@ -31,8 +32,14 @@ _OCS_HEADERS = {"OCS-APIRequest": "true", "Accept": "application/json"}
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
-def _talk_url(path: str) -> str:
-    base = _TALK_BASE.format(nc=settings.nextcloud_internal_url)
+def _talk_url(path: str, version: str = "v4") -> str:
+    """Build an OCS Talk URL.
+
+    ⚠️ Spreed splits its API across versions: rooms live under v4, but **chat is
+    only under v1**. Posting a message to the v4 base returns HTTP 404 — which is
+    exactly why every chat POST failed until 2026-08-11.
+    """
+    base = f"{settings.nextcloud_internal_url}/ocs/v2.php/apps/spreed/api/{version}"
     return f"{base}/{path.lstrip('/')}"
 
 
@@ -55,10 +62,18 @@ async def _ocs_get(path: str) -> dict:
     return r.json()
 
 
-async def _ocs_post(path: str, body: dict) -> dict:
+async def _ocs_post(path: str, body: dict, version: str = "v4") -> dict:
+    """POST to the OCS API.
+
+    ⚠️ Sends FORM data, not JSON. Nextcloud OCS rejects a JSON body with
+    HTTP 404 / statuscode 998 "Invalid query". This helper used `json=` and so
+    every POST through it silently failed: the Talk bot never delivered a single
+    reply, and `POST /v1/talk/notify` — the documented way to raise system alerts
+    into the family chat — never worked either. Verified against the live server.
+    """
     auth = _admin_auth()
     async with httpx.AsyncClient(timeout=10.0) as client:
-        r = await client.post(_talk_url(path), auth=auth, headers=_OCS_HEADERS, json=body)
+        r = await client.post(_talk_url(path, version), auth=auth, headers=_OCS_HEADERS, data=body)
     if r.status_code not in (200, 201):
         log.warning("Talk OCS POST %s → %d: %s", path, r.status_code, r.text[:200])
         raise HTTPException(status_code=502, detail=f"Nextcloud Talk API error: HTTP {r.status_code}")
@@ -218,7 +233,12 @@ async def notify(
         room_name = room_token
 
     # Send message via Talk chat API
-    result = await _ocs_post(f"chat/{room_token}", {"message": body.message, "actorDisplayName": "NAS_Jetson_Nano API"})
+    # chat lives under v1 only — see _talk_url()
+    result = await _ocs_post(
+        f"chat/{room_token}",
+        {"message": body.message, "actorDisplayName": "NAS_Jetson_Nano API"},
+        version="v1",
+    )
     ocs_data = result.get("ocs", {}).get("data", {})
     msg_id = ocs_data.get("id", 0)
 

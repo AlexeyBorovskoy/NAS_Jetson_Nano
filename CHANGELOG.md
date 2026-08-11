@@ -8,6 +8,86 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+_Пусто. Следующая работа — Волна 0 (off-site бэкап и проверка авто-восстановления)._
+
+---
+
+## [1.5.0] — 2026-08-11 · Семейный ИИ-помощник + честность вместо обещаний
+
+> 🇷🇺 Релиз о двух вещах сразу. Первая — в доме появился ИИ-помощник, у каждого
+> свой чат и свой лимит. Вторая, менее приятная и более важная: несколько функций,
+> которые документация давно объявляла работающими, **не работали никогда**, и этот
+> релиз их либо чинит, либо честно снимает обещание.
+>
+> 🇬🇧 A release about two things. One: the family got an AI assistant — a private
+> chat and a personal budget each. Two, less pleasant and more important: several
+> features the docs had long claimed as working **had never worked at all**. This
+> release either fixes them or honestly withdraws the promise.
+>
+> Точка состояния с замерами: [`docs/plans/CHECKPOINT_2026-08-11.md`](docs/plans/CHECKPOINT_2026-08-11.md)
+
+### Fixed / Исправлено (2026-08-11)
+
+- 🇷🇺 🔴 **Системные алерты в семейный чат не работали никогда.** `POST /v1/talk/notify` —
+  документированный способ сообщать о заполнении диска и перезапуске контейнера —
+  падал с `404`. Дефект оказался **двойным**: общий помощник `_ocs_post` слал `json=`
+  вместо формы, а базовый URL указывал на API **v4**, тогда как чат в spreed живёт
+  только в **v1**. Накануне была починена только отправка бота, и работала она
+  случайно — там URL собирался вручную сразу с `v1` и обходил обе проблемы разом.
+  Исправлено централизованно; проверено вживую: `notify` → `message_id: 116`,
+  `нас пинг` → `pong`, `@бобик` → ответ.
+- 🇬🇧 🔴 **System alerts to the family chat had never worked.** The defect was double:
+  `_ocs_post` sent JSON where OCS needs form data, and the base URL pointed at API v4
+  while spreed keeps chat under v1 only. Fixed centrally and verified live.
+
+### Security / Безопасность (2026-08-11)
+
+- 🇷🇺 **Канал фотографий наружу закрыт обратно.** `LLM_ALLOW_IMAGE_ANALYSIS` возвращён
+  в `false` на устройстве. Флаг включали ради эксперимента с ретушью через GigaChat;
+  эксперимент показал, что **провайдер фотографии не редактирует вообще**, — значит
+  открытый канал, по которому настоящие семейные снимки уходили наружу, не покупал
+  ничего. Проверено: `/v1/image/edit` → `403`, при этом текстовый разговор не пострадал.
+- 🇬🇧 **The outbound photo channel is shut again.** The flag bought nothing, because the
+  provider does not edit photographs at all; verified `403` with text chat unaffected.
+
+### Changed / Изменено (2026-08-11)
+
+- 🇷🇺 **Роль ноутбука Dell Vostro 15 пересмотрена: не ML-узел.** Живая проверка вместо
+  доверия плану: **CUDA нет** (Intel HD 520 + AMD R5 M230), 2 ядра без turbo, 3.7 ГБ RAM,
+  и машину уже делит второй проект владельца, которому нужен отзывчивый сервис.
+  Взяты сильные стороны ноутбука — **825 ГБ и расположение в другом здании**:
+  off-site хранилище и внешний сторож. Блокер L0 при этом снят — исходящий TCP/22
+  на VPS работает.
+- 🇬🇧 **The Vostro laptop is no longer the ML node.** A live audit found no CUDA, two
+  cores without turbo, and a second project already sharing the machine. Its real
+  strengths — 825 GB and a different building — make it off-site storage instead.
+
+### Added / Добавлено (2026-08-11)
+
+- 🇷🇺 **Канал между двумя проектами владельца.** Две сессии агента на одной машине
+  делят ноутбук и VPS, но друг друга не видели, и это уже стоило дорого: соседний
+  проект больше месяца стоял на блокере, которого нет (ждал наш старый IP), а его
+  runbook собирался занять порт `10022`, который держит туннель Jetson. Сделана
+  «забирающая» доска (вне git) + хуки `SessionStart` / `UserPromptSubmit`: никто
+  не пишет в чужую сессию, факты забираются сами.
+- 🇬🇧 **A channel between the owner's two projects** — a pull-based board plus hooks,
+  after the missing channel cost both sides real time.
+
+### Documentation / Документация (2026-08-11)
+
+- 🇷🇺 Новая точка проекта [`docs/plans/CHECKPOINT_2026-08-11.md`](docs/plans/CHECKPOINT_2026-08-11.md) —
+  снимок с замерами, что закрыто и что открыто, включая список решений, которые
+  принимает владелец, а не агент.
+- 🇷🇺 Четыре новые «грабли» в `CLAUDE.md`: `172.29.172.1` указывает на разные хосты
+  из разных сетей; `ffmpeg` съедает stdin вместе с остатком ssh-скрипта; порты VPS —
+  общий ресурс; консоль Windows `cp1251` роняет печать кириллицы из Python.
+- 🇷🇺 Из публичного репозитория убраны имя и пути соседнего рабочего проекта —
+  документ сам обещал их не содержать, а они там были.
+
+---
+
+## [1.4.2] — 2026-08-10 · Talk-бот Фаза C, GigaChat, персональные лимиты
+
 ### Deployed / Выкачено на устройство (2026-08-10, вечер)
 
 - 🇷🇺 **Семейный ИИ-помощник заработал.** У каждого своя комната в Nextcloud Talk
@@ -103,7 +183,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed / Изменено (2026-08-10)
 
 - `docs/plans/VOSTRO_ML_NODE_ONBOARDING.md` **переписан** под удалённое размещение:
-  сетевые параметры узла взяты из `E:\Belgorod_platform\infra\network.md`, добавлены
+  сетевые параметры узла взяты из локального источника вне git, добавлены
   схема двойного туннеля через VPS, честная оценка задержки и трафика, фаза освобождения
   ресурсов от стенда ZTN, таблица рисков. Уточнено: ОС уже Ubuntu 24.04 — переустановка
   не требуется.

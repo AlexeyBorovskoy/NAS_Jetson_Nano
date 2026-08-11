@@ -10,14 +10,19 @@
 
 - GitHub: https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
 - Owner: AlexeyBorovskoy (a.e.borovskoy@gmail.com)
-- Текущий релиз: v1.4.0 — JMS583 USB SSD enclosure, UAS quirk, goss 40/40
+- Текущий релиз: **v1.5.0** — семейный ИИ-помощник + починка того, что документация обещала, а код не делал
 - Основная ветка: `main`
 
 ## Операционное состояние
 
-**Состояние на 2026-08-10 (вечер): все 13 контейнеров up, 0 рестартов, 0 OOM. Оба диска, 0 USB-ошибок. Бэкапы идут, restore проверен. Сервисы за VPN. Открытых 🔴 нет.**
-**Выкачено в этот день:** Talk-бот Фаза C (позывной `@бобик`, 6 личных комнат), GigaChat вторым провайдером, персональный учёт токенов, обработка фото из чата.
-Полный отчёт: `docs/plans/SYSTEM_AUDIT_2026-08-10.md`.
+**Состояние на 2026-08-11: все 13 контейнеров up, 0 рестартов, 0 OOM, аптайм 1 д 15 ч. Оба диска, 0 USB-ошибок. Бэкапы свежие (03:12), restore проверен. Сервисы за VPN. Открытых 🔴 в живой системе нет.**
+**Сделано в этот день:** починены системные алерты в Talk (`/v1/talk/notify` не работал никогда), закрыт канал фотографий наружу, пройден L0 по Vostro с пересмотром его роли, заведён канал между двумя проектами владельца.
+**Точка проекта с замерами: `docs/plans/CHECKPOINT_2026-08-11.md`.** Предыдущая: `docs/plans/SYSTEM_AUDIT_2026-08-10.md`.
+
+> 🔴 **Главный долг — не технический, а решенческий.** Бэкапы делаются и restore проверен,
+> но **всё лежит в одном доме**. Волна 0 (off-site + проверка авто-восстановления реальным
+> отвалом SSD) не начата. Цель для off-site найдена (Vostro, 825 ГБ, другое здание) и ждёт
+> согласия владельца — см. «Ближайшие задачи».
 
 > ⚠️ **Расхождение git ↔ устройство.** Живой Jetson работает на СТАРОМ, до-переименовочном деплое. Rename `NASA → NAS_Jetson_Nano` сделан только в git — **на устройство не выкатан**. Фактически на устройстве:
 > - Репо: **`~/nasa`**, remote `github.com/AlexeyBorovskoy/Nasa_home.git` (HEAD `0f9fd0f`, ветка `main`)
@@ -50,7 +55,7 @@
 | JMS583 health timer | ✅ active (waiting) | `nasa-jms583-health.timer` ежечасно; последний прогон `errors=0 warnings=0` |
 | SSD hotplug auto-recovery | ✅ active | `nasa-ssd-recovery.service` — udev(`sda1`) → mount → preflight → Docker → контейнеры |
 | smartd | ⛔ **disabled by design** | UAS-quirk → usb-storage BOT → SMART passthrough невозможен в принципе. Здоровье закрывают JMS583-таймер и USB-монитор. См. `docs/13_MONITORING_RUNBOOK.md` |
-| Бэкапы БД | ✅ работают | `nasa-backup.timer`, последний дамп **2026-08-10 03:02** (immich 19 МБ + nextcloud 2.7 МБ), каталог 150 МБ |
+| Бэкапы БД | ✅ работают | `nasa-backup.timer`, последний дамп **2026-08-11 03:12** (immich 19 МБ + nextcloud 2.7 МБ), каталог 150 МБ. 🔴 **Всё в одном доме** — off-site не сделан |
 | Restore | ✅ **проверен 2026-08-09** | Накат во временную БД: NC 153 таблицы (users 5 = live, filecache 403 = live); Immich 61 таблица (asset 7098 = live, album 23 = live) |
 | VPS reverse tunnel | ✅ active | `nasa-tunnel.service`, ESTAB `192.168.0.50 → 95.163.176.103:22`; на VPS подняты 18080/12283/18090/18099/10022/45876 |
 | Docker daemon | ✅ active | **13 контейнеров** `homecloud_*` up (healthy), **restarts=0**, **OOMKilled=false** у всех |
@@ -307,7 +312,7 @@ LLM Gateway :8090/:9443, API :8099, Beszel Hub :8091.
 | `HOST_CONTRACT.md` на ноутбуке | **состояние** — кто чем владеет прямо сейчас |
 
 ```bash
-python E:\agent_coordination\coord.py post --from nas --to belgorod --subject "..." --body "..."
+python E:\agent_coordination\coord.py post --from nas --to work --subject "..." --body "..."
 python E:\agent_coordination\coord.py list
 ```
 

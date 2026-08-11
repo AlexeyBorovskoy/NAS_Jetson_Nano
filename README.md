@@ -156,14 +156,14 @@ Principles:
 
 ## Что работает прямо сейчас / What's running
 
-> **Состояние на 2026-08-10 / State as of 2026-08-10 · проверено live-аудитом**
-> ([`docs/plans/SYSTEM_AUDIT_2026-08-10.md`](docs/plans/SYSTEM_AUDIT_2026-08-10.md))
+> **Состояние на 2026-08-11 / State as of 2026-08-11 · проверено live**
+> ([`docs/plans/CHECKPOINT_2026-08-11.md`](docs/plans/CHECKPOINT_2026-08-11.md))
 >
-> Все **13 контейнеров** `Up (healthy)`, **0 рестартов, 0 OOM**. Температуры 41–50 °C, eth0 1 Гбит/с.
+> Все **13 контейнеров** `Up (healthy)`, **0 рестартов, 0 OOM**, аптайм 1 д 15 ч.
 > **Два диска:** SSD 229 GB ext4 → `/mnt/storage` (занято 5 %) и HDD 2 ТБ NTFS → `/mnt/hdd2tb`
 > (1.4 ТБ семейного архива, доступен через Nextcloud `/HDD-2TB` и Samba `hdd2tb`).
 > **0 USB-ошибок** с момента загрузки; UAS-quirk активен для обоих мостов.
-> **Бэкапы БД** идут по расписанию (последний 2026-08-10 03:02), **восстановление проверено**
+> **Бэкапы БД** идут по расписанию (последний 2026-08-11 03:12), **восстановление проверено**
 > накатом дампов во временную БД: счётчики сошлись с live один-в-один.
 > Реверс-туннель на VPS активен; Immich 2.7.5 (**7098 ассетов**: 6686 фото + 412 видео, 23 альбома),
 > Nextcloud 33.0.4 (5 пользователей), LLM Gateway healthy, Talk-бот running.
@@ -172,11 +172,16 @@ Principles:
 > 22, 443 и 40568/udp, всё остальное — через VPN. Адрес VPS сменился на **`95.163.176.103`**
 > (прежний заблокирован российскими ISP).
 >
-> 🤖 **Семейный ИИ-помощник (2026-08-10):** в Nextcloud Talk у каждого своя комната с ботом.
+> 🤖 **Семейный ИИ-помощник:** в Nextcloud Talk у каждого своя комната с ботом.
 > Два позывных, и граница приватности проходит по слову: `нас <команда>` считается **дома**
 > и наружу не уходит, `@бобик <вопрос>` — уходит через шлюз с вырезанием имён, телефонов и
 > почты. Два провайдера (DeepSeek + GigaChat) за одним редактированием и одним бюджетом,
 > с персональным лимитом токенов на каждого члена семьи.
+>
+> 📷 **Канал фотографий наружу закрыт (2026-08-11).** `LLM_ALLOW_IMAGE_ANALYSIS` возвращён
+> в `false`: провайдер фотографии всё равно не редактирует — он их описывает, а Kandinsky
+> рисует новое. Держать открытым канал, по которому семейные снимки уходят наружу, стало
+> не за что. Настоящая ретушь возможна только локально, и на чём её делать — открытый вопрос.
 >
 > Исторический снимок / Historical snapshot (2026-06-29): NAS_Jetson_Nano API **v0.6.0**, Talk, Users, Photos and Actions endpoints, goss 40/40.
 
@@ -232,18 +237,26 @@ Principles:
 
 ### Идея Шага 2 / The Step 2 idea
 
-> 🇷🇺 Дать кластеру «мозг», не купив ничего: подключить **ещё одну простаивавшую машину** — ноутбук **Dell Vostro 15 (2018)**, освободившийся после закрытия другого проекта, — как выделенный **always-on ML-узел**. Immich на Jetson отгружает распознавание лиц и smart-поиск на него через `IMMICH_MACHINE_LEARNING_URL`. Nano остаётся хранилищем и сервером, ноутбук считает нейросети — заодно разгружается скромная RAM Jetson.
+> 🇷🇺 Дать кластеру «мозг», не купив ничего: подключить **ещё одну простаивавшую машину** — ноутбук **Dell Vostro 15 (2018)** — как выделенный **always-on ML-узел**. Immich на Jetson отгружал бы распознавание лиц на него через `IMMICH_MACHINE_LEARNING_URL`.
 >
-> 🇬🇧 Give the cluster a "brain" without buying anything: bring in **another idle machine** — a **2018 Dell Vostro 15** laptop, freed up after another project wrapped — as a dedicated **always-on ML node**. Immich on the Jetson offloads face recognition and smart search to it via `IMMICH_MACHINE_LEARNING_URL`. The Nano stays the storage/server; the laptop runs the neural nets — and the Jetson's tight RAM gets some breathing room.
+> ⚠️ **2026-08-11: план встретился с замером.** Ноутбук проверен вживую, и роль пришлось пересмотреть: **CUDA у него нет** (Intel HD 520 + AMD R5 M230), процессор — 2 ядра без turbo, а машину уже делит другой проект владельца, которому нужен отзывчивый сервис. Два ядра нельзя занять наполовину.
+> Сильные стороны ноутбука оказались другими: **825 ГБ свободного диска и расположение в другом здании**. Поэтому он становится **off-site хранилищем и внешним сторожем**, а не ML-узлом. Честный разбор — [`docs/plans/VOSTRO_ML_NODE_ONBOARDING.md`](docs/plans/VOSTRO_ML_NODE_ONBOARDING.md).
+>
+> 🇬🇧 Give the cluster a "brain" without buying anything: bring in **another idle machine** — a **2018 Dell Vostro 15** laptop — as a dedicated **always-on ML node**.
+>
+> ⚠️ **2026-08-11: the plan met a measurement.** A live audit of the laptop forced a change of role: it has **no CUDA** (Intel HD 520 + AMD R5 M230), two cores without turbo, and another project of the owner's already runs on it and needs to stay responsive. Two cores cannot be half-taken.
+> Its real strengths turned out to be different: **825 GB free and sitting in a different building**. So it becomes **off-site storage and an external watchdog**, not an ML node.
 
 ### Дорожная карта Шага 2 / Step 2 roadmap
 
 | Направление / Track | Что / What | Статус / Status |
 |---|---|---|
-| 🧠 ML-узел / ML node | Dell Vostro 15 → remote `immich-machine-learning` | 🔧 Onboarding |
-| 🔒 Безопасность / Security | Сервисы за VPN (Tailscale/Amnezia), fail2ban / services behind VPN | 📋 План / Planned |
-| 💾 Хранилище / Storage | 2 ТБ HDD + restic off-site backup | 📋 План / Planned |
-| 🌡️ Здоровье SSD / SSD health | Температура SSD (SMART 194) → Telegram alert | 📋 План / Planned |
+| 🤖 Семейный ИИ / Family AI | Talk-бот `@бобик`, комната на человека, 2 провайдера, личные лимиты токенов | ✅ **Работает** / Live |
+| 🔒 Безопасность / Security | Сервисы за VPN, ufw на VPS, канал фотографий наружу закрыт | ✅ **Сделано** / Done |
+| 💾 Хранилище / Storage | 2 ТБ HDD подключён; restic off-site — цель найдена, ждёт решения владельца | 🔧 Частично / Partial |
+| 🧠 ML-узел / ML node | Dell Vostro 15 — L0 пройден, **CUDA нет**; роль пересмотрена на off-site + сторож | 🔄 **Пересмотрено** / Revised |
+| 🌐 Домашняя сеть / Home network | Замена роутера на mesh Deco E4 | 📋 План готов / Planned |
+| 🖼️ Обработка фото / Photo work | Локальная ретушь с сохранением лица — **не на чем считать** | ⛔ Блокер / Blocked |
 
 > 🇷🇺 📋 Полный разбор отзывов и план: [docs/plans/POST_HABR_FEEDBACK_2026-08.md](docs/plans/POST_HABR_FEEDBACK_2026-08.md) · 🖥️ Ввод ML-узла: [docs/plans/VOSTRO_ML_NODE_ONBOARDING.md](docs/plans/VOSTRO_ML_NODE_ONBOARDING.md) · 🗒️ Трекинг: [issue #9](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/issues/9)
 > 🇬🇧 📋 Full feedback review and plan: [docs/plans/POST_HABR_FEEDBACK_2026-08.md](docs/plans/POST_HABR_FEEDBACK_2026-08.md) · 🖥️ ML node onboarding: [docs/plans/VOSTRO_ML_NODE_ONBOARDING.md](docs/plans/VOSTRO_ML_NODE_ONBOARDING.md) · 🗒️ Tracking: [issue #9](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/issues/9)

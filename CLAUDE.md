@@ -295,3 +295,24 @@ LLM Gateway :8090/:9443, API :8099, Beszel Hub :8091.
 
 Память о проекте (cross-session): `C:\Users\Alexey\.claude\projects\e--Linux-mint-virtual-VM-shared-NAS-Jetson-Nano\memory\`
 Индекс: `MEMORY.md` в той же папке.
+
+## Связь со вторым проектом владельца
+
+Владелец ведёт два проекта в двух сессиях Claude Code на одной машине; они делят
+ноутбук `192.168.75.177` и VPS. Сессии друг друга не видят, поэтому заведён канал:
+
+| Где | Для чего |
+|---|---|
+| `E:\agent_coordination\` (вне git) | **события** — «проверил, выяснилось вот что» |
+| `HOST_CONTRACT.md` на ноутбуке | **состояние** — кто чем владеет прямо сейчас |
+
+```bash
+python E:\agent_coordination\coord.py post --from nas --to belgorod --subject "..." --body "..."
+python E:\agent_coordination\coord.py list
+```
+
+Доставка автоматическая: хуки `SessionStart` / `UserPromptSubmit` в `.claude/settings.json`
+обоих проектов (файлы под `.gitignore`). Подробности — `README.md` в той же папке.
+
+⚠️ **Порты VPS — общий ресурс.** Прежде чем занимать порт, сверяться с `ss -tlnp`
+и с `HOST_CONTRACT.md`.

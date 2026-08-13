@@ -74,6 +74,8 @@
 | LLM Gateway | ✅ healthy | `/health` → `{"status":"ok","provider":"deepseek","redaction":"true"}` |
 | Beszel Agent Jetson (45876) | ✅ active | **systemd-юнит** `beszel-agent.service` (не контейнер), enabled |
 | Beszel Hub (VPS:8091) | ✅ up | доступен только через VPN |
+| DNS-имя VPS | ✅ **`borovskoy.dynv6.net`** (с 2026-08-12) | A → **`95.163.176.103`**, TTL 60, AAAA намеренно НЕ создана (IPv6 на VPS наружу не отвечает). dynv6, адрес статический — DDNS-клиент не нужен. ⚠️ Апдейтер, запущенный НА VPS, прописал бы **заблокированный** `193.8.215.130`: наружу машина выходит через него. Разбор — `DNS/VPS_DNS_BASELINE.md` (вне git, там же токен) |
+| HTTPS на имя | ⛔ обычным путём невозможно | Порт **443 занят `amnezia-xray`**, порт 80 закрыт в ufw. Значит HTTP-01 и TLS-ALPN-01 отпадают. Единственный безопасный путь — **DNS-01 через API dynv6**, он не требует открытых портов. Освобождать 443 нельзя — правило №2 |
 | VPS nginx | ✅ live | `nasa_nginx` up 5 недель; проксирует 8080/2283/8090/8099/8091 на порты туннеля |
 | Telegram daily report | ✅ доставляется | `nasa-daily-report-telegram.timer` активен, последняя доставка 2026-08-09 16:33 MSK |
 | Android apps | ✅ установлены | Immich + Nextcloud из Play Store, DAVx⁵ APK v4.5.14 |

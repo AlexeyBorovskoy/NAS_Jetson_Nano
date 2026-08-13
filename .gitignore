@@ -84,3 +84,11 @@ gigachat/
 # a PUBLIC root certificate, not a key. It is committed so that deploying the
 # GigaChat provider is reproducible. See config/certs/README.md.
 !config/certs/russian_trusted_bundle.pem
+
+# ── DNS: содержит живой токен dynv6 ────────────────────────────────────
+# Проверено 2026-08-12: DNS/DNS.md содержит пароль ddclient открытым текстом,
+# а папка НЕ игнорировалась — `git add -A` отправил бы её в ПУБЛИЧНЫЙ репозиторий.
+# Тот же класс промаха, что был с gigachat/.
+DNS/
+**/dynv6*
+**/ddclient.conf

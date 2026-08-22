@@ -121,24 +121,65 @@ if [ -f "$VPS_KEY" ]; then
     [ -z "$BESZEL_REPORT" ] && BESZEL_REPORT="  ⚠️ Beszel Hub unreachable via SSH"
 fi
 
-# External check via VPS (optional)
+# External access.
+#
+# Service ports on the VPS are deliberately closed to the internet: ufw admits
+# them only from 172.29.172.0/24 and 10.8.1.0/24 (project rule #4). A curl from
+# the Jetson's public egress therefore MUST fail. The previous check treated
+# that desired state as an error and printed ❌ every single day — which is how
+# a monitor teaches the family to ignore it.
+#
+# What a family member actually depends on is the chain
+#     client -> VPS nginx -> reverse SSH tunnel -> Jetson
+# and it is measurable on the VPS itself against 127.0.0.1: the same path a VPN
+# client's request takes, minus the client->VPS hop.
+#
+# The one check still pointed outward is inverted on purpose: a service port
+# that answers from the public internet is now the alarm.
 EXTERNAL_REPORT=""
 VPS="${SERVER_IP:-95.163.176.103}"
-external_check() {
-    local port="$1" path="$2" label="$3"
-    local code
-    code="$(curl -o /dev/null -s -w '%{http_code}' --max-time 8 "http://${VPS}:${port}${path}" 2>/dev/null || true)"
-    [ -n "$code" ] || code="000"
-    if [ "$code" = "200" ] || [ "$code" = "302" ]; then
-        echo "  ✅ ${label} via VPS (${VPS}:${port}): HTTP ${code}"
+
+if [ -f "$VPS_KEY" ]; then
+    CHAIN_RAW="$(ssh -i "$VPS_KEY" \
+        -o StrictHostKeyChecking=no \
+        -o ConnectTimeout=10 \
+        -o BatchMode=yes \
+        "${VPS_USER}@${VPS}" \
+        'for s in "8080:/status.php:Nextcloud" "2283:/api/server/ping:Immich" "8090:/health:LLM Gateway" "8099:/healthcheck:API" "8091:/:Beszel Hub"; do
+             p="${s%%:*}"; r="${s#*:}"; path="${r%%:*}"; name="${r#*:}"
+             c="$(curl -o /dev/null -s -w "%{http_code}" --max-time 8 "http://127.0.0.1:${p}${path}" 2>/dev/null)"
+             echo "${c:-000}|${p}|${name}"
+         done' 2>/dev/null || true)"
+
+    if [ -z "$CHAIN_RAW" ]; then
+        EXTERNAL_REPORT="  ⚠️ VPS unreachable over SSH — chain NOT measured"
+        add_warning "VPS unreachable over SSH: external chain not measured"
     else
-        echo "  ❌ ${label} via VPS (${VPS}:${port}): HTTP ${code}"
-        add_warning "${label} via VPS returned HTTP ${code}"
+        while IFS='|' read -r code port name; do
+            [ -n "$name" ] || continue
+            case "$code" in
+                200|302)
+                    EXTERNAL_REPORT="${EXTERNAL_REPORT}\n  ✅ ${name} through tunnel (:${port}): HTTP ${code}" ;;
+                *)
+                    EXTERNAL_REPORT="${EXTERNAL_REPORT}\n  ❌ ${name} through tunnel (:${port}): HTTP ${code}"
+                    add_warning "${name} not reachable through the VPS tunnel (HTTP ${code})" ;;
+            esac
+        done <<CHAIN
+$CHAIN_RAW
+CHAIN
     fi
-}
-EXTERNAL_REPORT="${EXTERNAL_REPORT}\n$(external_check 8080 "/" "Nextcloud")"
-EXTERNAL_REPORT="${EXTERNAL_REPORT}\n$(external_check 2283 "/api/server/ping" "Immich")"
-EXTERNAL_REPORT="${EXTERNAL_REPORT}\n$(external_check 8090 "/health" "LLM Gateway")"
+else
+    EXTERNAL_REPORT="  ⚠️ no VPS key — external chain NOT measured"
+fi
+
+# Inverted check: this port MUST NOT answer from the public internet.
+PUB_CODE="$(curl -o /dev/null -s -w '%{http_code}' --max-time 6 "http://${VPS}:8080/" 2>/dev/null)"
+if [ "${PUB_CODE:-000}" = "000" ]; then
+    EXTERNAL_REPORT="${EXTERNAL_REPORT}\n  ✅ ports closed to the internet (VPN only) — rule #4 holds"
+else
+    EXTERNAL_REPORT="${EXTERNAL_REPORT}\n  ❌ :8080 answered from the public internet: HTTP ${PUB_CODE}"
+    add_warning "VPS port 8080 is reachable from the public internet"
+fi
 
 # Threshold warnings
 [ "$DISK_ROOT_PCT" -ge "${DISK_WARN_PERCENT:-80}" ] && \

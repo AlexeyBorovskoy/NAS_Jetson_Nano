@@ -1,56 +1,56 @@
 # NAS_Jetson_Nano
 
-_Old Hardware Must Live._
+_Old hardware should live._ · _Старое железо должно жить._
 
-A family self-hosted cloud built on Jetson Nano, USB SSD, Docker Compose,
-Nextcloud, Immich, Android clients, monitoring and AI-assisted reliability engineering.
+> 🇷🇺 Семейное облако на NVIDIA Jetson Nano 2019 года: фотографии, файлы, контакты и
+> календарь — дома. Проект опубликован целиком, включая ошибки и то, как они находились.
+>
+> 🇬🇧 A family cloud on a 2019 NVIDIA Jetson Nano: photos, files, contacts and calendar,
+> at home. Published in full — including the mistakes and how they were caught.
 
-## Highlights
+## Состояние / State — 2026-08-22
 
-> **Статус данных / Data status:** приведённые ниже эксплуатационные числа являются историческими снимками из материалов проекта, а не текущими показателями. / The runtime figures below are historical snapshots from project records, not current measurements.
+🇷🇺 Замерено живыми командами в этот день, а не взято из прошлых документов. /
+🇬🇧 Verified by live commands that day, not carried over from earlier docs.
 
-- **Jetson Nano 4GB** as home server (ARM64, no swap — real constraints)
-- **Nextcloud** for files, contacts and calendar (CardDAV/CalDAV)
-- **Immich** for family photo archive (6 697 photos backed up)
-- **Android clients** with DAVx5 / Nextcloud / Immich auto-backup
-- **Reverse SSH tunnel** through VPS for CGNAT bypass (no port forwarding needed)
-- **Monitoring** with Beszel / Uptime Kuma / Telegram daily reports
-- **Reliability story** around USB SSD failures and automated recovery
-- **NAS_Jetson_Nano API** — custom REST API over the full stack (FastAPI, 20 endpoints, JWT)
-- Open-source documentation, agent prompts and evidence
-
-## Read
-
-- [🇷🇺 Черновик статьи для Habr / Habr article draft](articles/habr_article_ru.md)
-- [🇬🇧 Hackaday.io project draft (EN)](articles/hackaday_project_en.md)
-- [Architecture](pages/architecture.md)
-- [Reliability and validation](pages/reliability.md)
-- [Android client](pages/android.md)
-- [Evidence package](pages/evidence.md)
-- [Keenetic Omni KN-1410 extender inventory](25_KEENETIC_OMNI_KN1410.md) — plan cancelled, cold spare
-- [TP-Link Deco E4 scouting analysis](26_DECO_E4_NETWORK.md) — superseded by document 27
-- [Home network on Deco E4 — full router replacement runbook](27_HOME_NETWORK_MESH.md)
-- [Remote Immich ML node on a Dell Vostro 15](plans/VOSTRO_ML_NODE_ONBOARDING.md)
-
-## Where the project is going / Куда движется проект
-
-- **[Step 2 roadmap — six waves](plans/ROADMAP_STEP2_2026-08.md)** — safety net → network →
-  ML node → offloading the Jetson → GPU experiment → conversational bot → article
-- [Health audit 2026-08-10](plans/SYSTEM_AUDIT_2026-08-10.md) — the state we start from
-- [Habr feedback and phase status](plans/POST_HABR_FEEDBACK_2026-08.md)
-- [Photo processing — what our hardware can actually do](plans/PHOTO_PROCESSING_FEASIBILITY.md)
-
-## Historical status snapshot / Исторический снимок состояния
-
-| Component | Status |
+| | |
 |---|---|
-| Docker containers | 13/13 up, healthy |
-| Photos backed up | 6 697 files (Immich) |
-| SSD | JMS583, 229 GB, Write 250 MB/s |
-| goss tests | 40/40 passing |
-| HTTPS (self-signed) | Live on alt-ports |
-| Off-site backup | Planned (restic + 2 TB HDD) |
+| Контейнеры / Containers | 13 up, 0 рестартов |
+| Immich | 7 476 ассетов / assets, 23 альбома |
+| Nextcloud | v33.0.4, 5 пользователей / users |
+| Хранилище / Storage | SSD 229 ГБ (6 %) + HDD 2 ТБ (76 %, 1.4 ТБ архива) |
+| Бэкапы / Backups | ежедневно, ~151 МБ, restore проверен / verified 2026-08-09 |
+| Внешний доступ / Remote access | реверс-туннель через VPS, портов наружу нет |
 
-## Repository
+🔴 **Открытый долг / Open debt:** 🇷🇺 off-site бэкапа нет — всё в одном доме. /
+🇬🇧 no off-site backup yet — everything sits in one building.
 
-GitHub: [AlexeyBorovskoy/NAS_Jetson_Nano](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano)
+## Читать / Read
+
+**О проекте / About**
+- [🇷🇺 Черновик статьи для Habr](articles/habr_article_ru.md)
+- [🇬🇧 Hackaday.io project draft](articles/hackaday_project_en.md)
+- [Архитектура / Architecture](pages/architecture.md) · [`03_ARCHITECTURE`](03_ARCHITECTURE.md)
+- [Почему не готовый NAS / Why not a NAS box](15_ALTERNATIVES_REVIEW.md)
+
+**Как это держится / How it holds up**
+- [Надёжность и проверка / Reliability and validation](pages/reliability.md)
+- [Бэкап и восстановление / Backup and restore](12_BACKUP_RESTORE.md)
+- [Мониторинг / Monitoring](13_MONITORING_RUNBOOK.md)
+- [Доказательства / Evidence package](pages/evidence.md)
+
+**Клиенты и сеть / Clients and network**
+- [Android-клиенты / Android clients](pages/android.md) · [`24_CLIENT_SETUP`](24_CLIENT_SETUP.md)
+- [Слепок домашней сети / Home network snapshot](28_NETWORK_SNAPSHOT_2026-08-22.md)
+
+**Куда идём / Where next**
+- [Вычисления, Kaggle, локальные модели / Compute, Kaggle, local models](29_COMPUTE_AND_LLM_ROADMAP.md)
+- [Разбор критики читателей / Reader feedback](plans/POST_HABR_FEEDBACK_2026-08.md)
+
+**Как это делалось с ИИ / Built with AI agents**
+- [Модель работы с агентами / Agent operating model](20_AGENT_OPERATING_MODEL.md)
+
+---
+
+🇷🇺 Полный список документов — в [репозитории](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/tree/main/docs).
+🇬🇧 The full document list lives in the repository.

@@ -1,717 +1,205 @@
 # NAS_Jetson_Nano
 
-> **Rename status:** the repository and source identifiers use `NAS_Jetson_Nano`. The live Jetson runtime has not been renamed or restarted yet; its controlled migration is tracked in [docs/MIGRATION_TO_NAS_JETSON_NANO.md](docs/MIGRATION_TO_NAS_JETSON_NANO.md).
 ### _Old hardware should live_ · _Старое железо должно жить_
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/AlexeyBorovskoy/NAS_Jetson_Nano?color=brightgreen)](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/releases)
-[![Platform](https://img.shields.io/badge/Platform-Jetson%20Nano-76b900)](https://developer.nvidia.com/embedded/jetson-nano-developer-kit)
-[![Docker](https://img.shields.io/badge/Docker%20Compose-v2-2496ED)](docker/compose/)
-[![AI-Assisted](https://img.shields.io/badge/Built%20with-Claude%20Code-blueviolet)](https://claude.ai/code)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)  
-[![Stars](https://img.shields.io/github/stars/AlexeyBorovskoy/NAS_Jetson_Nano?style=social)](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/stargazers)
-[![Discussions](https://img.shields.io/github/discussions/AlexeyBorovskoy/NAS_Jetson_Nano)](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/discussions)
-[![Issues](https://img.shields.io/github/issues/AlexeyBorovskoy/NAS_Jetson_Nano)](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/issues)
-[![CI](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/actions/workflows/secrets-check.yml/badge.svg)](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/actions/workflows/secrets-check.yml)
-[![Shellcheck](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/actions/workflows/shellcheck.yml)
+![Platform](https://img.shields.io/badge/platform-Jetson%20Nano%204GB%20·%20ARM64-76B900)
+![Services](https://img.shields.io/badge/containers-13%20up-blue)
+![Docs](https://img.shields.io/badge/docs-RU%20%2F%20EN-informational)
 
-> 🇷🇺 В ящике лежал NVIDIA Jetson Nano — купил когда-то для экспериментов, поиграл неделю и забыл.
-> Сын принёс плату DEXP с 232 ГБ памяти — «папа, пригодится». Пригодилась.
-> Вместо того чтобы покупать что-то новое — взял то, что уже было, и сделал из этого домашний сервер.
-> Заменил Google Фото, Google Drive и Яндекс.Диск. Задумал я — реализовал [Claude Code](https://claude.ai/code). **Новичок тоже справится.**
+> 🇷🇺 Семейное облако на NVIDIA Jetson Nano 2019 года: фотографии, файлы, контакты и
+> календарь — дома, а не у корпорации. Заменяет Google Photos, Google Drive и облачный NAS.
 >
-> 🇬🇧 Had an NVIDIA Jetson Nano sitting in a drawer — bought it for experiments, tinkered for a week, then forgot about it.
-> My son brought a DEXP board with 232 GB storage — "dad, you'll need this". He was right.
-> Instead of buying new hardware — used what was already there and turned it into a proper home server.
-> Replaced Google Photos, Google Drive, and Yandex.Disk. My vision — [Claude Code](https://claude.ai/code) did the implementation. **Beginners can do this too.**
+> 🇬🇧 A family cloud on a 2019 NVIDIA Jetson Nano: photos, files, contacts and calendar
+> at home instead of at a corporation. Replaces Google Photos, Google Drive and cloud NAS.
 
-**Если проект полезен — поставь ⭐ звезду, это помогает другим его найти.**  
-**If you find this useful — please ⭐ star this repo so others can discover it.**
-
-![NAS_Jetson_Nano — реальный стенд](assets/photos/test_sys.jpg)
-*Jetson Nano на роутере + DEXP-плата от сына (232 ГБ) · реальный стенд проекта*
+**Главное свойство проекта — честность замеров.** 🇷🇺 Всё, что здесь написано, проверено
+живой командой, а дата замера указана. Ошибки и отозванные диагнозы не удаляются, а
+остаются в документации вместе с тем, как они были найдены. / 🇬🇧 **Measured, not claimed.**
+Everything here was verified by a live command, and the measurement date is stated. Mistakes
+and retracted diagnoses stay in the docs, together with how they were caught.
 
 ---
 
-## Быстрый старт / Quick Start (TL;DR)
+## Состояние на 2026-08-22 / State as of 2026-08-22
 
-> 🇷🇺 Команды ниже разворачивают основные сервисы с конфигурацией проекта по умолчанию.
-> 🇬🇧 The following commands deploy the core services using the default project configuration.
+🇷🇺 Замерено живыми командами в этот день. / 🇬🇧 Verified by live commands that day.
 
-### Требования / Requirements
-
-🇷🇺 Перед началом убедитесь, что у вас есть: · 🇬🇧 Before starting, make sure you have:
-
-- NVIDIA Jetson Nano, Raspberry Pi 4/5 или другой совместимый мини-ПК / or another compatible mini-PC
-- Docker Engine 20.10+
-- Docker Compose v2
-- VPS — нужен только для внешнего доступа / required only for external access
-
-```bash
-git clone https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano.git ~/nas_jetson_nano
-cd ~/nas_jetson_nano
-cp config/.env.example config/.env && nano config/.env   # заполнить пароли
-docker compose -f docker/compose/docker-compose.nextcloud.yml --env-file config/.env up -d
-docker compose -f docker/compose/docker-compose.immich.yml   --env-file config/.env up -d
-```
-
-> 📖 Подробный гайд / For the complete setup guide: [Быстрый старт / Full Quick Start](#быстрый-старт--quick-start) ↓
-
----
-
-## Зачем это нужно / Why
-
-> 🇷🇺 Семейные фото копились в Google и Xiaomi Cloud. В какой-то момент понял, что не хочу чтобы они были у кого-то ещё.
-> Не хотелось тратить деньги на подписки и покупать новое железо, когда старое просто лежит.
-> Решение: собрать собственный облачный сервер из того что есть.
-
-> 🇬🇧 Family photos were piling up in Google and Xiaomi Cloud. At some point I realised I didn't want them sitting on someone else's server.
-> Didn't want to keep paying for subscriptions or buy new hardware when old hardware was just sitting there.
-> Solution: build a home cloud from what I already had.
-
-| Было / Before | Стало / After |
+| Что / What | Замер / Measurement |
 |---|---|
-| Google Фото — ваши фото у Google | **Immich** — личный фотоархив дома + Android авто-загрузка |
-| Google Drive / Яндекс.Диск | **Nextcloud** — файлы, WebDAV, Android авто-синхронизация |
-| Google Контакты / Google Calendar | **Nextcloud Contacts + Calendar** — CardDAV/CalDAV через DAVx⁵ |
-| Xiaomi Cloud фото-бэкап | **Immich** — всё хранится дома, не у Xiaomi |
-| DEXP-плата (232 ГБ) — лежала без дела, принёс сын | **Samba NAS + основное хранилище** |
-| ChatGPT / Claude API | **LLM Gateway** — локальный AI-ассистент, данные не уходят |
-| Облачный мониторинг | **Beszel** — история CPU/RAM/Disk/Net + Telegram алерты |
+| Контейнеры / Containers | **13 up**, 0 рестартов, 0 OOM |
+| Immich | v2.7.5, **7 476 ассетов**, 23 альбома |
+| Nextcloud | v33.0.4, 5 пользователей, `maintenance: false` |
+| SSD `/mnt/storage` | 229 ГБ, занято **6 %** |
+| HDD `/mnt/hdd2tb` | 1.9 ТБ, занято **76 %** (1.4 ТБ семейного архива, NTFS) |
+| RAM | 2.2 / 3.9 ГБ |
+| Бэкапы БД / DB backups | ежедневно ~03:10, **~151 МБ**, restore проверен 2026-08-09 |
+| Реверс-туннель / Reverse tunnel | active, Jetson → VPS |
+| Сеть / Network | Jetson `192.168.0.50`, **1000 Мбит/с** |
+| Семейный ассистент / Family assistant | Talk-бот отвечает, алерты в чат — **работают** |
+
+🔴 **Главный открытый долг / Main open debt:** 🇷🇺 бэкапы делаются и восстановление
+проверено, но **всё лежит в одном доме**. Off-site начат, упирается в доступ. /
+🇬🇧 backups run and restore is verified, but **everything sits in one building**.
+Off-site started, blocked on access. → [`WAVE_0`](docs/plans/WAVE_0_OFFSITE_BACKUP.md)
 
 ---
 
-## Содержание / Table of Contents
+## Что работает / What works
 
-- [О проекте / About](#о-проекте--about)
-- [Для кого / Who is this for](#для-кого--who-is-this-for)
-- [Что работает прямо сейчас / What's running](#что-работает-прямо-сейчас--whats-running)
-- [Шаг 2 — Развитие проекта / Step 2 — Project Evolution](#шаг-2--развитие-проекта--step-2--project-evolution)
-- [Архитектура / Architecture](#архитектура--architecture)
-- [Стек / Stack](#стек--stack)
-- [Требования / Prerequisites](#требования--prerequisites)
-- [Быстрый старт / Quick Start](#быстрый-старт--quick-start)
-- [Конфигурация / Configuration](#конфигурация--configuration)
-- [Этапы / Stages](#этапы--stages)
-- [Документация / Documentation](#документация--documentation)
-- [Безопасность / Security](#безопасность--security)
-- [Статьи и публикации / Articles](#статьи-и-публикации--articles)
-- [Вклад / Contributing](#вклад--contributing)
-- [Лицензия / License](#лицензия--license)
+🇷🇺 Каждый пункт — работающий сервис, а не план. / 🇬🇧 Each item is a running service, not a plan.
 
-
----
-
-## О проекте / About
-
-> 🇷🇺 Русский
-
-Всё началось с того, что в ящике лежал NVIDIA Jetson Nano, купленный несколько лет назад для экспериментов. Поиграл, отложил и забыл. Сын принёс плату DEXP с 232 ГБ памяти — «папа, пригодится». Покупать готовый NAS или новое железо не хотелось.
-
-Решил попробовать сделать домашний сервер из того, что уже есть. Jetson Nano оказался вполне достаточным: 4 ГБ RAM, ARM64, умеет в Docker. SSD смонтирован в `/mnt/storage` (229 GB), 13 контейнеров `Up (healthy)`. USB autosuspend отключён на уровне ядра. HTTPS добавлен на VPS nginx. SSD подключён через **JMS583** (USB 3.0 SuperSpeed, 5 Gbps, 250 MB/s write). Семейный чат работает через Nextcloud Talk — 5 участников. NAS_Jetson_Nano API v0.6.0 живёт на `:8099/docs` (Talk, Photos, Users, Actions).
-
-**NAS_Jetson_Nano** — это не инсталлятор в один клик. Это инженерный шаблон: документация, Docker Compose, диагностические скрипты, systemd-юниты и промпты для агентов, позволяющие разворачивать платформу малыми проверяемыми шагами.
-
-Принципы:
-
-- **Приватность прежде всего** — фото, видео, контакты, календарь и резервные копии не покидают домашнюю сеть.
-- **Только LAN + обратный SSH-тоннель** — сервисы недоступны напрямую из интернета; CGNAT обходится через VPS.
-- **Малые шаги** — каждый блок разворачивается отдельно и проверяется перед следующим.
-- **Без секретов в git** — реальные `.env`, токены, ключи и персональные данные не попадают в репозиторий.
-- **Устойчивость** — `restart: always`, mem_limit, Docker healthchecks, ежедневный Telegram-отчёт, автоматический бэкап БД.
-
-> 🇬🇧 English
-
-It started with an NVIDIA Jetson Nano sitting in a drawer — bought years ago for experiments, tinkered with it once, then forgot about it. My son brought a DEXP board with 232 GB storage — "dad, you'll need this". Didn't want to buy a ready-made NAS or new hardware.
-
-Decided to try building a home server from what was already there. The Jetson Nano turned out to be perfectly capable: 4 GB RAM, ARM64, Docker-ready. The DEXP board became the target USB storage. The SSD is mounted at `/mnt/storage` (229 GB), all 13 containers are `Up (healthy)`, USB autosuspend is disabled at kernel level, HTTPS is live on VPS nginx. The **JMS583** enclosure (USB 3.0 SuperSpeed, 5 Gbps, 250 MB/s write) replaced the original DEXP/RTL9210B-CG bridge. Family chat runs on Nextcloud Talk (5 members). NAS_Jetson_Nano API v0.6.0 is live at `:8099/docs` with Talk, Photos, Users, and Actions endpoints.
-
-**NAS_Jetson_Nano** is not a one-command installer. It is an engineering template with documentation, Docker Compose files, diagnostics, systemd units, and agent prompts for safe, step-by-step deployment.
-
-Principles:
-
-- **Privacy first** — photos, videos, contacts, calendars, and backups never leave the home network.
-- **LAN + reverse SSH tunnel only** — services are not exposed directly to the internet; CGNAT is bypassed via VPS relay.
-- **Small steps** — every deployment block is verified before moving to the next.
-- **No real secrets in git** — `.env`, tokens, API keys, and personal data are excluded from the repository.
-- **Resilience** — `restart: always`, mem_limit, Docker healthchecks, daily Telegram health report, automated DB backup timer.
-
----
-
-## Для кого / Who is this for
-
-> 🇷🇺 Если у вас где-то лежит Jetson Nano, Raspberry Pi 4/5 или любой мини-ПК — и он либо не используется, либо используется по крайней необходимости — этот проект для вас. Не нужно быть DevOps-инженером. Нужно быть готовым разбираться шаг за шагом.
->
-> Мне не нужна была экспертиза в Docker и systemd — достаточно было сформулировать задачи для [Claude Code](https://claude.ai/code). Агент генерировал код, отлаживал, тестировал, писал документацию. Я проверял, принимал решения, говорил что делать дальше. Получился рабочий сервер.
->
-> Весь лог решений открыт: промпты (`docs/prompts/`), архитектурные решения (`docs/decisions/`), CHANGELOG с каждым шагом.
-
-> 🇬🇧 If you have a Jetson Nano, Raspberry Pi 4/5, or any mini-PC sitting somewhere — either unused or barely used — this project is for you. You don't need to be a DevOps engineer. You just need to be willing to work through it step by step.
->
-> I didn't need expertise in Docker or systemd — just the ability to formulate tasks for [Claude Code](https://claude.ai/code). The agent wrote the code, debugged it, tested it, and documented everything. I reviewed, made decisions, and directed what to do next. The result: a working home server.
->
-> The full decision log is open: agent prompts (`docs/prompts/`), architecture decisions (`docs/decisions/`), CHANGELOG with every step.
-
----
-
-## Что работает прямо сейчас / What's running
-
-> **Состояние на 2026-08-11 / State as of 2026-08-11 · проверено live**
-> ([`docs/plans/CHECKPOINT_2026-08-11.md`](docs/plans/CHECKPOINT_2026-08-11.md))
->
-> Все **13 контейнеров** `Up (healthy)`, **0 рестартов, 0 OOM**, аптайм 1 д 15 ч.
-> **Два диска:** SSD 229 GB ext4 → `/mnt/storage` (занято 5 %) и HDD 2 ТБ NTFS → `/mnt/hdd2tb`
-> (1.4 ТБ семейного архива, доступен через Nextcloud `/HDD-2TB` и Samba `hdd2tb`).
-> **0 USB-ошибок** с момента загрузки; UAS-quirk активен для обоих мостов.
-> **Бэкапы БД** идут по расписанию (последний 2026-08-11 03:12), **восстановление проверено**
-> накатом дампов во временную БД: счётчики сошлись с live один-в-один.
-> Реверс-туннель на VPS активен; Immich 2.7.5 (**7098 ассетов**: 6686 фото + 412 видео, 23 альбома),
-> Nextcloud 33.0.4 (5 пользователей), LLM Gateway healthy, Talk-бот running.
->
-> 🔒 **Периметр:** сервисы больше **не открыты в интернет** — снаружи на VPS доступны только
-> 22, 443 и 40568/udp, всё остальное — через VPN. Адрес VPS сменился на **`95.163.176.103`**
-> (прежний заблокирован российскими ISP).
->
-> 🤖 **Семейный ИИ-помощник:** в Nextcloud Talk у каждого своя комната с ботом.
-> Два позывных, и граница приватности проходит по слову: `нас <команда>` считается **дома**
-> и наружу не уходит, `@бобик <вопрос>` — уходит через шлюз с вырезанием имён, телефонов и
-> почты. Два провайдера (DeepSeek + GigaChat) за одним редактированием и одним бюджетом,
-> с персональным лимитом токенов на каждого члена семьи.
->
-> 📷 **Канал фотографий наружу закрыт (2026-08-11).** `LLM_ALLOW_IMAGE_ANALYSIS` возвращён
-> в `false`: провайдер фотографии всё равно не редактирует — он их описывает, а Kandinsky
-> рисует новое. Держать открытым канал, по которому семейные снимки уходят наружу, стало
-> не за что. Настоящая ретушь возможна только локально, и на чём её делать — открытый вопрос.
->
-> Исторический снимок / Historical snapshot (2026-06-29): NAS_Jetson_Nano API **v0.6.0**, Talk, Users, Photos and Actions endpoints, goss 40/40.
-
-| Сервис / Service | Порт / Port | Доступ / Access | Статус / Status |
-|---|---|---|---|
-| Nextcloud | 8080 / **8443** | LAN + VPS `95.163.176.103` **только через VPN / VPN only** | ✅ Live · v33.0.4 |
-| Immich | 2283 / **2443** | LAN + VPS `95.163.176.103` **только через VPN / VPN only** | ✅ Live · v2.7.5 |
-| LLM Gateway | 8090 / **9443** | LAN + VPS `95.163.176.103` **только через VPN / VPN only** | ✅ Live · DeepSeek |
-| DAVx⁵ CardDAV/CalDAV | 8443 | `https://95.163.176.103:8443/remote.php/dav` (через VPN) | ✅ Live · Android sync |
-| nas_jetson_nano-api (Swagger) | 8099 | LAN `192.168.0.50:8099/docs` (снаружи — через VPN) | ✅ Live |
-| Samba NAS | 445/139 | LAN only (192.168.0.0/24) | ✅ Live · шары `public` + **`hdd2tb`** |
-| HDD 2 ТБ архив | — | Nextcloud `/HDD-2TB` · Samba `\\192.168.0.50\hdd2tb` | ✅ Live · 1.4 ТБ, NTFS |
-| Netdata | 19999 | LAN `192.168.0.50:19999` | ✅ Live |
-| Uptime Kuma | 3001 | LAN `192.168.0.50:3001` | ✅ Live · 5 monitors configured |
-| Portainer | 9000 | LAN `192.168.0.50:9000` | ✅ Live · admin configured |
-| Beszel Hub | 8091 | VPS `95.163.176.103:8091` (через VPN) | ✅ Live · Jetson 17% CPU · VPS 2% CPU |
-| Beszel Agent Jetson | 45876 | Jetson internal | ✅ Live · systemd, arm64 v0.18.7 |
-| Beszel Agent VPS | 45877 | VPS internal | ✅ Live · systemd, amd64 v0.18.7 |
-| VPS nginx (HTTP+HTTPS) | — | VPS 95.163.176.103 | ✅ Live · self-signed TLS 10y |
-| autossh tunnel | — | Jetson → VPS persistent | ✅ Live |
-| Telegram daily report | — | Bot → personal chat | ✅ Live (09:00) + Beszel data |
-| DB backup timer | — | pg_dump → /mnt/storage/backups | ✅ Live; fail-closed guard |
-| USB storage watchdog | udev | udev rules + systemd timers | ✅ active (nas_jetson_nano-usb-watchdog.timer) |
-| Android mobile sync | — | Immich app + DAVx⁵ + Nextcloud + Talk | ✅ Immich (6484 фото/210 видео) · Nextcloud · DAVx⁵ · Talk |
-| Nextcloud Talk | 8080/8443 | Семейный чат, 5 участников | ✅ Live · группа «Семья» (admin, olga, ivan, ulyana, anna) |
-
-> **Хранилище / Storage (2026-08-10):**
-> `/mnt/storage` — JMS583 USB 3.0 SSD (`152d:a583`, 229 GB ext4, write 250 / read 172 MB/s), занято 5 %.
-> `/mnt/hdd2tb` — WD 2 TB через RTL9201 (`0bda:9201`, **NTFS** / ntfs-3g, read 106 / write 92 MB/s),
-> занято 76 % — 1.4 ТБ существующего семейного архива, **форматированию не подлежит**.
-> Оба моста требуют UAS-quirk: `usb-storage.quirks=0bda:9210:rw,152d:a583:u,0bda:9201:u`.
-> USB-ошибок с момента загрузки — **0**.
-> ⚠️ SMART недоступен структурно: quirk переводит мосты в usb-storage BOT, который не пропускает
-> ATA passthrough → `smartd` отключён намеренно, здоровье закрывают почасовой таймер и USB-монитор.
-> История инцидента / Incident log: [docs/plans/STORAGE_INCIDENT_2026-06-23.md](docs/plans/STORAGE_INCIDENT_2026-06-23.md).
-> Аудит надёжности / Reliability audit: [docs/plans/RELIABILITY_AUDIT_2026-06-23.md](docs/plans/RELIABILITY_AUDIT_2026-06-23.md).
-
----
-
-## Шаг 2 — Развитие проекта / Step 2 — Project Evolution
-
-> 🇷🇺 **Шаг 1** — запуск: из простаивавшего Jetson Nano собран рабочий домашний облак (эта история — в [первой статье на Habr](https://habr.com/ru/articles/1062914/)).
-> **Шаг 2** — развитие: проект растёт по обратной связи от читателей и превращается из одноплатника в маленький кластер, собранный целиком из железа, которое лежало без дела.
->
-> 🇬🇧 **Step 1** — launch: an idle Jetson Nano became a working home cloud (that story is in the [first Habr article](https://habr.com/ru/articles/1062914/)).
-> **Step 2** — evolution: driven by reader feedback, the project grows from a single board into a small cluster built entirely from hardware that was gathering dust.
-
-### Что подтолкнуло / What triggered it
-
-> 🇷🇺 Главная претензия в комментариях к статье (3 читателя из 4): **Immich работает без распознавания (ML)**, а ведь смысл Jetson именно в GPU. «Immich без ML — деньги на ветер». Честный разбор подтвердил: читатели правы по сути, но GPU Nano (Maxwell, CUDA 10.2, 4 ГБ) современный Immich ML не потянет, а покупать отдельный GPU-бокс — против принципа проекта «старое железо должно жить».
->
-> 🇬🇧 The top criticism in the article comments (3 of 4 readers): **Immich runs without machine learning**, yet the GPU is the whole point of a Jetson. "Immich without ML is money down the drain." An honest review confirmed they're right in spirit — but the Nano's GPU (Maxwell, CUDA 10.2, 4 GB) can't run modern Immich ML, and buying a separate GPU box would break the project's core rule: *old hardware should live*.
-
-### Идея Шага 2 / The Step 2 idea
-
-> 🇷🇺 Дать кластеру «мозг», не купив ничего: подключить **ещё одну простаивавшую машину** — ноутбук **Dell Vostro 15 (2018)** — как выделенный **always-on ML-узел**. Immich на Jetson отгружал бы распознавание лиц на него через `IMMICH_MACHINE_LEARNING_URL`.
->
-> ⚠️ **2026-08-11: план встретился с замером.** Ноутбук проверен вживую, и роль пришлось пересмотреть: **CUDA у него нет** (Intel HD 520 + AMD R5 M230), процессор — 2 ядра без turbo, а машину уже делит другой проект владельца, которому нужен отзывчивый сервис. Два ядра нельзя занять наполовину.
-> Сильные стороны ноутбука оказались другими: **825 ГБ свободного диска и расположение в другом здании**. Поэтому он становится **off-site хранилищем и внешним сторожем**, а не ML-узлом. Честный разбор — [`docs/plans/VOSTRO_ML_NODE_ONBOARDING.md`](docs/plans/VOSTRO_ML_NODE_ONBOARDING.md).
->
-> 🇬🇧 Give the cluster a "brain" without buying anything: bring in **another idle machine** — a **2018 Dell Vostro 15** laptop — as a dedicated **always-on ML node**.
->
-> ⚠️ **2026-08-11: the plan met a measurement.** A live audit of the laptop forced a change of role: it has **no CUDA** (Intel HD 520 + AMD R5 M230), two cores without turbo, and another project of the owner's already runs on it and needs to stay responsive. Two cores cannot be half-taken.
-> Its real strengths turned out to be different: **825 GB free and sitting in a different building**. So it becomes **off-site storage and an external watchdog**, not an ML node.
-
-### Дорожная карта Шага 2 / Step 2 roadmap
-
-| Направление / Track | Что / What | Статус / Status |
-|---|---|---|
-| 🤖 Семейный ИИ / Family AI | Talk-бот `@бобик`, комната на человека, 2 провайдера, личные лимиты токенов | ✅ **Работает** / Live |
-| 🔒 Безопасность / Security | Сервисы за VPN, ufw на VPS, канал фотографий наружу закрыт | ✅ **Сделано** / Done |
-| 💾 Хранилище / Storage | 2 ТБ HDD подключён; restic off-site — цель найдена, ждёт решения владельца | 🔧 Частично / Partial |
-| 🧠 ML-узел / ML node | Dell Vostro 15 — L0 пройден, **CUDA нет**; роль пересмотрена на off-site + сторож | 🔄 **Пересмотрено** / Revised |
-| 🌐 Домашняя сеть / Home network | Замена роутера на mesh Deco E4 | 📋 План готов / Planned |
-| 🖼️ Обработка фото / Photo work | Локальная ретушь с сохранением лица — **не на чем считать** | ⛔ Блокер / Blocked |
-
-> 🇷🇺 📋 Полный разбор отзывов и план: [docs/plans/POST_HABR_FEEDBACK_2026-08.md](docs/plans/POST_HABR_FEEDBACK_2026-08.md) · 🖥️ Ввод ML-узла: [docs/plans/VOSTRO_ML_NODE_ONBOARDING.md](docs/plans/VOSTRO_ML_NODE_ONBOARDING.md) · 🗒️ Трекинг: [issue #9](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/issues/9)
-> 🇬🇧 📋 Full feedback review and plan: [docs/plans/POST_HABR_FEEDBACK_2026-08.md](docs/plans/POST_HABR_FEEDBACK_2026-08.md) · 🖥️ ML node onboarding: [docs/plans/VOSTRO_ML_NODE_ONBOARDING.md](docs/plans/VOSTRO_ML_NODE_ONBOARDING.md) · 🗒️ Tracking: [issue #9](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/issues/9)
->
-> 🇷🇺 О результатах Шага 2 будет **вторая статья на Habr** (в подготовке).
-> 🇬🇧 Step 2 results will be covered in a **second Habr article** (in preparation).
+| Сервис / Service | Роль / Role |
+|---|---|
+| **Nextcloud** | файлы, контакты, календарь (CardDAV/CalDAV через DAVx⁵) |
+| **Immich** | семейный фотоархив, автозагрузка с телефонов |
+| **Samba** | сетевые шары `public` и `hdd2tb` (2 ТБ архива) |
+| **LLM Gateway** | шлюз к DeepSeek и GigaChat **с редактированием персональных данных** и лимитами по каждому члену семьи |
+| **Talk-бот `@бобик`** | семейный ассистент в чате Nextcloud: команды из домашних данных + свободные вопросы наружу по явному позывному |
+| **Системные алерты** | проблемы приходят в чат владельца: устаревшие бэкапы, отвал диска, упавший контейнер |
+| **REST API** | FastAPI поверх всего стека, JWT, Swagger на `:8099/docs` |
+| **Мониторинг** | Beszel, Uptime Kuma, Netdata, ежедневный отчёт в Telegram |
+| **Реверс-туннель** | внешний доступ через VPS в обход CGNAT — портов наружу не открыто |
 
 ---
 
 ## Архитектура / Architecture
 
 ```
-Интернет / Internet
-        |
-        | (публичный IP / public IP)
-        v
-  [ VPS 95.163.176.103 — Вена / Vienna ]
-        |
-        |  nginx (host network, docker) — HTTP + HTTPS (self-signed TLS)
-        |  :8080 / :8443  → 127.0.0.1:18080 → tunnel → Jetson:8080  (Nextcloud)
-        |  :2283 / :2443  → 127.0.0.1:12283 → tunnel → Jetson:2283  (Immich)
-        |  :8090 / :9443  → 127.0.0.1:18090 → tunnel → Jetson:8090  (LLM Gateway)
-        |  :10022          → tunnel → Jetson:22                       (SSH management / SSH управление)
-        |  :8443/remote.php/dav → CardDAV/CalDAV (DAVx⁵ Android sync)
-        |
-        |  ↑ autossh reverse SSH tunnel (CGNAT bypass / обход CGNAT)
-        |
-  [ Домашний роутер / Home router ]
-        |  (static DHCP / статический DHCP: 192.168.0.50)
-        v
-  [ Jetson Nano 4GB · Ubuntu 18.04 · 192.168.0.50 ]
-        |
-        +-- Nextcloud (8080) · PostgreSQL 16 · Redis 7
-        |
-        +-- Immich (2283) · PostgreSQL 16 + pgvecto-rs · Redis 7
-        |   IMMICH_DISABLE_MACHINE_LEARNING=true (Jetson Nano 4GB safe mode)
-        |
-        +-- LLM Gateway / FastAPI (8090)
-        |     +-- [ DeepSeek API ] — privacy-filtered (PII redaction / редакция персданных)
-        |
-        +-- nas_jetson_nano-api / FastAPI (8099) · Swagger UI /docs · v0.6.0
-        |     · /v1/metrics · /v1/containers · /v1/storage · /v1/logs
-        |     · /v1/talk/rooms · POST /v1/talk/notify
-        |     · /v1/users · /v1/photos/stats
-        |     · POST /v1/actions/containers/{name}/restart · POST /v1/actions/backup/now
-        |
-        +-- Samba NAS (445, LAN only)
-        |     iptables: LAN only / разрешён только 192.168.0.0/24
-        |
-        +-- Netdata (19999)    — CPU, RAM, Disk, Docker, Jetson temp / темп Jetson
-        +-- Uptime Kuma (3001) — 5 HTTP monitors / мониторов + Telegram alerts
-        +-- Portainer (9000)   — Docker management UI (admin configured / настроен)
-        |
-        +-- systemd: nas_jetson_nano-tunnel.service       (autossh, restart=always)
-        +-- systemd: nas_jetson_nano-daily-report-telegram.timer  (09:00 daily / ежедневно)
-        +-- systemd: nas_jetson_nano-backup.timer         (03:00 daily / ежедневно, pg_dump)
-        +-- systemd: jetson-nas-health.timer   (SMART HDD monitoring / мониторинг HDD, 6h)
-        +-- systemd: beszel-agent.service      (monitoring → Beszel Hub at / на VPS:8091)
-        +-- udev:    usb-storage.quirks=152d:a583:u (UAS quirk для JMS583, в extlinux.conf)
-        +-- systemd: nas_jetson_nano-usb-preboot.service  (power cycle SSD порта при boot)
-        +-- systemd: nas_jetson_nano-usb-monitor.service  (Telegram alert при USB ошибках)
-        +-- systemd: nas_jetson_nano-ssd-recovery.service (udev sda1 add → mount → Docker)
-        +-- smartd:  /dev/sda monitoring       (S.M.A.R.T., weekly self-test)
-
-/mnt/storage  (JMS583 USB 3.0 SSD 229 GB ext4; mounted, fsck/preflight OK; write 250 MB/s)
-  ├── nextcloud/data
-  ├── immich/library
-  ├── db/
-  │   ├── nextcloud-postgres    (~373 MB)
-  │   └── immich-postgres
-  ├── backups/
-  │   └── database-dumps/       (pg_dump · gzip · 7-day rotation / ротация 7 дней)
-  └── samba/public
+   Интернет / Internet
+          │
+   ┌──────┴───────┐  VPS (Frankfurt) · 95.163.176.103 · borovskoy.dynv6.net
+   │  nginx       │  наружу открыты только 22, 443, 40568/udp
+   │  AmneziaWG   │  сервисные порты — ТОЛЬКО из VPN
+   └──────┬───────┘
+          │  обратный SSH-туннель (инициирует Jetson)
+          │  reverse SSH tunnel (initiated by the Jetson)
+   ┌──────┴───────────────────────────────┐
+   │  Jetson Nano 4 GB · ARM64 · 13 контейнеров │
+   │  ├── Nextcloud + PostgreSQL + Redis  │
+   │  ├── Immich + PostgreSQL + Redis     │
+   │  ├── LLM Gateway · REST API · Samba  │
+   │  └── Netdata · Uptime Kuma · Portainer │
+   └──────┬───────────────┬───────────────┘
+          │               │
+   USB SSD 250 GB   USB HDD 2 TB
+   сервисы/данные   семейный архив
 ```
 
-**Docker Compose файлы:**
+🇷🇺 Подробно: [`03_ARCHITECTURE.md`](docs/03_ARCHITECTURE.md).
+Текущая домашняя сеть и её цена: [`28_NETWORK_SNAPSHOT`](docs/28_NETWORK_SNAPSHOT_2026-08-22.md).
+🇬🇧 Details in the same files.
 
-| Файл / File | Назначение / Purpose |
+---
+
+## Быстрый старт / Quick start
+
+🇷🇺 Разворачивание — из документов, а не из README: шаги зависят от вашего железа и сети.
+🇬🇧 Deployment lives in the docs, not here: the steps depend on your hardware and network.
+
+```bash
+git clone https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano.git
+cd NAS_Jetson_Nano
+cp config/.env.example config/.env      # заполнить своими значениями
+sudo bash scripts/storage/storage_preflight.sh
+docker compose -f docker/compose/docker-compose.nextcloud.yml --env-file config/.env up -d
+```
+
+| Шаг / Step | Документ / Document |
 |---|---|
-| `docker/compose/docker-compose.nextcloud.yml` | Nextcloud + PostgreSQL + Redis |
-| `docker/compose/docker-compose.immich.yml` | Immich + PostgreSQL + Redis |
-| `docker/compose/docker-compose.llm-gateway.yml` | LLM Gateway (FastAPI) |
-| `docker/compose/docker-compose.samba.yml` | Samba NAS (ARM64, SMB2+) |
-| `docker/compose/docker-compose.monitoring.yml` | Netdata + Uptime Kuma + Portainer |
-| `docker/compose/docker-compose.nas_jetson_nano-api.yml` | nas_jetson_nano-api (FastAPI, Swagger, JSON logs) |
-| `docker/vps/docker-compose.yml` | nginx reverse proxy на VPS (`network_mode: host`) |
+| Железо и подготовка SD | [`01A_JETSON_SD_BOOTSTRAP`](docs/01A_JETSON_SD_BOOTSTRAP.md) |
+| Хранилище и USB-квирки | [`04_STORAGE_DESIGN`](docs/04_STORAGE_DESIGN.md) |
+| Сеть, VPS, туннель | [`05_NETWORKING_VPN`](docs/05_NETWORKING_VPN.md) |
+| Клиенты на Android | [`24_CLIENT_SETUP`](docs/24_CLIENT_SETUP.md) |
+| Бэкап и восстановление | [`12_BACKUP_RESTORE`](docs/12_BACKUP_RESTORE.md) |
+| Мониторинг | [`13_MONITORING_RUNBOOK`](docs/13_MONITORING_RUNBOOK.md) |
 
----
-
-## Стек / Stack
-
-| Область / Area | Компонент / Component | Версия / Version | Роль / Role |
-|---|---|---|---|
-| Файлы и документы / Files & docs | Nextcloud | latest (apache) | File cloud, WebDAV, CalDAV, CardDAV |
-| Фото и видео / Photos & video | Immich | release | Photo/video archive, Android sync |
-| Базы данных / Databases | PostgreSQL | 16 / pgvecto-rs | Nextcloud DB + Immich DB |
-| Кэш / Cache & queues | Redis | 7-alpine | Nextcloud cache + Immich queue |
-| Локальный NAS / Local NAS | Samba (crazymax/samba) | latest ARM64 | SMB2+ for Windows/Android/macOS |
-| LLM-шлюз / LLM Gateway | FastAPI LLM Gateway | — | Privacy shim, PII redaction / редакция персданных |
-| LLM API | DeepSeek API | deepseek-chat | Admin assistant / Помощник администратора |
-| Admin API | nas_jetson_nano-api (FastAPI) | v0.6.0 | Metrics, logs, containers, Talk, Users, Photos, Actions — Swagger UI |
-| Тоннель / Tunnel | autossh + systemd | — | Reverse SSH via CGNAT → VPS |
-| VPS прокси / VPS proxy | nginx:alpine | — | Reverse proxy to public ports |
-| Мониторинг / Monitoring | Netdata | latest ARM64 | CPU, RAM, Disk, Docker, Jetson temp |
-| Uptime | Uptime Kuma | 1 | HTTP uptime + Telegram alerts (5 monitors) |
-| Docker UI | Portainer CE | latest | Web UI for Docker management |
-| Ежедневный отчёт / Daily report | bash + SSH relay + Telegram | — | 09:00 cluster health report |
-| Бэкап БД / DB backup | bash pg_dump + gzip | — | 03:00 daily, 7-day rotation |
-| Тестирование / Testing | goss v0.4.9 (ARM64) | — | Infrastructure state tests (40 tests) |
-| Здоровье системы / System health | systemd timers + SMART | — | 6h diagnostics + HDD health |
-| Unified monitoring | Beszel | 0.18.7 | Hub at VPS:8091, Agent Jetson:45876 + VPS:45877 |
-| Android sync | Immich app + DAVx⁵ + Nextcloud | — | Photos / contacts / calendar / files; [docs/android/](docs/android/) |
-| Бэкапы файлов / File backups | restic | — | Stage 3 (scripts ready / заготовка готова) |
-| Android backup API | services/backup-api | — | Stage 2 placeholder |
-
----
-
-## Требования / Prerequisites
-
-**Железо / Hardware:**
-
-| Компонент / Component | Рекомендация / Recommendation |
-|---|---|
-| Вычислительный узел / Compute node | NVIDIA Jetson Nano Developer Kit (4 GB) · or Raspberry Pi 4/5 · or any mini-PC |
-| Системный диск / System disk | microSD 64 GB (Class 10 / A2) |
-| Диск данных / Data disk | USB SSD/HDD — any USB drive; in this project: DEXP 232 GB (son's old board) |
-| Сеть / Network | Home LAN, static DHCP lease |
-| Внешний доступ / External access | VPS (any; tested on Ubuntu 24.04, 1 vCPU, 2 GB RAM) |
-
-**ПО на Jetson / Software on Jetson:**
-
-- L4T / JetPack 4.x (Ubuntu 18.04) · or Ubuntu 22.04 (on RPi / mini-PC)
-- Docker Engine 20.10+, Docker Compose v2
-- autossh (`apt install autossh`)
-- curl, openssl (`apt install curl openssl`)
-- SSH-ключ для VPS в `~/.ssh/` / SSH key for VPS in `~/.ssh/`
-
-**ПО на VPS / Software on VPS:**
-
-- Docker + Docker Compose v2
-- UFW: открыть порты / open ports 8080, 2283, 8090, **8443, 2443, 9443**, 10022 (и / and 22 для SSH / for SSH)
-- SSH: разрешить вход от Jetson-ключа / allow login from Jetson key
-- nginx HTTPS: запустить / run `scripts/setup/install_nginx_vps.sh` после деплоя / after deploy
-
----
-
-## Быстрый старт / Quick Start
-
-### 1. Клонировать / Clone
-
-```bash
-git clone https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano.git ~/nas_jetson_nano
-cd ~/nas_jetson_nano
-cp config/.env.example config/.env
-chmod 600 config/.env
-nano config/.env   # заполнить пароли, пути, DeepSeek API key
-```
-
-### 2. Настроить VPS / Setup VPS
-
-```bash
-# На VPS:
-mkdir -p /opt/nas_jetson_nano
-scp -r docker/vps/ root@<VPS_IP>:/opt/nas_jetson_nano/
-ssh root@<VPS_IP> "cd /opt/nas_jetson_nano/vps && docker compose up -d"
-```
-
-### 3. Настроить тоннель на Jetson / Setup tunnel on Jetson
-
-```bash
-# На Jetson:
-ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519
-ssh-copy-id -i ~/.ssh/id_ed25519.pub root@<VPS_IP>
-
-sudo cp systemd/nas_jetson_nano-tunnel.service /etc/systemd/system/
-sudo systemctl daemon-reload && sudo systemctl enable --now nas_jetson_nano-tunnel.service
-```
-
-### 4. Запустить сервисы / Start services
-
-```bash
-# На Jetson:
-cd ~/nas_jetson_nano
-docker compose -f docker/compose/docker-compose.nextcloud.yml   --env-file config/.env up -d
-docker compose -f docker/compose/docker-compose.immich.yml      --env-file config/.env up -d
-docker compose -f docker/compose/docker-compose.llm-gateway.yml --env-file config/.env up -d
-docker compose -f docker/compose/docker-compose.monitoring.yml  --env-file config/.env up -d
-docker compose -f docker/compose/docker-compose.nas_jetson_nano-api.yml    --env-file config/.env up -d
-```
-
-### 5. Настроить Telegram-отчёты / Setup Telegram reports
-
-```bash
-# На Jetson:
-sudo mkdir -p /etc/nas_jetson_nano-monitor /var/log/nas_jetson_nano-monitor
-sudo cp scripts/monitoring/nas_jetson_nano-daily-report.sh /usr/local/sbin/
-sudo cp scripts/monitoring/nas_jetson_nano-send-report-telegram.sh /usr/local/sbin/
-sudo chmod +x /usr/local/sbin/nas_jetson_nano-*.sh
-
-sudo tee /etc/nas_jetson_nano-monitor/telegram.env <<EOF
-TELEGRAM_BOT_TOKEN=<your-token>
-TELEGRAM_CHAT_ID=<your-chat-id>
-EOF
-sudo chmod 600 /etc/nas_jetson_nano-monitor/telegram.env
-
-sudo cp systemd/nas_jetson_nano-daily-report-telegram.{service,timer} /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now nas_jetson_nano-daily-report-telegram.timer
-```
-
-### 6. Автоматическая настройка UI и бэкапов / Automated UI + backup setup
-
-```bash
-# На Jetson:
-# Бэкап таймер (pg_dump · 03:00 ежедневно)
-bash scripts/backup/install_backup_timer.sh
-
-# Portainer admin (генерирует пароль автоматически)
-bash scripts/monitoring/setup_portainer.sh
-
-# Uptime Kuma: admin + 5 мониторов
-docker run --rm --network host \
-  -v ~/nas_jetson_nano/scripts/monitoring/setup_uptime_kuma.py:/setup.py:ro \
-  -e UPTIME_KUMA_ADMIN_USER=admin \
-  -e UPTIME_KUMA_ADMIN_PASSWORD=<your-password> \
-  -e JETSON_LAN_IP=192.168.0.50 \
-  python:3.12-slim bash -c 'pip install uptime-kuma-api -q && python3 /setup.py'
-```
-
-### 7. Проверить / Verify
-
-🇷🇺 Команды ниже проверяют, что каждый основной сервис работает корректно после развёртывания. · 🇬🇧 Run the following commands to verify that each core service is running correctly after deployment.
-
-```bash
-curl -sf http://localhost:8080/status.php         # Nextcloud → {"installed":true,...}
-curl -sf http://localhost:2283/api/server/ping    # Immich → {"res":"pong"}
-curl -sf http://localhost:8090/health             # LLM Gateway → {"status":"ok"}
-curl -sf http://localhost:8099/healthcheck        # nas_jetson_nano-api → {"status":"ok"}
-curl -sf http://localhost:19999/api/v1/info       # Netdata → {...}
-
-goss -g tests/goss/goss.yaml validate --format tap   # 40 infrastructure tests
-```
-
-🇷🇺 После развёртывания доступны веб-интерфейсы: · 🇬🇧 After deployment, you can access the following web interfaces (Web UI):
-- **Swagger:** http://192.168.0.50:8099/docs
-- **Netdata:** http://192.168.0.50:19999
-- **Uptime Kuma:** http://192.168.0.50:3001
-- **Portainer:** http://192.168.0.50:9000
-
-Полный план тестирования / Full test plan: [docs/14_TEST_PLAN.md](docs/14_TEST_PLAN.md).  
-Подготовка microSD / microSD setup: [docs/01A_JETSON_SD_BOOTSTRAP.md](docs/01A_JETSON_SD_BOOTSTRAP.md).  
-Операционный runbook / Operations runbook: [docs/13_MONITORING_RUNBOOK.md](docs/13_MONITORING_RUNBOOK.md).
-
----
-
-## Конфигурация / Configuration
-
-Все переменные — в `config/.env` (не коммитится) / All variables go in `config/.env` (not committed). Шаблон / Template: `config/.env.example`.
-
-```bash
-# Хранилище
-STORAGE_ROOT=/mnt/storage
-NEXTCLOUD_DATA=/mnt/storage/nextcloud/data
-IMMICH_UPLOAD_LOCATION=/mnt/storage/immich/library
-BACKUP_ROOT=/mnt/storage/backups
-
-# Базы данных
-NEXTCLOUD_DB_PASSWORD=changeme
-IMMICH_DB_PASSWORD=changeme
-REDIS_PASSWORD=changeme
-
-# VPS tunnel
-VPS_HOST=your.vps.ip
-VPS_USER=root
-VPS_SSH_KEY=/home/admin/.ssh/id_ed25519
-
-# LLM Gateway
-DEEPSEEK_API_KEY=sk-...
-DEEPSEEK_MODEL=deepseek-chat
-IMMICH_DISABLE_MACHINE_LEARNING=true   # обязательно для Jetson Nano 4GB
-```
-
-Никогда не коммитьте реальный `config/.env`. Он в `.gitignore`. / Never commit the real `config/.env`. It is listed in `.gitignore`.
-
----
-
-## Этапы / Stages
-
-| Этап / Stage | Содержание / Content | Статус / Status |
-|---|---|---|
-| Stage 0 | microSD, первый boot, SSH, USB device mode | ✅ Задокументировано |
-| Stage 1A | Hardware audit, DEXP USB storage setup, Samba NAS | ✅ **Storage recovered; reboot verified** |
-| Stage 1B | Nextcloud + PostgreSQL + Redis | ✅ **Recovered; DB/Redis healthy; reboot verified** |
-| Stage 1C | Immich (ML отключён для Jetson) | ✅ **Развёрнут и работает** |
-| Stage 1D | LLM Gateway + DeepSeek | ✅ **Развёрнут и работает** |
-| Stage 1E | VPS + reverse SSH tunnel (autossh) | ✅ **Работает, nginx на VPS** |
-| Stage 1F | Мониторинг (Netdata, Uptime Kuma, Portainer) | ✅ **Развёрнут и работает** |
-| Stage 1G | nas_jetson_nano-api (FastAPI, Swagger, JSON logs) + Telegram отчёт | ✅ **Развёрнут и работает** |
-| Stage 1H | Resilience audit: healthchecks, mem_limit, goss | ✅ **8/10 findings fixed** |
-| Stage 1 Ops | Uptime Kuma (5 мониторов) + Portainer (admin) + бэкап-таймер | ✅ **Monitoring + fail-closed backup live** |
-| Stage 2 | Android sync: Immich + DAVx⁵ + Nextcloud + Talk + миграция с Google | ✅ **Работает** · [docs/android/](docs/android/) · семья подключена |
-| Stage 3 | Backup / restore (restic full + pg\_dump) | 🔜 Скрипты готовы |
-| Stage 3.1 | USB HDD: резервное расширение хранилища (NTFS + ext4 гибрид) | 📋 Готово к подключению |
-| Stage 4 | Analytics, RAG, fallback LLM providers | 📋 Будущее |
-
-**Шаг 2 — Развитие (по отзывам читателей Habr) / Step 2 — Evolution (from Habr reader feedback):**
-
-| Направление / Track | Содержание / Content | Статус / Status |
-|---|---|---|
-| Шаг 2 · ML | Dell Vostro 15 → выделенный Immich ML-узел (remote ML) / dedicated Immich ML node | 🔧 Onboarding · [plan](docs/plans/VOSTRO_ML_NODE_ONBOARDING.md) |
-| Шаг 2 · Security | Сервисы за VPN (Tailscale/Amnezia), fail2ban / services behind VPN | 📋 Планируется / Planned |
-| Шаг 2 · Storage | 2 ТБ HDD + restic off-site | 📋 Планируется / Planned |
-| Шаг 2 · SSD health | Температура SSD (SMART 194) → Telegram | 📋 Планируется / Planned |
-
-> Разбор и трекинг / Review & tracking: [POST_HABR_FEEDBACK_2026-08.md](docs/plans/POST_HABR_FEEDBACK_2026-08.md) · [issue #9](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/issues/9)
+⚠️ 🇷🇺 **Минимум железа:** Jetson Nano 4 ГБ (2 ГБ не хватит), **USB SSD обязателен** —
+на microSD база данных умирает. / 🇬🇧 **Minimum:** Jetson Nano 4 GB, and a **USB SSD is
+mandatory** — a database on microSD will not survive.
 
 ---
 
 ## Документация / Documentation
 
-| Файл / File | Описание / Description |
-|---|---|
-| [docs/00_OVERVIEW.md](docs/00_OVERVIEW.md) | Обзор концепции / Project concept overview |
-| [docs/01_HARDWARE_AUDIT.md](docs/01_HARDWARE_AUDIT.md) | Аппаратный аудит Jetson Nano |
-| [docs/01A_JETSON_SD_BOOTSTRAP.md](docs/01A_JETSON_SD_BOOTSTRAP.md) | Подготовка microSD, первый boot |
-| [docs/03_ARCHITECTURE.md](docs/03_ARCHITECTURE.md) | Архитектурная схема |
-| [docs/04_STORAGE_DESIGN.md](docs/04_STORAGE_DESIGN.md) | Дизайн хранилища (USB HDD, mount, fstab) |
-| [docs/05_NETWORKING_VPN.md](docs/05_NETWORKING_VPN.md) | LAN/VPN-модель, тоннели, порты |
-| [docs/06_NEXTCLOUD_DESIGN.md](docs/06_NEXTCLOUD_DESIGN.md) | Дизайн Nextcloud |
-| [docs/07_IMMICH_DESIGN.md](docs/07_IMMICH_DESIGN.md) | Дизайн Immich (Jetson-safe) |
-| [docs/08_LLM_GATEWAY_DEEPSEEK.md](docs/08_LLM_GATEWAY_DEEPSEEK.md) | LLM Gateway и DeepSeek API |
-| [docs/12_BACKUP_RESTORE.md](docs/12_BACKUP_RESTORE.md) | Backup и restore workflow |
-| [docs/13_MONITORING_RUNBOOK.md](docs/13_MONITORING_RUNBOOK.md) | Runbook: диагностика, бэкапы, Uptime Kuma, Netdata |
-| [docs/14_TEST_PLAN.md](docs/14_TEST_PLAN.md) | План тестирования по этапам |
-| [docs/17_MONITORING_OBSERVABILITY.md](docs/17_MONITORING_OBSERVABILITY.md) | Анализ инструментов мониторинга |
-| [docs/19_NETWORK_INVENTORY.md](docs/19_NETWORK_INVENTORY.md) | Сетевой паспорт стенда |
-| [docs/20_AGENT_OPERATING_MODEL.md](docs/20_AGENT_OPERATING_MODEL.md) | Операционная модель субагентов |
-| [docs/21_LOGGING_API.md](docs/21_LOGGING_API.md) | JSON-логирование и nas_jetson_nano-api (Swagger) |
-| [docs/22_AUDIT_RESILIENCE.md](docs/22_AUDIT_RESILIENCE.md) | Аудит надёжности: goss, shellcheck, итоги |
-| [docs/23_GITHUB_INTEGRATION.md](docs/23_GITHUB_INTEGRATION.md) | GitHub CLI + Claude Code интеграция, AI DevOps workflow |
-| [docs/24_CLIENT_SETUP.md](docs/24_CLIENT_SETUP.md) | **Подключение устройств: Android, Windows, Linux** |
-| [docs/25_KEENETIC_OMNI_KN1410.md](docs/25_KEENETIC_OMNI_KN1410.md) | Keenetic Omni KN-1410: карточка устройства (⛔ план ввода закрыт 2026-08-10, холодный резерв) |
-| [docs/26_DECO_E4_NETWORK.md](docs/26_DECO_E4_NETWORK.md) | TP-Link Deco E4: разведочный анализ (⛔ заменён документом 27) |
-| [docs/27_HOME_NETWORK_MESH.md](docs/27_HOME_NETWORK_MESH.md) | **Домашняя сеть на Deco E4 с полной заменой роутера: топология, адресный план, регламент, приёмка, откат** |
-| [docs/android/ANDROID_SETUP.md](docs/android/ANDROID_SETUP.md) | **Настройка Xiaomi MIUI/HyperOS** — Immich, Nextcloud, DAVx⁵, HTTPS через VPS |
-| [docs/android/GOOGLE_MIGRATION.md](docs/android/GOOGLE_MIGRATION.md) | **Миграция с Google** — Google Takeout → Immich/Nextcloud/DAVx⁵, чеклист |
-| [docs/android/XIAOMI_MIUI_QUIRKS.md](docs/android/XIAOMI_MIUI_QUIRKS.md) | Специфика MIUI/HyperOS — battery whitelist, автозапуск, блокировка в RAM |
-| [docs/decisions/ADR-0006-vps-nginx-https.md](docs/decisions/ADR-0006-vps-nginx-https.md) | ADR-0006: HTTPS на VPS nginx — почему self-signed, не Tailscale, не Let's Encrypt |
-| [docs/metrics/GITHUB_TRAFFIC.md](docs/metrics/GITHUB_TRAFFIC.md) | Ежедневный мониторинг GitHub трафика, клонов, звёзд — целевые метрики |
-| [docs/plans/STORAGE_INCIDENT_2026-06-23.md](docs/plans/STORAGE_INCIDENT_2026-06-23.md) | USB storage incident: `error -71`, recovery status, Nextcloud controlled start |
-| [docs/plans/RELIABILITY_AUDIT_2026-06-23.md](docs/plans/RELIABILITY_AUDIT_2026-06-23.md) | Live reliability audit: fsck/preflight, boot guard, restart policy, remaining risks |
-| [docs/plans/VPS_INTEGRATION_PLAN.md](docs/plans/VPS_INTEGRATION_PLAN.md) | План интеграции VPS + тоннель |
-| [docs/plans/POST_HABR_FEEDBACK_2026-08.md](docs/plans/POST_HABR_FEEDBACK_2026-08.md) | **Шаг 2:** разбор отзывов с Habr + дорожная карта развития / Habr feedback + Step 2 roadmap |
-| [docs/plans/VOSTRO_ML_NODE_ONBOARDING.md](docs/plans/VOSTRO_ML_NODE_ONBOARDING.md) | **Шаг 2:** ввод Dell Vostro 15 как Immich ML-узла / Vostro ML node onboarding |
-| [docs/plans/SYSTEM_AUDIT_2026-08-01.md](docs/plans/SYSTEM_AUDIT_2026-08-01.md) | **Live-аудит 2026-08-01:** питание (2.3/4.2 Вт), стабильность, снятые противоречия + 2 находки (экспозиция, бэкапы) / Live system audit |
-| [docs/plans/SYSTEM_AUDIT_2026-08-10.md](docs/plans/SYSTEM_AUDIT_2026-08-10.md) | **Аудит работоспособности 2026-08-10:** обе находки предыдущего аудита закрыты, оба диска, restore проверен, остаточные риски / Health audit |
-| [docs/plans/PHOTO_PROCESSING_FEASIBILITY.md](docs/plans/PHOTO_PROCESSING_FEASIBILITY.md) | **Обработка фото: что реально возможно на нашем железе** — почему облачный путь не редактирует, что поедет на RTX 3050 Ti / Photo processing feasibility |
-| [docs/plans/ROADMAP_STEP2_2026-08.md](docs/plans/ROADMAP_STEP2_2026-08.md) | **План развития (Шаг 2): 6 волн от страховки до статьи** — сеть, ML-узел, разгрузка, GPU-эксперимент, Talk B/C/E, с критериями приёмки / Step 2 roadmap |
-| [docs/articles/MEASUREMENTS_EN.md](docs/articles/MEASUREMENTS_EN.md) · [GAPS_EN.md](docs/articles/GAPS_EN.md) · [PROJECT_FACTS_EN.md](docs/articles/PROJECT_FACTS_EN.md) | Детальные замеры, блокеры и фактура (EN) / Measurements, gaps, facts |
-| [AGENTS.md](AGENTS.md) | Правила для Codex/агентов |
-| [docs/PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md) | Зафиксированные решения и ограничения |
-| [docs/architecture_nas_jetson_nano.md](docs/architecture_nas_jetson_nano.md) | Полная архитектурная карта (Mermaid) |
+🇷🇺 Вся документация двуязычная. Ниже — точки входа, полный список в
+[`docs/`](docs/) и [`REPOSITORY_STRUCTURE`](docs/REPOSITORY_STRUCTURE.md).
+🇬🇧 All docs are bilingual; entry points below.
+
+**Понять проект / Understand**
+[`00_OVERVIEW`](docs/00_OVERVIEW.md) ·
+[`03_ARCHITECTURE`](docs/03_ARCHITECTURE.md) ·
+[`15_ALTERNATIVES_REVIEW`](docs/15_ALTERNATIVES_REVIEW.md) — почему не Synology / why not a NAS box
+
+**Эксплуатация / Operate**
+[`12_BACKUP_RESTORE`](docs/12_BACKUP_RESTORE.md) ·
+[`13_MONITORING_RUNBOOK`](docs/13_MONITORING_RUNBOOK.md) ·
+[`22_AUDIT_RESILIENCE`](docs/22_AUDIT_RESILIENCE.md)
+
+**Безопасность / Security**
+[`10_SECURITY_PRIVACY`](docs/10_SECURITY_PRIVACY.md) ·
+[`11_SECRETS_POLICY`](docs/11_SECRETS_POLICY.md) ·
+[`SECURITY.md`](SECURITY.md)
+
+**Куда идём / Where next**
+[`29_COMPUTE_AND_LLM_ROADMAP`](docs/29_COMPUTE_AND_LLM_ROADMAP.md) — вычисления, Kaggle, локальные модели ·
+[`ROADMAP_STEP2`](docs/plans/ROADMAP_STEP2_2026-08.md) ·
+[`POST_HABR_FEEDBACK`](docs/plans/POST_HABR_FEEDBACK_2026-08.md) — разбор критики читателей
+
+**Как это делалось / How it was built**
+[`20_AGENT_OPERATING_MODEL`](docs/20_AGENT_OPERATING_MODEL.md) — работа с ИИ-агентами ·
+[`AGENTS.md`](AGENTS.md) · [`CLAUDE.md`](CLAUDE.md)
 
 ---
 
-## Безопасность / Security
+## Безопасность — честно / Security — honestly
 
 🇷🇺
-- Не коммитьте реальные `.env`, ключи, токены, дампы и персональные данные.
-- LLM Gateway блокирует отправку фото, видео, контактов и ключей во внешний API.
-- Samba доступна только из локальной сети (`iptables`: 192.168.0.0/24 → 445/139).
-- VPS nginx слушает публичные порты, но данные хранятся только на Jetson.
-- Telegram-токен передаётся через зашифрованный SSH-туннель, не раскрывается в `ps aux` на VPS.
+- ✅ Наружу на VPS открыты **только** 22, 443 и 40568/udp. Сервисы — только через VPN.
+- ✅ Секретов в git нет; история очищена, пароли ротированы (2026-06-28).
+- ✅ Фотографии наружу не уходят: `LLM_ALLOW_IMAGE_ANALYSIS=false`.
+- ✅ Свободные вопросы уходят к внешней модели **только по явному позывному** и после
+  редактирования персональных данных.
+- 🟠 **Внутри домашней LAN сегментации нет** — любой, кто знает пароль Wi-Fi, видит сервисы.
+- 🟠 TLS самоподписанный, выписан на один адрес.
 
 🇬🇧
-- Do not commit real `.env` files, keys, tokens, database dumps, or personal data.
-- LLM Gateway blocks sending photos, videos, contacts, and credentials to external APIs.
-- Samba is LAN-only (`iptables`: 192.168.0.0/24 → 445/139).
-- VPS nginx forwards public ports, but all data stays on Jetson.
-- Telegram bot token travels through an encrypted SSH tunnel — never visible in `ps aux` on VPS.
-
-Проверка перед push / Pre-push check:
-
-```bash
-./scripts/security/check_no_secrets.sh
-```
-
-CI автоматически проверяет секреты / CI automatically checks for secrets: `.github/workflows/secrets-check.yml`.
-
-Полная политика / Full policy: [SECURITY.md](SECURITY.md) · [docs/10_SECURITY_PRIVACY.md](docs/10_SECURITY_PRIVACY.md) · [docs/11_SECRETS_POLICY.md](docs/11_SECRETS_POLICY.md).
+- ✅ Only 22, 443 and 40568/udp are world-reachable; services are VPN-only.
+- ✅ No secrets in git; history rewritten, passwords rotated.
+- ✅ Photos never leave: `LLM_ALLOW_IMAGE_ANALYSIS=false`.
+- ✅ Free-form questions leave only on an explicit callsign, after PII redaction.
+- 🟠 **No segmentation inside the home LAN** — the Wi-Fi password is the real perimeter.
+- 🟠 Self-signed TLS, issued for a single address.
 
 ---
 
-## Известные ограничения / Known Limitations
+## Чего здесь нет / What this is not
 
-- **JMS583 USB SSD enclosure** (152d:a583) — UAS quirk активен (`usb-storage.quirks=152d:a583:u` в extlinux.conf). Для применения требуется reboot. Write 250 MB/s подтверждён. SMART passthrough ограничен (smartmontools 6.6 — базовые данные без SCSI passthrough). / UAS quirk active (`usb-storage.quirks=152d:a583:u` in extlinux.conf). Requires reboot to apply. Write 250 MB/s confirmed. SMART limited (smartmontools 6.6).
-- **HTTPS self-signed** — VPS nginx обслуживает Nextcloud на :8443, Immich на :2443, LLM на :9443 с самоподписанным сертификатом (10 лет). Let's Encrypt потребует доменное имя.
-- `scripts/backup/backup_databases.sh` работает fail-closed: если `/mnt/storage` не является отдельным mountpoint, backup не пишется в ложный каталог на microSD.
-- `services/backup-api` — Stage 2 placeholder, не production backup-сервис.
-- Immich работает без machine learning (`IMMICH_DISABLE_MACHINE_LEARNING=true`) — Jetson Nano 4 GB с ML не тестировался.
-- VPS IP может меняться — при смене обновить `VPS_HOST` в `config/.env` на Jetson и перезапустить `nas_jetson_nano-tunnel.service`.
-- Docker 20.10.7 (JetPack 4.x) — устаревший. Обновление нетривиально из-за зависимостей NVIDIA runtime. Для home lab допустимо.
-- HTTPS для VPS nginx — Let's Encrypt не настроен (нет доменного имени).
+🇷🇺 Список нужен, чтобы не обещать лишнего:
 
----
+- **Не готовый продукт.** Это домашний сервер одной семьи, опубликованный целиком.
+- **GPU Jetson не используется** — CUDA 10.2 против требуемых 11/12. Это структурное
+  ограничение платформы, а не недоделка. Machine learning выносится на другой узел.
+- **Off-site бэкапа пока нет** — главный открытый долг.
+- **Высокой доступности нет.** Одна плата, один блок питания.
 
-## Статьи и публикации / Articles
-
-🇷🇺 **Habr — Часть 1 (запуск):** опубликована → **[«Старому Jetson Nano — домашнее облако: Nextcloud, Immich, CGNAT и три USB-сбоя»](https://habr.com/ru/articles/1062914/)**. 9 комментариев; отзывы читателей легли в основу [Шага 2](#шаг-2--развитие-проекта--step-2--project-evolution).
-**Habr — Часть 2 (развитие):** в подготовке — ML-узел Vostro, безопасность, хранилище.
-
-🇬🇧 **Habr — Part 1 (launch):** published → **[habr.com/ru/articles/1062914](https://habr.com/ru/articles/1062914/)**. 9 comments; reader feedback seeded [Step 2](#шаг-2--развитие-проекта--step-2--project-evolution).
-**Habr — Part 2 (evolution):** in preparation — Vostro ML node, security, storage.
-
-🇬🇧 **GitHub Pages:** [alexeyborovskoy.github.io/NAS_Jetson_Nano](https://alexeyborovskoy.github.io/NAS_Jetson_Nano/) — project site with architecture, reliability story, evidence.
-
-| Материал / Material | Язык / Lang | Ссылка / Link |
-|---|---|---|
-| Habr — Часть 1 (запуск) / Part 1 (launch) | RU | [habr.com/ru/articles/1062914](https://habr.com/ru/articles/1062914/) |
-| Habr — Часть 2 (развитие) / Part 2 (evolution) | RU | 🔜 в подготовке / in preparation |
-| Разбор отзывов + план Шага 2 / Feedback & Step 2 plan | RU | [docs/plans/POST_HABR_FEEDBACK_2026-08.md](docs/plans/POST_HABR_FEEDBACK_2026-08.md) |
-| GitHub Pages | EN/RU | [alexeyborovskoy.github.io/NAS_Jetson_Nano](https://alexeyborovskoy.github.io/NAS_Jetson_Nano/) |
-| Hackaday.io | EN | [docs/articles/hackaday_project_en.md](docs/articles/hackaday_project_en.md) |
+🇬🇧 The same list: not a product, the Jetson GPU is unusable (CUDA 10.2 vs 11/12 required),
+no off-site backup yet, no high availability.
 
 ---
+
+## Статьи / Articles
+
+- 🇷🇺 [Черновик статьи для Habr](docs/articles/habr_article_ru.md)
+- 🇬🇧 [Hackaday.io project draft](docs/articles/hackaday_project_en.md)
+- Разбор критики читателей / reader feedback: [`POST_HABR_FEEDBACK`](docs/plans/POST_HABR_FEEDBACK_2026-08.md)
 
 ## Вклад / Contributing
 
-🇷🇺 Вклад приветствуется. Прочитайте [CONTRIBUTING.md](CONTRIBUTING.md) перед тем, как открывать pull request.
-
-**Есть вопрос или идея?** Заходи в [Discussions](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/discussions) — там есть тема для знакомства и Q&A.
-
-Правила:
-- Не коммитьте секреты и персональные данные.
-- Предпочитайте небольшие PR с документацией.
-- Stage 1 должен оставаться безопасным: нет прямого публичного доступа к сервисам.
-
-🇬🇧 Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
-
-**Questions or ideas?** Join the [Discussions](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/discussions) — there's an intro thread and Q&A.
-
-Rules:
-- Do not commit secrets or personal data.
-- Prefer small PRs with documentation.
-- Keep Stage 1 safe: no direct public access to services.
-
-Хорошие первые задачи / Good first issues:
-- [#5 Адаптация под Raspberry Pi 4/5](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/issues/5) — только документация / documentation only, no code changes.
-- [#4 HTTPS (Let's Encrypt) для VPS nginx](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/issues/4) — самоподписанный сертификат готов / self-signed cert ready, need a domain for Let's Encrypt.
-- [#6 Netdata Telegram alerts](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/issues/6) — настроить и описать / configure and document.
-- CI shellcheck для всех bash-скриптов / for all bash scripts in `scripts/`.
-- Подключение **USB HDD** как резервного хранилища / as backup storage (Stage 3.1, план в `docs/04_STORAGE_DESIGN.md`).
-
----
+🇷🇺 Проект открыт, вопросы и замечания приветствуются — особенно те, что ловят ошибку. /
+🇬🇧 Contributions welcome, especially ones that catch a mistake.
+См. [`CONTRIBUTING.md`](CONTRIBUTING.md) и [открытые issues](https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/issues).
 
 ## Лицензия / License
 
-MIT — см. [LICENSE](LICENSE).
+MIT — см. [`LICENSE`](LICENSE).

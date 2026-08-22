@@ -170,9 +170,18 @@ def check_hdd_smart():
         problems.append("температура %s °C" % t.group(1))
 
     # Самый свежий самотест: строка «# 1» в журнале самотестов.
+    #
+    # ⚠️ Здесь была ловушка, на которую я наступил 2026-08-22: успешный статус звучит
+    # как «Completed without error», и шаблон, искавший подстроку "error", объявлял
+    # успешный тест отказом. Ложная тревога подрывает доверие к алертам быстрее, чем
+    # их отсутствие. Поэтому: сначала явно признаём успех, и только потом ищем отказ,
+    # причём по словам, которых в успешном статусе быть не может.
     st = re.search(r"^#\s*1\s+(.+?)\s{2,}(\S.*?)\s{2,}", out, re.M)
-    if st and re.search(r"fail|error|aborted by host|interrupted", st.group(2), re.I):
-        problems.append("последний самотест: %s" % st.group(2).strip())
+    if st:
+        status = st.group(2).strip()
+        ok = status.lower().startswith("completed without error")
+        if not ok and re.search(r"fail|fatal|abort|interrupt|unknown", status, re.I):
+            problems.append("последний самотест: %s" % status)
 
     if problems:
         return "hdd_smart", "🔴 HDD 2 ТБ (семейный архив): " + "; ".join(problems)

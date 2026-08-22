@@ -123,6 +123,39 @@ def check_ram():
     return "ram", None
 
 
+SWAP_WARN_PERCENT = 85
+
+
+def check_swap():
+    """Подкачка живёт в ОЗУ (zram), и когда она кончается — следующая остановка OOM.
+
+    Проверять именно заполнение, а не факт использования: подкачка на zram
+    используется ПОСТОЯННО и это нормально. Замер 2026-08-22: занято 33 %,
+    трафик swap-in около 6 МБ/час — то есть механизм работает тихо и правильно.
+    Тревога нужна на исчерпание, а не на работу.
+    """
+    total = free = None
+    try:
+        with open("/proc/meminfo", encoding="utf-8") as fh:
+            for line in fh:
+                if line.startswith("SwapTotal:"):
+                    total = int(line.split()[1])
+                elif line.startswith("SwapFree:"):
+                    free = int(line.split()[1])
+    except OSError as exc:
+        return "swap", "🟠 Не прочитать /proc/meminfo: %s" % exc
+
+    if not total:
+        return "swap", "🟠 Подкачка отсутствует — zram не поднялся."
+
+    used_pct = (total - free) * 100 // total
+    if used_pct >= SWAP_WARN_PERCENT:
+        return "swap", ("🔴 Подкачка (zram) заполнена на %d%% — %d из %d МБ. "
+                        "Дальше начнутся снятия процессов по памяти."
+                        % (used_pct, (total - free) // 1024, total // 1024))
+    return "swap", None
+
+
 HDD_DEV = "/dev/sdb"
 HDD_FATAL_ATTRS = ("Reallocated_Sector_Ct", "Current_Pending_Sector", "Offline_Uncorrectable")
 HDD_TEMP_MAX = 50
@@ -189,7 +222,7 @@ def check_hdd_smart():
 
 
 CHECKS = (check_dumps, check_storage, check_containers, check_disk, check_ram,
-          check_hdd_smart)
+          check_swap, check_hdd_smart)
 
 
 # ── отправка ───────────────────────────────────────────────────────────────────
@@ -266,6 +299,7 @@ def main():
                     "containers": "все контейнеры работают",
                     "disk": "место на диске",
                     "ram": "свободная память",
+                    "swap": "подкачка zram",
                     "hdd_smart": "SMART диска с семейным архивом",
                 }.get(key, key))
                 sent += 1

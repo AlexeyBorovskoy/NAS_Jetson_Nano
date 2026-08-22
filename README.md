@@ -134,7 +134,8 @@ mandatory** — a database on microSD will not survive.
 **Эксплуатация / Operate**
 [`12_BACKUP_RESTORE`](docs/12_BACKUP_RESTORE.md) ·
 [`13_MONITORING_RUNBOOK`](docs/13_MONITORING_RUNBOOK.md) ·
-[`22_AUDIT_RESILIENCE`](docs/22_AUDIT_RESILIENCE.md)
+[`22_AUDIT_RESILIENCE`](docs/22_AUDIT_RESILIENCE.md) ·
+[`33_ZRAM`](docs/33_ZRAM.md) — почему тюнинг подкачки не рычаг
 
 **Качество / Quality**
 [`32_QUALITY_GATE`](docs/32_QUALITY_GATE.md) — обязательные ворота: ошибка ловится локально, а не в бою

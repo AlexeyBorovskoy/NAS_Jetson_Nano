@@ -49,7 +49,8 @@
 |---|---|---|
 | Jetson Nano | ✅ up | 192.168.0.50, eth0 1000 Мбит/с Full, аптайм с 2026-08-09 15:41 UTC |
 | Температуры | ✅ норма | CPU/AO 45 °C, GPU 41.5 °C, PMIC 50 °C |
-| RAM | 🟠 плотно | 2.0 / 3.9 ГБ занято + zram-swap 312 МБ из 1.9 ГБ |
+| RAM | 🟠 плотно | 2.0 / 3.9 ГБ занято, доступно ~1.6 ГБ |
+| ZRAM | ✅ работает, тюнить нечего | 4 × 495 МБ = 1.98 ГБ, **lzo**, сжатие **2.27×**, занято 33 %, трафик ~6 МБ/час. ⚠️ `lz4`/`zstd` в ядро 4.9-tegra **не собраны** — решение соседей с `zstd` неприменимо. `vm.page-cluster` → 0 (`/etc/sysctl.d/60-nasa-zram.conf`). Заполнение подкачки теперь под алертом. Разбор — `docs/33_ZRAM.md` |
 | SSD `/dev/sda1` → `/mnt/storage` | ✅ mounted | 229G, **5 %** (9.7G), ext4 noatime |
 | HDD 2 ТБ `/dev/sdb1` → `/mnt/hdd2tb` | ✅ mounted | WD20EADS, **NTFS** через ntfs-3g, метка `Borovskoy_Hard`, 1.9T, **76 %** (1.4T архива, 462G свободно) |
 | USB SSD энклоужер | ✅ **JMS583** (152d:a583) | USB 3.0 SuperSpeed 5000 Mbps, драйвер `usb-storage` |

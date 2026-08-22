@@ -20,6 +20,7 @@
 """
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -122,7 +123,64 @@ def check_ram():
     return "ram", None
 
 
-CHECKS = (check_dumps, check_storage, check_containers, check_disk, check_ram)
+HDD_DEV = "/dev/sdb"
+HDD_FATAL_ATTRS = ("Reallocated_Sector_Ct", "Current_Pending_Sector", "Offline_Uncorrectable")
+HDD_TEMP_MAX = 50
+
+
+def check_hdd_smart():
+    """SMART на 2-ТБ HDD ЕСТЬ — вопреки допущению, записанному в проекте.
+
+    Проверено 2026-08-22: мост RTL9201 (0bda:9201) пропускает SAT-команды, и
+    `smartctl -d sat` читает полную таблицу атрибутов. Невозможен SMART только на
+    USB-SSD за мостом JMS583 — там квирк действительно закрывает passthrough.
+    Раньше запрет распространяли на оба диска; для HDD это было неверно.
+
+    Диск не будим: `-n standby` возвращает управление, если он спит.
+    """
+    try:
+        out = subprocess.run(["smartctl", "-H", "-A", "-l", "selftest",
+                              "-n", "standby", "-d", "sat", HDD_DEV],
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                             universal_newlines=True, timeout=60).stdout
+    except Exception as exc:
+        return "hdd_smart", "🟠 SMART на %s не прочитан: %s" % (HDD_DEV, exc)
+
+    if "STANDBY" in out.upper():
+        return "hdd_smart", None
+
+    verdict = re.search(r"SMART overall-health.*?:\s*(\S+)", out)
+    if not verdict:
+        return "hdd_smart", ("🟠 SMART на %s не отвечает — проверьте мост или кабель."
+                             % HDD_DEV)
+
+    problems = []
+    if verdict.group(1).upper() != "PASSED":
+        problems.append("вердикт SMART: %s" % verdict.group(1))
+
+    for name in HDD_FATAL_ATTRS:
+        m = re.search(r"^\s*\d+\s+%s\s+\S+\s+\d+\s+\d+\s+\d+\s+\S+\s+\S+\s+\S+\s+(\d+)"
+                      % name, out, re.M)
+        if m and int(m.group(1)) > 0:
+            problems.append("%s = %s" % (name, m.group(1)))
+
+    t = re.search(r"^\s*194\s+Temperature_Celsius\s+\S+\s+\d+\s+\d+\s+\d+\s+\S+\s+\S+\s+\S+\s+(\d+)",
+                  out, re.M)
+    if t and int(t.group(1)) > HDD_TEMP_MAX:
+        problems.append("температура %s °C" % t.group(1))
+
+    # Самый свежий самотест: строка «# 1» в журнале самотестов.
+    st = re.search(r"^#\s*1\s+(.+?)\s{2,}(\S.*?)\s{2,}", out, re.M)
+    if st and re.search(r"fail|error|aborted by host|interrupted", st.group(2), re.I):
+        problems.append("последний самотест: %s" % st.group(2).strip())
+
+    if problems:
+        return "hdd_smart", "🔴 HDD 2 ТБ (семейный архив): " + "; ".join(problems)
+    return "hdd_smart", None
+
+
+CHECKS = (check_dumps, check_storage, check_containers, check_disk, check_ram,
+          check_hdd_smart)
 
 
 # ── отправка ───────────────────────────────────────────────────────────────────
@@ -199,6 +257,7 @@ def main():
                     "containers": "все контейнеры работают",
                     "disk": "место на диске",
                     "ram": "свободная память",
+                    "hdd_smart": "SMART диска с семейным архивом",
                 }.get(key, key))
                 sent += 1
             state[key] = {"active": False, "last_sent": prev.get("last_sent", 0)}

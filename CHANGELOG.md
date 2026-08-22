@@ -74,7 +74,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-_Пусто._
+### Добавлено / Added
+
+- **Контроль здоровья 2-ТБ HDD.** Атрибуты SMART проверяются каждые 15 минут вместе с
+  остальными алертами (`-n standby`, спящий диск не будим); короткий самотест —
+  еженедельно по таймеру `nas_jetson_nano-hdd2tb-selftest.timer`.
+  🇬🇧 SMART health monitoring for the 2 TB archive HDD.
+
+### Отозвано / Retracted
+
+- 🔴 **«SMART невозможен» относилось к обоим дискам — неверно.** Вывод, полученный на
+  мосту JMS583 (USB SSD), был перенесён на RTL9201 (USB HDD) без проверки и записан в
+  `CLAUDE.md` и `13_MONITORING_RUNBOOK`. Проверка 2026-08-22: `smartctl -d sat /dev/sdb`
+  читает всё, включая запуск самотестов.
+
+  Замер: `WDC WD20EADS-00W4B0` — **PASSED**, наработка **2553 ч** (~106 суток),
+  Reallocated / Current_Pending / Offline_Uncorrectable — **0**, UDMA_CRC 0, 31 °C,
+  журнал ошибок пуст, короткий самотест без ошибок, чтение 99.5 / 84.8 / 51.6 МБ/с
+  по зонам. Диск старый по модели (WD Green ~2009), но почти не работал.
+
+  🇬🇧 Retracted: SMART is impossible only on the SSD's JMS583 bridge; the 2 TB HDD
+  behind RTL9201 reports full SMART and is healthy — 2553 power-on hours, zero bad
+  sectors of any kind.
+
+  **Урок шире случая:** вывод, полученный на одном устройстве, нельзя переносить на
+  другое только потому, что они одного класса.
 
 ---
 

@@ -38,16 +38,52 @@ sudo dmesg | grep -i -E "error|reset|fail|i/o" | tail -20
 
 ## 3. Проверка дисков / Disk Check
 
-### 3.1. 🔴 SMART недоступен — и это не чинится конфигом
+### 3.1. SMART: невозможен на SSD, но **работает на HDD**
+
+> ⚠️ **Поправка 2026-08-22.** Прежняя редакция этого раздела утверждала, что SMART
+> недоступен **на обоих** дисках. Для 2-ТБ HDD это оказалось неверно, и вывод был
+> распространён с одного моста на другой без проверки. Проверено — работает.
+>
+> 🇬🇧 **Correction 2026-08-22:** this section used to claim SMART was impossible on
+> *both* disks. That was wrong for the 2 TB HDD — the conclusion had been carried over
+> from one bridge to the other without testing. It works.
+
+| Диск / Disk | Мост / Bridge | SMART | Чем закрыт контроль |
+|---|---|---|---|
+| USB SSD 250 ГБ | JMS583 `152d:a583` | ⛔ **невозможен** | `nasa-jms583-health.timer` + USB-монитор |
+| USB HDD 2 ТБ | RTL9201 `0bda:9201` | ✅ **`-d sat` работает полностью** | `nasa-talk-alert` (атрибуты каждые 15 мин) + `nasa-hdd2tb-selftest.timer` (короткий самотест еженедельно) |
+
+**Замер 2026-08-22 по HDD** (`smartctl -d sat /dev/sdb`):
+
+```
+WDC WD20EADS-00W4B0, S/N WD-WCAVY6366163
+SMART overall-health: PASSED
+Power_On_Hours 2553 · Reallocated_Sector_Ct 0 · Current_Pending_Sector 0
+Offline_Uncorrectable 0 · UDMA_CRC_Error_Count 0 · Temperature 31 °C
+Журнал ошибок пуст. Короткий самотест: Completed without error.
+Линейное чтение: 99.5 / 84.8 / 51.6 МБ/с на 1 / 50 / 95 % диска — нормальный
+профиль 5400 об/мин, провалов нет.
+```
+
+🇷🇺 Диск старый по году выпуска (WD Caviar Green, серия ~2009), но **наработка всего
+2553 часа** — около 106 суток. По собственным показателям он здоров.
+🇬🇧 Old by model year, but only 2553 power-on hours. Healthy by its own metrics.
+
+⚠️ **Это не отменяет главного:** единственная копия остаётся единственной копией,
+какой бы ни была SMART-статистика. Диск может умереть внезапно и без предупреждения.
+
+---
+
+#### Почему SMART невозможен на SSD
 
 🇷🇺 `smartd.service` **отключён намеренно** (`systemctl disable smartd`, 2026-08-09). Причина
 структурная: kernel-quirk `152d:a583:u`, нужный для стабильности SSD, переводит мост JMS583 в
 режим **usb-storage BOT**, а BOT не пропускает ATA/SCSI passthrough, на котором держится SMART.
 
-🇬🇧 `smartd` is disabled **by design**: the UAS quirk that keeps the SSD stable forces
+🇬🇧 `smartd` is disabled **by design** for the SSD: the UAS quirk that keeps it stable forces
 usb-storage BOT mode, which blocks the ATA/SCSI passthrough SMART depends on.
 
-Перебрано 2026-08-09 — не работает **ничего**:
+Перебрано 2026-08-09 на **SSD** — не работает **ничего**:
 
 | Режим | Результат |
 |---|---|

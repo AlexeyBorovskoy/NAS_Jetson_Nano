@@ -1,0 +1,11 @@
+[Unit]
+Description=NAS_Jetson_Nano — weekly SMART short self-test of the 2TB archive HDD
+Documentation=man:smartctl(8)
+
+[Service]
+Type=oneshot
+# Короткий тест: около 2 минут, только чтение. Длинный (490 мин) — вручную:
+#   sudo smartctl -t long -d sat /dev/sdb
+ExecStart=/usr/sbin/smartctl -t short -d sat /dev/sdb
+Nice=15
+IOSchedulingClass=idle

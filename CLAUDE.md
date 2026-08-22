@@ -61,7 +61,9 @@
 | USB watchdog / pre-boot / error monitor | ✅ active | `nasa-usb-watchdog.timer`, `nasa-usb-preboot.service`, `nasa-usb-monitor.service` |
 | JMS583 health timer | ✅ active (waiting) | `nasa-jms583-health.timer` ежечасно; последний прогон `errors=0 warnings=0` |
 | SSD hotplug auto-recovery | ✅ active | `nasa-ssd-recovery.service` — udev(`sda1`) → mount → preflight → Docker → контейнеры |
-| smartd | ⛔ **disabled by design** | UAS-quirk → usb-storage BOT → SMART passthrough невозможен в принципе. Здоровье закрывают JMS583-таймер и USB-монитор. См. `docs/13_MONITORING_RUNBOOK.md` |
+| smartd | ⛔ **disabled by design** | Относится **только к SSD**: quirk `152d:a583:u` → usb-storage BOT → passthrough закрыт. Здоровье SSD закрывают JMS583-таймер и USB-монитор |
+| SMART на HDD 2 ТБ | ✅ **работает** (проверено 2026-08-22) | ⚠️ Прежде в проекте значилось, что SMART невозможен на **обоих** дисках — вывод был перенесён с моста JMS583 на RTL9201 без проверки. `smartctl -d sat /dev/sdb` читает всё: **PASSED**, наработка **2553 ч**, переназначенных/ожидающих/некорректируемых секторов — **0**, CRC-ошибок 0, 31 °C, самотест без ошибок |
+| `nasa-hdd2tb-selftest.timer` | ✅ active | короткий SMART-самотест HDD еженедельно (пн 04:30). Длинный — вручную: `smartctl -t long -d sat /dev/sdb`, 490 мин |
 | Бэкапы БД | ✅ работают | `nasa-backup.timer`, последний дамп **2026-08-11 03:12** (immich 19 МБ + nextcloud 2.7 МБ), каталог 150 МБ. 🔴 **Всё в одном доме** — off-site не сделан |
 | Restore | ✅ **проверен 2026-08-09** | Накат во временную БД: NC 153 таблицы (users 5 = live, filecache 403 = live); Immich 61 таблица (asset 7098 = live, album 23 = live) |
 | VPS reverse tunnel | ✅ active | `nasa-tunnel.service`, ESTAB `192.168.0.50 → 95.163.176.103:22`; на VPS подняты 18080/12283/18090/18099/10022/45876 |

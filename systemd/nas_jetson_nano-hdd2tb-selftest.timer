@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the 2TB HDD SMART short self-test weekly
+
+[Timer]
+OnCalendar=Mon 04:30
+RandomizedDelaySec=15min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

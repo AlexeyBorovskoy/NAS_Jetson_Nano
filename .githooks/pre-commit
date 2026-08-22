@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Ворота качества перед коммитом. Versioned hook — включается командой:
+#   git config core.hooksPath .githooks
+#
+# Почему хук, а не «не забыть запустить»: у соседнего проекта вся дисциплина
+# держалась на памяти агента и владельца, и дважды едва не ушли секреты —
+# оба раза поймано глазами человека, а не машиной. Память не механизм защиты.
+#
+# Обойти осознанно: git commit --no-verify (и объяснить в сообщении коммита).
+set -uo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+gate="$repo_root/scripts/quality/preflight.sh"
+
+[ -f "$gate" ] || exit 0   # ворот нет — не мешаем коммиту
+
+printf '\n=== Ворота качества перед коммитом ===\n'
+bash "$gate" --quick
+rc=$?
+
+if [ "$rc" -ne 0 ]; then
+    printf '\nКоммит остановлен воротами. Исправь и повтори.\n'
+    printf 'Осознанный обход: git commit --no-verify\n\n'
+fi
+exit "$rc"

@@ -136,6 +136,9 @@ mandatory** — a database on microSD will not survive.
 [`13_MONITORING_RUNBOOK`](docs/13_MONITORING_RUNBOOK.md) ·
 [`22_AUDIT_RESILIENCE`](docs/22_AUDIT_RESILIENCE.md)
 
+**Качество / Quality**
+[`32_QUALITY_GATE`](docs/32_QUALITY_GATE.md) — обязательные ворота: ошибка ловится локально, а не в бою
+
 **Безопасность / Security**
 [`10_SECURITY_PRIVACY`](docs/10_SECURITY_PRIVACY.md) ·
 [`11_SECRETS_POLICY`](docs/11_SECRETS_POLICY.md) ·

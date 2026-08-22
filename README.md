@@ -142,6 +142,7 @@ mandatory** — a database on microSD will not survive.
 [`SECURITY.md`](SECURITY.md)
 
 **Куда идём / Where next**
+[`31_MASTER_PLAN`](docs/31_MASTER_PLAN.md) — **сводный план**: роли узлов, сеть, покупки ·
 [`30_NEXT_LEAP`](docs/30_NEXT_LEAP.md) — следующий рывок: память, ответы и голос дома ·
 [`29_COMPUTE_AND_LLM_ROADMAP`](docs/29_COMPUTE_AND_LLM_ROADMAP.md) — вычисления, Kaggle, локальные модели ·
 [`ROADMAP_STEP2`](docs/plans/ROADMAP_STEP2_2026-08.md) ·

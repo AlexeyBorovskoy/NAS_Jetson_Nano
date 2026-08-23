@@ -124,6 +124,27 @@ else
     bad "python не найден — проверку .env выполнить нечем"
 fi
 
+# ── 5б. Кодировка .ps1 ─────────────────────────────────────────────────────────
+head_ "5б. Кодировка PowerShell-скриптов / .ps1 encoding"
+#
+# 2026-08-23: скрипт туннеля был сохранён в UTF-8 без BOM. PowerShell 5.1 прочёл
+# его как cp1251, кириллица развалилась, и одна искажённая последовательность
+# порвала строковый литерал — скрипт не парсился целиком. Симптом был нулевой:
+# запущенный скрыто, он просто ничего не делал.
+if have python || have python3; then
+    PY=$(command -v python3 || command -v python)
+    ps_out=$("$PY" scripts/quality/check_ps1_bom.py scripts 2>&1)
+    ps_rc=$?
+    if [ "$ps_rc" -eq 0 ]; then
+        ok "$(printf '%s' "$ps_out" | tail -1 | sed 's/^✓ //')"
+    else
+        bad "есть .ps1 с кириллицей без BOM — PowerShell 5.1 их не разберёт:"
+        printf '%s\n' "$ps_out" | sed 's/^/      /'
+    fi
+else
+    warn "python не найден — проверку кодировки .ps1 выполнить нечем"
+fi
+
 # ── 6. Секреты ─────────────────────────────────────────────────────────────────
 head_ "6. Секреты / secrets"
 if [ -x scripts/security/check_no_secrets.sh ] || [ -f scripts/security/check_no_secrets.sh ]; then

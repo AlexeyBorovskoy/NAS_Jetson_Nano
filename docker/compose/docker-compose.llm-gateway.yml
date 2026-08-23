@@ -32,8 +32,21 @@ services:
       LLM_USER_LIMITS: ${LLM_USER_LIMITS:-}
       LLM_USER_DAILY_TOKEN_LIMIT: ${LLM_USER_DAILY_TOKEN_LIMIT:-0}
       LLM_ALLOW_IMAGE_ANALYSIS: ${LLM_ALLOW_IMAGE_ANALYSIS:-false}
+      # Локальная модель на рабочей станции — третий провайдер.
+      # Смысл: при нём вопрос семьи НЕ покидает дом. Станция кочует между сетями
+      # и выключается, поэтому доступность проверяется перед каждым вызовом,
+      # а не берётся отсюда. Недоступна — тихо уходим к облачному провайдеру.
+      LLM_LOCAL_URL: ${LLM_LOCAL_URL:-}
+      LLM_LOCAL_MODEL: ${LLM_LOCAL_MODEL:-qwen3.5:4b}
+      LLM_LOCAL_MAX_TOKENS: ${LLM_LOCAL_MAX_TOKENS:-512}
+      LLM_LOCAL_TIMEOUT: ${LLM_LOCAL_TIMEOUT:-120}
+      LLM_PREFER_LOCAL: ${LLM_PREFER_LOCAL:-false}
       LLM_LOG_PROMPTS: ${LLM_LOG_PROMPTS}
       LLM_LOG_RESPONSES: ${LLM_LOG_RESPONSES}
+    extra_hosts:
+      # Обратный SSH-туннель со станции слушает на хосте; из контейнера он виден
+      # только по этому имени. Тот же приём, что у API-контейнера.
+      - "host.docker.internal:host-gateway"
     volumes:
       # Persist budget counters so a restart does not reset the day's spend.
       - llm_usage:/data

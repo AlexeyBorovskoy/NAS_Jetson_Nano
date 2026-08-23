@@ -468,6 +468,70 @@ def _call_deepseek(system: str, user: str, model: str) -> tuple[str, int]:
     return content, tokens
 
 
+# ── Local model on the workstation ──────────────────────────────────────────────
+#
+# Третий провайдер. Смысл его существования — не скорость и не цена, а то, что
+# при нём вопрос семьи НЕ ПОКИДАЕТ ДОМ. Проект называется «уход от облаков», и до
+# сих пор его ассистент ходил в облако — это единственная нестыковка, честно
+# записанная в README.
+#
+# Станция кочует между домашней и рабочей сетью и выключается, поэтому её
+# доступность проверяется ПЕРЕД КАЖДЫМ вызовом, а не берётся из настройки.
+# Недоступна — тихо уходим к облачному провайдеру, как раньше.
+#
+# ⚠️ Редактирование персональных данных остаётся включённым и здесь. Соблазн его
+# отключить («всё равно не покидает дом») ошибочен: когда станция находится в
+# рабочей сети, тот же туннель идёт через VPS во Франкфурте. «Локальный» — это
+# про модель, а не всегда про маршрут.
+
+
+def _local_available(timeout: float = 2.0) -> bool:
+    """Отвечает ли локальная модель прямо сейчас. Дёшево и без побочных эффектов."""
+    url = os.getenv("LLM_LOCAL_URL", "").strip().rstrip("/")
+    if not url:
+        return False
+    try:
+        return httpx.get(url + "/api/tags", timeout=timeout).status_code == 200
+    except Exception:
+        return False
+
+
+def _call_ollama(system: str, user: str, model: str) -> tuple[str, int]:
+    """Вызов Ollama на рабочей станции через обратный SSH-туннель.
+
+    `think: false` обязателен. Рассуждающие модели (qwen3.5) кладут вывод в поле
+    `thinking`, а `response` возвращают ПУСТЫМ, если бюджет токенов израсходован
+    на размышление. Поймано замером 2026-08-22: первый ответ пришёл пустым за 47 с.
+    """
+    url = os.getenv("LLM_LOCAL_URL", "").strip().rstrip("/")
+    if not url:
+        raise HTTPException(status_code=500, detail="LLM_LOCAL_URL is not set")
+    body = {
+        "model": model,
+        "prompt": system + "\n\n" + user,
+        "stream": False,
+        "think": False,
+        "options": {"num_predict": int(os.getenv("LLM_LOCAL_MAX_TOKENS", "512"))},
+    }
+    try:
+        response = httpx.post(
+            url + "/api/generate",
+            json=body,
+            timeout=float(os.getenv("LLM_LOCAL_TIMEOUT", "120")),
+        )
+        response.raise_for_status()
+        data = response.json()
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"local model error: {exc}") from exc
+
+    content = (data.get("response") or "").strip()
+    if not content and data.get("thinking"):
+        content = ("Модель ушла в размышление и не оставила ответа — "
+                   "увеличьте LLM_LOCAL_MAX_TOKENS.")
+    tokens = int(data.get("eval_count") or 0) + int(data.get("prompt_eval_count") or 0)
+    return content, tokens
+
+
 # ── Models ──────────────────────────────────────────────────────────────────────
 
 
@@ -478,7 +542,7 @@ class ChatRequest(BaseModel):
     mode: Literal["safe", "raw"] = "safe"
     reasoning: bool = False
     # Per-request provider override; falls back to LLM_PROVIDER.
-    provider: Optional[Literal["deepseek", "gigachat"]] = None
+    provider: Optional[Literal["deepseek", "gigachat", "ollama"]] = None
     # Who is asking — drives per-user quotas and the /v1/usage breakdown.
     user: Optional[str] = None
 
@@ -507,7 +571,11 @@ def health():
         "providers": {
             "deepseek": bool(deepseek_key) and deepseek_key != "replace_me",
             "gigachat": bool(os.getenv("GIGACHAT_AUTH_KEY", "").strip()),
+            # Для локальной модели важно не «настроена ли», а «отвечает ли прямо
+            # сейчас»: станция кочует и выключается. Поэтому здесь живая проверка.
+            "ollama": _local_available(),
         },
+        "prefer_local": os.getenv("LLM_PREFER_LOCAL", "false").strip().lower() == "true",
     }
 
 
@@ -567,12 +635,25 @@ SYSTEM_PROMPT = (
 
 @app.post("/v1/chat", response_model=ChatResponse)
 def chat(payload: ChatRequest):
-    provider = (payload.provider or os.getenv("LLM_PROVIDER", "deepseek")).lower()
+    # Явно указанный провайдер уважается всегда. Если не указан — предпочитаем
+    # локальную модель, когда она отвечает: тогда вопрос не покидает дом.
+    # Станция кочует и выключается, поэтому проверяем доступность, а не настройку.
+    requested = (payload.provider or "").strip().lower()
+    if requested:
+        provider = requested
+    elif os.getenv("LLM_PREFER_LOCAL", "false").strip().lower() == "true" \
+            and _local_available():
+        provider = "ollama"
+    else:
+        provider = os.getenv("LLM_PROVIDER", "deepseek").lower()
 
     if payload.mode != "safe":
         raise HTTPException(status_code=400, detail="raw mode is disabled in Stage 1")
 
-    if provider == "gigachat":
+    if provider == "ollama":
+        model = os.getenv("LLM_LOCAL_MODEL", "qwen3.5:4b")
+        configured = bool(os.getenv("LLM_LOCAL_URL", "").strip())
+    elif provider == "gigachat":
         model = os.getenv("GIGACHAT_MODEL", "GigaChat")
         configured = bool(os.getenv("GIGACHAT_AUTH_KEY", "").strip())
     elif provider == "deepseek":
@@ -594,19 +675,29 @@ def chat(payload: ChatRequest):
         )
 
     # Budget first, then redaction — both apply to every provider.
+    #
+    # Исключение ровно одно и оно осознанное: локальная модель ничего не стоит,
+    # поэтому денежный и токенный потолки на неё не тратятся. В учёте вызов при
+    # этом ВИДЕН (calls растёт, tokens=0) — иначе нельзя будет ответить на вопрос
+    # «сколько вопросов семьи осталось дома». Редактирование данных остаётся
+    # включённым для всех провайдеров без исключений — см. комментарий у _call_ollama.
     user = payload.user or DEFAULT_USER
-    _check_budget(user)
+    local = provider == "ollama"
+    if not local:
+        _check_budget(user)
 
     context = payload.context or ""
     full = f"Task: {payload.task}\n\nContext:\n{context}\n\nPrompt:\n{payload.prompt}"
     safe_full = redact(full)
 
-    if provider == "gigachat":
+    if local:
+        content, tokens = _call_ollama(SYSTEM_PROMPT, safe_full, model)
+    elif provider == "gigachat":
         content, tokens = _call_gigachat(SYSTEM_PROMPT, safe_full, model)
     else:
         content, tokens = _call_deepseek(SYSTEM_PROMPT, safe_full, model)
 
-    _record_usage(tokens, user)
+    _record_usage(0 if local else tokens, user)
     return ChatResponse(provider=provider, model=model, redacted=True, content=content, tokens=tokens)
 
 

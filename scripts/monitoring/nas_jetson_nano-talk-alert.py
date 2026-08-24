@@ -221,8 +221,30 @@ def check_hdd_smart():
     return "hdd_smart", None
 
 
+OFFSITE_STAMP = "/mnt/storage/backups/offsite-pull-last.stamp"
+OFFSITE_MAX_AGE_HOURS = 30  # ночной таймер на Vostro ~04:00 + до 10 мин джиттера
+
+
+def check_offsite_pull():
+    """Штамп обновляет сам forced-command экспортёр на Jetson при каждой
+    успешной раздаче дампов — Vostro тут ничего не подтверждает, канал
+    односторонний по замыслу (docs/plans/WAVE_0_OFFSITE_BACKUP.md). Если путь
+    сломан (как был без port-forwarding 22.08-24.08), штамп просто не
+    появится. Не проверяет успех restic на стороне Vostro — только то, что
+    Jetson этой ночью кому-то отдал дампы."""
+    try:
+        mtime = os.path.getmtime(OFFSITE_STAMP)
+    except OSError:
+        return "offsite_pull", "🔴 Off-site бэкап (Vostro) ни разу не забирал дампы."
+    age_h = (time.time() - mtime) / 3600
+    if age_h > OFFSITE_MAX_AGE_HOURS:
+        return "offsite_pull", ("🔴 Off-site бэкап (Vostro) не забирал дампы уже %d ч."
+                                % age_h)
+    return "offsite_pull", None
+
+
 CHECKS = (check_dumps, check_storage, check_containers, check_disk, check_ram,
-          check_swap, check_hdd_smart)
+          check_swap, check_hdd_smart, check_offsite_pull)
 
 
 # ── отправка ───────────────────────────────────────────────────────────────────
@@ -301,6 +323,7 @@ def main():
                     "ram": "свободная память",
                     "swap": "подкачка zram",
                     "hdd_smart": "SMART диска с семейным архивом",
+                    "offsite_pull": "off-site бэкап на Vostro снова забирает дампы",
                 }.get(key, key))
                 sent += 1
             state[key] = {"active": False, "last_sent": prev.get("last_sent", 0)}

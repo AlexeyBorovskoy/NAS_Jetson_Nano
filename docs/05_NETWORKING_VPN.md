@@ -153,6 +153,74 @@ wg-eu 10.210.0.1/30  <-------------------->  wg-yandex 10.210.0.2/30
 > ⚠️ 🇷🇺 Статус: откачено 2026-06-13 из-за нестабильности через CGNAT. Раздел оставлен для истории.
 > ⚠️ 🇬🇧 Status: rolled back 2026-06-13 due to CGNAT instability. Section kept for reference.
 
+## 3.5. Обход генерации клиента AmneziaVPN Desktop (2026-08-25) / AmneziaVPN Desktop client-generation workaround (2026-08-25)
+
+> 🇷🇺 **Дефект:** приложение AmneziaVPN Desktop (Windows) не может сгенерировать
+> нового VPN-клиента через свою штатную SSH-логику — показывает `ErrorCode 305`
+> («тайм-аут подключения к серверу»), затем «SSH запрос отклонён». Проверено и
+> **отклонено** как причина: смена IP VPS (чистый TCP до старого
+> `193.8.215.130` и нового `95.163.176.103` — одинаково ~50 мс), диск/память/
+> docker на VPS, лимит частоты на порту 22, исчерпание пула `10.8.1.0/24`
+> (занято 13 из 254). Трассировка `sshd` на `LogLevel DEBUG3` (включена и
+> снята безопасно через `sshd -t` → `reload`, **не** `restart`) показала:
+> SSH-транспорт и авторизация ключом полностью здоровы, но сессии самого
+> приложения либо не доходят до запроса команды, либо канал закрывается сразу
+> после `exec` без данных — `awg0.conf` на сервере ни разу не изменился.
+> Дальнейшая диагностика упирается в закрытый клиент (лога на диске нет,
+> список серверов в реестре зашифрован) — не имеет смысла без лога самого
+> приложения.
+>
+> 🇬🇧 **Defect:** AmneziaVPN Desktop (Windows) cannot generate a new VPN client
+> through its own SSH-based provisioning — `ErrorCode 305` (connection
+> timeout), then "SSH request rejected". Ruled out: VPS IP change (clean TCP
+> to both old and new IP — equally ~50 ms), VPS disk/memory/docker, rate
+> limiting on port 22, exhausted `10.8.1.0/24` pool. `sshd` at `LogLevel
+> DEBUG3` (enabled and removed safely via `reload`, never `restart`) showed
+> transport and key auth are fully healthy — the app's own sessions never
+> reach `exec`, or the channel closes right after with no data. Root cause
+> stays inside the closed-source client; not pursued further without its own
+> log.
+
+🇷🇺 **Рабочий обход — добавление пира вручную, без приложения:**
+🇬🇧 **Working bypass — add a peer by hand, without the app:**
+
+```bash
+# 1. Ключевая пара + PSK внутри контейнера сервера
+docker exec amnezia-awg2 wg genkey | tee privatekey | wg pubkey > publickey
+docker exec amnezia-awg2 wg genpsk > presharedkey
+
+# 2. Пир живьём, без перезапуска интерфейса
+docker exec amnezia-awg2 wg set awg0 peer <publickey> \
+    preshared-key <presharedkey_path> allowed-ips 10.8.1.X/32
+
+# 3. Бэкап, затем тот же блок дописать в конфиг — переживает рестарт контейнера
+cp /opt/amnezia/awg/awg0.conf /opt/amnezia/awg/awg0.conf.bak.$(date +%s)
+cat >> /opt/amnezia/awg/awg0.conf <<EOF
+[Peer]
+PublicKey = <publickey>
+PresharedKey = <presharedkey>
+AllowedIPs = 10.8.1.X/32
+EOF
+```
+
+🇷🇺 Клиентский `.conf` собирается вручную — параметры обфускации
+`Jc/Jmin/Jmax/S1-S4/H1-H4` **обязаны** быть скопированы из секции
+`[Interface]` сервера, иначе хендшейк AmneziaWG не пройдёт.
+
+🇬🇧 The client `.conf` is assembled by hand — the AmneziaWG obfuscation
+parameters `Jc/Jmin/Jmax/S1-S4/H1-H4` **must** be copied from the server's
+`[Interface]` section, or the handshake never completes.
+
+🇷🇺 Проверено 2026-08-25: 6 пиров добавлены этим путём (13 → 19), один
+подтверждён владельцем как рабочий на Vostro. VPN не прерывался — `amnezia-xray`
+и `amnezia-awg2` не перезапускались в течение всей сессии (правило №13 в
+`CLAUDE.md`). Разбор — [`CHECKPOINT_2026-08-25.md`](plans/CHECKPOINT_2026-08-25.md).
+
+🇬🇧 Verified 2026-08-25: 6 peers added this way (13 → 19), one confirmed
+working by the owner on Vostro. VPN stayed up throughout — `amnezia-xray` and
+`amnezia-awg2` were never restarted (rule #13 in `CLAUDE.md`). Details —
+[`CHECKPOINT_2026-08-25.md`](plans/CHECKPOINT_2026-08-25.md).
+
 ## 4. DNS внутри сети / Internal DNS
 
 🇷🇺 Минимально: доступ по IP. Расширенно:

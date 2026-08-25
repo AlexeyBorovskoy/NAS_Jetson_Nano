@@ -74,6 +74,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Исправлено / Fixed
+
+- 🔴 **AmneziaVPN Desktop (Windows) не может сгенерировать нового VPN-клиента** —
+  `ErrorCode 305` («тайм-аут подключения к серверу»), затем «SSH запрос отклонён».
+  Проверено и отклонено как причина: смена IP VPS (TCP до старого и нового IP —
+  одинаково ~50 мс), диск/память/docker на VPS, лимит частоты на порту 22,
+  исчерпание пула IP `10.8.1.0/24`. Трассировка `sshd` на `LogLevel DEBUG3`
+  (снята безопасно через `reload`, не `restart`) показала: транспорт и
+  авторизация здоровы, но сессии приложения либо не доходят до `exec`, либо рвут
+  канал сразу после — `awg0.conf` на сервере ни разу не изменился. Причина
+  осталась в самом приложении (лога на диске нет, список серверов в реестре
+  зашифрован) — не долблена дальше, т.к. владельцу нужен был рабочий VPN, а не
+  починка чужого клиента. **Обход:** пиры добавляются вручную —
+  `wg genkey`/`pubkey`/`genpsk` в контейнере `amnezia-awg2` → `wg set awg0 peer
+  ...` живьём → тот же блок дописывается в `awg0.conf` с бэкапом
+  `.bak.<unixtime>` → клиентский `.conf` собирается вручную с параметрами
+  обфускации `Jc/Jmin/Jmax/S1-S4/H1-H4`, скопированными из `[Interface]`
+  сервера. Добавлено 6 пиров (было 13, стало 19), один подтверждён владельцем
+  как рабочий на Vostro. Разбор и команды —
+  [`05_NETWORKING_VPN.md` §3.5](docs/05_NETWORKING_VPN.md#35-обход-генерации-клиента-amneziavpn-desktop-2026-08-25--amneziavpn-desktop-client-generation-workaround-2026-08-25),
+  [`CHECKPOINT_2026-08-25.md`](docs/plans/CHECKPOINT_2026-08-25.md).
+  🇬🇧 AmneziaVPN Desktop (Windows) cannot generate new VPN clients through its
+  own SSH-based provisioning; root cause stayed inside the closed-source
+  client. Workaround: peers added directly via `wg`/`awg` inside the
+  `amnezia-awg2` container. VPN itself never went down — 19 peers, zero
+  restarts of `amnezia-xray`/`amnezia-awg2` throughout.
+
 ### Добавлено / Added
 
 - **Подкачка zram взята под наблюдение** — тревога при заполнении ≥ 85 % и при её

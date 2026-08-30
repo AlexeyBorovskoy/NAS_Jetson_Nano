@@ -103,6 +103,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Добавлено / Added
 
+- 🟠 **Волна 0, фаза 1 — off-site бэкап дампов БД в бою.** Постоянный туннель
+  Vostro↔VPS (порт 10222) + отдельный админ-ключ; restic-репозиторий на Vostro,
+  ночной таймер, восстановление **проверено взаправду** (снэпшот `ab975984`, все
+  `*.sql.gz` прошли `gzip -t`). Мимоходом починен непроверенный дефект от 22.08:
+  ключ для забора дампов на VPS был авторизован без `port-forwarding`, путь не
+  работал бы вовсе. Фаза 2 (фото Immich, ~6 ГБ) — отдельное решение, не начата.
+  Разбор — [`WAVE_0_OFFSITE_BACKUP.md`](docs/plans/WAVE_0_OFFSITE_BACKUP.md),
+  [`CHECKPOINT_2026-08-24.md`](docs/plans/CHECKPOINT_2026-08-24.md).
+  🇬🇧 Wave 0 phase 1 — off-site DB dump backup is live: restic repository on
+  Vostro, nightly timer, restore verified with a real restic snapshot restore.
+- Off-site backup канал — под алертом Фазы E (системные алерты в Talk).
+
+### Исправлено / Fixed
+
+- 🔴 **Рассинхронизация таймаутов держала `@бобик` немым на личные вопросы
+  владельца.** Talk-бот сдавался за 60 с, шлюз терпел локальную модель до 120 с —
+  если станция отвечала медленнее 60 с, бот обрывал раньше шлюза, и владелец видел
+  «не смог получить ответ» вместо ответа, который на самом деле уже готовился.
+  Первое исправление конфигом не подействовало: `docker restart` не перечитывает
+  `.env`, потребовалось пересоздание (`up -d`). Исправлено:
+  `TALK_BOT_LLM_TIMEOUT=150` (> 120 с шлюза). Разбор —
+  [`CHECKPOINT_2026-08-24.md`](docs/plans/CHECKPOINT_2026-08-24.md).
+  🇬🇧 Timeout desync left the Talk bot silent on the owner's own questions — the
+  bot gave up before the LLM gateway did. Fixed via `.env`, required a container
+  recreate (not just `restart`) to take effect.
+
+### Добавлено / Added
+
 - **Подкачка zram взята под наблюдение** — тревога при заполнении ≥ 85 % и при её
   отсутствии (значит `nvzramconfig` не поднялся). Раньше за ней не следил никто, а
   когда zram кончается, следующая остановка — снятие процессов по памяти.

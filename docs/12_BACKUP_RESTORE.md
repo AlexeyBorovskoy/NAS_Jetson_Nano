@@ -1,11 +1,16 @@
 # 12. Backup / Restore
 
-> 🇷🇺 **Статус 2026-08-10:** ночные дампы БД идут по расписанию (`nasa-backup.timer`, 03:00),
-> последний — 2026-08-10 03:02. **Восстановление проверено 2026-08-09** (впервые). Off-site
-> копии (restic) пока нет.
+> 🇷🇺 **Статус 2026-08-30:** ночные дампы БД идут по расписанию (`nasa-backup.timer`, 03:00).
+> **Восстановление проверено дважды**: 2026-08-09 (локальный дамп) и **2026-08-24** (offsite
+> restic-снэпшот `ab975984`, все `*.sql.gz` прошли `gzip -t`). **Off-site копия (restic) есть
+> и работает с 2026-08-24** — репозиторий на Vostro, ночной таймер, только дампы БД (фаза 1).
+> Фотографии Immich (~6 ГБ) в off-site пока не входят — фаза 2 не начата.
 >
-> 🇬🇧 **Status 2026-08-10:** nightly DB dumps run on schedule; restore verified on 2026-08-09
-> for the first time. No off-site (restic) copy yet.
+> 🇬🇧 **Status 2026-08-30:** nightly DB dumps run on schedule. **Restore verified twice**:
+> 2026-08-09 (local dump) and **2026-08-24** (offsite restic snapshot `ab975984`, every
+> `*.sql.gz` passed `gzip -t`). **The off-site (restic) copy exists and has been live since
+> 2026-08-24** — repository on Vostro, nightly timer, DB dumps only (phase 1). Immich photos
+> (~6 GB) are not yet in the off-site copy — phase 2 has not started.
 
 ## 0. 🔴 Главное правило проверки / The one check that matters
 

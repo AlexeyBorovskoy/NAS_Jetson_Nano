@@ -21,27 +21,30 @@ and retracted diagnoses stay in the docs, together with how they were caught.
 
 ---
 
-## Состояние на 2026-08-22 / State as of 2026-08-22
+## Состояние на 2026-08-30 / State as of 2026-08-30
 
-🇷🇺 Замерено живыми командами в этот день. / 🇬🇧 Verified by live commands that day.
+🇷🇺 Ядро таблицы — замер 2026-08-22, обновлены только строки, изменившиеся с тех пор (бэкапы/off-site). / 🇬🇧 Table core measured 2026-08-22; only rows that changed since then (backups/off-site) were updated.
 
 | Что / What | Замер / Measurement |
 |---|---|
-| Контейнеры / Containers | **13 up**, 0 рестартов, 0 OOM |
-| Immich | v2.7.5, **7 476 ассетов**, 23 альбома |
-| Nextcloud | v33.0.4, 5 пользователей, `maintenance: false` |
-| SSD `/mnt/storage` | 229 ГБ, занято **6 %** |
-| HDD `/mnt/hdd2tb` | 1.9 ТБ, занято **76 %** (1.4 ТБ семейного архива, NTFS) |
-| RAM | 2.2 / 3.9 ГБ |
-| Бэкапы БД / DB backups | ежедневно ~03:10, **~151 МБ**, restore проверен 2026-08-09 |
+| Контейнеры / Containers | **13 up**, 0 рестартов, 0 OOM (22.08) |
+| Immich | v2.7.5, **7 098 ассетов** (30.08), 23 альбома |
+| Nextcloud | v33.0.4, 5 пользователей, `maintenance: false` (22.08) |
+| SSD `/mnt/storage` | 229 ГБ, занято **6 %** (22.08) |
+| HDD `/mnt/hdd2tb` | 1.9 ТБ, занято **76 %** (1.4 ТБ семейного архива, NTFS) (22.08) |
+| RAM | 2.2 / 3.9 ГБ (22.08) |
+| Бэкапы БД / DB backups | ежедневно ~03:10, **~151 МБ**, restore проверен **2026-08-24** (restic-снэпшот `ab975984`) |
+| Off-site бэкап / Off-site backup | **фаза 1 в бою с 2026-08-24** — дампы БД на Vostro через restic, восстановление проверено. Фаза 2 (фото Immich, ~6 ГБ) не начата |
 | Реверс-туннель / Reverse tunnel | active, Jetson → VPS |
 | Сеть / Network | Jetson `192.168.0.50`, **1000 Мбит/с** |
 | Семейный ассистент / Family assistant | Talk-бот отвечает, алерты в чат — **работают** |
 
-🔴 **Главный открытый долг / Main open debt:** 🇷🇺 бэкапы делаются и восстановление
-проверено, но **всё лежит в одном доме**. Off-site начат, упирается в доступ. /
-🇬🇧 backups run and restore is verified, but **everything sits in one building**.
-Off-site started, blocked on access. → [`WAVE_0`](docs/plans/WAVE_0_OFFSITE_BACKUP.md)
+🟠 **Главный открытый долг / Main open debt:** 🇷🇺 off-site бэкап **дампов БД уже
+работает** (restic на Vostro, восстановление проверено 24.08) — но это только фаза 1.
+Фотографии Immich (~6 ГБ) по-прежнему лежат только дома. /
+🇬🇧 off-site backup **of DB dumps is now live** (restic on Vostro, restore verified
+2026-08-24) — but that's phase 1 only. Immich photos (~6 GB) still live at home only.
+→ [`WAVE_0`](docs/plans/WAVE_0_OFFSITE_BACKUP.md)
 
 ---
 
@@ -186,7 +189,8 @@ mandatory** — a database on microSD will not survive.
 - **Не готовый продукт.** Это домашний сервер одной семьи, опубликованный целиком.
 - **GPU Jetson не используется** — CUDA 10.2 против требуемых 11/12. Это структурное
   ограничение платформы, а не недоделка. Machine learning выносится на другой узел.
-- **Off-site бэкапа пока нет** — главный открытый долг.
+- **Off-site бэкап фото пока не сделан** — БД (фаза 1) уже реплицируется на Vostro,
+  фото Immich (~6 ГБ, фаза 2) — главный открытый долг.
 - **Высокой доступности нет.** Одна плата, один блок питания.
 
 🇬🇧 The same list: not a product, the Jetson GPU is unusable (CUDA 10.2 vs 11/12 required),

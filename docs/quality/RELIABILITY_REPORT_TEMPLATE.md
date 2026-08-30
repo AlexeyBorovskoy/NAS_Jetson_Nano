@@ -1,4 +1,4 @@
-﻿# Шаблон отчёта надёжности / Reliability Report Template: NAS_Jetson_Nano
+# Шаблон отчёта надёжности / Reliability Report Template: NAS_Jetson_Nano
 
 **Report date:** YYYY-MM-DD  
 **Version tested:** vX.Y.Z  
@@ -6,15 +6,17 @@
 
 ---
 
-## 1. Executive Summary
+## 1. Итоговое резюме / Executive Summary
 
-_2-3 sentences: overall system health, any critical findings, recommendation (GO / NO-GO / CONDITIONAL)._
+🇷🇺 _2-3 предложения: общее состояние системы, критические находки (если есть), рекомендация (GO / NO-GO / CONDITIONAL)._
+
+🇬🇧 _2-3 sentences: overall system health, any critical findings, recommendation (GO / NO-GO / CONDITIONAL)._
 
 ---
 
-## 2. Environment
+## 2. Окружение / Environment
 
-| Item | Value |
+| Параметр / Item | Значение / Value |
 |---|---|
 | Jetson Nano IP | 192.168.0.50 |
 | VPS IP | 95.163.176.103 |
@@ -25,9 +27,9 @@ _2-3 sentences: overall system health, any critical findings, recommendation (GO
 
 ---
 
-## 3. Static Analysis
+## 3. Статический анализ / Static Analysis
 
-| Check | Result | Notes |
+| Проверка / Check | Результат / Result | Заметки / Notes |
 |---|---|---|
 | ShellCheck errors | 0 / N | |
 | ShellCheck warnings | N | |
@@ -38,9 +40,9 @@ _2-3 sentences: overall system health, any critical findings, recommendation (GO
 
 ---
 
-## 4. Network Checks
+## 4. Сетевые проверки / Network Checks
 
-| Target | Check | Result | Response time |
+| Цель / Target | Проверка / Check | Результат / Result | Время отклика / Response time |
 |---|---|---|---|
 | 192.168.0.50 | ping | PASS/FAIL | Xms |
 | :22 (SSH) | nc -vz | PASS/FAIL | -- |
@@ -52,9 +54,9 @@ _2-3 sentences: overall system health, any critical findings, recommendation (GO
 
 ---
 
-## 5. Service Checks
+## 5. Проверки сервисов / Service Checks
 
-| Container | Status | Health | Restarts | Notes |
+| Контейнер / Container | Статус / Status | Здоровье / Health | Рестарты / Restarts | Заметки / Notes |
 |---|---|---|---|---|
 | homecloud_nextcloud | running | healthy | 0 | |
 | homecloud_nextcloud_db | running | healthy | 0 | |
@@ -72,9 +74,9 @@ _2-3 sentences: overall system health, any critical findings, recommendation (GO
 
 ---
 
-## 6. Storage Checks
+## 6. Проверки хранилища / Storage Checks
 
-| Check | Result | Notes |
+| Проверка / Check | Результат / Result | Заметки / Notes |
 |---|---|---|
 | /mnt/storage mounted | YES/NO | |
 | Backing device | /dev/sda1 | |
@@ -87,9 +89,9 @@ _2-3 sentences: overall system health, any critical findings, recommendation (GO
 
 ---
 
-## 7. Backup Checks
+## 7. Проверки бэкапа / Backup Checks
 
-| Check | Result | Notes |
+| Проверка / Check | Результат / Result | Заметки / Notes |
 |---|---|---|
 | Latest Nextcloud dump | YYYY-MM-DD | |
 | Latest Nextcloud dump size | X MB | |
@@ -100,9 +102,9 @@ _2-3 sentences: overall system health, any critical findings, recommendation (GO
 
 ---
 
-## 8. Android Checks (Manual)
+## 8. Проверки Android (вручную) / Android Checks (Manual)
 
-| Check | Result | Notes |
+| Проверка / Check | Результат / Result | Заметки / Notes |
 |---|---|---|
 | Immich login (local) | PASS/FAIL/SKIP | |
 | Immich login (via VPS) | PASS/FAIL/SKIP | |
@@ -112,9 +114,9 @@ _2-3 sentences: overall system health, any critical findings, recommendation (GO
 
 ---
 
-## 9. Load Test Results (if run)
+## 9. Результаты нагрузочного теста (если проводился) / Load Test Results (if run)
 
-| Metric | Value | Threshold | Pass? |
+| Метрика / Metric | Значение / Value | Порог / Threshold | Прошло? / Pass? |
 |---|---|---|---|
 | VUs | 5 | -- | -- |
 | Duration | 2 min | -- | -- |
@@ -127,27 +129,40 @@ _2-3 sentences: overall system health, any critical findings, recommendation (GO
 
 ---
 
-## 10. Security Findings
+## 10. Находки по безопасности / Security Findings
 
-### CRITICAL
+🇷🇺 Находки перечисляются по уровню серьёзности; если находок нет — так и указывается.
 
-_None / list findings_
+🇬🇧 Findings are listed by severity level; if there are none, that is stated explicitly.
 
-### HIGH
-
-_None / list findings_
-
-### MEDIUM
+### КРИТИЧНО / CRITICAL
 
 _None / list findings_
 
-### LOW
+### ВЫСОКИЙ / HIGH
+
+_None / list findings_
+
+### СРЕДНИЙ / MEDIUM
+
+_None / list findings_
+
+### НИЗКИЙ / LOW
 
 _None / list findings_
 
 ---
 
-## 11. Known Issues and Limitations
+## 11. Известные проблемы и ограничения / Known Issues and Limitations
+
+🇷🇺
+
+- USB-мост RTL9210B-CG — ненадёжное железо; ошибка -71 всё ещё может возникнуть
+- Проброс SMART через USB-мост может не давать достоверных значений
+- Jetson Nano — не промышленное железо (4 ГБ общей ОЗУ, ОС на SD-карте)
+- Off-site бэкапа пока нет
+
+🇬🇧
 
 - RTL9210B-CG USB bridge is unreliable hardware; error -71 can still occur
 - SMART passthrough via USB bridge may not return reliable values
@@ -156,19 +171,19 @@ _None / list findings_
 
 ---
 
-## 12. Recommendations
+## 12. Рекомендации / Recommendations
 
-1. _Highest priority action_
-2. _Second action_
-3. _Third action_
+1. _Highest priority action / Действие наивысшего приоритета_
+2. _Second action / Второе действие_
+3. _Third action / Третье действие_
 
 ---
 
-## 13. Decision
+## 13. Решение / Decision
 
 **GO / NO-GO / CONDITIONAL**
 
-_Conditions (if conditional):_
+_Conditions (if conditional): / Условия (если CONDITIONAL):_
 
-**Tester signature:** _________________  
-**Date:** _________________
+**Tester signature / Подпись тестировщика:** _________________  
+**Date / Дата:** _________________

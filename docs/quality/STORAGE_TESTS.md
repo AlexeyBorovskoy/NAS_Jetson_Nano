@@ -1,11 +1,20 @@
-﻿# Тесты хранилища / Storage Tests: NAS_Jetson_Nano
+# Тесты хранилища / Storage Tests: NAS_Jetson_Nano
 
 **Version:** 1.0  
 **Date:** 2026-06-27
 
 ---
 
-## Hardware Context
+## Аппаратный контекст / Hardware Context
+
+🇷🇺
+
+- Устройство: USB SSD через USB-SATA мост RTL9210B-CG
+- Известная проблема: RTL9210B-CG выдаёт ошибку -71 (отключение USB) под нагрузкой или после событий с питанием
+- Снижение риска: nas_jetson_nano-usb-watchdog.timer (каждые 3 мин), nas_jetson_nano-usb-preboot.service (при каждой загрузке)
+- Проброс SMART: ограничен через USB-мост; использовать `smartctl -d sat` или `-d scsi`
+
+🇬🇧
 
 - Device: USB SSD via RTL9210B-CG USB-SATA bridge
 - Known issue: RTL9210B-CG produces error -71 (USB disconnect) under load or after power events
@@ -14,7 +23,7 @@
 
 ---
 
-## Test Scripts
+## Тестовые скрипты / Test Scripts
 
 ### mount_check.sh
 
@@ -36,12 +45,17 @@ sudo tests/storage/smart_check.sh --device /dev/sda
 sudo tests/storage/smart_check.sh --device /dev/sda --output /tmp/smart-report.md
 ```
 
-Note: SMART may return "Unable to detect device type" via RTL9210B-CG.
+🇷🇺 Примечание: SMART может вернуть «Unable to detect device type» через RTL9210B-CG.
+Попробовать: `sudo smartctl -d sat -H /dev/sda` или `sudo smartctl -d scsi -H /dev/sda`
+
+🇬🇧 Note: SMART may return "Unable to detect device type" via RTL9210B-CG.
 Try: `sudo smartctl -d sat -H /dev/sda` or `sudo smartctl -d scsi -H /dev/sda`
 
 ### fio_quick_test.sh
 
-WARNING: Creates and deletes test files only in specified directory. Never run on /, /home, /etc.
+🇷🇺 ПРЕДУПРЕЖДЕНИЕ: создаёт и удаляет тестовые файлы только в указанном каталоге. Никогда не запускать на /, /home, /etc.
+
+🇬🇧 WARNING: Creates and deletes test files only in specified directory. Never run on /, /home, /etc.
 
 ```bash
 # Requires explicit confirmation
@@ -52,9 +66,9 @@ tests/storage/fio_quick_test.sh \
 
 ---
 
-## Manual Test Procedures
+## Процедуры ручного тестирования / Manual Test Procedures
 
-### T4.1: Mount Check
+### T4.1: Проверка монтирования / Mount Check
 
 ```bash
 mountpoint -q /mnt/storage && echo "MOUNTED" || echo "NOT MOUNTED"
@@ -62,13 +76,19 @@ lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT,MODEL
 findmnt /mnt/storage
 ```
 
-Expected:
+🇷🇺 Ожидается:
+- /mnt/storage смонтирован
+- Устройство — /dev/sda1 (НЕ mmcblk)
+- Файловая система: ext4
+- Опции: rw (не ro)
+
+🇬🇧 Expected:
 - /mnt/storage is mounted
 - Backing device is /dev/sda1 (NOT mmcblk)
 - Filesystem: ext4
 - Options: rw (not ro)
 
-### T4.2: SMART Health
+### T4.2: Здоровье SMART / SMART Health
 
 ```bash
 sudo smartctl -H /dev/sda
@@ -76,19 +96,32 @@ sudo smartctl -d sat -H /dev/sda  # if USB bridge
 sudo smartctl -a /dev/sda | head -50
 ```
 
-Expected: SMART overall-health self-assessment test result: PASSED
+🇷🇺 Ожидается: SMART overall-health self-assessment test result: PASSED
 
-### T4.3: Disk Usage
+🇬🇧 Expected: SMART overall-health self-assessment test result: PASSED
+
+### T4.3: Использование диска / Disk Usage
 
 ```bash
 df -h /mnt/storage
 ```
 
-Expected: Use% < 85%
+🇷🇺 Ожидается: Use% < 85%
 
-### T4.4: I/O Performance Baseline
+🇬🇧 Expected: Use% < 85%
 
-Expected speeds (RTL9210B-CG USB 3.0 SSD):
+### T4.4: Базовая производительность ввода-вывода / I/O Performance Baseline
+
+🇷🇺 Ожидаемые скорости (USB 3.0 SSD с RTL9210B-CG):
+- Последовательная запись: > 100 МБ/с (цель: ~300 МБ/с)
+- Последовательное чтение: > 150 МБ/с (цель: ~350 МБ/с)
+
+Если скорости < 50 МБ/с, проверить:
+- USB 3.0 или 2.0 порт (USB 2.0 ограничен ~40 МБ/с)
+- Конфигурацию порта хаба
+- Журнал USB-ошибок: `dmesg | grep -i "usb\|sda\|rtl" | tail -30`
+
+🇬🇧 Expected speeds (RTL9210B-CG USB 3.0 SSD):
 - Sequential write: > 100 MB/s (target: ~300 MB/s)
 - Sequential read: > 150 MB/s (target: ~350 MB/s)
 
@@ -99,7 +132,7 @@ If speeds are < 50 MB/s, check:
 
 ---
 
-## USB SSD Reliability Checks
+## Проверки надёжности USB SSD / USB SSD Reliability Checks
 
 ```bash
 # Check watchdog status
@@ -121,9 +154,9 @@ cat /var/lib/nas_jetson_nano-usb-watchdog.state 2>/dev/null || echo "No state (S
 
 ---
 
-## Expected Results
+## Ожидаемые результаты / Expected Results
 
-| Check | Expected | Actual | Pass? |
+| Проверка / Check | Ожидается / Expected | Фактически / Actual | Прошло? / Pass? |
 |---|---|---|---|
 | /mnt/storage mounted | yes | | |
 | Backing device | /dev/sda1 | | |

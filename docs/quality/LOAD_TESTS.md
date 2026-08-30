@@ -1,13 +1,23 @@
-﻿# Нагрузочные тесты / Load Tests: NAS_Jetson_Nano
+# Нагрузочные тесты / Load Tests: NAS_Jetson_Nano
 
 **Version:** 1.0  
 **Date:** 2026-06-27
 
 ---
 
-## Scope and Constraints
+## Область охвата и ограничения / Scope and Constraints
 
-This is a smoke load test only -- NOT a stress or soak test.
+🇷🇺 Это только дымовой нагрузочный тест — НЕ тест на выносливость (stress) и НЕ длительный тест (soak).
+
+**Ограничения:**
+- Jetson Nano 4GB: ОЗУ общая для CPU/GPU. OOM убьёт сервисы.
+- USB SSD (RTL9210B-CG): агрессивный ввод-вывод под нагрузкой может вызвать ошибку -71
+- ML-обработка отключена (IMMICH_DISABLE_MACHINE_LEARNING=true)
+- Конфигурация теста: максимум 5 VU / 2 минуты
+
+**НЕ ЗАПУСКАТЬ** нагрузочные тесты с > 10 VU на Jetson Nano без мониторинга ОЗУ.
+
+🇬🇧 This is a smoke load test only -- NOT a stress or soak test.
 
 **Constraints:**
 - Jetson Nano 4GB: RAM is shared CPU/GPU. OOM will kill services.
@@ -19,7 +29,7 @@ This is a smoke load test only -- NOT a stress or soak test.
 
 ---
 
-## Test Script
+## Тестовый скрипт / Test Script
 
 ### nextcloud-smoke.js (k6)
 
@@ -36,9 +46,9 @@ NEXTCLOUD_URL=http://95.163.176.103:8080 k6 run tests/load/nextcloud-smoke.js
 
 ---
 
-## Acceptance Criteria
+## Критерии приёмки / Acceptance Criteria
 
-| Metric | Target | Blocking? |
+| Метрика / Metric | Цель / Target | Блокирует? / Blocking? |
 |---|---|---|
 | Virtual Users | 5 | -- |
 | Duration | 2 minutes | -- |
@@ -49,9 +59,11 @@ NEXTCLOUD_URL=http://95.163.176.103:8080 k6 run tests/load/nextcloud-smoke.js
 
 ---
 
-## Resource Monitoring During Load Test
+## Мониторинг ресурсов во время нагрузочного теста / Resource Monitoring During Load Test
 
-Open a second terminal and monitor:
+🇷🇺 Открыть второй терминал и вести наблюдение.
+
+🇬🇧 Open a second terminal and monitor:
 
 ```bash
 # Docker stats (live)
@@ -68,16 +80,21 @@ cat /proc/sys/vm/dirty_ratio
 dmesg | grep -E "error|sda" | tail -5
 ```
 
-Stop the test immediately if:
+🇷🇺 Немедленно остановить тест, если:
+- `free -h` показывает доступную ОЗУ < 200 МБ
+- любой контейнер перезапустился
+- dmesg показывает «error -71» или «I/O error»
+
+🇬🇧 Stop the test immediately if:
 - `free -h` shows available RAM < 200MB
 - Any container restarts
 - dmesg shows "error -71" or "I/O error"
 
 ---
 
-## Expected Results (Jetson Nano LAN)
+## Ожидаемые результаты (Jetson Nano, LAN) / Expected Results (Jetson Nano LAN)
 
-| Scenario | Expected p95 | Notes |
+| Сценарий / Scenario | Ожидаемый p95 / Expected p95 | Заметки / Notes |
 |---|---|---|
 | Nextcloud /status.php (5 VU) | < 200ms | Static endpoint, cached |
 | Nextcloud / (5 VU) | < 1000ms | Main page, heavier |
@@ -85,7 +102,16 @@ Stop the test immediately if:
 
 ---
 
-## Known Limitations
+## Известные ограничения / Known Limitations
+
+🇷🇺
+
+- Jetson Nano — НЕ промышленное железо. Одноплатный ARM-компьютер с 4 ГБ общей ОЗУ.
+- Реальная производительность просядет при одновременной фотосинхронизации + запросах к БД + ML (отключён).
+- Не экстраполировать эти результаты на сценарии с несколькими пользователями.
+- Пропускная способность USB SSD общая для всего ввода-вывода; нагрузочный тест + бэкап = повышенный риск.
+
+🇬🇧
 
 - Jetson Nano is NOT production hardware. Single-board ARM compute with 4GB shared RAM.
 - Real-world performance will degrade with concurrent photo sync + DB queries + ML (disabled).

@@ -1,16 +1,16 @@
 # ARTICLE_AUDIT_REPORT — NAS_Jetson_Nano
 
-**Аудитор:** Claude Code (claude-sonnet-4-6)  
-**Дата аудита:** 2026-06-28 (обновлено 2026-06-29)  
-**Версия проекта:** v1.4.0  
-**Репозиторий:** https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
-**Режим:** READ-ONLY audit + report generation  
+**Аудитор / Auditor:** Claude Code (claude-sonnet-4-6)  
+**Дата аудита / Audit date:** 2026-06-28 (обновлено / updated 2026-06-29)  
+**Версия проекта / Project version:** v1.4.0  
+**Репозиторий / Repository:** https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
+**Режим / Mode:** READ-ONLY audit + report generation  
 
 ---
 
 ## 1. Executive Summary
 
-NAS_Jetson_Nano — это рабочий семейный self-hosted облачный сервер на базе NVIDIA Jetson Nano 4 GB + USB SSD (232 GB, DEXP/Realtek RTL9210B-CG). Проект заменяет Google Photos (Immich), Google Drive + Яндекс.Диск (Nextcloud), облачный NAS (Samba). Реализован совместно с Claude Code — AI-агент генерировал код, systemd-юниты, Docker Compose, документацию и диагностические скрипты; владелец принимал решения и проверял результат.
+🇷🇺 NAS_Jetson_Nano — это рабочий семейный self-hosted облачный сервер на базе NVIDIA Jetson Nano 4 GB + USB SSD (232 GB, DEXP/Realtek RTL9210B-CG). Проект заменяет Google Photos (Immich), Google Drive + Яндекс.Диск (Nextcloud), облачный NAS (Samba). Реализован совместно с Claude Code — AI-агент генерировал код, systemd-юниты, Docker Compose, документацию и диагностические скрипты; владелец принимал решения и проверял результат.
 
 **Состояние на момент аудита:** Stage 1 полностью работает. 13 Docker-контейнеров up/healthy. Android-клиенты подключены. Система пережила 3 инцидента с USB SSD и выработала механизм авто-восстановления через udev hotplug + systemd. 
 
@@ -18,29 +18,37 @@ NAS_Jetson_Nano — это рабочий семейный self-hosted обла�
 
 **Оценка готовности к публикации: 9/10.** Скриншоты 12/14 готовы. Остались: Portainer (LAN), Uptime Kuma (LAN). USB drama, Talk/API, Beszel, Swagger — все секции и скриншоты в habr_draft.md.
 
+🇬🇧 NAS_Jetson_Nano is a working self-hosted family cloud server built on an NVIDIA Jetson Nano 4 GB plus a USB SSD (232 GB, DEXP/Realtek RTL9210B-CG). The project replaces Google Photos (Immich), Google Drive + Yandex.Disk (Nextcloud) and a cloud NAS (Samba). It was built together with Claude Code — the AI agent generated code, systemd units, Docker Compose files, documentation and diagnostic scripts; the owner made the decisions and verified the results.
+
+**State at the time of the audit:** Stage 1 is fully operational. 13 Docker containers up/healthy. The Android clients are connected. The system survived 3 USB SSD incidents and produced an auto-recovery mechanism based on udev hotplug + systemd.
+
+**For the article:** the project is ready for publication on Habr. Its main value is not "how to set up Nextcloud" but the engineering story: unstable hardware → methodical debugging → production-grade reliability with the help of an AI assistant. That is a rare genre on Habr.
+
+**Publication readiness: 9/10.** 12 of 14 screenshots are done. Still missing: Portainer (LAN), Uptime Kuma (LAN). The USB drama, Talk/API, Beszel, Swagger — all sections and screenshots are in habr_draft.md.
+
 ---
 
 ## 2. Current Project State
 
-| Параметр | Значение |
+| Параметр / Parameter | Значение / Value |
 |---|---|
-| Версия | **v1.4.0** |
-| Платформа | Jetson Nano 4 GB · Ubuntu 18.04 LTS (L4T 4.9) · aarch64 |
-| Системный диск | microSD 64 GB (используется ~28%) |
-| Хранилище | **JMS583** USB 3.0 SSD 229 GB ext4 `/mnt/storage` · ~3% использовано |
-| USB-мост | **JMS583** (152d:a583, USB 3.0 SuperSpeed, 5 Gbps) · Write **250 MB/s** · UAS quirk активен |
-| Предыдущий | RTL9210B-CG **заменён 2026-06-28** |
-| Docker | 13 контейнеров up/healthy |
-| Пользователи | admin, olga, ivan, ulyana, **anna** (Talk-only) |
-| Фото в Immich | **6 484** фото + **210** видео · Immich v2.7.5 |
-| Контакты Nextcloud | 2 151 (синхронизируются через DAVx⁵) |
-| Android-статус | Immich ✅ Nextcloud ✅ DAVx⁵ ✅ **Talk ✅** |
-| Семейный чат | Nextcloud Talk «Семья» (token: 37pcobmf) · 5 участников |
+| Версия / Version | **v1.4.0** |
+| Платформа / Platform | Jetson Nano 4 GB · Ubuntu 18.04 LTS (L4T 4.9) · aarch64 |
+| Системный диск / System disk | microSD 64 GB (используется ~28% / ~28% used) |
+| Хранилище / Storage | **JMS583** USB 3.0 SSD 229 GB ext4 `/mnt/storage` · ~3% использовано / ~3% used |
+| USB-мост / USB bridge | **JMS583** (152d:a583, USB 3.0 SuperSpeed, 5 Gbps) · Write **250 MB/s** · UAS quirk активен / UAS quirk active |
+| Предыдущий / Previous | RTL9210B-CG **заменён 2026-06-28 / replaced 2026-06-28** |
+| Docker | 13 контейнеров up/healthy / 13 containers up/healthy |
+| Пользователи / Users | admin, olga, ivan, ulyana, **anna** (Talk-only) |
+| Фото в Immich / Photos in Immich | **6 484** фото + **210** видео / **6 484** photos + **210** videos · Immich v2.7.5 |
+| Контакты Nextcloud / Nextcloud contacts | 2 151 (синхронизируются через DAVx⁵ / synced via DAVx⁵) |
+| Android-статус / Android status | Immich ✅ Nextcloud ✅ DAVx⁵ ✅ **Talk ✅** |
+| Семейный чат / Family chat | Nextcloud Talk «Семья» / "Family" (token: 37pcobmf) · 5 участников / 5 members |
 | NAS_Jetson_Nano API | **v0.6.0** · 20 endpoints · Talk + Users + Photos + Actions |
 | VPS | 193.8.215.130 (Vienna) · nginx reverse proxy · HTTPS self-signed 10y |
-| Мониторинг | Beszel Hub VPS:8091 + Telegram daily report 09:00 |
-| CI | 4 GitHub Actions workflows активны |
-| Открытые вопросы | Docker 20.10.7 (устаревший), off-site backup не настроен |
+| Мониторинг / Monitoring | Beszel Hub VPS:8091 + Telegram daily report 09:00 |
+| CI | 4 GitHub Actions workflows активны / 4 GitHub Actions workflows active |
+| Открытые вопросы / Open items | Docker 20.10.7 (устаревший / outdated), off-site backup не настроен / off-site backup not configured |
 
 ---
 
@@ -98,71 +106,76 @@ Internet
 
 ---
 
-## 4. Architecture Changes (было → стало)
+## 4. Architecture Changes (было → стало / before → after)
 
-| Версия | Изменение | Причина |
+| Версия / Version | Изменение / Change | Причина / Reason |
 |---|---|---|
-| v0.1.0 | Начальная структура: Docker Compose, docs, scripts | Старт проекта |
-| v1.3.0 | Добавлены mem_limit, healthchecks, goss, NAS_Jetson_Nano API, Telegram report | Resilience audit (Stage 1H) |
-| v1.3.2 | CLAUDE.md, GitHub CLI, Discussions, good first issues | Open-source публикация |
-| v1.3.4 | Beszel Hub/Agent, USB watchdog (udev + autosuspend) | USB SSD error -71 инцидент |
-| v1.3.4 | autossh tunnel port +45876 (Beszel) | Мониторинг через VPS |
-| v1.3.5 | HTTPS: self-signed TLS на alt-портах (:8443/:2443/:9443) | Требование Android-приложений |
-| v1.3.5 | Nextcloud trusted proxy (occ) | Корректные HTTPS-заголовки |
-| v1.3.6 | USB SSD: порт 4 (сломан) → порт 2 | Аппаратный дефект порта |
-| v1.3.7 | nas_jetson_nano-usb-preboot.service (power cycle до монтирования) | RTL9210B-CG crashed state через software reboot |
-| v1.3.7 | nas_jetson_nano-usb-monitor.service (dmesg watcher) | Telegram alert при первом error -71 |
-| v1.3.7 | .gitattributes: LF enforce | CRLF→bash shebang corruption на Windows |
-| v1.3.8 | git filter-repo: удалён leaked password hash из 87 коммитов | Security incident |
-| v1.3.8 | Ротация паролей (4 сервиса) | После git history rewrite |
+| v0.1.0 | Начальная структура: Docker Compose, docs, scripts / Initial structure: Docker Compose, docs, scripts | Старт проекта / Project start |
+| v1.3.0 | Добавлены mem_limit, healthchecks, goss, NAS_Jetson_Nano API, Telegram report / Added mem_limit, healthchecks, goss, the NAS_Jetson_Nano API, the Telegram report | Resilience audit (Stage 1H) |
+| v1.3.2 | CLAUDE.md, GitHub CLI, Discussions, good first issues | Open-source публикация / Open-source publication |
+| v1.3.4 | Beszel Hub/Agent, USB watchdog (udev + autosuspend) | USB SSD error -71 инцидент / the USB SSD error -71 incident |
+| v1.3.4 | autossh tunnel port +45876 (Beszel) | Мониторинг через VPS / Monitoring through the VPS |
+| v1.3.5 | HTTPS: self-signed TLS на alt-портах (:8443/:2443/:9443) / self-signed TLS on alt ports (:8443/:2443/:9443) | Требование Android-приложений / Required by the Android apps |
+| v1.3.5 | Nextcloud trusted proxy (occ) | Корректные HTTPS-заголовки / Correct HTTPS headers |
+| v1.3.6 | USB SSD: порт 4 (сломан) → порт 2 / port 4 (broken) → port 2 | Аппаратный дефект порта / A hardware defect in the port |
+| v1.3.7 | nas_jetson_nano-usb-preboot.service (power cycle до монтирования / power cycle before mounting) | RTL9210B-CG crashed state через software reboot / RTL9210B-CG crashed state after a software reboot |
+| v1.3.7 | nas_jetson_nano-usb-monitor.service (dmesg watcher) | Telegram alert при первом error -71 / Telegram alert on the first error -71 |
+| v1.3.7 | .gitattributes: LF enforce | CRLF→bash shebang corruption на Windows / on Windows |
+| v1.3.8 | git filter-repo: удалён leaked password hash из 87 коммитов / removed a leaked password hash from 87 commits | Security incident |
+| v1.3.8 | Ротация паролей (4 сервиса) / Password rotation (4 services) | После git history rewrite / After the git history rewrite |
 | v1.3.8 | immich-microservices mem_limit 512m | OOM protection |
 | v1.3.8 | Repo structure refactor: assets/, artifacts/, docs/prompts/ | Open-source conventions |
-| v1.3.9 | nas_jetson_nano-ssd-recovery.service (udev hotplug auto-recovery) | Автовосстановление при подключении SSD |
-| **v1.4.0** | **JMS583** (152d:a583) заменил RTL9210B-CG | USB 3.0 SuperSpeed, write 250 MB/s, UAS quirk |
-| **v1.4.0** | **Nextcloud Talk** «Семья», 5 участников (+ anna) | Семейный чат, история на SSD |
-| **v1.4.0** | **NAS_Jetson_Nano API v0.6.0**: Talk/Users/Photos/Actions (11 новых endpoints) | Control + chat + stats API |
-| **v1.4.0** | goss 40/40 (+6 тестов) | Покрытие JMS583, Talk, новых сервисов |
-| Отменено | WireGuard через VPS | DKMS несовместим с Tegra kernel 4.9 (ADR-0003) |
-| Отменено | Tailscale | Конфликт VPN-профиля с Amnezia на Android (ADR-0004) |
+| v1.3.9 | nas_jetson_nano-ssd-recovery.service (udev hotplug auto-recovery) | Автовосстановление при подключении SSD / Auto-recovery when the SSD is plugged back in |
+| **v1.4.0** | **JMS583** (152d:a583) заменил RTL9210B-CG / replaced the RTL9210B-CG | USB 3.0 SuperSpeed, write 250 MB/s, UAS quirk |
+| **v1.4.0** | **Nextcloud Talk** «Семья», 5 участников (+ anna) / "Family", 5 members (+ anna) | Семейный чат, история на SSD / Family chat, history stored on the SSD |
+| **v1.4.0** | **NAS_Jetson_Nano API v0.6.0**: Talk/Users/Photos/Actions (11 новых endpoints / 11 new endpoints) | Control + chat + stats API |
+| **v1.4.0** | goss 40/40 (+6 тестов / +6 tests) | Покрытие JMS583, Talk, новых сервисов / Covering JMS583, Talk and the new services |
+| Отменено / Cancelled | WireGuard через VPS / WireGuard through the VPS | DKMS несовместим с Tegra kernel 4.9 (ADR-0003) / DKMS is incompatible with Tegra kernel 4.9 (ADR-0003) |
+| Отменено / Cancelled | Tailscale | Конфликт VPN-профиля с Amnezia на Android (ADR-0004) / VPN profile conflict with Amnezia on Android (ADR-0004) |
 
-### Оценки (1–10)
+### Оценки (1–10) / Scores (1–10)
 
-| Критерий | Оценка | Комментарий |
+| Критерий / Criterion | Оценка / Score | Комментарий / Comment |
 |---|---|---|
-| Готовность к статье | 8/10 | Всё работает, документация глубокая, 9/13 скриншотов готовы |
-| Инженерная зрелость | 8/10 | mem_limit, healthchecks, fail-closed backup, systemd watchdog |
-| Воспроизводимость | 7/10 | .env.example + Quick Start + ADR + промпты есть; JMS583 swap не задокументирован |
-| Уникальность сюжета | 9/10 | USB SSD нестабильность + AI-assisted engineering = редкий жанр |
-| Состояние CI/CD | 7/10 | 4 workflows работают; Trivy и actionlint есть, но не все scripts покрыты |
-| Тестовое покрытие | 6/10 | goss 34 теста, smoke-тесты есть; k6 нагрузочный не запускался live |
-| Безопасность | 7/10 | Secrets scan CI, no secrets in git, filter-repo done; Docker 20.10.7 устарел |
-| Документация | 9/10 | 24+ doc-файла, ADR-0001..0006, двуязычные, промпты, TEST_PLAN, runbook |
-| Android-интеграция | 8/10 | Immich + Nextcloud + DAVx⁵ настроены; документация MIUI quirks подробная |
-| AI-assisted workflow | 9/10 | AGENTS.md, 5 domain-agents, промпты, CLAUDE.md — образцовая модель |
+| Готовность к статье / Article readiness | 8/10 | Всё работает, документация глубокая, 9/13 скриншотов готовы / Everything works, the documentation is deep, 9 of 13 screenshots are ready |
+| Инженерная зрелость / Engineering maturity | 8/10 | mem_limit, healthchecks, fail-closed backup, systemd watchdog |
+| Воспроизводимость / Reproducibility | 7/10 | .env.example + Quick Start + ADR + промпты есть; JMS583 swap не задокументирован / .env.example + Quick Start + ADRs + prompts exist; the JMS583 swap is undocumented |
+| Уникальность сюжета / Uniqueness of the story | 9/10 | USB SSD нестабильность + AI-assisted engineering = редкий жанр / USB SSD instability + AI-assisted engineering = a rare genre |
+| Состояние CI/CD / CI/CD state | 7/10 | 4 workflows работают; Trivy и actionlint есть, но не все scripts покрыты / 4 workflows run; Trivy and actionlint exist, but not all scripts are covered |
+| Тестовое покрытие / Test coverage | 6/10 | goss 34 теста, smoke-тесты есть; k6 нагрузочный не запускался live / goss 34 tests, smoke tests exist; the k6 load test has never been run live |
+| Безопасность / Security | 7/10 | Secrets scan CI, no secrets in git, filter-repo done; Docker 20.10.7 устарел / Docker 20.10.7 is outdated |
+| Документация / Documentation | 9/10 | 24+ doc-файла, ADR-0001..0006, двуязычные, промпты, TEST_PLAN, runbook / 24+ documents, ADR-0001..0006, bilingual, prompts, TEST_PLAN, runbook |
+| Android-интеграция / Android integration | 8/10 | Immich + Nextcloud + DAVx⁵ настроены; документация MIUI quirks подробная / Immich + Nextcloud + DAVx⁵ are configured; the MIUI quirks documentation is detailed |
+| AI-assisted workflow | 9/10 | AGENTS.md, 5 domain-agents, промпты, CLAUDE.md — образцовая модель / AGENTS.md, 5 domain agents, prompts, CLAUDE.md — an exemplary model |
 
 ---
 
 ## 5. Hardware Layer
 
-| Компонент | Модель | Характеристики | Проблемы |
+| Компонент / Component | Модель / Model | Характеристики / Specs | Проблемы / Problems |
 |---|---|---|---|
-| Вычислительный узел | NVIDIA Jetson Nano Dev Kit | 4 GB LPDDR4, ARM64, GPU Maxwell | Docker 20.10.7 устарел; нет swap (zram 1.9 GB) |
-| Системный диск | microSD + Kingston USB | 64 GB (60 GB для OS); 28% использовано | Износ microSD — риск; нет мониторинга wear |
-| USB-хаб | Realtek 0bda:5411 | 4-портовый | Ранее входил в autosuspend, убивая дочерние устройства |
-| USB SSD (текущий) | **JMS583** (152d:a583) | 229 GB, USB 3.0 SuperSpeed, 5 Gbps, Write 250 MB/s | UAS quirk активен; SMART базовый (smartmontools 6.6) |
-| USB SSD (заменён) | DEXP / Realtek RTL9210B-CG | 232 GB, USB 2.0 (деградация), ~40 MB/s | 3x error -71, SMART заблокирован — **заменён 2026-06-28** |
-| VPS | Ubuntu 24.04 · 1 vCPU · 2 GB RAM | Vienna | Amnezia VPN (25 клиентов) — не трогать |
+| Вычислительный узел / Compute node | NVIDIA Jetson Nano Dev Kit | 4 GB LPDDR4, ARM64, GPU Maxwell | Docker 20.10.7 устарел; нет swap (zram 1.9 GB) / Docker 20.10.7 is outdated; no swap (zram 1.9 GB) |
+| Системный диск / System disk | microSD + Kingston USB | 64 GB (60 GB для OS); 28% использовано / 64 GB (60 GB for the OS); 28% used | Износ microSD — риск; нет мониторинга wear / microSD wear is a risk; wear is not monitored |
+| USB-хаб / USB hub | Realtek 0bda:5411 | 4-портовый / 4-port | Ранее входил в autosuspend, убивая дочерние устройства / Used to enter autosuspend, killing the child devices |
+| USB SSD (текущий / current) | **JMS583** (152d:a583) | 229 GB, USB 3.0 SuperSpeed, 5 Gbps, Write 250 MB/s | UAS quirk активен; SMART базовый (smartmontools 6.6) / the UAS quirk is active; SMART is basic (smartmontools 6.6) |
+| USB SSD (заменён / replaced) | DEXP / Realtek RTL9210B-CG | 232 GB, USB 2.0 (деградация / degraded), ~40 MB/s | 3x error -71, SMART заблокирован — **заменён 2026-06-28** / 3× error -71, SMART blocked — **replaced 2026-06-28** |
+| VPS | Ubuntu 24.04 · 1 vCPU · 2 GB RAM | Vienna | Amnezia VPN (25 клиентов) — не трогать / Amnezia VPN (25 clients) — do not touch |
 
-**Аппаратные риски:**
+🇷🇺 **Аппаратные риски:**
 - Docker 20.10.7 (2021) — устаревший, известные CVE (F-01, Open)
 - microSD wear: нет мониторинга S.M.A.R.T. для встроенной карты
 - RTL9210B-CG **заменён** на JMS583 (2026-06-28). Watchdog ✅ active.
+
+🇬🇧 **Hardware risks:**
+- Docker 20.10.7 (2021) — outdated, with known CVEs (F-01, Open)
+- microSD wear: no S.M.A.R.T. monitoring for the embedded card
+- The RTL9210B-CG has been **replaced** by the JMS583 (2026-06-28). Watchdog ✅ active.
 
 ---
 
 ## 6. Service Layer
 
-| Контейнер | Image | Порт | mem_limit | Healthcheck | restart | Статус |
+| Контейнер / Container | Image | Порт / Port | mem_limit | Healthcheck | restart | Статус / Status |
 |---|---|---|---|---|---|---|
 | homecloud_nextcloud | nextcloud:apache | 8080 | 512m | /status.php | always | ✅ |
 | homecloud_nextcloud_db | postgres:16-alpine | — | 512m | pg_isready | always | ✅ |
@@ -170,30 +183,37 @@ Internet
 | homecloud_immich_server | immich-server:release | 2283 | 1024m | /api/server/ping | always | ✅ |
 | homecloud_immich_db | pgvecto-rs:pg16 | — | 384m | pg_isready | always | ✅ |
 | homecloud_immich_redis | redis:7-alpine | — | 64m | redis-cli ping | always | ✅ |
-| homecloud_immich_microservices | immich-server:release | — | 512m | (нет) | always | ✅ |
+| homecloud_immich_microservices | immich-server:release | — | 512m | (нет / none) | always | ✅ |
 | homecloud_llm_gateway | custom FastAPI | 8090 | 256m | /health | always | ✅ |
 | homecloud_nas_jetson_nano_api | custom FastAPI | 8099 | 128m | /healthcheck | always | ✅ |
-| homecloud_samba | crazymax/samba | 445/139 | не задан | (нет) | always | ✅ LAN only |
+| homecloud_samba | crazymax/samba | 445/139 | не задан / not set | (нет / none) | always | ✅ LAN only |
 | homecloud_netdata | netdata:latest | 19999 | 256m | /api/v1/info | always | ✅ |
 | homecloud_uptime_kuma | louislam/uptime-kuma:1 | 3001 | 128m | built-in | always | ✅ 5 monitors |
 | homecloud_portainer | portainer/portainer-ce | 9000 | 128m | (scratch) | always | ✅ |
 
-**Примечания:**
+🇷🇺 **Примечания:**
 - IMMICH_DISABLE_MACHINE_LEARNING=true — обязательно для Jetson 4 GB (нет swap + GPU RAM shared)
 - Samba доступна только из LAN через iptables (192.168.0.0/24 → 445/139)
 - Beszel Agent работает как systemd-юнит вне Docker (arm64 binary 0.18.7)
 - immich-microservices не имеет healthcheck — возможно незначительный gap
 
+🇬🇧 **Notes:**
+- IMMICH_DISABLE_MACHINE_LEARNING=true — mandatory on a 4 GB Jetson (no swap + shared GPU RAM)
+- Samba is reachable only from the LAN, enforced by iptables (192.168.0.0/24 → 445/139)
+- The Beszel Agent runs as a systemd unit outside Docker (arm64 binary 0.18.7)
+- immich-microservices has no healthcheck — possibly a minor gap
+
 ---
 
 ## 7. Network Layer
 
-### Топология
+### Топология / Topology
 
 ```
 LAN (192.168.0.0/24)
   └─ Jetson Nano: 192.168.0.50 (static DHCP)
        └─ iptables: Samba LAN-only, DROP остальное для 445/139
+          iptables: Samba LAN-only, DROP everything else for 445/139
 
 CGNAT bypass: autossh reverse SSH tunnel
   Jetson → outbound SSH → VPS:22
@@ -206,95 +226,109 @@ VPS public ports:
   :8090/:9443  — LLM Gateway (HTTP/HTTPS)
   :10022       — SSH management (Jetson via tunnel)
   :8091        — Beszel Hub (monitoring)
-  :45876       — Beszel Agent Jetson (через VPS tunnel)
+  :45876       — Beszel Agent Jetson (через VPS tunnel / through the VPS tunnel)
   :45877       — Beszel Agent VPS (localhost)
 ```
 
-### Архитектурные решения (ADR)
+### Архитектурные решения (ADR) / Architecture decisions (ADR)
 
-| ADR | Решение | Статус |
+| ADR | Решение / Decision | Статус / Status |
 |---|---|---|
 | ADR-0001 | Nextcloud + Immich + DeepSeek Gateway | Accepted |
-| ADR-0002 | USB SSD хранилище, UUID/fstab | Accepted |
-| ADR-0003 | LAN-only (нет direct internet exposure) | Accepted |
-| ADR-0004 | Tailscale — отклонён (VPN-конфликт на Android) | Rejected |
+| ADR-0002 | USB SSD хранилище, UUID/fstab / USB SSD storage, UUID/fstab | Accepted |
+| ADR-0003 | LAN-only (нет direct internet exposure / no direct internet exposure) | Accepted |
+| ADR-0004 | Tailscale — отклонён (VPN-конфликт на Android) / rejected (VPN conflict on Android) | Rejected |
 | ADR-0005 | autossh reverse SSH tunnel (CGNAT bypass) | Implemented |
-| ADR-0006 | HTTPS self-signed на alt-портах (нет домена) | Accepted |
+| ADR-0006 | HTTPS self-signed на alt-портах (нет домена) / self-signed HTTPS on alt ports (no domain) | Accepted |
 
-### Известные ограничения сети
+### Известные ограничения сети / Known network limitations
 
+🇷🇺
 - Нет доменного имени → Let's Encrypt недоступен → self-signed TLS + браузерное предупреждение
 - VPS IP может меняться (нет DDN) → ручное обновление VPS_HOST в .env
 - Порт 443 занят Amnezia xray — не трогать
+
+🇬🇧
+- No domain name → Let's Encrypt is unavailable → self-signed TLS + a browser warning
+- The VPS IP can change (no DDNS) → VPS_HOST has to be updated in .env by hand
+- Port 443 is occupied by Amnezia xray — do not touch
 
 ---
 
 ## 8. Storage Layer
 
-| Параметр | Значение |
+| Параметр / Parameter | Значение / Value |
 |---|---|
-| Устройство | /dev/sda1 (JMS583 · 152d:a583) |
-| Размер | 229 GB ext4 |
-| Использование | ~3% (~7 GB) |
-| Монтирование | /mnt/storage · UUID в /etc/fstab · noatime |
-| Скорость | Write **250 MB/s** · Read **172 MB/s** (dd bs=1M) |
+| Устройство / Device | /dev/sda1 (JMS583 · 152d:a583) |
+| Размер / Size | 229 GB ext4 |
+| Использование / Usage | ~3% (~7 GB) |
+| Монтирование / Mount | /mnt/storage · UUID в /etc/fstab · noatime / UUID in /etc/fstab · noatime |
+| Скорость / Speed | Write **250 MB/s** · Read **172 MB/s** (dd bs=1M) |
 | Preflight | scripts/storage/storage_preflight.sh (errors=0 verified) |
 | Backup | pg_dump · gzip · /mnt/storage/backups/database-dumps · 7-day rotation |
-| Backup guard | fail-closed: не пишет в microSD если /mnt/storage не mountpoint |
-| SMART | Базовый (smartmontools 6.6, SAT passthrough ограничен) |
+| Backup guard | fail-closed: не пишет в microSD если /mnt/storage не mountpoint / fail-closed: does not write to the microSD if /mnt/storage is not a mountpoint |
+| SMART | Базовый (smartmontools 6.6, SAT passthrough ограничен) / Basic (smartmontools 6.6, SAT passthrough is limited) |
 | USB quirks | **usb-storage.quirks=152d:a583:u** (UAS quirk, BOT mode, extlinux.conf) |
-| USB autosuspend | usbcore.autosuspend=-1 (kernel param, подтверждён после reboot) |
-| SCSI timeout | 120s (udev правило, активно) |
+| USB autosuspend | usbcore.autosuspend=-1 (kernel param, подтверждён после reboot / kernel param, confirmed after a reboot) |
+| SCSI timeout | 120s (udev правило, активно / udev rule, active) |
 
-### История инцидентов USB SSD
+### История инцидентов USB SSD / USB SSD incident history
 
-| Дата | Событие | Причина | Решение |
+| Дата / Date | Событие / Event | Причина / Cause | Решение / Resolution |
 |---|---|---|---|
-| 2026-06-23 | error -71, SSD исчез с шины, Docker offline | RTL9210B-CG + USB autosuspend | Физическое переподключение + storage_preflight |
-| 2026-06-24 | USB watchdog установлен | Предотвращение повторения | udev power/control=on, smartd, autosuspend=-1 |
-| 2026-06-26 | error -71 при boot | Порт 4 (1-2.4) аппаратно сломан | Переткнут в порт 2 (1-2.2) |
-| 2026-06-26 | CRLF в shebang | git на Windows конвертировал LF→CRLF | .gitattributes LF enforce + dos2unix |
-| 2026-06-27 | Всё работает стабильно | preboot + monitor + port 2 | 7 boot подряд без инцидентов |
-| 2026-06-28 | nas_jetson_nano-ssd-recovery.service (udev hotplug) | Автовосстановление при горячем подключении | udev → mount → preflight → docker start |
+| 2026-06-23 | error -71, SSD исчез с шины, Docker offline / error -71, the SSD vanished from the bus, Docker offline | RTL9210B-CG + USB autosuspend | Физическое переподключение + storage_preflight / Physical replug + storage_preflight |
+| 2026-06-24 | USB watchdog установлен / USB watchdog installed | Предотвращение повторения / Preventing a repeat | udev power/control=on, smartd, autosuspend=-1 |
+| 2026-06-26 | error -71 при boot / error -71 at boot | Порт 4 (1-2.4) аппаратно сломан / Port 4 (1-2.4) is broken in hardware | Переткнут в порт 2 (1-2.2) / Moved to port 2 (1-2.2) |
+| 2026-06-26 | CRLF в shebang / CRLF in the shebang | git на Windows конвертировал LF→CRLF / git on Windows converted LF→CRLF | .gitattributes LF enforce + dos2unix |
+| 2026-06-27 | Всё работает стабильно / Everything runs stably | preboot + monitor + port 2 | 7 boot подряд без инцидентов / 7 boots in a row with no incidents |
+| 2026-06-28 | nas_jetson_nano-ssd-recovery.service (udev hotplug) | Автовосстановление при горячем подключении / Auto-recovery on hotplug | udev → mount → preflight → docker start |
 
 ### off-site backup
 
-**Статус: не реализован.** Скрипты restic готовы (`scripts/backup/restic_backup_example.sh`), но restic backup на VPS не настроен и не запущен. Это критический gap для статьи (нет полного disaster recovery).
+🇷🇺 **Статус: не реализован.** Скрипты restic готовы (`scripts/backup/restic_backup_example.sh`), но restic backup на VPS не настроен и не запущен. Это критический gap для статьи (нет полного disaster recovery).
+
+🇬🇧 **Status: not implemented.** The restic scripts are ready (`scripts/backup/restic_backup_example.sh`), but the restic backup to the VPS is neither configured nor running. This is a critical gap for the article (there is no complete disaster recovery).
 
 ---
 
 ## 9. Android Client Layer
 
-| Приложение | Статус | URL | Примечание |
+| Приложение / Application | Статус / Status | URL | Примечание / Note |
 |---|---|---|---|
-| Immich | ✅ настроен, работает | http://193.8.215.130:2283 | 6723 файлов, 31 альбом, бэкап активирован |
-| Nextcloud | ✅ настроен | https://193.8.215.130:8443 | HTTPS, self-signed → принять 1 раз |
-| DAVx⁵ | ✅ настроен | https://193.8.215.130:8443/remote.php/dav | 2151 контакт импортируется |
-| Samba | LAN only | \\192.168.0.50\public | Доступен в домашней сети |
-| Immich local URL | Не настроен | http://192.168.0.50:2283 | Приоритет по WiFi (TP-Link_828C) |
+| Immich | ✅ настроен, работает / configured, working | http://193.8.215.130:2283 | 6723 файлов, 31 альбом, бэкап активирован / 6723 files, 31 albums, backup enabled |
+| Nextcloud | ✅ настроен / configured | https://193.8.215.130:8443 | HTTPS, self-signed → принять 1 раз / HTTPS, self-signed → accept once |
+| DAVx⁵ | ✅ настроен / configured | https://193.8.215.130:8443/remote.php/dav | 2151 контакт импортируется / 2151 contacts being imported |
+| Samba | LAN only | \\192.168.0.50\public | Доступен в домашней сети / Available on the home network |
+| Immich local URL | Не настроен / Not configured | http://192.168.0.50:2283 | Приоритет по WiFi (TP-Link_828C) / Preferred over Wi-Fi (TP-Link_828C) |
 
-**Документация Android:** `docs/android/ANDROID_SETUP.md`, `GOOGLE_MIGRATION.md`, `XIAOMI_MIUI_QUIRKS.md` — подробные пошаговые инструкции для Xiaomi MIUI/HyperOS.
+🇷🇺 **Документация Android:** `docs/android/ANDROID_SETUP.md`, `GOOGLE_MIGRATION.md`, `XIAOMI_MIUI_QUIRKS.md` — подробные пошаговые инструкции для Xiaomi MIUI/HyperOS.
 
 **Специфика MIUI:** battery whitelist, автозапуск, блокировка в RAM — задокументированы в `XIAOMI_MIUI_QUIRKS.md`. Это ценный материал для статьи (проблема знакома большинству пользователей Xiaomi).
+
+🇬🇧 **Android documentation:** `docs/android/ANDROID_SETUP.md`, `GOOGLE_MIGRATION.md`, `XIAOMI_MIUI_QUIRKS.md` — detailed step-by-step instructions for Xiaomi MIUI/HyperOS.
+
+**MIUI specifics:** battery whitelist, autostart, locking in RAM — all documented in `XIAOMI_MIUI_QUIRKS.md`. This is valuable material for the article (the problem is familiar to most Xiaomi users).
 
 ---
 
 ## 10. AI-Agent Automation Layer
 
-Это один из наиболее сильных аспектов проекта для статьи.
+🇷🇺 Это один из наиболее сильных аспектов проекта для статьи.
 
-### Инфраструктура агентов
+🇬🇧 This is one of the project's strongest aspects for the article.
 
-| Файл | Назначение |
+### Инфраструктура агентов / Agent infrastructure
+
+| Файл / File | Назначение / Purpose |
 |---|---|
-| `AGENTS.md` | Правила работы агентов: hard limits, safety boundaries, workflow |
-| `CLAUDE.md` | Контекстный файл для Claude Code: живое состояние системы |
-| `docs/20_AGENT_OPERATING_MODEL.md` | Операционная модель: 6 ролей субагентов, safety gates, workflow |
-| `docs/prompts/CODEX_*.md` | 8+ промптов для субагентов по областям (Storage, Android, LLM, Security...) |
+| `AGENTS.md` | Правила работы агентов: hard limits, safety boundaries, workflow / Agent operating rules: hard limits, safety boundaries, workflow |
+| `CLAUDE.md` | Контекстный файл для Claude Code: живое состояние системы / The context file for Claude Code: the live state of the system |
+| `docs/20_AGENT_OPERATING_MODEL.md` | Операционная модель: 6 ролей субагентов, safety gates, workflow / The operating model: 6 subagent roles, safety gates, workflow |
+| `docs/prompts/CODEX_*.md` | 8+ промптов для субагентов по областям (Storage, Android, LLM, Security...) / 8+ subagent prompts by area (Storage, Android, LLM, Security...) |
 
 ### 5 domain agents (Prompt A model)
 
-| Агент | Промпт-файл | Зона ответственности |
+| Агент / Agent | Промпт-файл / Prompt file | Зона ответственности / Area of responsibility |
 |---|---|---|
 | Code Agent | `CODEX_CODE_AGENT.md` | services/, Dockerfiles, CI |
 | Hardware Agent | `CODEX_HARDWARE_AGENT.md` | scripts/diagnostics/, systemd/, Jetson SSH |
@@ -302,17 +336,25 @@ VPS public ports:
 | Network Agent | `CODEX_NETWORK_AGENT.md` | scripts/network/, docker/vps/, VPS nginx |
 | SysApps Agent | `CODEX_SYSAPPS_AGENT.md` | docker/compose/, configs/, .env.example |
 
-### Паттерны AI-assisted workflow в проекте
+### Паттерны AI-assisted workflow в проекте / AI-assisted workflow patterns in the project
 
+🇷🇺
 - Claude Code запускал параллельные субагенты для Bootstrap prompt (4 агента одновременно)
 - `AGENTS.md` — «память агента между сессиями»; жёсткие правила предотвращают повторные инциденты (Amnezia VPN)
 - Агент генерировал systemd-юниты, udev-правила, CRLF-fix, filter-repo — задачи, требующие специфических знаний
 - AI предупредил о рисках WireGuard на Tegra kernel 4.9 (несовместимость DKMS)
 - После VPN-инцидента правило «не трогать Amnezia» зафиксировано в AGENTS.md — агент напоминает при любой попытке
 
-### Честная оценка подхода
+🇬🇧
+- Claude Code ran parallel subagents for the Bootstrap prompt (4 agents at once)
+- `AGENTS.md` is the "agent's memory between sessions"; hard rules prevent repeat incidents (Amnezia VPN)
+- The agent generated systemd units, udev rules, the CRLF fix, filter-repo — tasks that require specific knowledge
+- The AI warned about the risks of WireGuard on Tegra kernel 4.9 (DKMS incompatibility)
+- After the VPN incident, the rule "do not touch Amnezia" was written into AGENTS.md — the agent brings it up on any attempt
 
-**Плюсы:**
+### Честная оценка подхода / An honest assessment of the approach
+
+🇷🇺 **Плюсы:**
 - Скорость: недели DevOps → часы
 - Документация создаётся параллельно с кодом
 - Ошибки фиксируются в ADR, не теряются
@@ -323,40 +365,51 @@ VPS public ports:
 - Финальная проверка — всегда человек: firewall, fstab, пароли
 - Контекст сессии конечен — решается AGENTS.md + CLAUDE.md
 
+🇬🇧 **Pros:**
+- Speed: weeks of DevOps → hours
+- Documentation is produced alongside the code
+- Mistakes are recorded in ADRs and are not lost
+- The agent knows GitHub open-source conventions (CI, badges, CODEOWNERS)
+
+**Cons:**
+- The agent does not know the specific hardware — the details have to be explained (the USB-SATA bridge, the real RAM figure)
+- The final check is always a human: firewall, fstab, passwords
+- The session context is finite — solved by AGENTS.md + CLAUDE.md
+
 ---
 
 ## 11. Reliability and Validation Layer
 
 ### CI/CD (GitHub Actions)
 
-| Workflow | Триггер | Что проверяет | Статус |
+| Workflow | Триггер / Trigger | Что проверяет / What it checks | Статус / Status |
 |---|---|---|---|
 | secrets-check.yml | push/PR → main | bash check_no_secrets.sh | ✅ |
 | shellcheck.yml | push/PR scripts/** | shellcheck --severity=error | ✅ |
 | validate-compose.yml | push/PR docker/** | docker compose config --quiet | ✅ |
-| quality-checks.yml | push/PR | (дополнительные проверки) | ✅ |
+| quality-checks.yml | push/PR | (дополнительные проверки / additional checks) | ✅ |
 
-### Тестирование
+### Тестирование / Testing
 
-| Тип | Инструмент | Покрытие | Статус |
+| Тип / Type | Инструмент / Tool | Покрытие / Coverage | Статус / Status |
 |---|---|---|---|
-| Infrastructure state | goss v0.4.9 | 34 теста (порты, сервисы, файлы, HTTP) | 33/34 прошли (1 — nas_jetson_nano-api /health transient) |
-| Shell scripts | shellcheck | scripts/ (**/*.sh) | CI, 11/14 чистые |
-| Python code | bandit | services/ (738 строк) | 0 проблем безопасности |
-| Dockerfiles | hadolint | 3 Dockerfile | 3/3 чистые |
-| Service smoke | curl | Nextcloud, Immich, LLM GW, nas_jetson_nano-api | ✅ скрипты в tests/service/ |
-| Storage mount | mountpoint + df | /mnt/storage | ✅ скрипты в tests/storage/ |
-| SMART | smartctl | /dev/sda | ⚠️ заблокирован RTL9210B-CG (docs в smart_check.sh) |
-| Load test (k6) | k6 | nextcloud-smoke.js (5 VU/2min) | Скрипт готов, live не запускался |
-| Backup restore | rsync dry-run | tests/backup/restore_test.sh | Скрипт готов, не задокументировано live прохождение |
-| Android manual | ADB (readonly) | tests/android/adb_readonly_check.sh | Скрипт готов; ручная проверка выполнена |
+| Infrastructure state | goss v0.4.9 | 34 теста (порты, сервисы, файлы, HTTP) / 34 tests (ports, services, files, HTTP) | 33/34 прошли (1 — nas_jetson_nano-api /health transient) / 33/34 passed (1 — nas_jetson_nano-api /health transient) |
+| Shell scripts | shellcheck | scripts/ (**/*.sh) | CI, 11/14 чистые / CI, 11/14 clean |
+| Python code | bandit | services/ (738 строк / 738 lines) | 0 проблем безопасности / 0 security issues |
+| Dockerfiles | hadolint | 3 Dockerfile | 3/3 чистые / 3/3 clean |
+| Service smoke | curl | Nextcloud, Immich, LLM GW, nas_jetson_nano-api | ✅ скрипты в tests/service/ / scripts in tests/service/ |
+| Storage mount | mountpoint + df | /mnt/storage | ✅ скрипты в tests/storage/ / scripts in tests/storage/ |
+| SMART | smartctl | /dev/sda | ⚠️ заблокирован RTL9210B-CG (docs в smart_check.sh) / blocked by the RTL9210B-CG (documented in smart_check.sh) |
+| Load test (k6) | k6 | nextcloud-smoke.js (5 VU/2min) | Скрипт готов, live не запускался / The script is ready, never run live |
+| Backup restore | rsync dry-run | tests/backup/restore_test.sh | Скрипт готов, не задокументировано live прохождение / The script is ready, no live pass is documented |
+| Android manual | ADB (readonly) | tests/android/adb_readonly_check.sh | Скрипт готов; ручная проверка выполнена / The script is ready; a manual check was performed |
 | Network | connectivity_check.sh | Jetson + VPS | ✅ |
 
 ### Resilience findings (doc/22_AUDIT_RESILIENCE.md)
 
-| ID | Серьёзность | Статус |
+| ID | Серьёзность / Severity | Статус / Status |
 |---|---|---|
-| F-01 | CRITICAL: Docker 20.10.7 устарел | Open (нетривиальное обновление на JetPack) |
+| F-01 | CRITICAL: Docker 20.10.7 устарел / Docker 20.10.7 is outdated | Open (нетривиальное обновление на JetPack) / Open (a non-trivial upgrade on JetPack) |
 | F-02 | CRITICAL: docker kill + restart:unless-stopped bug | Mitigated (→ restart:always) |
 | F-03 | HIGH: mem_limit | Fixed |
 | F-04 | HIGH: healthchecks | Fixed |
@@ -372,7 +425,7 @@ VPS public ports:
 
 ## 12. What Is Already Article-Ready
 
-**Сильные стороны для статьи:**
+🇷🇺 **Сильные стороны для статьи:**
 
 1. **Реальная история USB SSD crisis.** Три инцидента с RTL9210B-CG задокументированы с kernel logs, recovery procedures, постморемами. Это живой инженерный нарратив.
 
@@ -390,11 +443,29 @@ VPS public ports:
 
 8. **Единственное фото стенда.** `assets/photos/test_sys.jpg` — Jetson Nano на роутере + DEXP-плата. Реальный стенд.
 
+🇬🇧 **Strengths for the article:**
+
+1. **A real USB SSD crisis story.** Three RTL9210B-CG incidents are documented with kernel logs, recovery procedures and post-mortems. This is a living engineering narrative.
+
+2. **An AI-assisted engineering workflow.** AGENTS.md as "agent memory", 5 domain agents, parallel subagents, real prompts — a unique pattern that has not been described on Habr.
+
+3. **The CGNAT bypass architecture.** ADR-0005 explains why Tailscale and WireGuard were rejected and how an autossh reverse tunnel solves the problem without a domain name.
+
+4. **Bilingual documentation.** 24+ documents in RU+EN, ADR-0001..0006, TEST_PLAN, TEST_MATRIX, RUNBOOK — the project is ready for an international audience.
+
+5. **A reproducible Quick Start.** `config/.env.example` + 5 docker compose commands + goss validate = a complete deploy path.
+
+6. **Real users.** 4 accounts (admin, olga, ivan, ulyana), 6723 photos in Immich, 2151 contacts — the system is used by a family, not merely tested.
+
+7. **An honest list of limitations.** The Known Limitations section in the README: outdated Docker, self-signed TLS, no off-site backup, ML disabled.
+
+8. **The single photo of the rig.** `assets/photos/test_sys.jpg` — the Jetson Nano on the router + the DEXP board. A real setup.
+
 ---
 
 ## 13. What Is Not Ready Yet
 
-**Пробелы, которые нужно закрыть до публикации:**
+🇷🇺 **Пробелы, которые нужно закрыть до публикации:**
 
 1. **Скриншоты частично готовы.** Сделаны: Immich web, Nextcloud dashboard, Nextcloud Talk, Telegram report, Immich Android (галерея + профиль + бэкап), Nextcloud Android, DAVx⁵. Ещё нужны (LAN only): Portainer (13 контейнеров), Beszel Hub (CPU/RAM графики), Uptime Kuma (5 мониторов), NAS_Jetson_Nano API Swagger UI. Все в `assets/screenshots/article/`.
 
@@ -412,25 +483,43 @@ VPS public ports:
 
 8. **CHANGELOG содержит только v1.3.8 тег.** v1.3.9 упомянут в CLAUDE.md, но не в CHANGELOG — несоответствие для читателей репозитория.
 
+🇬🇧 **Gaps to close before publication:**
+
+1. **The screenshots are only partly done.** Taken: Immich web, the Nextcloud dashboard, Nextcloud Talk, the Telegram report, Immich Android (gallery + profile + backup), Nextcloud Android, DAVx⁵. Still needed (LAN only): Portainer (13 containers), Beszel Hub (CPU/RAM graphs), Uptime Kuma (5 monitors), the NAS_Jetson_Nano API Swagger UI. All of them live in `assets/screenshots/article/`.
+
+2. **Live performance measurements are undocumented.** The I/O benchmark (`scripts/storage/benchmark_io.sh`) exists but there are no results. The 40 MB/s figure for the RTL9210B-CG is in the README, but its source is unclear.
+
+3. **The off-site backup is not implemented.** The restic scripts are ready, but the backup to the VPS is not configured. If this is mentioned in the article, readers will ask "and how do you recover if the Jetson dies?".
+
+4. **The k6 load test has never been run live.** The script exists (`tests/load/nextcloud-smoke.js`), the results do not.
+
+5. **Docker 20.10.7 is an open vulnerability (F-01).** For the article it is best to either upgrade or explicitly explain why that is non-trivial (JetPack dependencies).
+
+6. **The JMS583 swap is undocumented.** A key planned event (it arrived 2026-06-28) — there is no document describing the replacement procedure and the validation afterwards.
+
+7. **Backup restore has not been tested end-to-end.** `tests/backup/restore_test.sh` exists, but there is no evidence of a live pass.
+
+8. **The CHANGELOG only carries the v1.3.8 tag.** v1.3.9 is mentioned in CLAUDE.md but not in the CHANGELOG — an inconsistency for readers of the repository.
+
 ---
 
 ## 14. Risks Before Publication
 
-| Риск | Вероятность | Влияние | Митигация |
+| Риск / Risk | Вероятность / Likelihood | Влияние / Impact | Митигация / Mitigation |
 |---|---|---|---|
-| Docker 20.10.7 CVE | Medium | High | Задокументировать в Known Limitations; добавить Trivy в CI |
-| off-site backup отсутствует | High | High | Добавить раздел «что будет если Jetson умрёт» в статью |
-| RTL9210B-CG до замены JMS583 | High | Critical | Watchdog остановлен; написать в статье как реальный open item |
-| VPS IP без домена | Medium | Medium | DDNS или купить домен (Issue #4 в GitHub) |
-| Утечка секретов в будущих коммитах | Low | Critical | CI secrets-check активен; .gitignore корректен |
-| Miui battery kill Immich backup | Medium | Medium | Задокументировано в XIAOMI_MIUI_QUIRKS.md |
-| Wear microSD | Low | High | Нет мониторинга; добавить в Netdata или systemd timer |
+| Docker 20.10.7 CVE | Medium | High | Задокументировать в Known Limitations; добавить Trivy в CI / Document it in Known Limitations; add Trivy to CI |
+| off-site backup отсутствует / off-site backup is missing | High | High | Добавить раздел «что будет если Jetson умрёт» в статью / Add a "what happens if the Jetson dies" section to the article |
+| RTL9210B-CG до замены JMS583 / RTL9210B-CG before the JMS583 swap | High | Critical | Watchdog остановлен; написать в статье как реальный open item / The watchdog is stopped; present it in the article as a genuine open item |
+| VPS IP без домена / A VPS IP with no domain | Medium | Medium | DDNS или купить домен (Issue #4 в GitHub) / DDNS or buy a domain (Issue #4 on GitHub) |
+| Утечка секретов в будущих коммитах / Secrets leaking in future commits | Low | Critical | CI secrets-check активен; .gitignore корректен / The CI secrets check is active; .gitignore is correct |
+| Miui battery kill Immich backup | Medium | Medium | Задокументировано в XIAOMI_MIUI_QUIRKS.md / Documented in XIAOMI_MIUI_QUIRKS.md |
+| Wear microSD / microSD wear | Low | High | Нет мониторинга; добавить в Netdata или systemd timer / Not monitored; add it to Netdata or a systemd timer |
 
 ---
 
 ## 15. Evidence Package Checklist
 
-Что нужно подготовить для сопровождения статьи:
+🇷🇺 Что нужно подготовить для сопровождения статьи:
 
 - [x] Скриншот Immich — фотоархив (6.1 GiB / 228 GiB) → `assets/screenshots/article/immich_web.png`
 - [x] Скриншот Nextcloud — дашборд → `assets/screenshots/article/nextcloud_dashboard.png`
@@ -452,22 +541,53 @@ VPS public ports:
 - [ ] Результат `storage_preflight.sh` — errors=0, warnings=0
 - [ ] CHANGELOG обновить до v1.3.9
 
+🇬🇧 What has to be prepared to accompany the article:
+
+- [x] Immich screenshot — the photo archive (6.1 GiB / 228 GiB) → `assets/screenshots/article/immich_web.png`
+- [x] Nextcloud screenshot — the dashboard → `assets/screenshots/article/nextcloud_dashboard.png`
+- [x] Nextcloud Talk screenshot — the "Family" chat → `assets/screenshots/article/nextcloud_talk.png`
+- [x] Nextcloud Android screenshot — files → `assets/screenshots/article/android_nextcloud_files.jpg`
+- [x] Immich Android screenshot — gallery + profile + backup → `android_immich_*.jpg`
+- [x] DAVx⁵ CalDAV screenshot → `assets/screenshots/article/android_davx5_caldav.jpg`
+- [x] Telegram daily report screenshot (full) → `assets/screenshots/article/telegram_report_full.png`
+- [ ] Portainer screenshot — 13 containers up/healthy *(LAN only :9000, has to be taken at home)*
+- [x] Beszel Hub screenshot — systems overview → `beszel_systems_overview.png`
+- [x] Beszel Hub screenshot — Jetson CPU/RAM/Docker metrics → `beszel_jetson_metrics.png`
+- [ ] Uptime Kuma screenshot — 5 monitors (all green) *(LAN only :3001)*
+- [x] NAS_Jetson_Nano API Swagger UI v0.6.0 screenshot → `nas_jetson_nano_api_swagger.png`
+- [x] A photo of the physical rig (already present: `assets/photos/test_sys.jpg`)
+- [ ] `goss validate` output — 34/34 pass after the JMS583 swap
+- [ ] `docker stats --no-stream` output — RAM usage of all 13 containers
+- [ ] `dd` or fio I/O test results on the JMS583 (compared with the RTL9210B-CG at 40 MB/s)
+- [ ] Kernel log before/after the USB enclosure swap
+- [ ] `storage_preflight.sh` output — errors=0, warnings=0
+- [ ] Update the CHANGELOG to v1.3.9
+
 ---
 
 ## 16. Habr Article Plan
 
-**Заголовок:** Домашнее облако на Jetson Nano: задумал я — реализовал Claude Code. История трёх USB-инцидентов, 13 Docker-контейнеров и семейного фотоархива
+🇷🇺 **Заголовок:** Домашнее облако на Jetson Nano: задумал я — реализовал Claude Code. История трёх USB-инцидентов, 13 Docker-контейнеров и семейного фотоархива
 
 **Хабы:** Системное администрирование · Open Source · Искусственный интеллект · Self-hosted  
 **Теги:** `selfhosted` `nextcloud` `immich` `jetson-nano` `docker` `homelab` `claude-code` `ai-assisted-dev` `usb-storage`
 
+🇬🇧 **Title:** A home cloud on a Jetson Nano: I designed it, Claude Code built it. The story of three USB incidents, 13 Docker containers and a family photo archive
+
+**Hubs:** System administration · Open Source · Artificial Intelligence · Self-hosted  
+**Tags:** `selfhosted` `nextcloud` `immich` `jetson-nano` `docker` `homelab` `claude-code` `ai-assisted-dev` `usb-storage`
+
 ---
 
-### Структура статьи
+### Структура статьи / Article structure
 
-**Лид (до cut):** 3-4 абзаца — личная история (Jetson в ящике, HDD от сына, Google Photos без места), идея, ключевой сюжет: не «как поднять Nextcloud», а «как строили отказоустойчивость вокруг нестабильного железа с помощью AI».
+🇷🇺 **Лид (до cut):** 3-4 абзаца — личная история (Jetson в ящике, HDD от сына, Google Photos без места), идея, ключевой сюжет: не «как поднять Nextcloud», а «как строили отказоустойчивость вокруг нестабильного железа с помощью AI».
+
+🇬🇧 **Lead (before the cut):** 3–4 paragraphs — a personal story (a Jetson in a drawer, an HDD from a son, Google Photos out of space), the idea, and the central plot: not "how to set up Nextcloud" but "how we built resilience around unstable hardware with the help of AI".
 
 ---
+
+🇷🇺
 
 **§1. Железо и исходная точка**
 - NVIDIA Jetson Nano 4 GB: что это, зачем куплен, почему подходит для home cloud
@@ -526,15 +646,74 @@ VPS public ports:
 - Что дал AI-assisted подход: скорость + документация + системность
 - Что впереди: JMS583, restic backup, Let's Encrypt, RPi guide
 
+🇬🇧
+
+**§1. The hardware and the starting point**
+- NVIDIA Jetson Nano 4 GB: what it is, why it was bought, why it suits a home cloud
+- Key constraints: no swap (but 1.9 GB of zram), ARM64, Docker 20.10.7 (old)
+- The DEXP USB SSD: 232 GB, RTL9210B-CG — why this turned into a problem
+- The VPS in Vienna: it already existed for the family VPN (Amnezia) and must not be touched
+
+**§2. The architecture in 5 minutes**
+- An ASCII diagram: Jetson → autossh → VPS nginx → HTTPS → Android
+- A table of services with their ports and mem_limit
+- Principles: LAN+tunnel only, no secrets in git, restart:always, fail-closed backup
+
+**§3. What the process with Claude Code looked like**
+- AGENTS.md as the agent's "architectural memory"
+- Examples of real prompts (from docs/prompts/)
+- Parallel subagents: what they did simultaneously
+- An honest assessment: what works well, what needs supervision
+- The VPN incident: how the lesson was written into AGENTS.md
+
+**§4. The USB SSD: three incidents and the engineering response**
+*(This is the central and most distinctive section)*
+- Incident 1 (2026-06-23): error -71, the kernel log, what it means
+- Diagnosis: the RTL9210B-CG degrades from USB 3.0 to 2.0 and blocks SMART
+- Fix 1: autosuspend=off via udev, SCSI timeout 120s
+- Incident 2 (2026-06-26): port 4 is broken in hardware → move to port 2
+- Incident 3 (CRLF in the bash shebang): the watchdog was dead for 4+ hours because of git on Windows → .gitattributes
+- nas_jetson_nano-usb-preboot.service: a power cycle BEFORE mounting on every boot
+- nas_jetson_nano-ssd-recovery.service: udev hotplug → mount → preflight → docker start
+- Result: 7 boots in a row with no incidents on port 2
+
+**§5. Android integration: migrating away from Google**
+- Immich: 6723 photos, 31 albums, auto-backup
+- DAVx⁵ + Nextcloud: 2151 contacts
+- Self-signed HTTPS on alt ports: why (no domain, Amnezia on 443)
+- MIUI/HyperOS specifics: battery whitelist, autostart
+
+**§6. Monitoring and observability**
+- Beszel Hub (VPS) + Agents: CPU/RAM/Disk history
+- The Telegram daily report at 09:00: what it contains
+- Uptime Kuma: 5 monitors
+- goss: 34 infrastructure tests
+
+**§7. An honest assessment and the open questions**
+- Docker 20.10.7 — an open vulnerability, a non-trivial upgrade
+- The off-site backup is not configured (the restic scripts exist, the backup on the VPS does not)
+- What happens when the JMS583 arrives: the watchdog goes back on, SMART starts working
+- Let's Encrypt: once there is a domain
+
+**§8. How to repeat this: Quick Start**
+- Requirements (Jetson/RPi4+/mini-PC, a VPS, Docker Compose v2)
+- 5 commands to launch it
+- A link to the README + docs/
+
+**§9. Conclusions**
+- What came of it: a working family server that survives USB incidents
+- What the AI-assisted approach gave: speed + documentation + systematic thinking
+- What lies ahead: JMS583, restic backup, Let's Encrypt, an RPi guide
+
 ---
 
 ## 17. Hackaday.io Project Plan
 
-**Название проекта:** Home Cloud for Old Hardware — Jetson Nano Family Server
+**Название проекта / Project name:** Home Cloud for Old Hardware — Jetson Nano Family Server
 
 **Tagline:** Turn forgotten Jetson Nano + USB drive into a private family cloud replacing Google Photos, Drive, and Contacts. Survived 3 USB SSD failures. Built with AI.
 
-**Категории:** Raspberry Pi · Linux · Software · Home Automation
+**Категории / Categories:** Raspberry Pi · Linux · Software · Home Automation
 
 ---
 
@@ -571,7 +750,7 @@ Replacing RTL9210B-CG with JMS583 (SMART passthrough, USB 3.0). Off-site restic 
 
 ## 18. Recommended Article Angle
 
-**Главный сюжет:** «Reliability story + AI-assisted engineering»
+🇷🇺 **Главный сюжет:** «Reliability story + AI-assisted engineering»
 
 Это не «как поднять Nextcloud» (таких статей достаточно). Это:
 
@@ -592,11 +771,32 @@ Replacing RTL9210B-CG with JMS583 (SMART passthrough, USB 3.0). Off-site restic 
 
 **Вывод:** комбинация уникальна. Публиковать стоит.
 
+🇬🇧 **The central story:** "a reliability story + AI-assisted engineering"
+
+This is not "how to set up Nextcloud" (there are plenty of those). It is:
+
+> *A family cloud on a forgotten Jetson Nano. An unstable USB bridge killed the system three times. An AI agent helped build resilience: it wrote systemd services, udev rules, incident documentation. The result is a working system for 4 family members with 6723 photos and 2151 contacts.*
+
+**Why this story works:**
+
+1. **The USB SSD crisis** — a concrete technical story with kernel logs, not abstract architecture
+2. **AI as a tool** — not hype but practice: what works, what does not, what the lessons are
+3. **"Old hardware must live"** — an emotional hook: a Jetson from a drawer + an HDD from a son
+4. **Reproducibility** — a reader can take an RPi4 and repeat it
+5. **Honesty** — Docker 20.10.7 is outdated, the off-site backup is not configured, SMART is blocked — that builds trust
+
+**Competitors on Habr:**
+- Ordinary "how to set up Nextcloud" pieces — many, and weak
+- "AI helps you code" — many, without engineering depth
+- "A homelab on an RPi" — they exist, but without AI and without a USB crisis
+
+**Conclusion:** the combination is unique. It is worth publishing.
+
 ---
 
 ## 19. Priority Fixes Before Publication
 
-Критичный (нельзя публиковать без этого):
+🇷🇺 Критичный (нельзя публиковать без этого):
 
 1. **Сделать скриншоты** — Immich, Nextcloud, Portainer (13 контейнеров), Beszel Hub, Telegram report, Uptime Kuma. Без них статья слабая.
 2. **Обновить CHANGELOG до v1.3.9** — текущая несогласованность между CLAUDE.md и CHANGELOG.
@@ -614,11 +814,29 @@ Replacing RTL9210B-CG with JMS583 (SMART passthrough, USB 3.0). Off-site restic 
 8. Docker 20.10.7 — упомянуть в статье как известное ограничение JetPack
 9. microSD wear — добавить в Known Limitations
 
+🇬🇧 Critical (do not publish without these):
+
+1. **Take the screenshots** — Immich, Nextcloud, Portainer (13 containers), Beszel Hub, the Telegram report, Uptime Kuma. Without them the article is weak.
+2. **Update the CHANGELOG to v1.3.9** — the current inconsistency between CLAUDE.md and the CHANGELOG.
+3. **Document the JMS583 swap** — create docs/plans/JMS583_SWAP_PROCEDURE.md with the steps and the validation. A key event.
+
+Important (desirable):
+
+4. **Run the k6 load test** — record the p95/p99 results in docs/quality/LOAD_TESTS.md
+5. **Run the backup restore test** — record a pass of tests/backup/restore_test.sh
+6. **An I/O benchmark on the JMS583** — compare it with the RTL9210B-CG at 40 MB/s
+7. **Add an "off-site backup" item to Known Limitations** — state explicitly that restic on the VPS is planned (Stage 3)
+
+Minor (can be worked around in the article):
+
+8. Docker 20.10.7 — mention it in the article as a known JetPack limitation
+9. microSD wear — add it to Known Limitations
+
 ---
 
 ## 20. Final Recommendation
 
-**Публиковать? Да, после скриншотов.**
+🇷🇺 **Публиковать? Да, после скриншотов.**
 
 **Сила проекта:**
 
@@ -644,6 +862,34 @@ Replacing RTL9210B-CG with JMS583 (SMART passthrough, USB 3.0). Off-site restic 
 - GitHub: 20-50 звёзд в первые 2 недели если Habr-аудитория целевая.
 - Hackaday.io: 500-1000 просмотров; шанс попасть в «Projects of the Week» за USB-reliability story.
 
+🇬🇧 **Publish? Yes, once the screenshots are done.**
+
+**The project's strength:**
+
+This is a technically deep and honest project. The documentation (24+ files, ADR-0001..0006, TEST_PLAN, a resilience audit) is far above the average level of public homelab projects on GitHub. The USB SSD story is a real engineering narrative with kernel logs, post-mortems and several iterations of the fix. The AI-assisted workflow is documented with concrete prompt examples and lessons.
+
+**The main gap:**
+
+There is no visual evidence. Habr is a text-and-technology platform, but screenshots of the running system (Immich with 6723 photos, Portainer with 13 containers, Beszel Hub with CPU graphs) are critical for reader trust. Without them the story remains "just words".
+
+**Recommended sequence of actions:**
+
+1. Replace the USB enclosure (JMS583) — awaiting delivery
+2. Take screenshots of every key UI (1–2 hours)
+3. Run goss validate after the swap — record 34/34
+4. Run fio or dd on the JMS583 — record the speed vs the RTL9210B-CG
+5. Update the CHANGELOG to v1.3.9
+6. Write the final version of the article following the plan in §16
+7. Publish on Habr (Russian) + translate/adapt for Hackaday.io (English)
+
+**Response forecast:**
+
+- Habr: 2000–5000 views with a good title and screenshots. Potential to make the hubs' front page if the USB story is well written.
+- GitHub: 20–50 stars in the first 2 weeks if the Habr audience is the right one.
+- Hackaday.io: 500–1000 views; a chance at "Projects of the Week" for the USB reliability story.
+
 ---
 
-*Отчёт создан автоматически на основании анализа репозитория. Проверить все утверждения об актуальном live-состоянии системы.*
+🇷🇺 *Отчёт создан автоматически на основании анализа репозитория. Проверить все утверждения об актуальном live-состоянии системы.*
+
+🇬🇧 *This report was generated automatically from an analysis of the repository. Verify every claim about the current live state of the system.*

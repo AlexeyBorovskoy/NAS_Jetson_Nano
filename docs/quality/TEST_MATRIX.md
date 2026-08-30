@@ -1,13 +1,17 @@
-﻿# Матрица тестов / Test Matrix: NAS_Jetson_Nano
+# Матрица тестов / Test Matrix: NAS_Jetson_Nano
 
 **Version:** 1.0  
 **Date:** 2026-06-27
 
 ---
 
-## Test ID Reference
+## Справочник ID тестов / Test ID Reference
 
-| ID | Category | Test Name | Script / Tool | Automated | Priority |
+🇷🇺 Идентификатор, категория, название теста, скрипт/инструмент, автоматизация и приоритет — по каждому тесту.
+
+🇬🇧 Identifier, category, test name, script/tool, automation, and priority — per test.
+
+| ID | Категория / Category | Название теста / Test Name | Скрипт / Инструмент / Script / Tool | Автоматизация / Automated | Приоритет / Priority |
 |---|---|---|---|---|---|
 | T1.1 | Static | ShellCheck scripts/ | shellcheck | CI | HIGH |
 | T1.2 | Static | Compose validate all | docker compose config | CI | HIGH |
@@ -45,9 +49,13 @@
 
 ---
 
-## Coverage by Component
+## Покрытие по компонентам / Coverage by Component
 
-| Component | Static | Network | Service | Storage | Backup | Android | Load | Security |
+🇷🇺 Какие тесты покрывают каждый компонент, по категориям («--» значит покрытия в этой категории нет).
+
+🇬🇧 Which tests cover each component, by category (“--” means no coverage in that category).
+
+| Компонент / Component | Static | Network | Service | Storage | Backup | Android | Load | Security |
 |---|---|---|---|---|---|---|---|---|
 | Nextcloud | T1.2 | T2.2 | T3.2 | T4.1 | T5.1 | T6.2 | T7.1 | T1.3 |
 | Immich | T1.2 | T2.2 | T3.3 | T4.1 | T5.1 | T6.1 | -- | T1.3 |
@@ -60,9 +68,13 @@
 
 ---
 
-## Risk Matrix
+## Матрица рисков / Risk Matrix
 
-| Risk | Likelihood | Impact | Mitigation |
+🇷🇺 Риск, вероятность, влияние и способ снижения — по каждой строке.
+
+🇬🇧 Risk, likelihood, impact, and mitigation — per row.
+
+| Риск / Risk | Вероятность / Likelihood | Влияние / Impact | Снижение риска / Mitigation |
 |---|---|---|---|
 | USB SSD error -71 | HIGH | CRITICAL | watchdog + preboot cycle |
 | microSD wear (OS disk) | MEDIUM | HIGH | monitoring, backup |
@@ -74,9 +86,13 @@
 
 ---
 
-## Test Environments Required
+## Требуемые тестовые окружения / Test Environments Required
 
-| Test ID | Requires Jetson | Requires VPS | Requires Android |
+🇷🇺 Какое окружение нужно для группы тестов — Jetson, VPS, Android-устройство.
+
+🇬🇧 Which environment is required for each test group — Jetson, VPS, Android device.
+
+| ID теста / Test ID | Нужен Jetson / Requires Jetson | Нужен VPS / Requires VPS | Нужен Android / Requires Android |
 |---|---|---|---|
 | T1.x | No (CI) | No | No |
 | T2.x | Yes | Yes (T2.3) | No |

@@ -1,13 +1,17 @@
-﻿# Тесты Backup/Restore / Backup and Restore Tests: NAS_Jetson_Nano
+# Тесты Backup/Restore / Backup and Restore Tests: NAS_Jetson_Nano
 
 **Version:** 1.0  
 **Date:** 2026-06-27
 
 ---
 
-## Backup Architecture
+## Архитектура бэкапа / Backup Architecture
 
-| Component | Backup method | Location | Schedule |
+🇷🇺 Компонент, метод бэкапа, расположение и расписание — по каждой строке.
+
+🇬🇧 Component, backup method, location, and schedule — per row.
+
+| Компонент / Component | Метод бэкапа / Backup method | Расположение / Location | Расписание / Schedule |
 |---|---|---|---|
 | Nextcloud DB (PostgreSQL) | pg_dump via docker exec | /mnt/storage/backups/database-dumps/ | Daily (nas_jetson_nano-backup.timer) |
 | Immich DB (PostgreSQL) | pg_dump via docker exec | /mnt/storage/backups/database-dumps/ | Daily (nas_jetson_nano-backup.timer) |
@@ -16,7 +20,7 @@
 
 ---
 
-## Test Scripts
+## Тестовые скрипты / Test Scripts
 
 ### restore_test.sh
 
@@ -35,18 +39,20 @@ tests/backup/restore_test.sh \
 
 ---
 
-## Manual Test Procedures
+## Процедуры ручного тестирования / Manual Test Procedures
 
-### T5.1: Check DB Dump Exists
+### T5.1: Проверка наличия дампа БД / Check DB Dump Exists
 
 ```bash
 ls -lh /mnt/storage/backups/database-dumps/nextcloud_*.sql.gz | tail -3
 ls -lh /mnt/storage/backups/database-dumps/immich_*.sql.gz | tail -3
 ```
 
-Expected: Files exist, dated within last 7 days.
+🇷🇺 Ожидается: файлы существуют, датированы последними 7 днями.
 
-### T5.2: Check Dump Non-Empty
+🇬🇧 Expected: Files exist, dated within last 7 days.
+
+### T5.2: Проверка, что дамп не пуст / Check Dump Non-Empty
 
 ```bash
 DUMP=$(ls -t /mnt/storage/backups/database-dumps/nextcloud_*.sql.gz | head -1)
@@ -54,9 +60,11 @@ ls -lh "$DUMP"
 gzip -t "$DUMP" && echo "GZIP OK"
 ```
 
-Expected: File > 10KB, gzip integrity check passes.
+🇷🇺 Ожидается: файл > 10 КБ, проверка целостности gzip проходит.
 
-### T5.3: rsync Dry-Run
+🇬🇧 Expected: File > 10KB, gzip integrity check passes.
+
+### T5.3: Сухой прогон rsync / rsync Dry-Run
 
 ```bash
 rsync -avz --dry-run \
@@ -64,9 +72,11 @@ rsync -avz --dry-run \
   /tmp/nas_jetson_nano-restore-dry-run/
 ```
 
-Expected: rsync lists files to copy, exit code 0.
+🇷🇺 Ожидается: rsync перечисляет файлы для копирования, код выхода 0.
 
-### T5.4: Restore and Diff
+🇬🇧 Expected: rsync lists files to copy, exit code 0.
+
+### T5.4: Восстановление и сравнение / Restore and Diff
 
 ```bash
 RESTORE_DIR=$(mktemp -d /tmp/nas_jetson_nano-restore-XXXX)
@@ -76,22 +86,26 @@ echo "Restore check: $?"
 rm -rf "$RESTORE_DIR"
 ```
 
-Expected: diff returns 0 (identical file lists).
+🇷🇺 Ожидается: diff возвращает 0 (списки файлов идентичны).
 
-### T5.5: DB Dump Manual Trigger
+🇬🇧 Expected: diff returns 0 (identical file lists).
+
+### T5.5: Ручной запуск дампа БД / DB Dump Manual Trigger
 
 ```bash
 # Run backup manually to verify it works
 sudo bash scripts/backup/backup_databases.sh
 ```
 
-Expected: Exit 0, "Database backup finished -- errors: 0"
+🇷🇺 Ожидается: выход 0, «Database backup finished -- errors: 0»
+
+🇬🇧 Expected: Exit 0, "Database backup finished -- errors: 0"
 
 ---
 
-## Expected Results
+## Ожидаемые результаты / Expected Results
 
-| Check | Expected | Actual | Pass? |
+| Проверка / Check | Ожидается / Expected | Фактически / Actual | Прошло? / Pass? |
 |---|---|---|---|
 | Nextcloud dump exists | yes (< 7 days) | | |
 | Nextcloud dump size | > 10KB | | |
@@ -104,7 +118,16 @@ Expected: Exit 0, "Database backup finished -- errors: 0"
 
 ---
 
-## Known Limitations
+## Известные ограничения / Known Limitations
+
+🇷🇺
+
+- Off-site бэкапа нет (restic на VPS запланирован, но не настроен)
+- Медиафайлы (фото, документы) пока НЕ бэкапятся — только дампы БД
+- Ротация бэкапов хранит последние 7 дней (BACKUP_KEEP_LAST=7)
+- Если SSD выйдет из строя между бэкапами, все данные с момента последнего дампа под риском
+
+🇬🇧
 
 - No off-site backup (restic to VPS is planned but not configured)
 - Media files (photos, documents) are NOT backed up yet -- only DB dumps
@@ -113,7 +136,18 @@ Expected: Exit 0, "Database backup finished -- errors: 0"
 
 ---
 
-## Recovery Procedure (abbreviated)
+## Процедура восстановления (сокращённо) / Recovery Procedure (abbreviated)
+
+🇷🇺
+
+1. Физически: переподключить SSD, запустить цикл preboot
+2. Смонтировать: `sudo bash scripts/storage/storage_preflight.sh`
+3. Запустить Docker: `sudo systemctl start docker`
+4. Запустить контейнеры: `docker compose up -d` для каждого compose-файла
+5. При необходимости восстановить БД (см. команду ниже)
+6. Проверить Nextcloud: `curl -sf http://localhost:8080/status.php`
+
+🇬🇧
 
 1. Physical: reconnect SSD, run preboot cycle
 2. Mount: `sudo bash scripts/storage/storage_preflight.sh`

@@ -1,4 +1,4 @@
-﻿# План тестирования / Test Plan: NAS_Jetson_Nano
+# План тестирования / Test Plan: NAS_Jetson_Nano
 
 **Version:** 1.0  
 **Date:** 2026-06-27  
@@ -7,7 +7,18 @@
 
 ---
 
-## 1. Objectives
+## 1. Цели / Objectives
+
+🇷🇺
+
+1. Убедиться, что после деплоя или аппаратного события все сервисы доступны и работают.
+2. Обнаружить уязвимости shell-скриптов (отсутствие обработки ошибок, небезопасные временные файлы, захардкоженные секреты).
+3. Замерить базовую производительность ввода-вывода USB SSD (RTL9210B-CG).
+4. Подтвердить, что процедуры бэкапа и восстановления работают без потери данных.
+5. Проверить подключение Android-клиентов к Nextcloud и Immich.
+6. Подтвердить корректное поведение USB watchdog и цикла pre-boot при внесённых сбоях.
+
+🇬🇧
 
 1. Validate that all services are reachable and functional after deploy or hardware event.
 2. Detect shell script vulnerabilities (missing error handling, unsafe temp files, hardcoded secrets).
@@ -18,9 +29,13 @@
 
 ---
 
-## 2. Scope
+## 2. Область охвата / Scope
 
-| Area | In Scope | Out of Scope |
+🇷🇺 Таблица ниже перечисляет, что входит в тестирование, а что — нет, по каждой области.
+
+🇬🇧 The table below lists what is in scope for testing and what is not, per area.
+
+| Область / Area | В охвате / In Scope | Вне охвата / Out of Scope |
 |---|---|---|
 | Docker services | Yes — all 13 containers | Docker internals, image builds |
 | USB SSD reliability | Yes — watchdog, SMART, mount | Physical hardware replacement |
@@ -32,72 +47,75 @@
 
 ---
 
-## 3. Test Environments
+## 3. Тестовые окружения / Test Environments
 
-### 3.1 Primary: Jetson Nano (192.168.0.50)
+### 3.1 Основное: Jetson Nano (192.168.0.50) / Primary: Jetson Nano (192.168.0.50)
 - OS: Ubuntu 18.04 LTS (L4T r32.7.6)
 - Docker: 24.x
 - Storage: USB SSD /dev/sda1 -> /mnt/storage (229G, ext4)
 - RAM: 4GB LPDDR4 (shared CPU/GPU)
 
 ### 3.2 VPS (95.163.176.103)
+🇷🇺 Локация: Вена. Роль: обратный прокси + конечная точка туннеля autossh.
+
+🇬🇧
 - Location: Vienna
 - Role: Reverse proxy + autossh tunnel endpoint
 - Services: nginx -> :8080 (Nextcloud), :2283 (Immich), :8090 (LLM Gateway)
 
-### 3.3 CI Environment
+### 3.3 Окружение CI / CI Environment
 - GitHub Actions: ubuntu-latest
 - Tools: shellcheck, docker compose validate, gitleaks, trivy, actionlint
 
 ---
 
-## 4. Test Categories
+## 4. Категории тестов / Test Categories
 
-### T1: Static Analysis (CI)
+### T1: Статический анализ (CI) / Static Analysis (CI)
 - ShellCheck on all scripts/
 - docker compose config --quiet on all compose files
 - Gitleaks secrets scan
 - Trivy filesystem scan (vuln + secret + misconfig)
 - actionlint on .github/workflows/
 
-### T2: Network Connectivity
+### T2: Сетевая связность / Network Connectivity
 - Ping Jetson from LAN
 - Port check: 22, 8080, 2283, 8090, 8099, 19999, 3001
 - VPS reverse proxy HTTP check: 8080, 2283, 8090
 - DNS resolution of Jetson hostname
 
-### T3: Service Smoke Tests
+### T3: Дымовые тесты сервисов / Service Smoke Tests
 - Nextcloud: /status.php -> HTTP 200
 - Immich: /api/server/ping -> HTTP 200
 - LLM Gateway: /health -> HTTP 200
 - Beszel Agent: systemctl is-active
 - nas_jetson_nano-usb-watchdog.timer: active
 
-### T4: Storage
+### T4: Хранилище / Storage
 - mountpoint -q /mnt/storage
 - lsblk shows /dev/sda
 - df -h shows < 90% usage
 - SMART: smartctl -H /dev/sda returns PASSED
 - Write/read performance > 50 MB/s (USB 3.0 SSD expected ~300 MB/s)
 
-### T5: Backup / Restore
+### T5: Бэкап / восстановление / Backup / Restore
 - DB dump created for nextcloud and immich
 - Dump file size > 0
 - rsync dry-run to backup target succeeds
 - Restore to temp dir + diff check
 
-### T6: Android Client
+### T6: Android-клиент / Android Client
 - Immich app can login (manual)
 - Nextcloud app can login via HTTPS (manual)
 - DAVx5 contacts sync configured (manual)
 - Backup queue progress visible in Immich
 
-### T7: Load Test
+### T7: Нагрузочный тест / Load Test
 - k6 smoke: 5 VU / 2 min on /status.php
 - Acceptance: p95 < 2s, error rate < 1%
 - Resource check: RAM not exhausted during test
 
-### T8: Security
+### T8: Безопасность / Security
 - No secrets in git-tracked files
 - All scripts have set -euo pipefail
 - No hardcoded IPs/passwords in scripts (config from env only)
@@ -105,9 +123,9 @@
 
 ---
 
-## 5. Acceptance Criteria
+## 5. Критерии приёмки / Acceptance Criteria
 
-| Category | Pass Condition |
+| Категория / Category | Условие прохождения / Pass Condition |
 |---|---|
 | Static (CI) | ShellCheck 0 errors; compose valid; no secrets in git |
 | Network | All local ports reachable, VPS proxy returns 200 |
@@ -119,7 +137,18 @@
 
 ---
 
-## 6. Known Limitations
+## 6. Известные ограничения / Known Limitations
+
+🇷🇺
+
+- Ядро Jetson Nano L4T 4.9: ограниченный проброс SMART через USB-мост RTL9210B-CG.
+- USB SSD (RTL9210B-CG) — ненадёжное железо; watchdog снижает риск, но не устраняет его.
+- ОЗУ общее для CPU/GPU; тяжёлый фото-ML вызвал бы OOM (ML отключён).
+- Off-site бэкап пока не настроен (restic на VPS — в планах).
+- Нагрузочный тест — только дымовой; не тест ёмкости или на выносливость.
+- Android-тесты требуют ручного выполнения (автоматизация через ADB запрещена политикой).
+
+🇬🇧
 
 - Jetson Nano L4T 4.9 kernel: limited SMART passthrough via RTL9210B-CG USB bridge.
 - USB SSD (RTL9210B-CG) is unreliable hardware; watchdog mitigates but does not eliminate risk.
@@ -130,9 +159,9 @@
 
 ---
 
-## 7. Test Execution Schedule
+## 7. Расписание выполнения тестов / Test Execution Schedule
 
-| Phase | When | Who |
+| Фаза / Phase | Когда / When | Кто / Who |
 |---|---|---|
 | Static (CI) | Every push/PR | GitHub Actions |
 | Network + Service | After each deploy | Admin (manual or script) |
@@ -143,7 +172,7 @@
 
 ---
 
-## 8. References
+## 8. Ссылки / References
 
 - `tests/network/connectivity_check.sh` -- network connectivity
 - `tests/service/docker_healthcheck.sh` -- container health

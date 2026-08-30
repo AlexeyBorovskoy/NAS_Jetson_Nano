@@ -574,3 +574,584 @@ git add docs/quality tests .github/workflows
 git commit -m "Add reliability and quality validation framework"
 git push
 ```
+
+---
+
+---
+
+# Codex prompt — running the NAS_Jetson_Nano reliability validation (English)
+
+**Project:** `NAS_Jetson_Nano` / `NAS_Jetson_Nano`
+**Prompt prepared on:** 2026-06-27  
+**Purpose:** a prompt for a Codex agent in VS Code / Cursor.
+
+---
+
+## 1. How to use
+
+1. Put this file into the project, for example:
+
+```text
+docs/quality/CODEX_RELIABILITY_VALIDATION_PROMPT.md
+```
+
+2. Open the project in VS Code / Cursor.
+3. Open the Codex agent chat.
+4. Paste the text from the **"Ready-made prompt"** section.
+5. Let Codex do the work stage by stage.
+6. When it finishes, review `git diff`.
+
+---
+
+## 2. Ready-made prompt
+
+```text
+You are working as a reliability engineer, DevOps auditor, security reviewer, and technical writer for the NAS_Jetson_Nano project.
+
+Project:
+NAS_Jetson_Nano / NAS_Jetson_Nano
+
+Project idea:
+Old Hardware Must Live — a home cloud platform built on a first-generation Jetson Nano / Jetson Nano 4GB, an old HDD/SSD, Docker Compose, Nextcloud, and an Android client.
+
+Context:
+The project is being prepared for publication on Hackaday.io, Habr, and other technical venues. We need to check how resilient and well-justified the solutions are:
+- at the network connectivity level;
+- at the Docker Compose level;
+- at the code and script level;
+- at the security level;
+- at the storage level;
+- at the backup/restore level;
+- at the Android client level;
+- at the monitoring level.
+
+Main rule:
+Do not break the system. Do not run dangerous commands without explicit confirmation. Do not format disks. Do not delete data. Do not publish secrets or personal data.
+
+Work strictly stage by stage.
+
+---
+
+# Stage 0. Safety mode
+
+Before doing anything, record the constraints.
+
+Forbidden without separate user confirmation:
+
+- mkfs
+- fdisk
+- parted
+- dd
+- wipefs
+- rm -rf
+- adb install
+- adb shell pm uninstall
+- adb shell pm clear
+- adb reboot
+- adb reboot bootloader
+- fastboot
+- factory reset
+- any command that modifies disk partitions
+- any command that deletes data
+- any command that exfiltrates personal data from Android
+
+If a potentially dangerous operation is needed — do not run it; propose a manual step with a DANGER warning.
+
+---
+
+# Stage 1. Read-only audit of the current structure
+
+Change nothing at first.
+
+Perform a read-only analysis:
+
+1. Show the project tree.
+2. Find:
+   - README.md;
+   - docs/;
+   - scripts/;
+   - config/;
+   - tests/;
+   - docker-compose files;
+   - Dockerfile;
+   - .github/workflows;
+   - SECURITY.md;
+   - CONTRIBUTING.md;
+   - LICENSE;
+   - CLAUDE.md;
+   - AGENTS.md;
+   - Android-related docs/scripts.
+3. Determine which checks already exist.
+4. Determine which checks are missing.
+5. Produce a brief audit summary.
+
+---
+
+# Stage 2. Create the quality documentation structure
+
+Create, if missing:
+
+```text
+docs/quality/
+docs/quality/results/
+tests/
+tests/network/
+tests/service/
+tests/storage/
+tests/backup/
+tests/android/
+tests/load/
+```
+
+Create or update the files:
+
+```text
+docs/quality/TEST_PLAN.md
+docs/quality/TEST_MATRIX.md
+docs/quality/RELEASE_ACCEPTANCE_CHECKLIST.md
+docs/quality/RELIABILITY_REPORT_TEMPLATE.md
+docs/quality/NETWORK_TESTS.md
+docs/quality/STORAGE_TESTS.md
+docs/quality/BACKUP_RESTORE_TESTS.md
+docs/quality/ANDROID_TESTS.md
+docs/quality/LOAD_TESTS.md
+docs/quality/SECURITY_TESTS.md
+```
+
+Requirements:
+- documentation in English;
+- engineering style;
+- no promises of production-grade reliability;
+- an honest description of the limitations of the Jetson Nano and the old HDD/SSD;
+- every dangerous operation must carry a DANGER warning.
+
+---
+
+# Stage 3. Create safe test scripts
+
+Create the scripts if they do not exist:
+
+```text
+tests/network/connectivity_check.sh
+tests/network/port_check.sh
+tests/service/docker_healthcheck.sh
+tests/service/nextcloud_smoke.sh
+tests/service/immich_smoke.sh
+tests/storage/smart_check.sh
+tests/storage/mount_check.sh
+tests/storage/fio_quick_test.sh
+tests/backup/restore_test.sh
+tests/android/adb_readonly_check.sh
+```
+
+Every shell script must start with:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+```
+
+Every script must:
+- provide `--help`;
+- print clear messages;
+- check its dependencies;
+- not delete data;
+- not format disks;
+- not change system configs without confirmation;
+- exit with a meaningful error code.
+
+---
+
+# Stage 3.1. tests/network/connectivity_check.sh
+
+Purpose:
+- ping the Jetson;
+- curl the Nextcloud URL;
+- DNS check, if configured;
+- save the result as Markdown.
+
+Arguments:
+- `--host`
+- `--url`
+- `--dns-name`, optional
+- `--output`, optional
+
+Not allowed:
+- scanning networks that are not yours;
+- aggressive scanning;
+- using nmap against external addresses.
+
+---
+
+# Stage 3.2. tests/network/port_check.sh
+
+Purpose:
+- check only explicitly specified ports via `nc -vz`.
+
+Arguments:
+- `--host`
+- `--ports "80,443,8080"`
+- `--output`, optional
+
+Not allowed:
+- scanning port ranges without an explicit specification;
+- checking IPs that are not yours.
+
+---
+
+# Stage 3.3. tests/service/docker_healthcheck.sh
+
+Purpose:
+- `docker compose ps`;
+- `docker compose config`;
+- container health status;
+- `docker stats --no-stream`, if Docker is available.
+
+Do not restart containers automatically.
+
+---
+
+# Stage 3.4. tests/service/nextcloud_smoke.sh
+
+Purpose:
+- check `/status.php`;
+- check the HTTP code;
+- measure response time with curl.
+
+Arguments:
+- `--url`
+- `--output`, optional
+
+---
+
+# Stage 3.5. tests/service/immich_smoke.sh
+
+Purpose:
+- check the availability of the Immich URL, if the service exists in the project.
+
+Arguments:
+- `--url`
+- `--output`, optional
+
+If Immich is not used — the script must report `not applicable` cleanly.
+
+---
+
+# Stage 3.6. tests/storage/smart_check.sh
+
+Purpose:
+- read-only SMART check of a disk.
+
+Arguments:
+- `--device /dev/sdX`
+- `--output`, optional
+
+Allowed:
+- `smartctl -a`;
+- `smartctl -l selftest`;
+- reading temperature.
+
+Forbidden:
+- formatting;
+- changing partitions;
+- running destructive tests.
+
+---
+
+# Stage 3.7. tests/storage/mount_check.sh
+
+Purpose:
+- `lsblk`;
+- `blkid`;
+- `df -h`;
+- mount point check.
+
+Arguments:
+- `--mount-point`, optional
+- `--output`, optional
+
+---
+
+# Stage 3.8. tests/storage/fio_quick_test.sh
+
+Purpose:
+- a safe, short fio test confined to the specified test folder.
+
+Arguments:
+- `--directory /mnt/nas/test_fio`
+- `--size 1G`, optional
+- `--output`, optional
+
+Requirements:
+- require confirmation before running;
+- verify the directory is not `/`, not `/home`, not `/etc`, and not an empty path;
+- create only the test file;
+- delete only its own test files;
+- never touch user data.
+
+---
+
+# Stage 3.9. tests/backup/restore_test.sh
+
+Purpose:
+- create a test file;
+- run an rsync dry-run;
+- restore into a safe temporary folder;
+- verify with diff.
+
+Arguments:
+- `--source /mnt/nas/test-data`
+- `--restore-dir /tmp/nas_jetson_nano_restore_test`
+- `--output`, optional
+
+Do not touch real user data.
+
+---
+
+# Stage 3.10. tests/android/adb_readonly_check.sh
+
+Purpose:
+- check `adb devices`;
+- print the phone model;
+- the Android version;
+- the presence of relevant packages.
+
+Only read-only commands are allowed:
+
+```bash
+adb devices
+adb shell getprop ro.product.manufacturer
+adb shell getprop ro.product.model
+adb shell getprop ro.build.version.release
+adb shell getprop ro.build.version.sdk
+adb shell pm list packages
+```
+
+Forbidden:
+- adb install;
+- adb uninstall;
+- adb pull of personal data;
+- adb shell content query;
+- adb shell pm clear;
+- adb reboot.
+
+The report must not contain:
+- IMEI;
+- the full serial number;
+- accounts;
+- phone numbers;
+- Wi-Fi data;
+- personal files.
+
+---
+
+# Stage 4. Create a k6 smoke test
+
+Create the file:
+
+```text
+tests/load/nextcloud-smoke.js
+```
+
+Requirements:
+- use the `NEXTCLOUD_URL` environment variable;
+- check `/status.php`;
+- profile: 5 VU / 2 minutes;
+- check for HTTP status 200;
+- check response time;
+- do not run it automatically.
+
+Example logic:
+- if `NEXTCLOUD_URL` is not set, use a placeholder and print a clear error.
+
+---
+
+# Stage 5. Update GitHub Actions
+
+Review the existing workflows.
+
+Add a separate workflow if it does not exist:
+
+```text
+.github/workflows/quality-checks.yml
+```
+
+It must run:
+
+1. checkout;
+2. bash syntax check;
+3. ShellCheck;
+4. Docker Compose config validation, if a compose file exists;
+5. Gitleaks, or preparation for Gitleaks;
+6. Trivy fs scan, or a separate security workflow;
+7. actionlint, if possible.
+
+If CI becomes too heavy, split it:
+
+```text
+.github/workflows/quality-checks.yml
+.github/workflows/security-scan.yml
+```
+
+Do not break the existing workflows.
+
+---
+
+# Stage 6. Run safe local checks
+
+Run only safe checks:
+
+```bash
+find . -name "*.sh" -print0 | xargs -0 -r bash -n
+```
+
+If ShellCheck is available:
+
+```bash
+find . -name "*.sh" -print0 | xargs -0 -r shellcheck
+```
+
+If Docker is available and a compose file exists:
+
+```bash
+docker compose config
+```
+
+If Git is available:
+
+```bash
+git status --short
+```
+
+Do not run:
+- fio without confirmation;
+- k6 without confirmation;
+- ADB without a connected device and permission;
+- any destructive tests.
+
+---
+
+# Stage 7. Produce the reports
+
+Create the final baseline report:
+
+```text
+docs/quality/results/YYYY-MM-DD_baseline_quality_report.md
+```
+
+Structure:
+
+```markdown
+# Baseline Quality Report: NAS_Jetson_Nano
+
+## 1. Executive summary
+## 2. Environment
+## 3. Repository audit
+## 4. Static checks
+## 5. Docker Compose validation
+## 6. Network checks
+## 7. Storage checks
+## 8. Backup/restore checks
+## 9. Android checks
+## 10. Load test readiness
+## 11. Monitoring readiness
+## 12. Security findings
+## 13. Risks
+## 14. Recommended fixes
+## 15. Article-ready summary
+```
+
+Also create/update:
+
+```text
+docs/quality/RELIABILITY_REPORT_TEMPLATE.md
+docs/quality/RELEASE_ACCEPTANCE_CHECKLIST.md
+docs/quality/TEST_MATRIX.md
+```
+
+---
+
+# Stage 8. Article-ready summary
+
+Add a section to the baseline report:
+
+```markdown
+## Article-ready summary
+```
+
+In it, state briefly:
+
+- which checks were added;
+- which checks passed;
+- which checks require a manual run;
+- which limitations should be stated honestly;
+- why the project now looks engineering-verified.
+
+Do not write that the solution is production-grade if that has not been proven.
+
+---
+
+# Stage 9. Codex final output
+
+At the end of the work, output:
+
+1. What was found.
+2. Which files were created.
+3. Which files were updated.
+4. Which checks were run.
+5. Which checks were not run, and why.
+6. Which risks remain.
+7. What needs to be done manually.
+8. Commands for the commit:
+
+```bash
+git status
+git add docs/quality tests .github/workflows
+git commit -m "Add reliability and quality validation framework"
+git push
+```
+
+---
+
+# Style
+
+Write documentation in English if the file is intended for a public repository.
+
+Tone:
+- engineering-grade;
+- honest;
+- no hype;
+- no promises of production-grade reliability;
+- with the limitations of the Jetson Nano and old HDD/SSD stated explicitly.
+
+Start with a read-only audit of the current repository.
+```
+
+---
+
+## 3. What to expect afterwards
+
+After the run, Codex should have prepared:
+
+```text
+docs/quality/
+tests/
+.github/workflows/quality-checks.yml
+docs/quality/results/YYYY-MM-DD_baseline_quality_report.md
+```
+
+And output the list of manual actions that must not be run automatically.
+
+---
+
+## 4. Commands to commit
+
+After reviewing the result manually:
+
+```bash
+git status
+git diff
+git add docs/quality tests .github/workflows
+git commit -m "Add reliability and quality validation framework"
+git push
+```

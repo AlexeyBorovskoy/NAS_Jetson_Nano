@@ -1,13 +1,26 @@
-﻿# Тесты безопасности / Security Tests: NAS_Jetson_Nano
+# Тесты безопасности / Security Tests: NAS_Jetson_Nano
 
 **Version:** 1.0  
 **Date:** 2026-06-27
 
 ---
 
-## Security Scope
+## Область охвата по безопасности / Security Scope
 
-This is a home cloud security audit. Scope:
+🇷🇺 Это аудит безопасности домашнего облака. Охват:
+- Усиление shell-скриптов
+- Управление секретами (нет учётных данных в git)
+- Конфигурация безопасности docker compose
+- Аудит сетевой открытости
+- Сканирование уязвимостей зависимостей (Trivy)
+
+Вне охвата:
+- Пентест
+- Аудит безопасности Wi-Fi
+- Конфигурация роутера/файрвола
+- Клиенты Amnezia VPN (не трогать по правилам проекта)
+
+🇬🇧 This is a home cloud security audit. Scope:
 - Shell script hardening
 - Secret management (no credentials in git)
 - Docker compose security configuration
@@ -22,9 +35,9 @@ Out of scope:
 
 ---
 
-## Static Security Checks (CI)
+## Статические проверки безопасности (CI) / Static Security Checks (CI)
 
-### 1. Secrets Scan
+### 1. Сканирование секретов / Secrets Scan
 
 ```bash
 # Run locally
@@ -33,7 +46,10 @@ Out of scope:
 # In CI: .github/workflows/quality-checks.yml (gitleaks job)
 ```
 
-Checks for: API keys, passwords, tokens, private keys in git-tracked files.
+🇷🇺 Проверяет наличие в отслеживаемых git файлах: API-ключей, паролей, токенов, приватных ключей.
+Исключения: .env.example (плейсхолдер-значения), .gitignore, сам check_no_secrets.sh.
+
+🇬🇧 Checks for: API keys, passwords, tokens, private keys in git-tracked files.
 Excludes: .env.example (placeholder values), .gitignore, check_no_secrets.sh itself.
 
 ### 2. ShellCheck
@@ -42,13 +58,19 @@ Excludes: .env.example (placeholder values), .gitignore, check_no_secrets.sh its
 find scripts/ -name "*.sh" | xargs shellcheck --severity=warning --shell=bash
 ```
 
-Key checks:
+🇷🇺 Ключевые проверки:
+- SC2086: незакавыченные переменные (расщепление слов)
+- SC2046: незакавыченная подстановка команд
+- SC2034: неиспользуемые переменные
+- SC2155: объявление и присвоение раздельно
+
+🇬🇧 Key checks:
 - SC2086: Unquoted variables (word splitting)
 - SC2046: Unquoted command substitution
 - SC2034: Unused variables
 - SC2155: Declare and assign separately
 
-### 3. Trivy Filesystem Scan
+### 3. Сканирование файловой системы Trivy / Trivy Filesystem Scan
 
 ```bash
 # Scan entire repository
@@ -61,9 +83,11 @@ trivy image tensorchord/pgvecto-rs:pg16-v0.3.0
 
 ---
 
-## Shell Script Security Checklist
+## Чеклист безопасности shell-скриптов / Shell Script Security Checklist
 
-For each script in scripts/:
+🇷🇺 Для каждого скрипта в scripts/:
+
+🇬🇧 For each script in scripts/:
 
 - [ ] `#!/usr/bin/env bash` or `#!/bin/bash`
 - [ ] `set -euo pipefail` (or at minimum `set -eu`)
@@ -78,7 +102,7 @@ For each script in scripts/:
 
 ---
 
-## Docker Compose Security Checklist
+## Чеклист безопасности Docker Compose / Docker Compose Security Checklist
 
 - [ ] All secrets via `${VAR}` from .env (no hardcoded values)
 - [ ] All services have `restart:` policy
@@ -90,7 +114,7 @@ For each script in scripts/:
 
 ---
 
-## Network Security
+## Сетевая безопасность / Network Security
 
 - [ ] Services not directly exposed to internet (only via VPS proxy)
 - [ ] VPS nginx does not forward admin/setup endpoints
@@ -100,11 +124,13 @@ For each script in scripts/:
 
 ---
 
-## Findings Log
+## Журнал находок / Findings Log
 
-Document all findings here:
+🇷🇺 Здесь документируются все находки.
 
-| Date | File | Line | Severity | Issue | Fixed? |
+🇬🇧 Document all findings here:
+
+| Дата / Date | Файл / File | Строка / Line | Серьёзность / Severity | Проблема / Issue | Исправлено? / Fixed? |
 |---|---|---|---|---|---|
 | 2026-06-27 | usb_recovery_watchdog.sh | 11 | MEDIUM | Missing `-e` in `set -uo pipefail` | YES |
 | 2026-06-27 | nas_jetson_nano-daily-report.sh | 3 | MEDIUM | Only `set -u`, missing `-eo` | KNOWN LIMITATION (complex heredoc) |
@@ -114,7 +140,17 @@ Document all findings here:
 
 ---
 
-## Non-Goals (Explicitly Out of Scope)
+## Не входит в задачи (явно вне охвата) / Non-Goals (Explicitly Out of Scope)
+
+🇷🇺
+
+1. Никакого nmap или агрессивного сканирования портов
+2. Никакого перебора (brute-force) учётных данных
+3. Никакой эксплуатации найденных уязвимостей
+4. Никакого извлечения данных с Android-устройств через ADB
+5. Никакого вмешательства в Amnezia VPN (отключило бы ~25 VPN-клиентов)
+
+🇬🇧
 
 1. No nmap or aggressive port scanning
 2. No brute-force testing of any credentials

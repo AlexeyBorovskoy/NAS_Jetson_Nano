@@ -1,15 +1,17 @@
-﻿# Сетевые тесты / Network Tests: NAS_Jetson_Nano
+# Сетевые тесты / Network Tests: NAS_Jetson_Nano
 
 **Version:** 1.0  
 **Date:** 2026-06-27
 
 ---
 
-## Test Scripts
+## Тестовые скрипты / Test Scripts
 
 ### connectivity_check.sh
 
-Checks ping reachability and HTTP endpoint availability.
+🇷🇺 Проверяет доступность по ping и доступность HTTP-эндпоинтов.
+
+🇬🇧 Checks ping reachability and HTTP endpoint availability.
 
 ```bash
 # Basic connectivity to Jetson
@@ -30,7 +32,9 @@ tests/network/connectivity_check.sh \
 
 ### port_check.sh
 
-Checks that specific TCP ports are listening.
+🇷🇺 Проверяет, что заданные TCP-порты слушают соединения.
+
+🇬🇧 Checks that specific TCP ports are listening.
 
 ```bash
 # Check all Jetson service ports
@@ -46,21 +50,25 @@ tests/network/port_check.sh \
 
 ---
 
-## Manual Test Procedures
+## Процедуры ручного тестирования / Manual Test Procedures
 
-### T2.1: Ping Jetson from LAN
+### T2.1: Ping Jetson с домашней сети / Ping Jetson from LAN
 
 ```bash
 ping -c 4 192.168.0.50
 ```
 
-Expected: 0% packet loss, RTT < 5ms on LAN
+🇷🇺 Ожидается: 0% потерь пакетов, RTT < 5 мс в локальной сети.
 
-### T2.2: Port scan (listed ports only)
+🇬🇧 Expected: 0% packet loss, RTT < 5ms on LAN
 
-Run `tests/network/port_check.sh` as above.
+### T2.2: Сканирование портов (только перечисленные порты) / Port scan (listed ports only)
 
-Expected ports:
+🇷🇺 Запустить `tests/network/port_check.sh`, как показано выше.
+
+🇬🇧 Run `tests/network/port_check.sh` as above.
+
+Ожидаемые порты / Expected ports:
 - :22 SSH
 - :8080 Nextcloud
 - :2283 Immich
@@ -70,7 +78,7 @@ Expected ports:
 - :3001 Uptime Kuma
 - :9000 Portainer
 
-### T2.3: VPS Proxy
+### T2.3: Прокси VPS / VPS Proxy
 
 ```bash
 curl -sf http://95.163.176.103:8080/status.php | python3 -m json.tool
@@ -87,9 +95,9 @@ nslookup jetson-nano.local
 
 ---
 
-## Expected Results
+## Ожидаемые результаты / Expected Results
 
-| Test | Expected | Actual | Pass? |
+| Тест / Test | Ожидается / Expected | Фактически / Actual | Прошло? / Pass? |
 |---|---|---|---|
 | Ping 192.168.0.50 | 0% loss | | |
 | :22 open | yes | | |
@@ -100,17 +108,26 @@ nslookup jetson-nano.local
 
 ---
 
-## Failure Analysis
+## Разбор сбоев / Failure Analysis
 
-### Ping fails but SSH works
+### Ping не проходит, но SSH работает / Ping fails but SSH works
+🇷🇺 Проверить IP-адрес: `ip -4 addr show eth0` на Jetson. Проверить файрвол: `ufw status` (должен быть неактивен или пропускать ICMP).
+
+🇬🇧
 - Check IP address: `ip -4 addr show eth0` on Jetson
 - Check firewall: `ufw status` (should be inactive or allow ICMP)
 
-### Port not listening
+### Порт не слушает / Port not listening
+🇷🇺 Проверить контейнер и проброс портов.
+
+🇬🇧
 - Check container: `docker ps | grep homecloud_nextcloud`
 - Check port mapping: `docker inspect homecloud_nextcloud | grep PortBindings`
 
-### VPS proxy not responding
+### Прокси VPS не отвечает / VPS proxy not responding
+🇷🇺 Проверить туннель, nginx и конечную точку туннеля.
+
+🇬🇧
 - Check tunnel: `ssh root@95.163.176.103 "systemctl status autossh-nas_jetson_nano.service"`
 - Check nginx: `ssh root@95.163.176.103 "nginx -t && systemctl status nginx"`
 - Check tunnel endpoint: `ssh root@95.163.176.103 "ss -tlnp | grep :8080"`

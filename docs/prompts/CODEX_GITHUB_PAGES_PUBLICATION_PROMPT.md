@@ -1,13 +1,17 @@
-# CODEX: GitHub Pages Publication Prompt
+# CODEX: GitHub Pages Publication Prompt / Промт публикации на GitHub Pages
 
-**Purpose:** Prepare full publication structure for NAS_Jetson_Nano:
+🇷🇺 **Назначение:** подготовить полную структуру публикации для NAS_Jetson_Nano:
 `README.md → docs/articles/ → GitHub Pages`
 
-**Session where this was executed:** 2026-06-29
+🇬🇧 **Purpose:** Prepare full publication structure for NAS_Jetson_Nano:
+`README.md → docs/articles/ → GitHub Pages`
+
+🇷🇺 **Сессия, в которой это выполнялось:** 2026-06-29
+🇬🇧 **Session where this was executed:** 2026-06-29
 
 ---
 
-## Scope
+## Scope / Объём работ
 
 1. **README.md** — add "Статьи и публикации / Articles" section with Habr link and GitHub Pages URL.
 
@@ -41,28 +45,38 @@
    - `docs/articles/GITHUB_PUBLICATION_CHECKLIST.md`
    - `docs/articles/GITHUB_PAGES_IMAGE_AUDIT.md`
 
-7. **Security checks:**
-   - No real IPs in any public-facing docs (use `192.168.x.x`, `ваш_VPS_IP`)
-   - No personal names in article text
-   - No tokens or passwords
-   - Run `./scripts/security/check_no_secrets.sh` before commit
+7. **Security checks / Проверки безопасности:**
+   - No real IPs in any public-facing docs (use `192.168.x.x`, `ваш_VPS_IP`) / Никаких реальных IP в публичных документах
+   - No personal names in article text / Никаких личных имён в тексте статьи
+   - No tokens or passwords / Никаких токенов и паролей
+   - Run `./scripts/security/check_no_secrets.sh` before commit / Прогнать перед коммитом
 
 8. **Commit** all new docs files (not images already in git). Push. Enable GitHub Pages manually in Settings → Pages → main /docs.
+   🇷🇺 **Закоммитить** все новые файлы документации (кроме изображений, уже лежащих в git). Запушить. Включить GitHub Pages вручную: Settings → Pages → main /docs.
 
 ---
 
-## Hard constraints (do not violate)
+## Hard constraints (do not violate) / Жёсткие ограничения (не нарушать)
+
+🇷🇺
 
 - НЕ коммитить реальные `.env`, пароли, токены, ключи.
 - НЕ трогать Amnezia VPN контейнеры на VPS.
 - НЕ удалять сетевой профиль `nas_jetson_nano-lan`.
 - Все публичные статьи: IP-адреса заменены на плейсхолдеры, имена участников не раскрываются.
 
+🇬🇧
+
+- Do NOT commit real `.env` files, passwords, tokens, or keys.
+- Do NOT touch the Amnezia VPN containers on the VPS.
+- Do NOT delete the `nas_jetson_nano-lan` network profile.
+- In all public articles: IP addresses replaced with placeholders, participants' names never disclosed.
+
 ---
 
-## Verification
+## Verification / Проверка
 
-After completing:
+🇷🇺 После завершения: / 🇬🇧 After completing:
 
 ```bash
 # No real IPs in public docs:
@@ -76,5 +90,7 @@ ls docs/assets/screenshots/article/redacted/0*.png
 cat docs/_config.yml
 ```
 
-Then enable GitHub Pages: Settings → Pages → Deploy from branch → main → /docs → Save.
+🇷🇺 Затем включить GitHub Pages: Settings → Pages → Deploy from branch → main → /docs → Save.
+
+🇬🇧 Then enable GitHub Pages: Settings → Pages → Deploy from branch → main → /docs → Save.
 URL: https://alexeyborovskoy.github.io/NAS_Jetson_Nano/

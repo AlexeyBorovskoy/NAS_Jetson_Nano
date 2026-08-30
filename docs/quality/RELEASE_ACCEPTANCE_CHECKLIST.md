@@ -1,12 +1,12 @@
-﻿# Чеклист приёмки релиза / Release Acceptance Checklist: NAS_Jetson_Nano
+# Чеклист приёмки релиза / Release Acceptance Checklist: NAS_Jetson_Nano
 
 **Version:** 1.0  
 **Date:** 2026-06-27  
-**Use:** Complete before tagging a release or declaring system operational.
+**Use / Назначение:** Complete before tagging a release or declaring system operational. Заполнять перед созданием тега релиза или объявлением системы рабочей.
 
 ---
 
-## Pre-Release: Code Quality
+## Перед релизом: качество кода / Pre-Release: Code Quality
 
 - [ ] `git status` shows no uncommitted changes
 - [ ] `./scripts/security/check_no_secrets.sh` passes (0 findings)
@@ -17,7 +17,7 @@
 
 ---
 
-## Pre-Release: Infrastructure
+## Перед релизом: инфраструктура / Pre-Release: Infrastructure
 
 - [ ] SSH to Jetson succeeds: `ssh admin@192.168.0.50 hostname`
 - [ ] `git pull --ff-only` on Jetson: no conflicts
@@ -27,7 +27,7 @@
 
 ---
 
-## Pre-Release: Docker Services
+## Перед релизом: Docker-сервисы / Pre-Release: Docker Services
 
 - [ ] All 13 containers are in running state
 - [ ] No containers in unhealthy state (`docker ps --filter health=unhealthy`)
@@ -36,7 +36,7 @@
 
 ---
 
-## Pre-Release: Service Endpoints
+## Перед релизом: конечные точки сервисов / Pre-Release: Service Endpoints
 
 - [ ] Nextcloud: `curl -sf http://192.168.0.50:8080/status.php` returns HTTP 200 with `{"installed":true}`
 - [ ] Immich: `curl -sf http://192.168.0.50:2283/api/server/ping` returns HTTP 200
@@ -46,7 +46,7 @@
 
 ---
 
-## Pre-Release: Systemd Services
+## Перед релизом: сервисы systemd / Pre-Release: Systemd Services
 
 - [ ] `systemctl is-active nas_jetson_nano-usb-watchdog.timer` = active
 - [ ] `systemctl is-active nas_jetson_nano-usb-monitor.service` = active
@@ -56,7 +56,7 @@
 
 ---
 
-## Pre-Release: Backup
+## Перед релизом: бэкап / Pre-Release: Backup
 
 - [ ] At least one Nextcloud DB dump exists in /mnt/storage/backups/database-dumps/ (< 7 days old)
 - [ ] At least one Immich DB dump exists (< 7 days old)
@@ -64,7 +64,7 @@
 
 ---
 
-## Pre-Release: Security
+## Перед релизом: безопасность / Pre-Release: Security
 
 - [ ] `config/.env` is in .gitignore and NOT tracked by git
 - [ ] `config/secrets.json` is NOT tracked by git
@@ -74,9 +74,13 @@
 
 ---
 
-## Go / No-Go Decision
+## Решение Go / No-Go / Go / No-Go Decision
 
-| Area | Status | Blocker? |
+🇷🇺 По каждой области указывается статус и является ли она блокирующей для релиза.
+
+🇬🇧 For each area, its status is recorded, and whether it is a release blocker.
+
+| Область / Area | Статус / Status | Блокирует? / Blocker? |
 |---|---|---|
 | CI passes | / | YES |
 | Storage mounted | / | YES |
@@ -87,13 +91,13 @@
 | DB backup current | / | NO (warn only) |
 | VPS proxy working | / | NO (warn only) |
 
-**Decision:** GO / NO-GO  
-**Signed off by:** _________________  
-**Date:** _________________
+**Decision / Решение:** GO / NO-GO  
+**Signed off by / Утвердил:** _________________  
+**Date / Дата:** _________________
 
 ---
 
-## Post-Release
+## После релиза / Post-Release
 
 - [ ] Git tag created: `git tag -a vX.Y.Z -m "description"`
 - [ ] Tag pushed: `git push origin vX.Y.Z`

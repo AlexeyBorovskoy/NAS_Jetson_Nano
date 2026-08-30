@@ -4,6 +4,12 @@ set -euo pipefail
 SECRET_ASSIGNMENT_PATTERN='[A-Z0-9_]*(API[_-]?KEY|SECRET|TOKEN|PASSWORD|BEARER)[A-Z0-9_]*[[:space:]]*[:=][[:space:]]*['"'"'"]?[A-Za-z0-9_./+=:@-]{16,}'
 PRIVATE_KEY_PATTERN='-----BEGIN [A-Z ]*PRIVATE KEY-----'
 PLACEHOLDER_PATTERN='(change_me|replace_me|example|mock|REDACTED|ВАШ_|x{8,}|X{8,})'
+# *_FILE / *_PATH указывают на путь к секрету, а не на само значение —
+# тот же паттерн (docker secrets, restic) уже используется в проекте
+# (RESTIC_PASSWORD_FILE=/root/..., password_file: /run/secrets/...).
+# Найдено 2026-08-30: check_no_secrets.sh ловил такие строки как ложные срабатывания
+# на каждом коммите.
+SECRET_FILE_REF_PATTERN='(API[_-]?KEY|SECRET|TOKEN|PASSWORD|BEARER)[A-Z0-9_]*_(FILE|PATH)[[:space:]]*[:=][[:space:]]*['"'"'"]?/'
 
 # Сканируем только то, что git реально опубликует (tracked-файлы).
 # Untracked/.gitignored (например локальный config/.env с реальными ключами)
@@ -26,6 +32,7 @@ if [ -n "$scan_files" ]; then
 fi
 
 matches="$(printf '%s\n' "$matches" | grep -Ev "$PLACEHOLDER_PATTERN" || true)"
+matches="$(printf '%s\n' "$matches" | grep -Ev "$SECRET_FILE_REF_PATTERN" || true)"
 
 if [ -n "$matches" ]; then
   printf '%s\n' "$matches"

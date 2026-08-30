@@ -1,0 +1,157 @@
+{
+  "audit_date": "2026-08-30",
+  "mode": "READ-ONLY / NON-DESTRUCTIVE",
+  "platform": {
+    "model": "NVIDIA Jetson Nano Developer Kit",
+    "ram_gb": 3.9,
+    "l4t": "R32.7.1",
+    "jetpack": "4.6.1",
+    "cpu": "4x ARM Cortex-A57 aarch64",
+    "gpu": "Maxwell 128 CUDA cores (spec, not live-measured)",
+    "gpu_utilization_observed_pct": 0
+  },
+  "os": {
+    "distro": "Ubuntu 18.04.6 LTS (bionic)",
+    "kernel": "4.9.253-tegra",
+    "eol": true,
+    "eol_since": "2023-04",
+    "esm_confirmed": false
+  },
+  "jetpack": {
+    "version": "4.6.1",
+    "is_platform_ceiling_for_nano": true
+  },
+  "cuda": {
+    "version": "10.2.460",
+    "used_by_project": false
+  },
+  "tensorrt": {
+    "version": "8.2.1.8",
+    "used_by_project": false
+  },
+  "project": {
+    "name": "NAS_Jetson_Nano",
+    "repo_windows": {
+      "remote": "https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano.git",
+      "head": "7707d0e",
+      "branch": "main"
+    },
+    "repo_device": {
+      "path": "~/nasa",
+      "remote": "https://github.com/AlexeyBorovskoy/Nasa_home.git",
+      "head": "0f9fd0f",
+      "branch": "main",
+      "uncommitted_lines": 33,
+      "modified_files": 13,
+      "untracked_backup_files": 20
+    },
+    "git_device_divergence": "known, partially closed 2026-08-30 (commit 42ee9dd)"
+  },
+  "services": [
+    { "name": "immich", "status": "healthy", "port": 2283 },
+    { "name": "immich_db", "status": "healthy", "port": null, "db_tables": 55 },
+    { "name": "immich_redis", "status": "healthy", "port": null },
+    { "name": "nextcloud", "status": "healthy", "port": 8080 },
+    { "name": "nextcloud_db", "status": "healthy", "port": null, "db_tables": 162 },
+    { "name": "nextcloud_redis", "status": "healthy", "port": null },
+    { "name": "samba", "status": "healthy", "port": 445 },
+    { "name": "llm_gateway", "status": "healthy", "port": 8090 },
+    { "name": "nasa_api", "status": "healthy", "port": 8099 },
+    { "name": "netdata", "status": "healthy", "port": 19999 },
+    { "name": "uptime_kuma", "status": "healthy", "port": 3001 },
+    { "name": "portainer", "status": "up_no_healthcheck", "port": 9000 },
+    { "name": "beszel_agent", "status": "active", "port": 45876, "type": "systemd, not container" },
+    { "name": "coturn", "status": "NOT_DEPLOYED", "port": null, "note": "planned in compose, never pulled on VPS" }
+  ],
+  "containers_total": 13,
+  "containers_healthy": 12,
+  "containers_restarts": 0,
+  "containers_oom_killed": 0,
+  "ports": [22, 111, 445, 2283, 3001, 8080, 8090, 8099, 9000, 9443, 19999, 45876],
+  "models": [],
+  "databases": [
+    { "engine": "PostgreSQL", "version": "16.8", "purpose": "Immich" },
+    { "engine": "PostgreSQL", "version": "16.14", "purpose": "Nextcloud" },
+    { "engine": "Redis 7-alpine", "version": "7", "purpose": "Immich cache/session" },
+    { "engine": "Redis 7-alpine", "version": "7", "purpose": "Nextcloud cache/session" }
+  ],
+  "risks": [
+    { "id": "R-01", "summary": "Immich photos have no offsite backup", "probability": "MEDIUM", "impact": "CRITICAL" },
+    { "id": "R-02", "summary": ".env real values exist only on device", "probability": "LOW-MEDIUM", "impact": "HIGH" },
+    { "id": "R-03", "summary": "coturn not deployed, Talk calls outside LAN likely broken", "probability": "HIGH", "impact": "MEDIUM" },
+    { "id": "R-04", "summary": "naive redeploy would break report_cmd/backup_cmd paths", "probability": "MEDIUM", "impact": "MEDIUM" },
+    { "id": "R-05", "summary": "Ubuntu 18.04 EOL, ESM unconfirmed", "probability": "MEDIUM", "impact": "HIGH" },
+    { "id": "R-06", "summary": "CORS wildcard on API :8099", "probability": "LOW", "impact": "MEDIUM" },
+    { "id": "R-07", "summary": "JWT secret may regenerate on every restart", "probability": "UNKNOWN", "impact": "LOW" },
+    { "id": "R-08", "summary": "jms583-health.log has no logrotate", "probability": "LOW", "impact": "LOW" },
+    { "id": "R-09", "summary": "storage_preflight.sh has no explicit disk-space check", "probability": "LOW", "impact": "MEDIUM" },
+    { "id": "R-10", "summary": "nasa-api dependencies unpinned", "probability": "MEDIUM", "impact": "LOW-MEDIUM" },
+    { "id": "R-11", "summary": "5 images use floating tags (latest/release/apache)", "probability": "MEDIUM", "impact": "MEDIUM" },
+    { "id": "R-12", "summary": "SD card wear monitoring exists in git but not deployed", "probability": "LOW-MEDIUM", "impact": "HIGH" },
+    { "id": "R-13", "summary": "Uptime Kuma monitoring coverage narrow (5 HTTP endpoints only)", "probability": "LOW", "impact": "LOW" }
+  ],
+  "technical_debt": [
+    { "id": "TD-01", "component": "Deployment", "priority": "P1" },
+    { "id": "TD-02", "component": "Backup", "priority": "P0" },
+    { "id": "TD-03", "component": "Talk/coturn", "priority": "P2" },
+    { "id": "TD-04", "component": "nasa-api deps", "priority": "P2" },
+    { "id": "TD-05", "component": "Docker images", "priority": "P3" },
+    { "id": "TD-06", "component": "Logging", "priority": "P3" },
+    { "id": "TD-07", "component": "Storage preflight", "priority": "P2" },
+    { "id": "TD-08", "component": "API security", "priority": "P2" },
+    { "id": "TD-09", "component": "SD card", "priority": "P2" },
+    { "id": "TD-10", "component": "Docs sync", "priority": "P2" },
+    { "id": "TD-11", "component": "Platform EOL", "priority": "P1" },
+    { "id": "TD-12", "component": ".env.bak.*", "priority": "P3" },
+    { "id": "TD-13", "component": "docker-compose.stage1.yml", "priority": "P3" },
+    { "id": "TD-14", "component": "Tests", "priority": "P2" }
+  ],
+  "protected_components": [
+    "amnezia-xray / amnezia-awg2 (VPS)",
+    "nasa-tunnel.service",
+    "nasa-lan (NetworkManager profile)",
+    "nasa-usb-watchdog / nasa-ssd-recovery",
+    "Nextcloud/Immich PostgreSQL volumes",
+    ".env + .env.bak.*"
+  ],
+  "quick_wins": [
+    "pin nasa-api requirements.txt versions",
+    "docker image prune (after verifying unused)",
+    "logrotate for jms583-health.log",
+    "explicit disk-space check in storage_preflight.sh",
+    "clean $RECYCLE.BIN on /mnt/hdd2tb (27GB, needs owner confirmation)",
+    "deploy nas_jetson_nano-sd-wear timer (already in git)",
+    "sync README.md with CLAUDE.md",
+    "narrow CORS on API :8099"
+  ],
+  "development_options": ["Scenario A: Minimal modernization", "Scenario B: Controlled refactoring", "Scenario C: Architecture evolution", "Scenario D: Hybrid Edge + Server"],
+  "unknowns": [
+    "U-01: exact /var/lib/docker size (needs root)",
+    "U-02: full /mnt/hdd2tb traversal (FUSE too slow)",
+    "U-03: sshd -T actual PasswordAuthentication/PermitRootLogin value",
+    "U-04: whether NAS_JETSON_NANO_API_JWT_SECRET is set explicitly",
+    "U-05: offsite restic repo freshness (Vostro unreachable)",
+    "U-06: Ubuntu ESM status",
+    "U-07: exact Telegram bot token variable name",
+    "U-08: BACKUP_RETENTION_* values",
+    "U-09: whether docker-compose.stage1.yml is still referenced anywhere",
+    "U-10: CORS config of llm-gateway and backup-api",
+    "U-11: real Talk video call test outside LAN",
+    "U-12: docker json-file logging driver rotation limits",
+    "U-13: exact cuDNN version",
+    "U-14: exact GPU CUDA core count via live command"
+  ],
+  "scores_0_5": {
+    "architecture": 4,
+    "code_quality": 3,
+    "reproducibility": 2,
+    "security": 3,
+    "reliability": 4,
+    "observability": 3,
+    "performance": 5,
+    "maintainability": 3,
+    "documentation": 3,
+    "upgrade_readiness": 2,
+    "hardware_headroom": 2
+  }
+}

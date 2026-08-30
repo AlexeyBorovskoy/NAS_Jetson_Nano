@@ -38,7 +38,7 @@ services:
     container_name: homecloud_netdata
     hostname: jetson-nano
     restart: always
-    mem_limit: 256m
+    mem_limit: 320m
     pid: host
     # Доступ к системным ресурсам хоста
     cap_add:
@@ -94,7 +94,7 @@ services:
     image: louislam/uptime-kuma:1
     container_name: homecloud_uptime_kuma
     restart: always
-    mem_limit: 128m
+    mem_limit: 192m
     ports:
       - "3001:3001"
     volumes:

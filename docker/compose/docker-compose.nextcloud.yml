@@ -65,6 +65,8 @@ services:
     volumes:
       - ${NEXTCLOUD_DATA}:/var/www/html/data
       - nextcloud_app:/var/www/html
+      # 2TB USB HDD (NTFS, existing family archive) exposed as Nextcloud external storage
+      - /mnt/hdd2tb:/mnt/hdd2tb
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost/status.php"]
       interval: 30s

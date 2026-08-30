@@ -5,4 +5,4 @@ After=network-online.target
 [Service]
 Type=oneshot
 EnvironmentFile=/etc/nas_jetson_nano-monitor/ddns.env
-ExecStart=/root/nas_jetson_nano/scripts/network/ddns_duckdns.sh
+ExecStart=/home/admin/nas_jetson_nano/scripts/network/ddns_duckdns.sh

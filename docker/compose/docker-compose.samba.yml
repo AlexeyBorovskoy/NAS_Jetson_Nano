@@ -24,6 +24,8 @@ services:
       - ${STORAGE_ROOT:-/mnt/storage}/nextcloud/data:/mnt/nc-data:ro
       - ${STORAGE_ROOT:-/mnt/storage}/immich/library:/mnt/immich-data:ro
       - ${STORAGE_ROOT:-/mnt/storage}/samba/public:/mnt/public
+      # 2TB USB HDD (NTFS family archive)
+      - /mnt/hdd2tb:/mnt/hdd2tb
       # Samba state persistence
       - samba_data:/data
     environment:

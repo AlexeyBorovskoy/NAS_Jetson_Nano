@@ -37,3 +37,12 @@ share:
     guestok: no
     users:
       - nas
+
+  - name: hdd2tb
+    comment: Borovskoy 2TB HDD (family archive)
+    path: /mnt/hdd2tb
+    browsable: yes
+    readonly: no
+    guestok: no
+    users:
+      - nas

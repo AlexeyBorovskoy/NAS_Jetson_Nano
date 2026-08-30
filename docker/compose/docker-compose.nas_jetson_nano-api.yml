@@ -1,9 +1,12 @@
-name: homecloud-nas_jetson_nano-api
+name: homecloud-nasa-api
 services:
   nas_jetson_nano-api:
     build:
       context: ../../services/nas_jetson_nano-api
-    container_name: homecloud_nas_jetson_nano_api
+    # Контейнер намеренно НЕ переименован в homecloud_nas_jetson_nano_api: на устройстве
+    # уже работает homecloud_nasa_api на порту 8099, и наивный деплой под новым именем
+    # создал бы второй, конкурирующий контейнер вместо пересоздания старого.
+    container_name: homecloud_nasa_api
     restart: always
     mem_limit: 128m
     ports:

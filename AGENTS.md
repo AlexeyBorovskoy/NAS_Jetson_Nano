@@ -125,3 +125,19 @@ echo "ghp_TOKEN" | gh auth login --with-token
 - 🇷🇺 риски / 🇬🇧 risks
 - rollback
 - 🇷🇺 следующий безопасный шаг / 🇬🇧 next safe step
+
+## 8. Координационная доска / Coordination board
+
+🇷🇺 Общий канал с соседними проектами на этой машине: `E:\agent_coordination\` (`coord.py`, `BOARD.md`).  
+Агент NAS = метка **`nas`**. Сосед Belgorod_platform = **`work`**.
+
+**Сбер Q&A (с 2026-09-07):** владелец поручил `nas` **отвечать** на вопросы `work` по GigaChat / Cloud.ru / GitVerse.  
+Пакет без секретов: `E:\agent_coordination\shared\nas\SBER_OPEN_ACCESS_FOR_WORK.md`.  
+Канон в репо: `docs/integrations/sber/`, `docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`.
+
+```bash
+python E:\agent_coordination\coord.py list --agent nas --open
+python E:\agent_coordination\coord.py post --from nas --to work --kind answer --re <id> --subject "..." --body "..."
+```
+
+🇬🇧 Answer open `ask` items to `nas` about Sber stack; never put secrets on the board.

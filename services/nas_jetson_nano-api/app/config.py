@@ -74,7 +74,7 @@ class Settings(BaseSettings):
     # Server-side long-poll timeout in seconds (how long a read call waits).
     talk_bot_poll_timeout: int = 30
 
-    # ── Talk AI bot (Phase C, free-form questions → DeepSeek) ───────────────
+    # ── Talk AI bot (Phase C, free-form → gateway; ADR-0008 Giga first) ─────
     # A SECOND, deliberately separate callsign. The privacy boundary is the word
     # you type: `talk_bot_trigger` answers from local data and never leaves the
     # house; this one goes out to the provider through the redaction gateway.
@@ -88,7 +88,10 @@ class Settings(BaseSettings):
     talk_bot_llm_display_name: str = "Бобик"
     # Redaction gateway endpoint — the ONLY outbound door.
     talk_bot_llm_url: str = "http://host.docker.internal:8090/v1/chat"
-    talk_bot_llm_timeout: int = 60
+    # Provider field for POST /v1/chat (gigachat | deepseek | ollama). Empty =
+    # gateway uses LLM_PROVIDER. ADR-0008 default: gigachat.
+    talk_bot_llm_provider: str = "gigachat"
+    talk_bot_llm_timeout: int = 150
     # Guard against a wall-of-text question inflating the bill.
     talk_bot_llm_max_chars: int = 1000
     # Second budget guard, at bot level: max LLM replies per day. 0 = unlimited.

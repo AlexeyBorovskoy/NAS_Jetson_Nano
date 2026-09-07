@@ -1,0 +1,14 @@
+[Unit]
+Description=NAS_Jetson_Nano — GigaChat balance check via local gateway
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=LLM_GATEWAY_URL=http://127.0.0.1:8090
+Environment=NAS_JETSON_NANO_PROJECT_DIR=/home/admin/nasa
+ExecStart=/bin/bash ${NAS_JETSON_NANO_PROJECT_DIR}/scripts/sber/check_gigachat_balance.sh
+User=admin
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nas_jetson_nano-giga-balance

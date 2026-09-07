@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — 2026-09-07 · Sber-era architecture (device deploy still pending)
+
+### Added / Добавлено
+- ADR-0007 node model (Jetson SoR; workstation/Vostro out; Cloud.ru edge)
+- ADR-0008 LLM routing (GigaChat-2 first on `api.giga.chat`)
+- ADR-0009 backup topology (SSD / HDD on-site / S3 off-site)
+- Canon plan `docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md` + offline pack + full deploy runbook
+- `docs/integrations/sber/` (GIGACHAT, CLOUD_RU, GITVERSE, CONSOLE_CHECKLIST)
+- LLM gateway: Giga defaults, flight lock, balance endpoint, Giga→DeepSeek failover, `provider=cloudru`
+- Talk: `TALK_BOT_LLM_PROVIDER`; Immich→HDD script + systemd; `scripts/sber/*`
+- Tests: `tests/llm_gateway/test_sber_routing.py`
+- Auth/probe notes (no secrets): Cloud.ru IAM/FM, GitVerse, SA home-nas-api
+- GitVerse mirror remote workflow (HTTPS oauth2)
+
+### Changed / Изменено
+- `.env.example` + compose: Giga-first, Cloud.ru FM env stubs
+- Docs 08/12/29/30/31 + WAVE_0 legacy banners; CLAUDE nearest tasks
+
+### Not deployed / Не выкатано
+- Jetson `.env` cutover, container rebuild, HDD timer — need Jetson online + «деплой»
+- Cloud.ru FM chat until account balance/grant (402 as of 2026-09-07)
+
+---
+
 ## [1.6.0] — 2026-08-22 · Сеть перестроена, алерты заговорили, один диагноз отозван
 
 > 🇷🇺 День начался с жалобы «телефоны не синхронизируются» и трёх ❌ в отчёте.

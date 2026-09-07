@@ -1,0 +1,26 @@
+[Unit]
+Description=NAS_Jetson_Nano — Immich on-site second copy to HDD (ADR-0009)
+Documentation=https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
+After=local-fs.target network-online.target
+Wants=network-online.target
+RequiresMountsFor=/mnt/storage /mnt/hdd2tb
+ConditionPathIsMountPoint=/mnt/storage
+ConditionPathIsMountPoint=/mnt/hdd2tb
+
+[Service]
+Type=oneshot
+# Device path today is often /home/admin/nasa — override Environment if needed.
+Environment=NAS_JETSON_NANO_PROJECT_DIR=/home/admin/nasa
+Environment=IMMICH_SRC=/mnt/storage/immich
+Environment=IMMICH_DST=/mnt/hdd2tb/backups/immich
+Environment=MIN_FREE_GB=20
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+ExecStartPre=/bin/mountpoint -q /mnt/storage
+ExecStartPre=/bin/mountpoint -q /mnt/hdd2tb
+ExecStart=/bin/bash "${NAS_JETSON_NANO_PROJECT_DIR}/scripts/backup/immich_hdd_second_copy.sh"
+User=root
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nas_jetson_nano-immich-hdd-copy

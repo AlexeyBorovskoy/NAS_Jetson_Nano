@@ -1,9 +1,13 @@
-# 08. LLM Gateway / DeepSeek
+# 08. LLM Gateway (multi-provider: GigaChat · DeepSeek · optional Ollama)
+
+> ⚠️ **2026-09-04 (ADR-0008):** family default is **GigaChat** (`GigaChat-2` on `https://api.giga.chat/v1`).  
+> DeepSeek remains fallback. Filename kept for link stability.  
+> See also: [`integrations/sber/GIGACHAT.md`](integrations/sber/GIGACHAT.md), [`plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`](plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md).
 
 ## 1. Назначение / Purpose
 
-🇷🇺 LLM Gateway — отдельный сервис, который изолирует домашнее облако от прямой интеграции с DeepSeek API.
-🇬🇧 LLM Gateway is a dedicated service that isolates the home cloud from direct DeepSeek API integration.
+🇷🇺 LLM Gateway — единственная дверь наружу: redaction + budget + multi-provider.
+🇬🇧 Single outbound door: redaction, budget, and multiple providers.
 
 ## 2. Почему шлюз обязателен / Why the gateway is mandatory
 
@@ -18,16 +22,17 @@
 
 ## 3. Провайдеры / Providers
 
-🇷🇺 Шлюз поддерживает **двух** провайдеров. Ключевой инвариант: оба ходят через
-**одно и то же** редактирование и **один и тот же** бюджет. Добавление провайдера
-не должно открывать вторую, неохраняемую дверь — ради этого шлюз и существует.
+🇷🇺 Шлюз поддерживает несколько провайдеров. Ключевой инвариант: все ходят через
+**одно и то же** редактирование и **один и тот же** бюджет.
 
-🇬🇧 Two providers, one door: both go through the same redaction and the same budget.
+🇬🇧 Multiple providers, one door: same redaction and budget.
 
-| Провайдер | Значение `LLM_PROVIDER` | Транспорт | Статус |
+| Провайдер | `LLM_PROVIDER` / `provider` | Транспорт | Статус |
 |---|---|---|---|
-| **DeepSeek** | `deepseek` | OpenAI-совместимый SDK | ✅ проверен вживую |
-| **GigaChat (Сбер)** | `gigachat` | OAuth + REST, OpenAI-совместимый формат | ✅ проверен вживую 2026-08-10 |
+| **GigaChat (Сбер)** | `gigachat` (**default family**, ADR-0008) | OAuth + REST; base `api.giga.chat` | ✅ live 2026-08-10; cutover 2026-09 |
+| **DeepSeek** | `deepseek` (fallback) | OpenAI-compatible SDK | ✅ live |
+| **Ollama** | `ollama` | local HTTP | dev only; prod `LLM_PREFER_LOCAL=false` |
+| **Cloud.ru FM** | planned `cloudru` | OpenAI-compatible | wave W3 |
 
 Провайдера можно выбрать **на конкретный запрос** полем `provider` в `POST /v1/chat` —
 удобно для честного сравнения ответов на одной задаче.
@@ -73,17 +78,21 @@ self-signed certificate in certificate chain
 ```env
 LLM_PROVIDER=gigachat
 GIGACHAT_AUTH_KEY=<base64(client_id:client_secret)>
-GIGACHAT_SCOPE=GIGACHAT_API_PERS      # физлица; для организаций — _B2B / _CORP
-GIGACHAT_MODEL=GigaChat               # также GigaChat-Pro, GigaChat-Max
+GIGACHAT_SCOPE=GIGACHAT_API_PERS
+GIGACHAT_BASE_URL=https://api.giga.chat/v1
+GIGACHAT_MODEL=GigaChat-2
+GIGACHAT_IMAGE_MODEL=GigaChat-2-Max
 GIGACHAT_CA_BUNDLE=/certs/russian_trusted_bundle.pem
+TALK_BOT_LLM_PROVIDER=gigachat
+LLM_PREFER_LOCAL=false
 ```
 
 ## 4. Модели / Models
 
-🇷🇺 Текущая конфигурация / 🇬🇧 Current configuration:
+🇷🇺 Fallback DeepSeek / 🇬🇧 DeepSeek fallback:
 
 ```env
-LLM_PROVIDER=deepseek
+# when provider=deepseek or Giga unavailable
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=deepseek-chat
 DEEPSEEK_REASONER_MODEL=deepseek-reasoner

@@ -1,8 +1,9 @@
 """
 Home Cloud LLM Gateway.
 
-Single outbound door to the LLM provider (DeepSeek). Everything that leaves the
-house passes through here, gets redacted, and is counted against a budget.
+Single outbound door to LLM providers (GigaChat default, DeepSeek fallback,
+optional Ollama). Everything that leaves the house passes through here, gets
+redacted, and is counted against a budget. ADR-0008.
 
 Design notes
 ------------
@@ -262,6 +263,15 @@ def _record_usage(tokens: int, user: str = DEFAULT_USER) -> None:
 
 _gigachat_token: dict = {"value": "", "expires_at": 0.0}
 _token_lock = threading.Lock()
+# PERS freemium allows one concurrent stream — serialize GigaChat network calls.
+_gigachat_flight_lock = threading.Lock()
+
+_DEFAULT_GIGACHAT_BASE = "https://api.giga.chat/v1"
+_DEFAULT_GIGACHAT_MODEL = "GigaChat-2"
+
+
+def _gigachat_base() -> str:
+    return os.getenv("GIGACHAT_BASE_URL", _DEFAULT_GIGACHAT_BASE).rstrip("/")
 
 
 def _gigachat_verify():
@@ -321,8 +331,13 @@ def _gigachat_access_token() -> str:
 
 
 def _call_gigachat(system: str, user: str, model: str) -> tuple[str, int]:
+    with _gigachat_flight_lock:
+        return _call_gigachat_locked(system, user, model)
+
+
+def _call_gigachat_locked(system: str, user: str, model: str) -> tuple[str, int]:
     token = _gigachat_access_token()
-    base = os.getenv("GIGACHAT_BASE_URL", "https://gigachat.devices.sberbank.ru/api/v1").rstrip("/")
+    base = _gigachat_base()
     try:
         r = httpx.post(
             f"{base}/chat/completions",
@@ -355,7 +370,7 @@ _IMG_TAG_RE = re.compile(r'<img\s+src="([^"]+)"', re.IGNORECASE)
 def _gigachat_download_file(file_id: str) -> bytes:
     """Fetch a generated/stored file's binary content."""
     token = _gigachat_access_token()
-    base = os.getenv("GIGACHAT_BASE_URL", "https://gigachat.devices.sberbank.ru/api/v1").rstrip("/")
+    base = _gigachat_base()
     try:
         r = httpx.get(
             f"{base}/files/{file_id}/content",
@@ -373,7 +388,7 @@ def _gigachat_download_file(file_id: str) -> bytes:
 def _gigachat_upload_file(filename: str, data: bytes, mime: str = "image/jpeg") -> str:
     """Upload a file to GigaChat storage; returns its id."""
     token = _gigachat_access_token()
-    base = os.getenv("GIGACHAT_BASE_URL", "https://gigachat.devices.sberbank.ru/api/v1").rstrip("/")
+    base = _gigachat_base()
     try:
         r = httpx.post(
             f"{base}/files",
@@ -398,9 +413,15 @@ def _gigachat_image(user_prompt: str, attachments: Optional[list[str]] = None) -
 
     Returns (image_bytes, file_id, tokens). `attachments` carries an uploaded
     source image for editing/restoration instead of generating from scratch.
+    Serialized with chat via _gigachat_flight_lock (PERS one stream).
     """
+    with _gigachat_flight_lock:
+        return _gigachat_image_locked(user_prompt, attachments)
+
+
+def _gigachat_image_locked(user_prompt: str, attachments: Optional[list[str]] = None) -> tuple[bytes, str, int]:
     token = _gigachat_access_token()
-    base = os.getenv("GIGACHAT_BASE_URL", "https://gigachat.devices.sberbank.ru/api/v1").rstrip("/")
+    base = _gigachat_base()
     # ⚠️ Verified 2026-08-10: only GigaChat-2-Max accepts an image on input.
     # Plain "GigaChat" answers 422 "Model does not support image" — so the image
     # model is deliberately a SEPARATE setting from the chat model.
@@ -466,6 +487,89 @@ def _call_deepseek(system: str, user: str, model: str) -> tuple[str, int]:
     content = response.choices[0].message.content or ""
     tokens = getattr(getattr(response, "usage", None), "total_tokens", 0) or 0
     return content, tokens
+
+
+def _cloudru_configured() -> bool:
+    key = os.getenv("CLOUDRU_FM_API_KEY", "").strip()
+    return bool(key) and key not in ("replace_me",)
+
+
+def _call_cloudru(system: str, user: str, model: str) -> tuple[str, int]:
+    """Cloud.ru Foundation Models — OpenAI-compatible chat (ADR-0008 wave W3).
+
+    Auth: static SA API key as Bearer (docs: foundation-models api-ref).
+    Base default: https://foundation-models.api.cloud.ru/v1
+    """
+    if not _cloudru_configured():
+        raise HTTPException(status_code=500, detail="CLOUDRU_FM_API_KEY is not configured")
+    api_key = os.getenv("CLOUDRU_FM_API_KEY", "").strip()
+    base = os.getenv(
+        "CLOUDRU_FM_BASE_URL",
+        "https://foundation-models.api.cloud.ru/v1",
+    ).rstrip("/")
+    # Prefer httpx so we do not require OpenAI SDK quirks for non-OpenAI hosts.
+    try:
+        r = httpx.post(
+            f"{base}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+                "max_tokens": int(os.getenv("CLOUDRU_FM_MAX_TOKENS", "2048")),
+            },
+            timeout=float(os.getenv("CLOUDRU_FM_TIMEOUT", "120")),
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Cloud.ru FM transport error: {exc}") from exc
+    if r.status_code != 200:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Cloud.ru FM error: HTTP {r.status_code} {r.text[:300]}",
+        )
+    data = r.json()
+    content = (data.get("choices") or [{}])[0].get("message", {}).get("content", "") or ""
+    tokens = (data.get("usage") or {}).get("total_tokens", 0) or 0
+    return content, tokens
+
+
+def _gigachat_balance() -> dict:
+    """Upstream GigaChat GET /balance (PERS freemium remaining)."""
+    token = _gigachat_access_token()
+    base = _gigachat_base()
+    try:
+        r = httpx.get(
+            f"{base}/balance",
+            headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
+            verify=_gigachat_verify(),
+            timeout=30.0,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"GigaChat balance transport: {exc}") from exc
+    if r.status_code != 200:
+        raise HTTPException(
+            status_code=502,
+            detail=f"GigaChat balance: HTTP {r.status_code} {r.text[:200]}",
+        )
+    return r.json() if r.content else {}
+
+
+def _deepseek_configured() -> bool:
+    k = os.getenv("DEEPSEEK_API_KEY", "")
+    return bool(k) and k != "replace_me"
+
+
+def _giga_fallback_enabled() -> bool:
+    return os.getenv("LLM_GIGA_FALLBACK_DEEPSEEK", "true").strip().lower() not in (
+        "false",
+        "0",
+        "no",
+    )
 
 
 # ── Local model on the workstation ──────────────────────────────────────────────
@@ -542,7 +646,7 @@ class ChatRequest(BaseModel):
     mode: Literal["safe", "raw"] = "safe"
     reasoning: bool = False
     # Per-request provider override; falls back to LLM_PROVIDER.
-    provider: Optional[Literal["deepseek", "gigachat", "ollama"]] = None
+    provider: Optional[Literal["deepseek", "gigachat", "ollama", "cloudru"]] = None
     # Who is asking — drives per-user quotas and the /v1/usage breakdown.
     user: Optional[str] = None
 
@@ -553,6 +657,8 @@ class ChatResponse(BaseModel):
     redacted: bool
     content: str
     tokens: int = 0
+    # Set when Giga failed and DeepSeek answered (LLM_GIGA_FALLBACK_DEEPSEEK).
+    fallback_from: Optional[str] = None
 
 
 # ── Endpoints ───────────────────────────────────────────────────────────────────
@@ -560,23 +666,35 @@ class ChatResponse(BaseModel):
 
 @app.get("/health")
 def health():
-    deepseek_key = os.getenv("DEEPSEEK_API_KEY", "")
     return {
         "status": "ok",
-        "provider": os.getenv("LLM_PROVIDER", "deepseek"),
+        "provider": os.getenv("LLM_PROVIDER", "gigachat"),
         "redaction": os.getenv("LLM_REDACT_PERSONAL_DATA", "true"),
         "names_configured": len(NAME_PATTERNS),
         # Non-empty means a name in LLM_REDACT_NAMES is NOT being filtered.
         "names_dropped": NAMES_DROPPED,
         "providers": {
-            "deepseek": bool(deepseek_key) and deepseek_key != "replace_me",
+            "deepseek": _deepseek_configured(),
             "gigachat": bool(os.getenv("GIGACHAT_AUTH_KEY", "").strip()),
-            # Для локальной модели важно не «настроена ли», а «отвечает ли прямо
-            # сейчас»: станция кочует и выключается. Поэтому здесь живая проверка.
+            "cloudru": _cloudru_configured(),
+            # Live reachability — workstation is not a prod node (ADR-0007).
             "ollama": _local_available(),
         },
         "prefer_local": os.getenv("LLM_PREFER_LOCAL", "false").strip().lower() == "true",
+        "giga_fallback_deepseek": _giga_fallback_enabled(),
+        "gigachat_base": _gigachat_base(),
+        "gigachat_model": os.getenv("GIGACHAT_MODEL", _DEFAULT_GIGACHAT_MODEL),
     }
+
+
+@app.get("/v1/provider/gigachat/balance")
+def gigachat_balance():
+    """Proxy GigaChat PERS balance (no secrets in response). Requires GIGACHAT_AUTH_KEY."""
+    if not os.getenv("GIGACHAT_AUTH_KEY", "").strip():
+        raise HTTPException(status_code=503, detail="GigaChat is not configured")
+    raw = _gigachat_balance()
+    # Pass through structure from upstream; do not log tokens.
+    return {"provider": "gigachat", "base": _gigachat_base(), "balance": raw}
 
 
 @app.get("/v1/usage")
@@ -635,9 +753,7 @@ SYSTEM_PROMPT = (
 
 @app.post("/v1/chat", response_model=ChatResponse)
 def chat(payload: ChatRequest):
-    # Явно указанный провайдер уважается всегда. Если не указан — предпочитаем
-    # локальную модель, когда она отвечает: тогда вопрос не покидает дом.
-    # Станция кочует и выключается, поэтому проверяем доступность, а не настройку.
+    # Explicit provider always wins. Else optional local prefer, else LLM_PROVIDER.
     requested = (payload.provider or "").strip().lower()
     if requested:
         provider = requested
@@ -645,7 +761,7 @@ def chat(payload: ChatRequest):
             and _local_available():
         provider = "ollama"
     else:
-        provider = os.getenv("LLM_PROVIDER", "deepseek").lower()
+        provider = os.getenv("LLM_PROVIDER", "gigachat").lower()
 
     if payload.mode != "safe":
         raise HTTPException(status_code=400, detail="raw mode is disabled in Stage 1")
@@ -654,15 +770,20 @@ def chat(payload: ChatRequest):
         model = os.getenv("LLM_LOCAL_MODEL", "qwen3.5:4b")
         configured = bool(os.getenv("LLM_LOCAL_URL", "").strip())
     elif provider == "gigachat":
-        model = os.getenv("GIGACHAT_MODEL", "GigaChat")
+        model = os.getenv("GIGACHAT_MODEL", _DEFAULT_GIGACHAT_MODEL)
         configured = bool(os.getenv("GIGACHAT_AUTH_KEY", "").strip())
+    elif provider == "cloudru":
+        model = os.getenv(
+            "CLOUDRU_FM_MODEL",
+            "ai-sage/GigaChat3-10B-A1.8B",
+        )
+        configured = _cloudru_configured()
     elif provider == "deepseek":
         model = os.getenv(
             "DEEPSEEK_REASONER_MODEL" if payload.reasoning else "DEEPSEEK_MODEL",
             "deepseek-chat",
         )
-        api_key = os.getenv("DEEPSEEK_API_KEY", "")
-        configured = bool(api_key) and api_key != "replace_me"
+        configured = _deepseek_configured()
     else:
         raise HTTPException(status_code=400, detail=f"unknown provider: {provider}")
 
@@ -674,13 +795,8 @@ def chat(payload: ChatRequest):
             content=f"LLM Gateway mock response: {provider} credentials are not configured.",
         )
 
-    # Budget first, then redaction — both apply to every provider.
-    #
-    # Исключение ровно одно и оно осознанное: локальная модель ничего не стоит,
-    # поэтому денежный и токенный потолки на неё не тратятся. В учёте вызов при
-    # этом ВИДЕН (calls растёт, tokens=0) — иначе нельзя будет ответить на вопрос
-    # «сколько вопросов семьи осталось дома». Редактирование данных остаётся
-    # включённым для всех провайдеров без исключений — см. комментарий у _call_ollama.
+    # Budget first, then redaction — both apply to every cloud provider.
+    # Local model is free but still redacted (ADR-0007: tunnel may leave home).
     user = payload.user or DEFAULT_USER
     local = provider == "ollama"
     if not local:
@@ -690,15 +806,42 @@ def chat(payload: ChatRequest):
     full = f"Task: {payload.task}\n\nContext:\n{context}\n\nPrompt:\n{payload.prompt}"
     safe_full = redact(full)
 
+    fallback_from: Optional[str] = None
+    used_provider = provider
+    used_model = model
+
     if local:
         content, tokens = _call_ollama(SYSTEM_PROMPT, safe_full, model)
     elif provider == "gigachat":
-        content, tokens = _call_gigachat(SYSTEM_PROMPT, safe_full, model)
+        try:
+            content, tokens = _call_gigachat(SYSTEM_PROMPT, safe_full, model)
+        except HTTPException as exc:
+            # ADR-0008: on Giga 429/5xx fall back to DeepSeek when enabled.
+            if (
+                exc.status_code in (429, 502, 503)
+                and _giga_fallback_enabled()
+                and _deepseek_configured()
+            ):
+                used_provider = "deepseek"
+                used_model = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+                fallback_from = "gigachat"
+                content, tokens = _call_deepseek(SYSTEM_PROMPT, safe_full, used_model)
+            else:
+                raise
+    elif provider == "cloudru":
+        content, tokens = _call_cloudru(SYSTEM_PROMPT, safe_full, model)
     else:
         content, tokens = _call_deepseek(SYSTEM_PROMPT, safe_full, model)
 
     _record_usage(0 if local else tokens, user)
-    return ChatResponse(provider=provider, model=model, redacted=True, content=content, tokens=tokens)
+    return ChatResponse(
+        provider=used_provider,
+        model=used_model,
+        redacted=True,
+        content=content,
+        tokens=tokens,
+        fallback_from=fallback_from,
+    )
 
 
 @app.post("/v1/diagnostics/explain", response_model=ChatResponse)

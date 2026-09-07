@@ -298,6 +298,11 @@ async def _ask_llm(question: str, user: str) -> str:
         # Who asked — the gateway bills and rate-limits per person.
         "user": user,
     }
+    # ADR-0008: explicit provider (default gigachat). Empty setting → omit field,
+    # gateway falls back to LLM_PROVIDER.
+    _prov = (settings.talk_bot_llm_provider or "").strip().lower()
+    if _prov:
+        payload["provider"] = _prov
     async with httpx.AsyncClient(timeout=settings.talk_bot_llm_timeout) as client:
         r = await client.post(settings.talk_bot_llm_url, json=payload)
 

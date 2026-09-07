@@ -18,11 +18,18 @@ services:
       GIGACHAT_AUTH_KEY: ${GIGACHAT_AUTH_KEY:-}
       GIGACHAT_SCOPE: ${GIGACHAT_SCOPE:-GIGACHAT_API_PERS}
       GIGACHAT_OAUTH_URL: ${GIGACHAT_OAUTH_URL:-https://ngw.devices.sberbank.ru:9443/api/v2/oauth}
-      GIGACHAT_BASE_URL: ${GIGACHAT_BASE_URL:-https://gigachat.devices.sberbank.ru/api/v1}
-      GIGACHAT_MODEL: ${GIGACHAT_MODEL:-GigaChat}
+      GIGACHAT_BASE_URL: ${GIGACHAT_BASE_URL:-https://api.giga.chat/v1}
+      GIGACHAT_MODEL: ${GIGACHAT_MODEL:-GigaChat-2}
       GIGACHAT_IMAGE_MODEL: ${GIGACHAT_IMAGE_MODEL:-GigaChat-2-Max}
       GIGACHAT_CA_BUNDLE: ${GIGACHAT_CA_BUNDLE:-/certs/russian_trusted_bundle.pem}
       GIGACHAT_VERIFY_SSL: ${GIGACHAT_VERIFY_SSL:-true}
+      LLM_GIGA_FALLBACK_DEEPSEEK: ${LLM_GIGA_FALLBACK_DEEPSEEK:-true}
+      # Cloud.ru Foundation Models (optional)
+      CLOUDRU_FM_API_KEY: ${CLOUDRU_FM_API_KEY:-}
+      CLOUDRU_FM_BASE_URL: ${CLOUDRU_FM_BASE_URL:-https://foundation-models.api.cloud.ru/v1}
+      CLOUDRU_FM_MODEL: ${CLOUDRU_FM_MODEL:-ai-sage/GigaChat3-10B-A1.8B}
+      CLOUDRU_FM_MAX_TOKENS: ${CLOUDRU_FM_MAX_TOKENS:-2048}
+      CLOUDRU_FM_TIMEOUT: ${CLOUDRU_FM_TIMEOUT:-120}
       LLM_DAILY_TOKEN_LIMIT: ${LLM_DAILY_TOKEN_LIMIT:-100000}
       LLM_MONTHLY_COST_LIMIT_USD: ${LLM_MONTHLY_COST_LIMIT_USD:-10}
       LLM_PRICE_USD_PER_MTOKEN: ${LLM_PRICE_USD_PER_MTOKEN:-0.5}
@@ -32,10 +39,8 @@ services:
       LLM_USER_LIMITS: ${LLM_USER_LIMITS:-}
       LLM_USER_DAILY_TOKEN_LIMIT: ${LLM_USER_DAILY_TOKEN_LIMIT:-0}
       LLM_ALLOW_IMAGE_ANALYSIS: ${LLM_ALLOW_IMAGE_ANALYSIS:-false}
-      # Локальная модель на рабочей станции — третий провайдер.
-      # Смысл: при нём вопрос семьи НЕ покидает дом. Станция кочует между сетями
-      # и выключается, поэтому доступность проверяется перед каждым вызовом,
-      # а не берётся отсюда. Недоступна — тихо уходим к облачному провайдеру.
+      # Локальная Ollama — dev only (ADR-0007: workstation not a prod node).
+      # If URL set and LLM_PREFER_LOCAL=true, gateway may prefer it when reachable.
       LLM_LOCAL_URL: ${LLM_LOCAL_URL:-}
       LLM_LOCAL_MODEL: ${LLM_LOCAL_MODEL:-qwen3.5:4b}
       LLM_LOCAL_MAX_TOKENS: ${LLM_LOCAL_MAX_TOKENS:-512}

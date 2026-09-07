@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Immich→HDD second copy daily at 04:15 (after DB backup)
+Documentation=https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
+
+[Timer]
+OnCalendar=*-*-* 04:15:00
+Persistent=true
+RandomizedDelaySec=20m
+Unit=nas_jetson_nano-immich-hdd-copy.service
+
+[Install]
+WantedBy=timers.target

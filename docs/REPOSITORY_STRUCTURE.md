@@ -35,6 +35,8 @@ NAS_Jetson_Nano/
 |---|---|
 | New feature documentation / Документация новой функции | `docs/NN_TOPIC.md` |
 | Architecture decisions / Архитектурные решения | `docs/decisions/ADR-NNN-title.md` |
+| Sber / Cloud.ru / GitVerse integration notes | `docs/integrations/sber/` |
+| Development canon (2026-09) | `docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md` |
 | Hardware notes / Заметки о железе | `docs/hardware/` |
 | Android docs / Документация Android | `docs/android/` |
 | Agent prompts (Codex/Claude/ChatGPT) / Промпты агентов | `docs/prompts/` |

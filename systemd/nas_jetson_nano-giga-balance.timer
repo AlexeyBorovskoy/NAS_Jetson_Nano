@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily GigaChat balance check 10:00
+
+[Timer]
+OnCalendar=*-*-* 10:00:00
+Persistent=true
+RandomizedDelaySec=30m
+Unit=nas_jetson_nano-giga-balance.service
+
+[Install]
+WantedBy=timers.target

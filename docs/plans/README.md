@@ -25,6 +25,14 @@ docs/plans/
 | `VPS_INTEGRATION_PLAN.md` | реализованный внешний доступ через VPS reverse SSH tunnel |
 | `STORAGE_INCIDENT_2026-06-23.md` | live-инцидент USB storage: симптомы, безопасное восстановление, guardrails |
 | `RELIABILITY_AUDIT_2026-06-23.md` | аудит автовосстановления после power loss/USB failure и список hardening-мер |
+| `DEVELOPMENT_PLAN_2026-09_SBER_ERA.md` | **канон-кандидат развития** (Jetson SoR, Сбер/Cloud.ru, без станции/Vostro) |
+| `SBER_PLATFORM_IMPLEMENTATION_PLAN.md` | детальные фазы GigaChat / Cloud.ru / GitVerse |
+| `CLOUD_RU_GITVERSE_PUBLIC_PROBE_2026-09-04.md` | API inventory + public probe Cloud.ru+GitVerse |
+| `DEPLOY_W1_GIGA_CUTOVER.md` | runbook device cutover Giga (только после «деплой») |
+| `DEPLOY_FULL_SBER_CUTOVER.md` | полный cutover W1+W2+W3 на Jetson |
+| `OFFLINE_SBER_READY_PACK.md` | что уже готово offline без Jetson |
+| `STATUS_2026-09-07.md` | снимок статуса на 2026-09-07 |
+| `AUTH_PROBE_*.md` / `CLOUDRU_*.md` | live probes (без секретов) |
 
 ## 3. Главный вывод
 

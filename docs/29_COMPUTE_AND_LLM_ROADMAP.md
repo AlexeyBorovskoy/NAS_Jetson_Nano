@@ -1,5 +1,10 @@
 # 29. Где считать и на чём думать — план развития / Where to compute and what to think on — development plan
 
+> ⚠️ **2026-09-04 — PARTIALLY SUPERSEDED for production compute topology.**  
+> 🇷🇺 Прод-вычисления и LLM: см. [`plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`](plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md).  
+> Станция/Vostro не узлы NAS; Cloud.ru FM + GigaChat PERS — edge. Kaggle/research ниже может оставаться.  
+> 🇬🇧 Production topology moved to the Sber-era plan; this file keeps research notes.
+
 > Составлен 2026-08-22 после того, как две записи в собственной документации
 > оказались неверны. Обе меняли выводы, поэтому документ начинается с них.
 

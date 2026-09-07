@@ -1,5 +1,11 @@
 # 30. Следующий рывок — и статья, ради которой он стоит того
 
+> ⚠️ **2026-09-04 — PARTIALLY SUPERSEDED.**  
+> 🇷🇺 Слои 1–2 (Immich ML / Ollama на рабочей станции) **сняты**: станция вне проекта.  
+> Актуальный рывок: [`plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`](plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md)  
+> (GigaChat-first, Cloud.ru FM/S3, Immich→HDD). Слой 3 (голос) может вернуться через FM Whisper.  
+> 🇬🇧 Station-based layers 1–2 cancelled; see the Sber-era development plan.
+>
 > 🇷🇺 Составлен 2026-08-22. Задача владельца: не косметика, а качественный скачок,
 > из которого получится сильный материал для Habr. Фильтр — **семейное решение**:
 > этим должен пользоваться человек, не знающий слова «контейнер».

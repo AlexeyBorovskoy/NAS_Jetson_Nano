@@ -1,5 +1,11 @@
 # 31. Сводный план развития — узлы, сеть, покупки
 
+> ⚠️ **2026-09-04 — SUPERSEDED for node roles and work order.**  
+> 🇷🇺 Актуальный канон развития: [`plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`](plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md)  
+> (Jetson SoR; станция и Vostro вне проекта; GigaChat + Cloud.ru + GitVerse; Immich→HDD).  
+> 🇬🇧 Current development canon: that plan. This file remains as the 2026-08-22 historical snapshot  
+> (network mesh / purchase notes still useful; §2–§4 node model is obsolete).
+>
 > 🇷🇺 Один документ вместо четырёх. Детали живут в [`27`](27_HOME_NETWORK_MESH.md),
 > [`28`](28_NETWORK_SNAPSHOT_2026-08-22.md), [`29`](29_COMPUTE_AND_LLM_ROADMAP.md),
 > [`30`](30_NEXT_LEAP.md); здесь — роли узлов, порядок работ и решения, которые надо принять.

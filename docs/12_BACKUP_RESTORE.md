@@ -1,16 +1,14 @@
 # 12. Backup / Restore
 
-> 🇷🇺 **Статус 2026-08-30:** ночные дампы БД идут по расписанию (`nasa-backup.timer`, 03:00).
-> **Восстановление проверено дважды**: 2026-08-09 (локальный дамп) и **2026-08-24** (offsite
-> restic-снэпшот `ab975984`, все `*.sql.gz` прошли `gzip -t`). **Off-site копия (restic) есть
-> и работает с 2026-08-24** — репозиторий на Vostro, ночной таймер, только дампы БД (фаза 1).
-> Фотографии Immich (~6 ГБ) в off-site пока не входят — фаза 2 не начата.
+> 🇷🇺 **Статус 2026-09-07 (ADR-0009):**  
+> - L0 live: SSD.  
+> - L1 on-site Immich→HDD: скрипт + timer **в git** (`scripts/backup/immich_hdd_second_copy.sh`,  
+>   `systemd/nas_jetson_nano-immich-hdd-copy.*`) — **на устройство не выкатано** до «деплой».  
+> - L2 off-site: канон → Cloud.ru S3 (позже). Vostro restic DB (2026-08-24) = **legacy**, не обязателен.  
+> Канон: [`plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`](plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md).
 >
-> 🇬🇧 **Status 2026-08-30:** nightly DB dumps run on schedule. **Restore verified twice**:
-> 2026-08-09 (local dump) and **2026-08-24** (offsite restic snapshot `ab975984`, every
-> `*.sql.gz` passed `gzip -t`). **The off-site (restic) copy exists and has been live since
-> 2026-08-24** — repository on Vostro, nightly timer, DB dumps only (phase 1). Immich photos
-> (~6 GB) are not yet in the off-site copy — phase 2 has not started.
+> 🇬🇧 **Status 2026-09-07:** L1 Immich→HDD units in git, not installed on device until deploy.  
+> L2 off-site target is Cloud.ru S3; Vostro is legacy.
 
 ## 0. 🔴 Главное правило проверки / The one check that matters
 
@@ -59,14 +57,26 @@ ls -lt /mnt/storage/backups/database-dumps/ | head -5
 
 ## 2. Объекты backup / What is backed up
 
-| Объект / Object | Метод / Method |
-|---|---|
-| Nextcloud data | restic/borg |
-| Nextcloud DB | pg_dump |
-| Immich library | restic/borg |
-| Immich DB | pg_dump |
-| Docker compose/config | git + restic |
-| `.env` | зашифрованный backup / encrypted backup, outside public Git |
+| Объект / Object | Метод / Method | Layer |
+|---|---|---|
+| Nextcloud DB | pg_dump (`nasa-backup.timer`) | L1b SSD |
+| Immich DB | pg_dump | L1b SSD |
+| Immich library | `immich_hdd_second_copy.sh` → `/mnt/hdd2tb/backups/immich` | L1 on-site |
+| Nextcloud/Immich data bulk | restic → S3 Cloud.ru (planned W3) | L2 off-site |
+| Docker compose/config | git (+ GitVerse mirror) | L3 |
+| `.env` | encrypted off-device only | — |
+
+### 2a. Immich → HDD (ADR-0009)
+
+```bash
+# Dry-run on Jetson after deploy of script:
+DRY_RUN=1 bash /home/admin/nasa/scripts/backup/immich_hdd_second_copy.sh
+
+# Install timer (once):
+sudo cp systemd/nas_jetson_nano-immich-hdd-copy.* /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now nas_jetson_nano-immich-hdd-copy.timer
+```
 
 ## 3. Пример restic / restic example
 

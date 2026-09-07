@@ -34,6 +34,7 @@
 | 2026-09-07 | Auth probe Cloud.ru + GitVerse (RO) | ✅ | `AUTH_PROBE_CLOUDRU_GITVERSE_2026-09-07.md` |
 | 2026-09-07 | SA `home-nas-api` + project role | ✅ | SA id `8f07c1f7-…`; project `10dd738e-…`; `platform.project.admin` |
 | 2026-09-07 | FM API key smoke | ✅ auth / ❌ 402 | Bearer OK; **Not enough money** — need grant/balance |
+| 2026-09-07 | FM chat re-probe (post top-up) | ✅ **200** | `GigaChat3-10B` + `GigaChat-2-Max`; `finish_reason=stop`; see `AUTH_PROBE_FM_KEY_SMOKE` |
 | 2026-09-07 | GitVerse remote + push | ✅ | `main`=`master`=`HEAD` aligned; HTTPS oauth2 token |
 | 2026-09-07 | Docs refresh + commit this pack | ✅ | this release |
 
@@ -46,7 +47,7 @@
 | GitVerse `NAS_HOME` main+master | mirror of same tip after push |
 | Jetson device cutover | **not** done (offline / no «деплой») |
 | GigaChat PERS | keys owner-side; gateway ready |
-| Cloud.ru FM inference | blocked **402** until balance/grant |
+| Cloud.ru FM inference | **OK** (200 chat) after top-up; key still host-only |
 | Immich→HDD timer | units in git; not installed on device |
 
 **Owner rule 2026-09-04:** git/docs/code autonomous; **no Jetson deploy** without «деплой».  

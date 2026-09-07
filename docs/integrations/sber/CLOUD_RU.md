@@ -49,7 +49,7 @@ curl -s http://127.0.0.1:8090/v1/chat -H 'Content-Type: application/json' \
 | SA role on project | `platform.project.admin` (bound) |
 | IAM access_key → token | OK |
 | FM API key | issued; **`Authorization: Bearer`** (not `Api-Key`) |
-| FM chat | **402 Not enough money** until grant/balance |
+| FM chat | **OK** (200) — Bearer key; `ai-sage/GigaChat3-10B-A1.8B` + `GigaChat/GigaChat-2-Max` after balance top-up |
 | S3 buckets | 0 (not created) |
 
 Probe notes: `docs/plans/AUTH_PROBE_*.md`, `AUTH_PROBE_FM_KEY_SMOKE_2026-09-07.md`.

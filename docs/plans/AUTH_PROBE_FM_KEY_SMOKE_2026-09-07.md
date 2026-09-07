@@ -17,12 +17,12 @@
 |---|---|
 | Working auth header | **`Authorization: Bearer <CLOUDRU_FM_API_KEY>`** |
 | `Authorization: Api-Key …` | **FAIL 403** — `AccessDenied` / invalid authorization header format (full key and secret-only part) |
-| Chat inference | **Auth OK, billing block** — HTTP **402** body `Not enough money` (all tried models) |
-| `finish_reason` / content | **N/A** (no completion body; spend not charged beyond reject) |
+| Chat inference (pre top-up) | **Auth OK, billing block** — HTTP **402** `Not enough money` |
+| Chat inference (**post top-up 2026-09-07**) | **HTTP 200** — see re-probe table below |
 | `GET /v1/models` | **200**, ~98 models; **public without auth** (catalog) |
 | Key storage risk | Still **plaintext in Downloads** — move to password manager; never commit |
 
-**Bottom line:** FM static key from «Данные API-ключа» is accepted as **Bearer**. Inference is blocked by **account balance (402)**, not by bad credentials. Top up / enable FM billing in Cloud.ru console, then re-probe chat with `max_tokens: 8`.
+**Bottom line:** FM static key from «Данные API-ключа» is accepted as **Bearer**. After owner balance top-up, chat completions return **200** with `finish_reason=stop`.
 
 ---
 
@@ -43,7 +43,19 @@
 | 8 | `X-API-Key` header only | GigaChat3-10B | **401** | n | — | 0 | Missing authorization |
 | 9 | `Api-Key` + secret segment only (after `.`) | GigaChat3-10B | **403** | n | — | 0 | format reject |
 
-No completion text returned on any attempt (no preview).
+No completion text returned on any attempt (no preview) **before** top-up.
+
+### Re-probe after balance top-up (2026-09-07 ~13:40 UTC)
+
+**Body:** `messages: [{role:user, content:"Ответь одним словом: ок"}]`, `max_tokens: 16`  
+**Auth:** `Authorization: Bearer` (same key source)
+
+| # | Model | HTTP | Success | finish_reason | content (short) | usage (p/c/t) |
+|---|---|---|---|---|---|---|
+| 10 | `ai-sage/GigaChat3-10B-A1.8B` | **200** | y | `stop` | `Да` | 997 / 2 / 999 |
+| 11 | `GigaChat/GigaChat-2-Max` | **200** | y | `stop` | `Ок` | 18 / 2 / 20 |
+
+Notes: response `model` for #11 may show `GigaChat/GigaChat-2-Max:latest`. Prompt token count on #10 is elevated (server-side accounting); completion still tiny. No secrets logged.
 
 ---
 
@@ -96,14 +108,13 @@ curl -sS -o /tmp/fm_out.json -w "%{http_code}\n" \
 
 ## Risks
 
-- **402** until balance/quota for Foundation Models is funded.  
+- Balance can drain — keep `max_tokens` low on smokes; monitor Cloud.ru billing.  
 - Conflicting internal docs (`Api-Key` vs `Bearer`) — live key behaves as **Bearer**.  
 - Plaintext key in Downloads increases leak risk.  
 - Catalog `GET /models` is public — do not treat 200 on models as auth proof.
 
 ## Next safe step
 
-1. Top up Cloud.ru FM billing / check project quota in console.  
-2. Re-run single Bearer chat smoke (`max_tokens: 8`); record HTTP 200 + `finish_reason` only.  
-3. Install `CLOUDRU_FM_API_KEY` on Jetson via secret channel; wire gateway `provider=cloudru`.  
-4. Remove or encrypt plaintext copy under Downloads.
+1. Install `CLOUDRU_FM_API_KEY` on Jetson via secret channel (env/file mode `600`); never commit.  
+2. Device/gateway smoke: `provider=cloudru` with default model `ai-sage/GigaChat3-10B-A1.8B` (needs «деплой»).  
+3. Remove or encrypt plaintext copy under Downloads; rotate key if file was shared.

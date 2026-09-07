@@ -27,7 +27,7 @@ services:
       # Cloud.ru Foundation Models (optional)
       CLOUDRU_FM_API_KEY: ${CLOUDRU_FM_API_KEY:-}
       CLOUDRU_FM_BASE_URL: ${CLOUDRU_FM_BASE_URL:-https://foundation-models.api.cloud.ru/v1}
-      CLOUDRU_FM_MODEL: ${CLOUDRU_FM_MODEL:-ai-sage/GigaChat3-10B-A1.8B}
+      CLOUDRU_FM_MODEL: ${CLOUDRU_FM_MODEL:-GigaChat/GigaChat-2-Max}
       CLOUDRU_FM_MAX_TOKENS: ${CLOUDRU_FM_MAX_TOKENS:-2048}
       CLOUDRU_FM_TIMEOUT: ${CLOUDRU_FM_TIMEOUT:-120}
       LLM_DAILY_TOKEN_LIMIT: ${LLM_DAILY_TOKEN_LIMIT:-100000}

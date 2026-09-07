@@ -13,6 +13,8 @@
 | Кабинеты (ручной) | [CONSOLE_CHECKLIST.md](CONSOLE_CHECKLIST.md) | owner only |
 | Cutover on device | [DEPLOY_FULL_SBER_CUTOVER.md](../../plans/DEPLOY_FULL_SBER_CUTOVER.md) | after «деплой» |
 | Env snippet | `config/sber.env.snippet` | `scripts/sber/merge_sber_snippet.sh` |
+| Device env checklist | [DEVICE_ENV_CHECKLIST](../../plans/DEVICE_ENV_CHECKLIST.md) | no secrets |
+| S3 + budget | [S3_AND_BUDGET_CHECKLIST](S3_AND_BUDGET_CHECKLIST.md) | console |
 | API inventory | [CLOUD_RU_GITVERSE_PUBLIC_PROBE](../../plans/CLOUD_RU_GITVERSE_PUBLIC_PROBE_2026-09-04.md) | — |
 
 ## Status 2026-09-07

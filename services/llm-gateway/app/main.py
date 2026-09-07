@@ -775,7 +775,7 @@ def chat(payload: ChatRequest):
     elif provider == "cloudru":
         model = os.getenv(
             "CLOUDRU_FM_MODEL",
-            "ai-sage/GigaChat3-10B-A1.8B",
+            "GigaChat/GigaChat-2-Max",
         )
         configured = _cloudru_configured()
     elif provider == "deepseek":

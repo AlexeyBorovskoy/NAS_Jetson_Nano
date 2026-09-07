@@ -26,7 +26,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Not deployed / Не выкатано
 - Jetson `.env` cutover, container rebuild, HDD timer — need Jetson online + «деплой»
-- Cloud.ru FM chat until account balance/grant (402 as of 2026-09-07)
+
+### Offline prep (Jetson unavailable)
+- Device env checklist, S3/budget checklist, `smoke_cloudru_fm.sh`
+- Default `CLOUDRU_FM_MODEL=GigaChat/GigaChat-2-Max` (FM chat verified after top-up)
 
 ---
 

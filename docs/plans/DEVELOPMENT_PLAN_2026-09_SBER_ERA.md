@@ -402,12 +402,14 @@ Vostro restic (if still running) → document as **legacy optional**, not requir
 
 ---
 
-## 13. Следующий шаг
+## 13. Следующий шаг (Jetson offline)
 
-1. **Cloud.ru:** грант 4000 / баланс → повтор FM smoke (Bearer + `CLOUDRU_FM_API_KEY`).  
-2. **Jetson online + «деплой»:** [`DEPLOY_FULL_SBER_CUTOVER.md`](DEPLOY_FULL_SBER_CUTOVER.md) (Giga PERS first; FM optional).  
-3. Optional: S3 bucket + restic L2; GitVerse SSH pubkey.  
-4. Secrets: move keys from plaintext Downloads into password manager.
+1. **Secrets hygiene** — password manager; leave Downloads plaintext.  
+2. **Prep done in git:** [`DEVICE_ENV_CHECKLIST.md`](DEVICE_ENV_CHECKLIST.md), [`../integrations/sber/S3_AND_BUDGET_CHECKLIST.md`](../integrations/sber/S3_AND_BUDGET_CHECKLIST.md), `scripts/sber/smoke_cloudru_fm.sh`.  
+3. **Optional now:** create S3 bucket in console (record name only).  
+4. **When Jetson on + «деплой»:** [`DEPLOY_FULL_SBER_CUTOVER.md`](DEPLOY_FULL_SBER_CUTOVER.md) — Giga PERS first, then FM key, then Immich HDD.  
+
+FM chat verified paid (2026-09-07). Default family still PERS when device is up.
 
 Offline pack: [`OFFLINE_SBER_READY_PACK.md`](OFFLINE_SBER_READY_PACK.md).
 

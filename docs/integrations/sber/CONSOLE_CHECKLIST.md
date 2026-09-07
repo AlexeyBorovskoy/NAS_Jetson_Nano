@@ -47,10 +47,11 @@
 
 ## C. GitVerse
 
-- [ ] Репо `Alexey_Borovskoy/NAS_HOME` существует
-- [ ] SSH ключ `gitverse_ed25519` на workstation
+- [x] Репо `Alexey_Borovskoy/NAS_HOME` существует (HTTPS mirror OK)
+- [ ] **UI:** https://gitverse.ru/settings/keys — add `gitverse_ed25519.pub` (API cannot register SSH)
+- [ ] SSH: `ssh -T -i ~/.ssh/gitverse_ed25519 -o IdentitiesOnly=yes git@gitverse.ru`
 - [ ] `bash scripts/sber/gitverse_mirror_push.sh` после preflight
-- [ ] Remote name **`gitverse`**, не pushurl на origin
+- [x] Remote name **`gitverse`**, не pushurl на origin
 
 ## D. После «деплой» на Jetson
 

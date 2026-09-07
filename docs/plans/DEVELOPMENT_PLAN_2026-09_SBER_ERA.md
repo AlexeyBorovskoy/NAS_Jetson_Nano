@@ -37,6 +37,7 @@
 | 2026-09-07 | FM chat re-probe (post top-up) | ✅ **200** | `GigaChat3-10B` + `GigaChat-2-Max`; `finish_reason=stop`; see `AUTH_PROBE_FM_KEY_SMOKE` |
 | 2026-09-07 | GitVerse remote + push | ✅ | `main`=`master`=`HEAD` aligned; HTTPS oauth2 token |
 | 2026-09-07 | Docs refresh + commit this pack | ✅ | this release |
+| 2026-09-07 | W3.3 S3 bucket + W4 SSH key API | ❌ blocked | S3 needs console tenant_id; GitVerse public API has no SSH keys — UI only |
 
 ### Snapshot 2026-09-07 (end of day)
 
@@ -48,6 +49,8 @@
 | Jetson device cutover | **not** done (offline / no «деплой») |
 | GigaChat PERS | keys owner-side; gateway ready |
 | Cloud.ru FM inference | **OK** (200 chat) after top-up; key still host-only |
+| Cloud.ru S3 bucket | **blocked** — need console tenant_id; no keys created |
+| GitVerse SSH | **fail** — public API has no key endpoint; add in UI |
 | Immich→HDD timer | units in git; not installed on device |
 
 **Owner rule 2026-09-04:** git/docs/code autonomous; **no Jetson deploy** without «деплой».  
@@ -148,7 +151,7 @@
 | Stable model id | `GigaChat-2` on `api.giga.chat`; legacy `GigaChat` flaky/404 on new host |
 | Embeddings PERS | **402** (нет пакета) |
 | FM Cloud.ru | **GET /v1/models public** = 98 models (Giga/DeepSeek/Qwen/Whisper/OCR/…) |
-| GitVerse | SSH OK; `NAS_HOME` exists (`master`); REST needs Bearer+Accept |
+| GitVerse | HTTPS mirror OK; SSH ❌ until UI key add; REST Bearer+Accept (no SSH API) |
 | Cloud.ru keys | у владельца (Downloads); **не** в git; auth = IAM POST access_key |
 | P0 audit | Immich single copy on SSD still CRITICAL until HDD copy live |
 

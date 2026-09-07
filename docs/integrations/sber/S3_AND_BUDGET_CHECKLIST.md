@@ -13,21 +13,42 @@
 
 ## B. Object Storage bucket (L2 off-site later)
 
-Console → **Object Storage** → create bucket, e.g. `nas-home-restic` (name unique).
+### Live attempt 2026-09-07 (agent, owner-authorized)
+
+| Step | Result |
+|---|---|
+| IAM token `access_key` / `auth/token` | ✅ OK |
+| SigV4 ListBuckets with `customer_id` / `project_id` / `user_id` as tenant prefix | ❌ `NoSuchTenant` |
+| Bare Key ID as AWS access key | ❌ `InvalidAccessKeyId` |
+| CreateBucket Bearer IAM | ❌ `AccessDenied` |
+| New S3/IAM keys via API | ❌ not created (key-create paths 415/404) |
+| Preferred name | `nas-home-restic` (not created) |
+
+**Blocker:** Object Storage **tenant_id** is not customer/project/user id. Docs: console → **Хранение данных → Object Storage → Параметры работы с API** (tenant id). Until that value exists (service opened in project), API cannot `mb` / ListBuckets for the tenant.
+
+**Owner console (one-time):**
+
+1. Evolution project → ensure **Object Storage** is in the service list (support if missing).  
+2. Copy **tenant_id** from «Параметры работы с API».  
+3. Create bucket `nas-home-restic` **or** give agent tenant_id only (not a secret) and re-run SigV4 `create_bucket`.  
+4. Access Key ID for tools = `tenant_id:key_id` (personal or SA access key); Secret = Key Secret → password manager only.
 
 Record offline (not secret):
 
 ```text
-bucket_name = ____________________
+bucket_name = (pending — not created 2026-09-07)
 region      = ru-central-1
 endpoint    = https://s3.cloud.ru
+tenant_id   = ____________________   # from console API params only
+created     = —
 ```
 
 S3 credentials (password manager only):
 
-- Access Key ID format often `tenant_id:key_id`  
+- Access Key ID format: `tenant_id:key_id` or `tenant_id.key_id`  
 - Secret = Key Secret  
 - Docs: https://cloud.ru/docs/s3e/ug/topics/api__getting-started?source-platform=Evolution  
+- **S3 keys created this session:** no
 
 ## C. restic (on Jetson when ready)
 

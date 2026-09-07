@@ -12,8 +12,19 @@
 | Method | Status |
 |---|---|
 | HTTPS `oauth2:<TOKEN>` one-shot | ✅ works (token from local store, not git) |
-| SSH `gitverse_ed25519` | ❌ pubkey not registered on account |
+| SSH `gitverse_ed25519` | ❌ not registered — see below |
 | REST API Bearer | ✅ user/repos OK |
+
+### SSH register attempt 2026-09-07
+
+- Local pubkey: `~/.ssh/gitverse_ed25519.pub` (title comment `detecktor-belgorod@gitverse`).  
+- `POST/GET https://api.gitverse.ru/user/keys` (+ `/api/v1/…`, ssh_keys variants) with Bearer + required Accept → **400** empty body.  
+- Public API catalog / OpenAPI page: **no** `/user/keys` (or other SSH) endpoint.  
+- `ssh -T -i gitverse_ed25519 … git@gitverse.ru` → `Permission denied (publickey)`.  
+- `git ls-remote git@gitverse.ru:Alexey_Borovskoy/NAS_HOME.git` → fail (same).
+
+**Owner UI (required for SSH):** https://gitverse.ru/settings/keys → add pubkey from `gitverse_ed25519.pub`.  
+Until then use HTTPS mirror push only.
 
 ### HTTPS push (token never in `.git/config`)
 

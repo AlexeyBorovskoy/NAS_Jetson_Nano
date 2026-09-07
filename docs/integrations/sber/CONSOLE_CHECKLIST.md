@@ -31,8 +31,10 @@
 
 ### B3. Object Storage (L2 off-site)
 
-- [ ] Бакет (free tier 15 GB std если доступен)
-- [ ] S3 ключ: Access Key ID = `tenant_id:key_id`
+- [ ] Object Storage visible under **Хранение данных** for this Evolution project  
+- [ ] **tenant_id** copied from Object Storage → Параметры работы с API (≠ customer/project id)  
+- [ ] Bucket name recorded (e.g. `nas-home-restic`) — API create blocked until tenant_id  
+- [ ] S3 ключ: Access Key ID = `tenant_id:key_id`  
 - [ ] Endpoint `https://s3.cloud.ru`, region `ru-central-1`
 - [ ] restic password file **вне git**
 - [ ] Скрипт-пример: `scripts/backup/restic_s3_cloudru_example.sh` — сначала только DB dumps

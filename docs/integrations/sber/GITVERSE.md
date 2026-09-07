@@ -5,28 +5,26 @@
 - Canonical code: GitHub `AlexeyBorovskoy/NAS_Jetson_Nano`
 - Mirror: https://gitverse.ru/Alexey_Borovskoy/NAS_HOME  
 - Remote name: **`gitverse`** (never pushurl on `origin`)
-- Remote URL (no credentials): `https://gitverse.ru/Alexey_Borovskoy/NAS_HOME.git`
+- Remote URL: `git@gitverse.ru:Alexey_Borovskoy/NAS_HOME.git` (SSH preferred)
 
 ## Auth (2026-09-07)
 
 | Method | Status |
 |---|---|
 | HTTPS `oauth2:<TOKEN>` one-shot | ✅ works (token from local store, not git) |
-| SSH `gitverse_ed25519` | ❌ not registered — see below |
+| SSH `gitverse_ed25519` | ✅ OK (2026-09-07) — key `detecktor-belgorod@gitverse` |
 | REST API Bearer | ✅ user/repos OK |
 
-### SSH register attempt 2026-09-07
+### SSH (verified 2026-09-07)
 
-- Local pubkey: `~/.ssh/gitverse_ed25519.pub` (title comment `detecktor-belgorod@gitverse`).  
-- `POST/GET https://api.gitverse.ru/user/keys` (+ `/api/v1/…`, ssh_keys variants) with Bearer + required Accept → **400** empty body.  
-- Public API catalog / OpenAPI page: **no** `/user/keys` (or other SSH) endpoint.  
-- `ssh -T -i gitverse_ed25519 … git@gitverse.ru` → `Permission denied (publickey)`.  
-- `git ls-remote git@gitverse.ru:Alexey_Borovskoy/NAS_HOME.git` → fail (same).
+- Local key: `~/.ssh/gitverse_ed25519` (+ `.pub`, title `detecktor-belgorod@gitverse`).
+- Owner registered pubkey in GitVerse UI: https://gitverse.ru/settings/keys
+- `ssh -T -i … git@gitverse.ru` → authenticated as `Alexey_Borovskoy` (no shell).
+- `git ls-remote git@gitverse.ru:Alexey_Borovskoy/NAS_HOME.git` → OK (`main`/`master`/`HEAD`).
+- `~/.ssh/config` Host `gitverse.ru`: `IdentityFile ~/.ssh/gitverse_ed25519`, `IdentitiesOnly yes`.
+- Remote: `git remote set-url gitverse git@gitverse.ru:Alexey_Borovskoy/NAS_HOME.git`
 
-**Owner UI (required for SSH):** https://gitverse.ru/settings/keys → add pubkey from `gitverse_ed25519.pub`.  
-Until then use HTTPS mirror push only.
-
-### HTTPS push (token never in `.git/config`)
+### HTTPS push fallback (token never in `.git/config`)
 
 ```powershell
 # TOKEN only in memory — e.g. from password manager / local git.md (not committed)
@@ -35,7 +33,7 @@ git -c credential.helper= push "https://oauth2:${TOKEN}@gitverse.ru/Alexey_Borov
 ```
 
 ```bash
-git remote add gitverse https://gitverse.ru/Alexey_Borovskoy/NAS_HOME.git   # once
+git remote add gitverse git@gitverse.ru:Alexey_Borovskoy/NAS_HOME.git   # once (or HTTPS URL)
 ```
 
 ## Remote state

@@ -1,9 +1,9 @@
 # План развития NAS_Jetson_Nano — эра Сбер / Cloud.ru (2026-09)
 
 > **Статус:** канон развития (замена операционной части `docs/31_MASTER_PLAN.md` 2026-08-22).  
-> **Дата:** 2026-09-04 · **Обновлено:** 2026-09-07 (commit pack + Cloud.ru/GitVerse live)  
+> **Дата:** 2026-09-04 · **Обновлено:** 2026-09-08 (W1/W2 device + giga-balance timer; S3 still blocked)  
 > **Входы владельца:** станция RTX и Vostro **вне проекта**; Immich 2-я копия на HDD Jetson; Сбер/Cloud.ru/GitVerse; деплой Jetson — только по «деплой».  
-> **Доказательная база:** audit 2026-08-30; probes 2026-09-04…07; offline pack + unit tests.
+> **Доказательная база:** audit 2026-08-30; probes 2026-09-04…08; offline pack + unit tests; device cutover 2026-09-08.
 >
 > 🇬🇧 Project canon for development. EN summary §14.
 
@@ -19,12 +19,14 @@
 | 2026-09-04 | W0.5 banners 29–31 | ✅ git | superseded notes |
 | 2026-09-04 | W0.9 `docs/integrations/sber/` | ✅ git | README, GIGACHAT, CLOUD_RU, GITVERSE |
 | 2026-09-04 | W1 templates (no device deploy) | ✅ git | `.env.example`, compose defaults, Talk `TALK_BOT_LLM_PROVIDER` |
-| 2026-09-04 | W1.1–1.3 **device cutover** | ⏳ blocked | needs «деплой»; runbook `DEPLOY_W1_GIGA_CUTOVER.md` |
+| 2026-09-04 | W1.1–1.3 **device cutover** | ✅ device 2026-09-08 | Giga-2 + `prefer_local=false`; chat 200; key rotated |
 | 2026-09-04 | W2 Immich→HDD script | ✅ git | `scripts/backup/immich_hdd_second_copy.sh` |
 | 2026-09-07 | W1 gateway code defaults + 1-flight lock | ✅ git | `services/llm-gateway/app/main.py` |
 | 2026-09-07 | W2 systemd timer/service | ✅ git | `systemd/nas_jetson_nano-immich-hdd-copy.*` |
 | 2026-09-07 | docs 12 / deploy runbook | ✅ git | `12_BACKUP_RESTORE.md`, `DEPLOY_W1_GIGA_CUTOVER.md` |
-| 2026-09-07 | W2 **install on device** | ⏳ blocked | deploy |
+| 2026-09-08 | W2 **install on device** | ✅ device | timer enabled; rsync ~13G → `/mnt/hdd2tb/backups/immich` |
+| 2026-09-08 | W1.5 giga-balance timer | ✅ device | `nas_jetson_nano-giga-balance.timer` enabled; manual+oneshot HTTP 200 |
+| 2026-09-08 | W3.3 S3 + restic L2 dumps | ❌ blocked | CreateBucket AccessDenied; no tenant_id; restic skipped |
 | 2026-09-04 | W3 Cloud.ru / W4 GitVerse push | ⏳ later | |
 | 2026-09-07 | Board: Sber Q&A open for `work` | ✅ | `E:\agent_coordination\shared\nas\SBER_OPEN_ACCESS_FOR_WORK.md` + BOARD #8 |
 | 2026-09-07 | Workstation inventory (dev PC) | ✅ | `artifacts/reports/WORKSTATION_INVENTORY_2026-09-07.md` |
@@ -39,22 +41,23 @@
 | 2026-09-07 | Docs refresh + commit this pack | ✅ | this release |
 | 2026-09-07 | W3.3 S3 bucket + W4 SSH key API | ❌ blocked | S3 needs console tenant_id; GitVerse public API has no SSH keys — UI only |
 
-### Snapshot 2026-09-07 (end of day)
+### Snapshot 2026-09-08
 
 | Item | State |
 |---|---|
-| Code/docs Sber-era | in git (this commit) |
+| Code/docs Sber-era | in git |
 | GitHub `origin/main` | push target |
-| GitVerse `NAS_HOME` main+master | mirror of same tip after push |
-| Jetson device cutover | **not** done (offline / no «деплой») |
-| GigaChat PERS | keys owner-side; gateway ready |
-| Cloud.ru FM inference | **OK** (200 chat) after top-up; key still host-only |
-| Cloud.ru S3 bucket | **blocked** — need console tenant_id; no keys created |
-| GitVerse SSH | **fail** — public API has no key endpoint; add in UI |
-| Immich→HDD timer | units in git; not installed on device |
+| GitVerse `NAS_HOME` main+master | mirror after push |
+| Jetson W1 Giga cutover | ✅ `provider=gigachat`, `GigaChat-2`, chat 200 |
+| Giga balance timer | ✅ enabled; next ~10:00 UTC+jitter; HTTP 200 |
+| Immich→HDD L1 | ✅ ~13G on `/mnt/hdd2tb/backups/immich`; timer enabled |
+| Cloud.ru FM inference | **OK** (200) host-only key |
+| Cloud.ru S3 + restic L2 | **blocked** — tenant_id / CreateBucket AccessDenied; restic not run |
+| GitVerse SSH | optional (HTTPS works); UI key if needed |
 
 **Owner rule 2026-09-04:** git/docs/code autonomous; **no Jetson deploy** without «деплой».  
-**Owner 2026-09-07:** Sber Q&A for `work` on board; GitVerse + FM key path confirmed.
+**Owner 2026-09-07:** Sber Q&A for `work` on board; GitVerse + FM key path confirmed.  
+**Owner 2026-09-08:** device deploy authorized (W1/W2/timer); S3 still console-gated.
 
 ---
 
@@ -355,14 +358,14 @@ Vostro restic (if still running) → document as **legacy optional**, not requir
 - [x] Repo templates: Giga-2 + `api.giga.chat` + Talk provider  
 - [x] Gateway code: default gigachat, flight lock, base URL helper  
 - [x] W2 script + systemd units in git  
-- [ ] `@бобик` answers via **GigaChat-2** on `api.giga.chat` **(needs deploy)**  
-- [ ] `prefer_local=false` on device **(needs deploy)**  
-- [ ] Immich second copy on HDD; restore drill OK **(needs deploy)**  
-- [ ] balance visible to admin  
-- [ ] GitVerse `NAS_HOME` has current main (no secrets)  
-- [ ] Cloud.ru: auth probe done; FM adapter **or** explicit “defer W3”  
-- [ ] S3 off-site dumps **or** explicit defer with risk acceptance  
-- [ ] Amnezia peer count unchanged throughout  
+- [x] Device: gateway chat **GigaChat-2** on `api.giga.chat` (HTTP 200, 2026-09-08)  
+- [x] `prefer_local=false` on device  
+- [x] Immich second copy on HDD (~13G); timer enabled (restore drill optional follow-up)  
+- [x] balance visible: `/v1/provider/gigachat/balance` + daily timer HTTP 200  
+- [x] GitVerse `NAS_HOME` has current main (no secrets)  
+- [x] Cloud.ru: auth probe done; FM adapter in code + live chat 200  
+- [ ] S3 off-site dumps — **deferred** until console tenant_id / Object Storage open (risk accepted short-term; L1 HDD live)  
+- [x] Amnezia peer count unchanged throughout 
 
 ---
 
@@ -405,16 +408,13 @@ Vostro restic (if still running) → document as **legacy optional**, not requir
 
 ---
 
-## 13. Следующий шаг (Jetson offline)
+## 13. Следующий шаг
 
-1. **Secrets hygiene** — password manager; leave Downloads plaintext.  
-2. **Prep done in git:** [`DEVICE_ENV_CHECKLIST.md`](DEVICE_ENV_CHECKLIST.md), [`../integrations/sber/S3_AND_BUDGET_CHECKLIST.md`](../integrations/sber/S3_AND_BUDGET_CHECKLIST.md), `scripts/sber/smoke_cloudru_fm.sh`.  
-3. **Optional now:** create S3 bucket in console (record name only).  
-4. **When Jetson on + «деплой»:** [`DEPLOY_FULL_SBER_CUTOVER.md`](DEPLOY_FULL_SBER_CUTOVER.md) — Giga PERS first, then FM key, then Immich HDD.  
+1. **Owner console:** open Object Storage → copy **tenant_id** → bucket `nas-home-restic` + S3 keys → then restic L2 dumps only.  
+2. **Secrets hygiene** — password manager; leave Downloads plaintext.  
+3. Optional: Immich HDD restore drill (1 file); Talk smoke `@бобик`.  
 
-FM chat verified paid (2026-09-07). Default family still PERS when device is up.
-
-Offline pack: [`OFFLINE_SBER_READY_PACK.md`](OFFLINE_SBER_READY_PACK.md).
+W1/W2/giga-balance timer done on device 2026-09-08. FM chat verified paid. Offline pack: [`OFFLINE_SBER_READY_PACK.md`](OFFLINE_SBER_READY_PACK.md).
 
 ---
 
@@ -430,3 +430,4 @@ Architecture shifts from four nodes (Jetson, roaming RTX, Vostro, VPS) to **Jets
 |---|---|
 | 2026-09-04 | Initial plan from owner directives + probes + audits |
 | 2026-09-04 | Progress log; W0 done in git; W1 templates; deploy gated |
+| 2026-09-08 | W1/W2 device done; giga-balance timer; S3 blocker reconfirmed; restic L2 skipped |

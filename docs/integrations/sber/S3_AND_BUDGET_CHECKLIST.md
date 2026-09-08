@@ -24,7 +24,19 @@
 | New S3/IAM keys via API | ❌ not created (key-create paths 415/404) |
 | Preferred name | `nas-home-restic` (not created) |
 
-**Blocker:** Object Storage **tenant_id** is not customer/project/user id. Docs: console → **Хранение данных → Object Storage → Параметры работы с API** (tenant id). Until that value exists (service opened in project), API cannot `mb` / ListBuckets for the tenant.
+### Live attempt 2026-09-08 (agent, owner-authorized)
+
+| Step | Result |
+|---|---|
+| IAM token | ✅ OK |
+| Bearer `GET https://s3.cloud.ru/` | ✅ 200 empty `<Buckets></Buckets>` (no tenant-scoped keys) |
+| CreateBucket `nas-home-restic` Bearer / path-style / virtual-host | ❌ `AccessDenied` |
+| SigV4 with customer/project/SA/user as tenant prefix | ❌ `NoSuchTenant` / bare key `InvalidAccessKeyId` |
+| JWT claims | no `tenant_id` (sub = personal IAM user) |
+| S3 access keys via API | ❌ not created |
+| restic L2 on Jetson | ⏭ **skipped** — no bucket / no S3 keys |
+
+**Blocker (unchanged):** Object Storage **tenant_id** is not customer/project/user id. Service must be opened in console; Access Key ID for tools must be `tenant_id:key_id`. Until then API cannot create buckets or run restic to S3.
 
 **Owner console (one-time):**
 
@@ -36,11 +48,12 @@
 Record offline (not secret):
 
 ```text
-bucket_name = (pending — not created 2026-09-07)
+bucket_name = (pending — not created 2026-09-07 / 2026-09-08)
 region      = ru-central-1
 endpoint    = https://s3.cloud.ru
 tenant_id   = ____________________   # from console API params only
 created     = —
+restic_L2   = skipped 2026-09-08 (blocker tenant_id / CreateBucket AccessDenied)
 ```
 
 S3 credentials (password manager only):
@@ -58,6 +71,7 @@ See `scripts/backup/restic_s3_cloudru_example.sh`.
 RESTIC_REPOSITORY=s3:https://s3.cloud.ru/<bucket>/nas-restic
 RESTIC_PASSWORD_FILE=/root/.config/homecloud/restic-s3-password   # device only
 # first: dumps only — not full Immich until explicit OK
+# 2026-09-08: not run — S3 bucket/keys blocked
 ```
 
 ## D. Do not

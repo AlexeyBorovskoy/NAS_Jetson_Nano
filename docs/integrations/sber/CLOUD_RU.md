@@ -39,7 +39,7 @@ curl -s http://127.0.0.1:8090/v1/chat -H 'Content-Type: application/json' \
   -d '{"prompt":"ping","provider":"cloudru","user":"admin"}'
 ```
 
-## Live status (2026-09-07)
+## Live status (2026-09-08)
 
 | Item | State |
 |---|---|
@@ -50,7 +50,7 @@ curl -s http://127.0.0.1:8090/v1/chat -H 'Content-Type: application/json' \
 | IAM access_key → token | OK |
 | FM API key | issued; **`Authorization: Bearer`** (not `Api-Key`) |
 | FM chat | **OK** (200) — Bearer key; `ai-sage/GigaChat3-10B-A1.8B` + `GigaChat/GigaChat-2-Max` after balance top-up |
-| S3 buckets | 0 — create blocked: need console **tenant_id** (not customer/project); see `S3_AND_BUDGET_CHECKLIST.md` |
+| S3 buckets | **0** — 2026-09-08 re-probe: Bearer ListBuckets empty; CreateBucket `nas-home-restic` → `AccessDenied`; SigV4 tenant prefixes → `NoSuchTenant`. **Blocker:** console **tenant_id** + Object Storage service + S3 keys `tenant_id:key_id`. restic L2 **not** run. See `S3_AND_BUDGET_CHECKLIST.md` |
 
 Probe notes: `docs/plans/AUTH_PROBE_*.md`, `AUTH_PROBE_FM_KEY_SMOKE_2026-09-07.md`.
 

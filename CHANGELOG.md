@@ -6,7 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — 2026-09-07 · Sber-era architecture (device deploy still pending)
+## [Unreleased] — 2026-09-08 · Sber-era live + audit
+
+### Added
+- Strict audit `docs/audit/AUDIT_GITHUB_SBER_BILINGUAL_2026-09-08.md`
+- Bilingual ADRs 0007/0008/0009; sber integration index + GIGACHAT notes
+- Habr Part 2 plan; publication_status refresh
+
+### Changed
+- README state table → 2026-09-08 (Giga-first live, Immich→HDD, S3 debt)
+- `.gitignore`: allow `docs/.../GIGACHAT.md`; ignore `.kilo/`, `firebase-debug.log`
+
+### Device (not only git)
+- Jetson: GigaChat-2 default, Immich HDD copy, giga-balance timer
+- S3 L2 still blocked pending Cloud.ru tenant_id
+
+---
+
+## [Unreleased notes] — 2026-09-07 · Sber-era pack (pre-device)
 
 ### Added / Добавлено
 - ADR-0007 node model (Jetson SoR; workstation/Vostro out; Cloud.ru edge)

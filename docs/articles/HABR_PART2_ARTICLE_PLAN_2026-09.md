@@ -1,9 +1,16 @@
-# План статьи Habr — Часть 2 (2026-09)
+# Habr Part 2 article plan (2026-09) / План статьи Habr — Часть 2
 
-> **Статус:** план к написанию (не черновик текста).  
-> **Связь:** Часть 1 → https://habr.com/ru/articles/1062914/ (13K reach, +6, 9 комментариев, без новых с 30.07).  
-> **Канон фактов:** `docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`, ADR-0007/8/9.  
-> **Не повторять** устаревший план Part 2 про «ML на Vostro» как главный сюжет — Vostro **вне** архитектуры NAS.
+> 🇬🇧 **Status:** writing plan (not a full draft yet).  
+> 🇷🇺 **Статус:** план к написанию (не черновик текста).  
+>
+> 🇬🇧 Part 1 → https://habr.com/ru/articles/1062914/ (13K, +6, 9 comments, none after 2026-07-30).  
+> 🇷🇺 Часть 1 → тот же URL.  
+>
+> 🇬🇧 Fact canon: `DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`, ADR-0007/8/9.  
+> 🇷🇺 Канон фактов: тот же.  
+>
+> 🇬🇧 Do **not** center Part 2 on “ML on Vostro” — Vostro is **out** of NAS architecture.  
+> 🇷🇺 **Не** делать сюжет «ML на Vostro» каноном.
 
 ---
 

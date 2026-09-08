@@ -1,8 +1,10 @@
-# Device `.env` checklist — Jetson cutover (no secrets)
+# Device `.env` checklist — Jetson cutover (no secrets)  
+# Чеклист device `.env` — cutover Jetson (без секретов)
 
-> Fill values **on the device only**. Never commit real keys.  
+> 🇬🇧 Fill values **on the device only**. Never commit real keys.  
+> 🇷🇺 Значения только на устройстве. Реальные ключи в git не коммитить.  
 > Runbook: [`DEPLOY_FULL_SBER_CUTOVER.md`](DEPLOY_FULL_SBER_CUTOVER.md)  
-> Snippet merge: `config/sber.env.snippet` + `scripts/sber/merge_sber_snippet.sh`
+> Snippet: `config/sber.env.snippet` + `scripts/sber/merge_sber_snippet.sh`
 
 ## Sources (owner password manager)
 

@@ -21,30 +21,29 @@ and retracted diagnoses stay in the docs, together with how they were caught.
 
 ---
 
-## Состояние на 2026-08-30 / State as of 2026-08-30
+## Состояние на 2026-09-08 / State as of 2026-09-08
 
-🇷🇺 Ядро таблицы — замер 2026-08-22, обновлены только строки, изменившиеся с тех пор (бэкапы/off-site). / 🇬🇧 Table core measured 2026-08-22; only rows that changed since then (backups/off-site) were updated.
+🇷🇺 Канон развития: [Sber-era plan](docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md) · ADR-0007/8/9.  
+🇬🇧 Development canon: same plan · ADR-0007/8/9.
 
 | Что / What | Замер / Measurement |
 |---|---|
-| Контейнеры / Containers | **13 up**, 0 рестартов, 0 OOM (22.08) |
-| Immich | v2.7.5, **7 098 ассетов** (30.08), 23 альбома |
-| Nextcloud | v33.0.4, 5 пользователей, `maintenance: false` (22.08) |
-| SSD `/mnt/storage` | 229 ГБ, занято **6 %** (22.08) |
-| HDD `/mnt/hdd2tb` | 1.9 ТБ, занято **76 %** (1.4 ТБ семейного архива, NTFS) (22.08) |
-| RAM | 2.2 / 3.9 ГБ (22.08) |
-| Бэкапы БД / DB backups | ежедневно ~03:10, **~151 МБ**, restore проверен **2026-08-24** (restic-снэпшот `ab975984`) |
-| Off-site бэкап / Off-site backup | **фаза 1 в бою с 2026-08-24** — дампы БД на Vostro через restic, восстановление проверено. Фаза 2 (фото Immich, ~6 ГБ) не начата |
-| Реверс-туннель / Reverse tunnel | active, Jetson → VPS |
-| Сеть / Network | Jetson `192.168.0.50`, **1000 Мбит/с** |
-| Семейный ассистент / Family assistant | Talk-бот отвечает, алерты в чат — **работают** |
+| Контейнеры / Containers | **13 up** (live 2026-09-08) |
+| Immich | library **~13 ГБ** on SSD; **L1 copy on HDD** `/mnt/hdd2tb/backups/immich` **13 ГБ** + timer |
+| Nextcloud | live (family) |
+| SSD `/mnt/storage` | 229 ГБ, ~6 % used (photos grow slowly) |
+| HDD `/mnt/hdd2tb` | 1.9 ТБ, ~76 % (family archive NTFS + `backups/`) |
+| LLM Gateway | **`provider=gigachat`** (GigaChat-2), DeepSeek fallback, Cloud.ru FM optional, `prefer_local=false` |
+| Talk `@бобик` | `TALK_BOT_LLM_PROVIDER=gigachat` |
+| DB dumps T0 | fresh **2026-09-08** → Vostro restic snapshot `3922949b` (emergency path) |
+| Off-site L2 S3 | ⏳ Cloud.ru bucket blocked (tenant_id) — see [S3 checklist](docs/integrations/sber/S3_AND_BUDGET_CHECKLIST.md) |
+| Git mirrors | GitHub canon + [GitVerse NAS_HOME](https://gitverse.ru/Alexey_Borovskoy/NAS_HOME) (SSH OK) |
+| Реверс-туннель / Reverse tunnel | active Jetson → VPS `:10022` |
+| Habr Part 1 | [1062914](https://habr.com/ru/articles/1062914/) · 13K · 9 comments · [Part 2 plan](docs/articles/HABR_PART2_ARTICLE_PLAN_2026-09.md) |
 
-🟠 **Главный открытый долг / Main open debt:** 🇷🇺 off-site бэкап **дампов БД уже
-работает** (restic на Vostro, восстановление проверено 24.08) — но это только фаза 1.
-Фотографии Immich (~6 ГБ) по-прежнему лежат только дома. /
-🇬🇧 off-site backup **of DB dumps is now live** (restic on Vostro, restore verified
-2026-08-24) — but that's phase 1 only. Immich photos (~6 GB) still live at home only.
-→ [`WAVE_0`](docs/plans/WAVE_0_OFFSITE_BACKUP.md)
+🟠 **Open debt / Открытый долг:** 🇷🇺 L2 off-site на **Cloud.ru S3** (не Vostro как канон). Vostro = legacy emergency dumps only.  
+🇬🇧 L2 off-site target is **Cloud.ru S3** (Vostro is legacy emergency only).  
+→ [ADR-0009](docs/decisions/ADR-0009-backup-ssd-hdd-s3.md) · [audit 2026-09-08](docs/audit/AUDIT_GITHUB_SBER_BILINGUAL_2026-09-08.md)
 
 ---
 
@@ -57,7 +56,7 @@ and retracted diagnoses stay in the docs, together with how they were caught.
 | **Nextcloud** | файлы, контакты, календарь (CardDAV/CalDAV через DAVx⁵) |
 | **Immich** | семейный фотоархив, автозагрузка с телефонов |
 | **Samba** | сетевые шары `public` и `hdd2tb` (2 ТБ архива) |
-| **LLM Gateway** | шлюз к DeepSeek и GigaChat **с редактированием персональных данных** и лимитами по каждому члену семьи |
+| **LLM Gateway** | 🇬🇧 GigaChat-first + DeepSeek fallback + optional Cloud.ru FM; **PII redaction** and per-user budgets / 🇷🇺 GigaChat по умолчанию, DeepSeek fallback, Cloud.ru FM опционально; редактирование ПДн и лимиты |
 | **Talk-бот `@бобик`** | семейный ассистент в чате Nextcloud: команды из домашних данных + свободные вопросы наружу по явному позывному |
 | **Системные алерты** | проблемы приходят в чат владельца: устаревшие бэкапы, отвал диска, упавший контейнер |
 | **REST API** | FastAPI поверх всего стека, JWT, Swagger на `:8099/docs` |

@@ -79,6 +79,10 @@ docs/new_ping/photo_2026-08-09_18-49-48.jpg
 # Provider credentials kept locally — MUST NEVER be committed (public repo)
 gigachat/
 **/gigachat.md
+# Integration notes (no secrets) — uppercase path under docs/
+!docs/integrations/sber/GIGACHAT.md
+firebase-debug.log
+.kilo/
 
 # Exception to the blanket `*.pem` rule above: the Russian Trusted CA bundle is
 # a PUBLIC root certificate, not a key. It is committed so that deploying the

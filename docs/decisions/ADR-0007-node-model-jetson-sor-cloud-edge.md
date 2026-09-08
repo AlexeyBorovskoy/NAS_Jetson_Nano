@@ -1,37 +1,46 @@
+# ADR-0007: Node model — Jetson SoR, VPS net-edge, Cloud.ru AI/storage edge  
 # ADR-0007: Модель узлов — Jetson SoR, VPS net-edge, Cloud.ru AI/storage edge
 
-## Статус / Status
+## Status / Статус
 
-🇷🇺 **Принято** (2026-09-04). / 🇬🇧 **Accepted** (2026-09-04).
+🇬🇧 **Accepted** (2026-09-04).  
+🇷🇺 **Принято** (2026-09-04).
 
-Канон развития: [`docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`](../plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md).  
-Заменяет операционную модель узлов из `docs/31_MASTER_PLAN.md` (2026-08-22).
+Canon: [`docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`](../plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md).  
+Replaces node roles from `docs/31_MASTER_PLAN.md` (2026-08-22).
 
-## Контекст / Context
+## Context / Контекст
 
-Владелец исключил из проекта NAS:
+🇬🇧 The owner removed from the NAS project:  
+🇷🇺 Владелец исключил из проекта NAS:
 
-- рабочую станцию RTX (только разработка);
-- Vostro (не off-site и не сторож для NAS).
+- 🇬🇧 workstation RTX (dev only) / 🇷🇺 рабочую станцию RTX (только разработка);
+- 🇬🇧 Vostro (not off-site, not watchdog) / 🇷🇺 Vostro (не off-site и не сторож).
 
-Нужна модель, где семейные данные остаются дома, а интеллект и off-site могут жить в РФ-облаке (Сбер / Cloud.ru), без зависимости от кочующего ПК.
+🇬🇧 Family data must stay at home; intelligence and off-site may live in RU cloud (Sber / Cloud.ru), without depending on a roaming PC.  
+🇷🇺 Семейные данные дома; интеллект и off-site — в РФ-облаке, без зависимости от кочующего ПК.
 
-## Решение / Decision
+## Decision / Решение
 
-| Узел | Роль |
+| Node / Узел | Role / Роль |
 |---|---|
-| **Jetson Nano** | System of Record: Nextcloud, Immich, Samba, Talk-бот, LLM Gateway, on-site backups |
-| **VPS** | Network edge: reverse SSH, nginx, Amnezia (не трогать без checklist) |
-| **Cloud.ru Evolution** | Optional AI/storage edge: Foundation Models, Object Storage, later CA/VM |
-| **GigaChat PERS** | Family LLM freemium via gateway |
-| **Станция / Vostro** | **Вне** архитектуры NAS |
+| **Jetson Nano** | 🇬🇧 System of Record: Nextcloud, Immich, Samba, Talk bot, LLM Gateway, on-site backups / 🇷🇺 SoR: те же сервисы |
+| **VPS** | 🇬🇧 Network edge: reverse SSH, nginx, Amnezia (do not touch without checklist) / 🇷🇺 сетевой edge |
+| **Cloud.ru Evolution** | 🇬🇧 Optional AI/storage edge: FM, Object Storage / 🇷🇺 опциональный AI/storage edge |
+| **GigaChat PERS** | 🇬🇧 Family LLM freemium via gateway / 🇷🇺 семейный LLM через шлюз |
+| **Workstation / Vostro** | 🇬🇧 **Outside** NAS architecture / 🇷🇺 **Вне** архитектуры NAS |
 
-## Последствия / Consequences
+## Consequences / Последствия
 
-- Immich ML / Ollama на станции **не** требуются для prod.
-- Off-site больше не проектируется на Vostro; on-site 2-я копия Immich — HDD Jetson; off-site — S3 (ADR-0009).
-- Документы 29–31 помечены superseded для topology.
+🇬🇧 Immich ML / Ollama on the workstation are **not** required for prod.  
+🇷🇺 Immich ML / Ollama на станции **не** нужны в prod.
 
-## Не меняется / Unchanged
+🇬🇧 Off-site is no longer designed on Vostro; Immich second copy = Jetson HDD; off-site = S3 (ADR-0009).  
+🇷🇺 Off-site не на Vostro; 2-я копия Immich = HDD Jetson; off-site = S3 (ADR-0009).
+
+🇬🇧 Docs 29–31 marked superseded for topology.  
+🇷🇺 Документы 29–31 помечены superseded для topology.
+
+## Unchanged / Не меняется
 
 ADR-0003 (LAN-only), ADR-0005 (reverse tunnel), Amnezia safety, redaction gateway.

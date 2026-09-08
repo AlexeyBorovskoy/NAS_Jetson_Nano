@@ -7,7 +7,7 @@
 | ID | Component | Problem | Evidence | Impact | Complexity | Priority |
 |---|---|---|---|---|---|---|
 | TD-01 | Deployment | Живое устройство работает на до-переименовочном деплое (`~/nasa`, `Nasa_home.git`, `homecloud_*`), git — на переименованном (`nas_jetson_nano-*`) | `INVENTORY.md` §1; `docs/plans/tranquil-wandering-truffle.md` | Наивный деплой сломает `report_cmd`/`backup_cmd`, риск дублирования API-контейнера (уже частично снят — см. коммит `42ee9dd`) | HIGH (требует окна обслуживания) | **P1** — runbook уже готов (Часть B плана), не выполнен |
-| TD-02 | Backup | Фото Immich (единственный актив семьи, ~6-9 ГБ) не покрыты offsite-бэкапом — только БД | `RISKS.md` R-01 | Безвозвратная потеря при отказе SSD | MEDIUM | **P0** — самый весомый пробел проекта по последствиям |
+| TD-02 | Backup | Фото Immich: **L1 HDD copy live 2026-09-08 (13G)**; L2 Cloud.ru S3 still blocked; Vostro dumps emergency-only | `FINDINGS.md` F-02 | SSD loss mitigated; house loss not | MEDIUM | **P1** L2 S3 (was P0) |
 | TD-03 | Talk / coturn | `coturn` описан в compose, не развёрнут на VPS — видеозвонки вне LAN, вероятно, не проходят NAT | `INVENTORY.md` §15, `RISKS.md` R-03 | Функциональный пробел (не security) | LOW-MEDIUM (образ уже готов, нужен только деплой на VPS) | **P2** |
 | TD-04 | `nasa-api` deps | Единственный из 3 Python-сервисов без пиннинга зависимостей (`>=`, не `==`), включая auth-библиотеки | `DEPENDENCIES.md` §2 | Непредсказуемый дрейф версий при `--build` | LOW (просто закрепить `==`) | **P2** |
 | TD-05 | Docker images | ~13 dangling-образов (2.5-3 ГБ), плавающие теги `latest`/`release`/`apache` у 5 образов | `DEPENDENCIES.md` §3, §5 | Неконтролируемый апгрейд при следующем `pull`/`build`; лишнее место на SSD | LOW | **P3** |

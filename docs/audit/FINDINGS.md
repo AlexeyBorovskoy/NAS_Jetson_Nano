@@ -5,9 +5,9 @@
 
 | ID | Severity | Category | Location | Problem | Risk | Status |
 | -- | -------- | -------- | -------- | ------- | ---- | ------ |
-| F-01 | CRITICAL | Data integrity | `scripts/backup/backup_databases.sh` `dump_postgres` + `nasa-backup.timer` | Dump can write ~20-byte gzip when Postgres not ready; timer still success. Evidence: 2026-09-08 04:04 empty dumps; good dumps after manual run 09:13. No min-size/`gzip -t` fail-closed. | False sense of backup; restore of empty file | OPEN |
+| F-01 | CRITICAL | Data integrity | `scripts/backup/backup_databases.sh` `dump_postgres` + `nasa-backup.timer` | Dump can write ~20-byte gzip when Postgres not ready; timer still success. Evidence: 2026-09-08 04:04 empty dumps; good dumps after manual run 09:13. No min-size/`gzip -t` fail-closed. | False sense of backup; restore of empty file | **MITIGATED 2026-09-08** (git: wait pg_isready, .partial + gzip -t + MIN_DUMP_BYTES, ExecStartPre containers; test `tests/backup/test_dump_validate.sh`). Device unit copy still needs install. |
 | F-02 | CRITICAL | Backup | Immich library single copy | Was P0 TD-02. **L1 HDD copy 13G=13G + timer 2026-09-08**. L2 S3 still blocked. House fire still single-site. | Photo loss if house lost | MITIGATED (L1) / OPEN (L2) |
-| F-03 | HIGH | Reliability | `nasa-backup.timer` vs Docker start | Boot race: timer at ~03:00 / Persistent=true fires before PG listen | Empty dumps F-01 | OPEN |
+| F-03 | HIGH | Reliability | `nasa-backup.timer` vs Docker start | Boot race: timer at ~03:00 / Persistent=true fires before PG listen | Empty dumps F-01 | **MITIGATED 2026-09-08** (script wait + service ExecStartPre; same install caveat as F-01) |
 | F-04 | HIGH | Security | `services/nas_jetson_nano-api/app/main.py` CORS `*` | Any origin if API reachable (VPN/LAN). JWT still required on mutating routes. | CSRF/token use from random origin | OPEN (TD-08) |
 | F-05 | HIGH | Security | JWT secret / `.env.bak.*` on device | TD-12 backups of env; historical example secret shape | Disk compromise | OPEN |
 | F-06 | HIGH | Platform | Host Ubuntu 18.04 + Py 3.6 EOL | TD-11 JetPack ceiling | Unpatched host CVEs | ACCEPTED until board replace |
@@ -34,12 +34,13 @@
 
 - **Evidence:** 20-byte `*_20260908_040406.sql.gz`; journal pg connection refused; unit exit 0.  
 - **Reproduce:** reboot Jetson so Persistent timer fires before `immich_db` ready.  
-- **Fix:** wait-for-pg; `gzip -t` + `stat -c%s` ≥ 1 KiB; non-zero exit; systemd `After=` docker + `ExecStartPre` health.  
-- **Fix risk:** LOW. **Tests:** shell test with mock empty gzip.
+- **Fix (git 2026-09-08):** `wait_pg_ready`; dump to `.partial`; `gzip -t`; `MIN_DUMP_BYTES=1024`; fail-closed; `tests/backup/test_dump_validate.sh`.  
+- **Remaining:** copy unit+script onto Jetson (`~/nasa`) — not deployed in this step.  
+- **Fix risk:** LOW.
 
 ### F-03 Timer race
 
-- Same incident. **Fix:** `OnCalendar` keep 03:10 **plus** `ExecStartPre` wait loop 60s for `pg_isready` in containers.
+- Same incident. **Mitigation:** `wait_pg_ready` in script + `ExecStartPre` DB containers running (15×4s). Timer calendar unchanged.
 
 ### F-04 CORS *
 

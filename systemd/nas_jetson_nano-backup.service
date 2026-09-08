@@ -12,6 +12,8 @@ Type=oneshot
 # Adjust NAS_JETSON_NANO_PROJECT_DIR if repo is not at /home/admin/nas_jetson_nano
 Environment=NAS_JETSON_NANO_PROJECT_DIR=/home/admin/nas_jetson_nano
 ExecStartPre=/bin/mountpoint -q /mnt/storage
+# F-01/F-03: do not start dump until DB containers exist (script also waits pg_isready)
+ExecStartPre=/bin/bash -c "for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do docker inspect --format '{{.State.Running}}' homecloud_immich_db 2>/dev/null | grep -qx true && docker inspect --format '{{.State.Running}}' homecloud_nextcloud_db 2>/dev/null | grep -qx true && exit 0; sleep 4; done; echo 'F-01: DB containers not running'; exit 1"
 ExecStart=/bin/bash "${NAS_JETSON_NANO_PROJECT_DIR}/scripts/backup/backup_databases.sh"
 User=admin
 StandardOutput=journal

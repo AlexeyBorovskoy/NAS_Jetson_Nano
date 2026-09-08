@@ -8,7 +8,7 @@
 
 | ID | Work | Tests first | Risk |
 |---|---|---|---|
-| F-01/F-03 | Fail-closed dumps: `pg_isready` wait, min size, `gzip -t`, systemd After/Pre | shell fixture empty gzip | LOW |
+| F-01/F-03 | Fail-closed dumps: `pg_isready` wait, min size, `gzip -t`, systemd After/Pre | shell fixture empty gzip | LOW — **git done 2026-09-08**; install unit on Jetson still pending |
 | F-02 L2 | Cloud.ru S3 when owner gives tenant_id — dumps only first | dry-run restic | MEDIUM |
 
 ## P1 — high

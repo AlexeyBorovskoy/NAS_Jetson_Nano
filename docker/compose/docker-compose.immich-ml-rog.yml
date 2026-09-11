@@ -1,0 +1,27 @@
+# Immich ML worker for Windows ROG (RTX 3050 Ti) — FREE home-LAN pilot
+# Not for WAN. Bind only to LAN; see docs/plans/IMMICH_ML_ROG_FREE_PILOT.md
+name: immich-ml-rog
+
+services:
+  immich-machine-learning:
+    container_name: immich_ml_rog
+    image: ${IMMICH_ML_IMAGE:-ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}-cuda}
+    restart: unless-stopped
+    ports:
+      - "${IMMICH_ML_HOST_BIND:-0.0.0.0}:${IMMICH_ML_PORT:-3003}:3003"
+    volumes:
+      - immich_ml_rog_cache:/cache
+    environment:
+      TZ: ${TZ:-Europe/Moscow}
+      MACHINE_LEARNING_WORKERS: ${MACHINE_LEARNING_WORKERS:-1}
+      MACHINE_LEARNING_WORKER_TIMEOUT: ${MACHINE_LEARNING_WORKER_TIMEOUT:-300}
+    gpus: all
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:3003/ping', timeout=5)\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+volumes:
+  immich_ml_rog_cache:

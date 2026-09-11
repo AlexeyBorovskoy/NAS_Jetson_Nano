@@ -8,8 +8,23 @@ Use personal **Dell Vostro 15** (`192.168.75.153`, corp LAN) as the **only jump 
 into resources that this laptop can already reach (DNS/TCP from Vostro).
 
 ```
-Home or Jetson  →  VPS 95.163.176.103  →  127.0.0.1:10222  →  Vostro:22  →  corp
+Home (Wi‑Fi or Ethernet) or Jetson  →  VPS 95.163.176.103:22  →  127.0.0.1:10222  →  Vostro:22  →  corp
 ```
+
+## Home Wi‑Fi vs LAN — where you can connect from
+
+| Where you are | Path to Vostro bastion | Need Amnezia? |
+|---------------|------------------------|---------------|
+| **Home Wi‑Fi** (`TP-Link_828C` / `_5G`, same router as Jetson) | Internet → VPS:22 → jump `:10222` | **No** for SSH bastion (only keys + `ssh vostro-bastion`) |
+| **Home Ethernet** LAN `192.168.0.0/24` | Same as Wi‑Fi (egress via CGNAT to VPS) | **No** for bastion |
+| **Mobile / any internet** | Same: VPS:22 → `:10222` | **No** for bastion |
+| **Corp LAN** `192.168.75.0/24` | Direct `ssh alexey@192.168.75.153` | N/A |
+| Family apps Nextcloud/Immich via VPS service ports | VPS ufw allows only VPN subnets | **Yes** Amnezia (separate from bastion) |
+
+**Short answer:** family home Wi‑Fi is enough. Bastion does **not** require being on Jetson LAN cable and does **not** require Amnezia — it only needs reachability of `95.163.176.103:22` and the SSH keys.  
+Home Wi‑Fi and home Ethernet are equivalent for this path (both leave via the same ISP/CGNAT).
+
+**Does not work without the tunnel:** phone/PC on home Wi‑Fi cannot open `192.168.75.153` directly (different building/network).
 
 ## Already deployed (verified)
 

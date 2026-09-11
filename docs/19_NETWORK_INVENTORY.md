@@ -4,7 +4,7 @@
 >
 > 🇷🇺 Документ фиксирует сетевую топологию тестового стенда NAS_Jetson_Nano. Публичная версия: реальные пароли Wi-Fi, серийные номера, MAC-адреса и учётные данные хранятся только в `config/.env` (gitignored).
 >
-> Updated / Обновлено: 2026-08-10.
+> Updated / Обновлено: 2026-09-11 (Vostro bastion `:10222`).
 
 ## 1а. Current measured state / Текущее измеренное состояние (2026-08-10)
 
@@ -112,6 +112,13 @@ VPS:
     IP: 95.163.176.103 (Vienna, AEZA GROUP)
     SSH: ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103
     Caution: Amnezia VPN containers — DO NOT TOUCH.
+
+Vostro bastion (2026-09-11, verified):
+    Vostro 192.168.75.153 (corp) --autossh -R--> VPS 127.0.0.1:10222
+    From home Wi-Fi OR home LAN OR mobile:
+      ssh ProxyJump VPS:22 -> 127.0.0.1:10222 -> alexey@Vostro
+    Amnezia NOT required for this SSH path (only for NC/Immich service ports).
+    Details: docs/plans/VOSTRO_BASTION_HOME_ACCESS.md
 ```
 
 ## 4. Network Settings Table
@@ -265,7 +272,7 @@ sudo bash scripts/storage/storage_preflight.sh
 | No LAN segmentation | Every service is reachable by anyone with the Wi-Fi password | Guest network during the home-network rebuild (`26_DECO_E4_NETWORK.md`) |
 | Keenetic Omni KN-1410 extender | ⛔ **Plan cancelled 2026-08-10** — superseded by the Deco E4 mesh | Keep as a cold spare; do not commission |
 | TP-Link Deco E4 mesh (2 units) | ✅ **Decided 2026-08-10: Deco replaces the router entirely** (Router mode, LAN IP set to `192.168.0.1`). Cost accepted: Jetson link drops 1000 → 100 Mbit/s | Follow the runbook in [`27_HOME_NETWORK_MESH.md`](27_HOME_NETWORK_MESH.md). Capture the WAN connection type from the EC220-G5 **before** removing it |
-| Vostro 15 ML node | ✅ **Decided 2026-08-10: stays in the corporate network** `192.168.75.177`, does not move home. Becomes a **remote** ML node reached through the VPS | Plan in [`plans/VOSTRO_ML_NODE_ONBOARDING.md`](plans/VOSTRO_ML_NODE_ONBOARDING.md). First check outbound TCP/22 from the corporate LAN |
+| Vostro 15 | ✅ In corp LAN **`192.168.75.153`** (was `.177` pre-reinstall). Role: bastion + legacy restic, not ML. Reverse tunnel **`nas-offsite-tunnel` → VPS `127.0.0.1:10222`**. From **home Wi‑Fi or Ethernet** (or any internet): `ssh vostro-bastion` via VPS:22 — **Amnezia not required** for bastion SSH. Direct home→`.153` impossible. | [`plans/VOSTRO_BASTION_HOME_ACCESS.md`](plans/VOSTRO_BASTION_HOME_ACCESS.md) · HOST_CONTRACT on laptop |
 
 ## 8. Rollback
 

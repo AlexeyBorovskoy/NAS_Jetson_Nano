@@ -17,6 +17,7 @@
 | HDD | USB HDD, питание предусмотрено отдельно |
 | Системный носитель | microSD 64 GB |
 | Сеть | Ethernet для Jetson; на Stage 0 допустим временный direct-link через USB-Ethernet адаптер |
+| Кандидат home-helper (2026-09-11) | **Dell Inspiron N5110** ST `6M60JR1` / `5110-8477` RED — пока неисправен; см. `docs/plans/INSPIRON_N5110_HOME_NODE.md` |
 
 ## 2.1. Текущий Stage 0 стенд
 

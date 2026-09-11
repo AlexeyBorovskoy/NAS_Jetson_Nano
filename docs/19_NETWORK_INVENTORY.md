@@ -79,6 +79,7 @@ Gateway: 192.168.0.1
     |
     +-- Windows laptop / admin workstation
     |      Wi-Fi client, current observed IP: 192.168.0.106
+    |      (ROG Strix G17 — Immich ML CUDA free pilot when home)
     |
     +-- Jetson Nano
     |      eth0: nas_jetson_nano-lan, static 192.168.0.50/24
@@ -88,6 +89,13 @@ Gateway: 192.168.0.1
     |      +-- USB storage
     |             data disk attached directly to Jetson over USB
     |             not a network device
+    |
+    +-- Dell Inspiron N5110 (planned home helper, NOT live)
+    |      Service Tag 6M60JR1 / Model 5110-8477 RED RU
+    |      target role: LAN helper / cold storage / watchdog
+    |      NOT Immich CUDA; CPU ML only as last resort
+    |      reserved IP candidate: 192.168.0.60 (unassigned)
+    |      doc: docs/plans/INSPIRON_N5110_HOME_NODE.md
     |
     +-- Keenetic Omni KN-1410 (planned, not configured)
            target mode: Wi-Fi Extender / Repeater
@@ -273,6 +281,7 @@ sudo bash scripts/storage/storage_preflight.sh
 | Keenetic Omni KN-1410 extender | ⛔ **Plan cancelled 2026-08-10** — superseded by the Deco E4 mesh | Keep as a cold spare; do not commission |
 | TP-Link Deco E4 mesh (2 units) | ✅ **Decided 2026-08-10: Deco replaces the router entirely** (Router mode, LAN IP set to `192.168.0.1`). Cost accepted: Jetson link drops 1000 → 100 Mbit/s | Follow the runbook in [`27_HOME_NETWORK_MESH.md`](27_HOME_NETWORK_MESH.md). Capture the WAN connection type from the EC220-G5 **before** removing it |
 | Vostro 15 | ✅ In corp LAN **`192.168.75.153`** (was `.177` pre-reinstall). Role: bastion + legacy restic, not ML. Reverse tunnel **`nas-offsite-tunnel` → VPS `127.0.0.1:10222`**. From **home Wi‑Fi or Ethernet** (or any internet): `ssh vostro-bastion` via VPS:22 — **Amnezia not required** for bastion SSH. Direct home→`.153` impossible. | [`plans/VOSTRO_BASTION_HOME_ACCESS.md`](plans/VOSTRO_BASTION_HOME_ACCESS.md) · HOST_CONTRACT on laptop |
+| Dell Inspiron N5110 | 🟠 **Inventory 2026-09-11**, not commissioned (owner: unit currently faulty). Tag `6M60JR1`, model `5110-8477` RED. Planned **home** LAN helper — not corp, not Immich CUDA. IP candidate `.60` unassigned. | [`plans/INSPIRON_N5110_HOME_NODE.md`](plans/INSPIRON_N5110_HOME_NODE.md) |
 
 ## 8. Rollback
 

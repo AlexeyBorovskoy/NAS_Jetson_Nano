@@ -16,6 +16,7 @@
 | Env snippet | `config/sber.env.snippet` | `merge_sber_snippet.sh` |
 | Device env checklist | [DEVICE_ENV_CHECKLIST](../../plans/DEVICE_ENV_CHECKLIST.md) | no secrets |
 | S3 + budget | [S3_AND_BUDGET_CHECKLIST](S3_AND_BUDGET_CHECKLIST.md) | console |
+| Immich ML on Cloud.ru | [IMMICH_ML_CLOUDRU_COST](../../plans/IMMICH_ML_CLOUDRU_COST_ESTIMATE.md) | [ADR-0010](../../decisions/ADR-0010-immich-ml-cloudru.md) |
 | API inventory | [PUBLIC_PROBE](../../plans/CLOUD_RU_GITVERSE_PUBLIC_PROBE_2026-09-04.md) | — |
 
 ## Status 2026-09-08 / Статус

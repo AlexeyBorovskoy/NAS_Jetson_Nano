@@ -89,7 +89,8 @@ and retracted diagnoses stay in the docs, together with how they were caught.
 ```
 
 🇷🇺 Подробно: [`03_ARCHITECTURE.md`](docs/03_ARCHITECTURE.md).
-Текущая домашняя сеть и её цена: [`28_NETWORK_SNAPSHOT`](docs/28_NETWORK_SNAPSHOT_2026-08-22.md).
+Текущая домашняя сеть и её цена: [`34_NETWORK_SNAPSHOT`](docs/34_NETWORK_SNAPSHOT_2026-09-12.md) (2026-09-12, mesh перестроен);
+предыдущий слепок — [`28_NETWORK_SNAPSHOT`](docs/28_NETWORK_SNAPSHOT_2026-08-22.md).
 🇬🇧 Details in the same files.
 
 ---

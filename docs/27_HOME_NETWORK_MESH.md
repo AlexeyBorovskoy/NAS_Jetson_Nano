@@ -6,11 +6,22 @@
 > EN: Working document for migrating the home network to a TP-Link Deco E4 mesh,
 > fully replacing the EC220-G5 router. Decision made by the owner on 2026-08-10.
 >
-> Создано / Created: 2026-08-10. Статус: **регламент готов, оборудование не введено.**
-> Заменяет разведочный `docs/26_DECO_E4_NETWORK.md`.
+> Создано / Created: 2026-08-10. Заменяет разведочный `docs/26_DECO_E4_NETWORK.md`.
 >
-> Status: **the procedure is ready, the equipment is not yet in service.**
-> Supersedes the exploratory `docs/26_DECO_E4_NETWORK.md`.
+> ## ⚠️ Статус на 2026-09-12 / Status as of 2026-09-12
+>
+> 🇷🇺 **Оборудование введено, но не по этому регламенту.** Deco работает **вторым
+> роутером позади EC220-G5** (двойной NAT), Jetson остался в гигабитном порту EC220,
+> шаги 2, 3 и 6 (перевод LAN IP на `192.168.0.1`, перенос Jetson в Deco, вывод EC220)
+> **не выполнялись и не планируются** — они стоили бы Jetson гигабита.
+> Фактическое состояние и живые замеры:
+> [`34_NETWORK_SNAPSHOT_2026-09-12.md`](34_NETWORK_SNAPSHOT_2026-09-12.md).
+> Документ сохранён как источник по устройству, размещению узлов и порядку работ.
+>
+> 🇬🇧 **The equipment is in service, but not via this procedure.** The Deco runs as a
+> second router behind the EC220-G5 (double NAT); the Jetson stays on the EC220 gigabit
+> port. Steps 2, 3 and 6 were never performed and are not planned. See snapshot 34 for
+> the measured state.
 
 ---
 

@@ -3,9 +3,59 @@
 > 🇷🇺 Бесплатный пилот: `immich-machine-learning` на ASUS ROG (RTX) в домашней LAN.  
 > 🇬🇧 Free pilot: Immich ML worker on ROG laptop, same `192.168.0.0/24` as Jetson `.50`.
 
-**Status:** prep in repo (2026-09-11). Not 24/7 prod.  
+**Status:** ⛔ **blocked on host 2026-09-12** — Docker Desktop не стартует: `Virtualization
+support not detected`. Not 24/7 prod.  
 **Cost:** $0 cloud (electricity only).  
 **Related:** ADR-0010 (Cloud.ru path remains the paid/prod option).
+
+---
+
+## Статус на 2026-09-12 / Status as of 2026-09-12
+
+🇷🇺 **Сделано:** образ привязан к версии сервера (**Immich 2.7.5** на Jetson, значит
+ML-образ `…:v2.7.5-cuda`); создан `config/immich-ml-rog.env` (вне git, правило
+`config/*.env` добавлено в `.gitignore`); порт **привязан к `127.0.0.1`**, а не к LAN.
+
+🔴 **Блокер:** на станции **выключен гипервизор Windows**. Замер: `HypervisorPresent
+= False` при `VirtualizationFirmwareEnabled = True` и поддержке SLAT, то есть железо и
+BIOS готовы, не запущен сам гипервизор. Служба `com.docker.service` была остановлена
+(запущена владельцем), но без гипервизора движок не поднимается. Лечение требует прав
+администратора **и перезагрузки станции**:
+
+```powershell
+dism /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+bcdedit /set hypervisorlaunchtype auto
+# затем перезагрузка / then reboot
+```
+
+⚠️ На станции стоит **VMware Workstation 25** (виртуалок запущено 0). Версия официально
+работает поверх гипервизора, но машины станут немного медленнее. Откат:
+`bcdedit /set hypervisorlaunchtype off` + перезагрузка. Решение отложено владельцем.
+
+🔴 **Схема связи изменилась против исходного runbook.** Раздел A предполагает, что ROG
+и Jetson в одной подсети `192.168.0.0/24`. **Это больше не так:** станция живёт за Deco
+в `192.168.68.0/22`, и Jetson её не достаёт — ping с Jetson даёт **100 % потерь**
+(замер 2026-09-12). Рабочий путь — **обратный туннель со станции**, как уже сделано для
+локальной языковой модели: на Jetson включён `GatewayPorts clientspecified`, поэтому
+проброс нужно привязывать к `172.17.0.1`, иначе контейнеры его не увидят.
+
+```powershell
+# со станции, после запуска ML-контейнера
+ssh -N -R 172.17.0.1:3003:127.0.0.1:3003 admin@192.168.0.50
+# на Jetson: IMMICH_MACHINE_LEARNING_URL=http://172.17.0.1:3003
+```
+
+⚠️ На устройстве `docker-compose.immich.yml` **старее git** — переменной
+`IMMICH_MACHINE_LEARNING_URL` в нём ещё нет, только `IMMICH_DISABLE_MACHINE_LEARNING`.
+Правка compose на Jetson — это **деплой**, и делается только по слову владельца.
+
+🇬🇧 **Done:** image pinned to the server version (Immich 2.7.5 → `…:v2.7.5-cuda`), local
+env created outside git, ML port bound to `127.0.0.1` instead of the LAN.
+**Blocked:** the Windows hypervisor is off on the station (`HypervisorPresent = False`
+while firmware virtualization is enabled); enabling it needs admin rights and a reboot,
+and VMware Workstation 25 is installed alongside. **Topology changed:** the station is
+behind the Deco in another subnet and the Jetson cannot reach it (100 % packet loss), so
+the pilot must use a reverse SSH tunnel bound to `172.17.0.1`, not a LAN URL.
 
 ## What / Что
 

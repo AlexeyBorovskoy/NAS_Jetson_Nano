@@ -118,6 +118,31 @@ Immich 12.09 04:20 (12.8 ГБ).
 - Замер отдачи канала: **84 Мбит/с** — архив уходит наружу примерно за 7 минут, но
   только мимо туннеля.
 
+## 4б. Пилот Immich ML на ROG — начат, упёрся в гипервизор
+
+Владелец выбрал этот блок развития. Подготовка выполнена, запуск отложен.
+
+| Шаг | Состояние |
+|---|---|
+| Версия образа привязана к серверу | ✅ Immich на Jetson **2.7.5** → ML `…:v2.7.5-cuda` |
+| `config/immich-ml-rog.env` | ✅ создан, вне git (правило `config/*.env` в `.gitignore`) |
+| Порт ML | ✅ привязан к `127.0.0.1`, в LAN не открыт |
+| Видеокарта | ✅ RTX 3050 Ti Laptop, 4 ГБ, драйвер 596.36 |
+| Docker Desktop | ⛔ `Virtualization support not detected` |
+| Запуск обработчика | ⛔ отложен |
+
+🔴 **Блокер:** на станции выключен гипервизор Windows — `HypervisorPresent = False`
+при `VirtualizationFirmwareEnabled = True`. Служба `com.docker.service` была
+остановлена (владелец запустил), но без гипервизора движок не поднимается. Нужны права
+администратора и **перезагрузка**; рядом стоит VMware Workstation 25, которая после
+включения гипервизора продолжит работать, но немного медленнее. **Владелец отложил
+решение на завтра.**
+
+🔴 **Runbook пилота устарел в части топологии.** Он предполагает ROG и Jetson в одной
+подсети, но станция за Deco в `192.168.68.0/22`, и Jetson её не достаёт (ping 100 %
+потерь). Рабочий путь — обратный туннель со станции с привязкой к `172.17.0.1`
+(`GatewayPorts clientspecified` на Jetson уже включён). Документ пилота исправлен.
+
 ## 5. Доска
 
 | Сообщение | Что |
@@ -167,5 +192,24 @@ Four of my own hypotheses were withdrawn, including "mismatched firmware broke t
 radio" (the real cause was the client falling back to 2.4 GHz channel 9) and "no V4
 firmware exists anywhere" (wrong catalogue).
 
-Open: a 20-minute session-hold test is still running; the child node needs its firmware;
-no RF scan was possible; the EC220 still broadcasts a competing Wi-Fi.
+**Session-hold test finished — negative.** Two 20-minute sessions, through AmneziaVPN and
+bypassing it over the same Wi-Fi, both completed without a drop. Duration alone does not
+kill a session; the test was rate-limited to 50 KB/s, so load was not tested.
+
+**Samba was broken and is fixed.** An out-of-project host `smbd` had hijacked port 445
+from the project container in a boot race, serving three empty shares; the `hdd2tb`
+archive share was unreachable from the LAN. The owner disabled the host units. A 4.21 GB
+archive of the diploma folder was then built on the device (7.06 GB in, 28 421 entries,
+integrity verified) and handed over on the share. Uploading it to an external service was
+**not** performed: the chosen service requires a real captcha and the session policy
+blocks outbound data transfer.
+
+**Immich ML pilot started and is blocked.** The image is pinned to server version 2.7.5
+and the local env sits outside git, but Docker Desktop will not start: the Windows
+hypervisor is off (`HypervisorPresent = False`). Enabling it needs admin rights and a
+reboot; the owner postponed it. The pilot runbook was also corrected: the station now
+lives behind the Deco in another subnet, so a reverse SSH tunnel bound to `172.17.0.1`
+replaces the LAN URL.
+
+Open: firmware on the child Deco node; no RF scan was possible; the EC220 still
+broadcasts a competing Wi-Fi; off-site for photos still waits on the Cloud.ru console.

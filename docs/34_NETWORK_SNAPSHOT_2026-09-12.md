@@ -376,3 +376,20 @@ carrying clients at 866.7 Mbit/s.
 verified healthy. Three non-urgent risks remain from the child node's 2023 firmware:
 unpatched security, an unsupported mixed-version mesh, and configuration that may not
 reach the node — so do not change the Wi-Fi name or password until it is re-added.
+
+**Two Samba servers fought over port 445 (§5г).** Besides the project's
+`homecloud_samba` container (shares `public`, `nextcloud`, `immich`, **`hdd2tb`**, user
+`nas`) an out-of-project **host smbd** was running with three empty shares and user
+`admin`. The container binds `0.0.0.0:445`, the host binds `192.168.0.50:445`, and the
+specific bind wins — so LAN clients reached the empty server and got "access denied"
+with a correct password. It was a **boot race**: on 08.09 the host unit started 24 s
+before the container, which is why the defect had never surfaced. The owner disabled the
+host units; the port moved to the container and the archive share came back. Note that
+`net use` still fails with *system error 67* here — `New-SmbMapping` works.
+
+**Upload speed:** 84 Mbit/s, the link is nearly symmetric (87–92 down). A 4.2 GB file
+leaves the house in about 7 minutes, but only outside the tunnel.
+
+**DPI breaks TLS on some hosts while TCP stays open.** Of eight file-sharing services,
+all answered on TCP 443, but only three completed HTTPS. Never judge reachability by
+ping or an open port here — only by a completed HTTPS request.

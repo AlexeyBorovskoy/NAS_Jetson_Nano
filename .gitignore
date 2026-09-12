@@ -96,3 +96,7 @@ firebase-debug.log
 DNS/
 **/dynv6*
 **/ddclient.conf
+
+# локальные env-файлы служб (шаблоны *.env.example остаются в git)
+config/*.env
+!config/*.env.example

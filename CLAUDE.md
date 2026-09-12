@@ -187,7 +187,9 @@
 - ✅ GitVerse `NAS_HOME` mirror (HTTPS); keep main=master aligned on push.
 - 🟠 **P1 — EOL Ubuntu 18.04** — accept risk / ESM / board replacement.
 - **P2 — coturn** or document Talk video LAN-only.
-- Optional: Deco mesh, Part B rename, SSD pull-test.
+- 🟠 **Immich ML на ROG (пилот)** — начат 2026-09-12, **заблокирован**: на станции выключен гипервизор Windows (`HypervisorPresent=False`), Docker Desktop не стартует. Нужны админ-права + **перезагрузка** (`dism … VirtualMachinePlatform`, `bcdedit /set hypervisorlaunchtype auto`). Владелец отложил на 13.09. Подготовка сделана: образ под **2.7.5**, env вне git, порт на `127.0.0.1`. ⚠️ Связь — **обратным туннелем на `172.17.0.1`**, не по LAN: станция за Deco, Jetson её не достаёт.
+- 🟠 **Deco: `living_room` на прошивке 1.0.0** — довести до 1.2.0 переподключением узла в приложении. До этого **не менять имя сети и пароль Wi-Fi**.
+- Optional: скан эфира, Wi-Fi на EC220, Part B rename, SSD pull-test.
 - Board: answer `work` Sber asks (`AGENTS.md` §8).
 
 ## Железо и доступ

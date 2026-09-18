@@ -3,8 +3,8 @@
 
 ## Status / Статус
 
-🇬🇧 **Proposed** (2026-09-18) — design only; no device deploy.  
-🇷🇺 **Предложено** (2026-09-18) — только дизайн; без выката на Jetson.
+🇬🇧 **Accepted in git** (2026-09-18) — code + unit tests; **device deploy pending** «деплой».  
+🇷🇺 **Принято в git** (2026-09-18) — код + unit-тесты; **выкат на Jetson** — по слову «деплой».
 
 Source / Источник идей: `E:\Belgorod_platform\docs\research\обзор.md`  
 (structured outputs, SafeGate/DAR, tool-calling, shadow) — adapted to **family home cloud**, not ASUDD.
@@ -138,7 +138,21 @@ Optional later: **shadow** second provider for metrics only (no user-visible swi
 2. Any v1 tool to add beyond read-only four?  
 3. Should refuse messages be kid-friendly fixed templates (no model)?  
 
+## Implementation (git 2026-09-18)
+
+| Piece | Path |
+|-------|------|
+| Gate + DAR fixtures | `services/nas_jetson_nano-api/app/bobik_gate.py` |
+| Bot wire-up | `services/nas_jetson_nano-api/app/routers/talk_bot.py` |
+| Settings | `talk_bot_structured_tools`, `talk_bot_safety_gate` |
+| Tests | `tests/unit/test_bobik_gate.py` |
+| Env example | `TALK_BOT_STRUCTURED_TOOLS`, `TALK_BOT_SAFETY_GATE` |
+
+```bash
+python -m pytest tests/unit/test_bobik_gate.py -q
+```
+
 ## Next safe step / Следующий шаг
 
-🇬🇧 Write JSON Schema stubs + pytest fixtures under `services/` or `tests/` (step A) — **no Jetson deploy**.  
-🇷🇺 Черновики JSON Schema + pytest (шаг A) — **без деплоя на Jetson**.
+🇬🇧 Owner says «деплой» → rebuild/restart `homecloud_nasa_api` on Jetson; smoke `@бобик статус` (local) and a refuse phrase.  
+🇷🇺 Слово «деплой» → пересборка API на Jetson; smoke: локальный tool и refuse.

@@ -45,6 +45,13 @@ import httpx
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
+from app.bobik_gate import (
+    ADMIT_CHAT,
+    ADMIT_CLARIFY,
+    ADMIT_EXECUTE,
+    ADMIT_REFUSE,
+    admit,
+)
 from app.config import settings
 from app.routers import photos as photos_mod
 from app.routers import storage as storage_mod
@@ -72,6 +79,11 @@ _STATE: dict = {
     "llm_day": "",
     "llm_day_replies": 0,
     "llm_last_error": None,
+    # ADR-0011 gate counters
+    "gate_refuse": 0,
+    "gate_clarify": 0,
+    "gate_execute": 0,
+    "gate_chat": 0,
 }
 
 # command keyword (first word, lowercased) -> handler name
@@ -113,10 +125,11 @@ def _build_help() -> str:
     if callsign:
         lines += [
             "",
-            f"🐕 **{settings.talk_bot_llm_display_name}** — свободные вопросы: `{callsign} <вопрос>`",
-            f"   Например: `{callsign} что приготовить из курицы и риса?`",
-            "   ⚠️ Такой вопрос **уходит наружу** — в облачную модель, "
-            "после вырезания имён, телефонов и почты.",
+            f"🐕 **{settings.talk_bot_llm_display_name}** — `{callsign} <вопрос>`",
+            f"   Дома без облака: `{callsign} статус` / диск / бэкап / фото",
+            f"   Наружу (шлюз): `{callsign} что приготовить из курицы?`",
+            "   ⚠️ Обычный вопрос **уходит наружу** после проверки безопасности "
+            "и вырезания имён/телефонов. Опасное — отказ.",
         ]
     return "\n".join(lines)
 
@@ -209,6 +222,34 @@ async def _dispatch(handler: str) -> str:
         return _build_disk()
     if handler == "photos":
         return await _build_photos()
+    return _build_help()
+
+
+async def _dispatch_home_tool(tool: str, user: str = "") -> str:
+    """ADR-0011 allowlisted tools — local only, never outbound."""
+    if tool == "home.status":
+        return await _build_status()
+    if tool == "home.disk":
+        return _build_disk()
+    if tool == "home.backup_age":
+        return _build_disk()
+    if tool == "home.photos":
+        return await _build_photos()
+    if tool == "home.whoami":
+        label = (user or "unknown").strip() or "unknown"
+        return f"🐕 Ты в чате как `{label}`. Домашние команды считаются здесь, без облака."
+    if tool == "home.help":
+        callsign = settings.talk_bot_llm_trigger.strip() or "@бобик"
+        return (
+            "🐕 **Бобик — что можно без облака:**\n"
+            "- статус / как сервер\n"
+            "- диск / сколько места\n"
+            "- бэкап / когда копия\n"
+            "- фото / Immich\n"
+            "- whoami / кто я\n"
+            f"\nОбычный вопрос: `{callsign} …` (после проверки безопасности уходит в шлюз).\n"
+            "Опасное (стереть, открыть порт, секреты) — отказ."
+        )
     return _build_help()
 
 
@@ -425,6 +466,64 @@ async def _handle_messages(token: str, messages: list[dict]) -> None:
             if _image_attachment(m):
                 await _handle_image_request(token, m, question, user)
                 continue
+
+            # ADR-0011: safety gate + structured home tools before cloud LLM
+            use_gate = bool(
+                getattr(settings, "talk_bot_safety_gate", True)
+                or getattr(settings, "talk_bot_structured_tools", True)
+            )
+            if use_gate:
+                decision = admit(
+                    question,
+                    structured_tools=bool(
+                        getattr(settings, "talk_bot_structured_tools", True)
+                    ),
+                )
+                d = decision.get("decision")
+                if d == ADMIT_REFUSE:
+                    _STATE["gate_refuse"] = _STATE.get("gate_refuse", 0) + 1
+                    _STATE["llm_refused"] = _STATE.get("llm_refused", 0) + 1
+                    await _send(
+                        token,
+                        decision.get("message") or "🐕 Не могу.",
+                        settings.talk_bot_llm_display_name,
+                    )
+                    log.info(
+                        "talk bot gate refuse",
+                        extra={"fields": {"room": token, "user": user,
+                                          "reason": decision.get("reason"),
+                                          "outbound": False}},
+                    )
+                    continue
+                if d == ADMIT_CLARIFY:
+                    _STATE["gate_clarify"] = _STATE.get("gate_clarify", 0) + 1
+                    await _send(
+                        token,
+                        decision.get("message") or "🐕 Уточни.",
+                        settings.talk_bot_llm_display_name,
+                    )
+                    continue
+                if d == ADMIT_EXECUTE and decision.get("tool"):
+                    _STATE["gate_execute"] = _STATE.get("gate_execute", 0) + 1
+                    try:
+                        reply = await _dispatch_home_tool(
+                            decision["tool"], user=user
+                        )
+                    except Exception as exc:
+                        log.exception("talk bot home tool failed")
+                        reply = f"🐕 Ошибка локальной команды: {exc}"
+                    await _send(token, reply, settings.talk_bot_llm_display_name)
+                    _STATE["replied"] = _STATE.get("replied", 0) + 1
+                    log.info(
+                        "talk bot home tool",
+                        extra={"fields": {"room": token, "user": user,
+                                          "tool": decision.get("tool"),
+                                          "outbound": False}},
+                    )
+                    continue
+                # ADMIT_CHAT
+                _STATE["gate_chat"] = _STATE.get("gate_chat", 0) + 1
+
             try:
                 reply = await _ask_llm(question, user)
             except Exception as exc:

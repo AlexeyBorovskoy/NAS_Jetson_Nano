@@ -368,6 +368,74 @@ async def _ask_llm(question: str, user: str) -> str:
     return f"🐕 {content}"
 
 
+# ── общий ответ @бобик (Talk и Telegram) ────────────────────────────────────────
+
+async def gate_reply(question: str, user: str) -> str | None:
+    """Всё, что решается до облака: дневной лимит, safety gate (ADR-0011), домашние
+    инструменты. Возвращает текст ответа или None — gate пропустил как «chat», и
+    вызывающий идёт в LLM (Talk ещё может уйти в ветку картинок)."""
+    if not _llm_quota_left(user):
+        _STATE["llm_refused"] = _STATE.get("llm_refused", 0) + 1
+        return "🐕 На сегодня лимит вопросов исчерпан."
+    use_gate = bool(
+        getattr(settings, "talk_bot_safety_gate", True)
+        or getattr(settings, "talk_bot_structured_tools", True)
+    )
+    if not use_gate:
+        return None
+    decision = admit(
+        question,
+        structured_tools=bool(getattr(settings, "talk_bot_structured_tools", True)),
+    )
+    d = decision.get("decision")
+    if d == ADMIT_REFUSE:
+        _STATE["gate_refuse"] = _STATE.get("gate_refuse", 0) + 1
+        _STATE["llm_refused"] = _STATE.get("llm_refused", 0) + 1
+        log.info("bobik gate refuse",
+                 extra={"fields": {"user": user, "reason": decision.get("reason"),
+                                   "outbound": False}})
+        return decision.get("message") or "🐕 Не могу."
+    if d == ADMIT_CLARIFY:
+        _STATE["gate_clarify"] = _STATE.get("gate_clarify", 0) + 1
+        return decision.get("message") or "🐕 Уточни."
+    if d == ADMIT_EXECUTE and decision.get("tool"):
+        _STATE["gate_execute"] = _STATE.get("gate_execute", 0) + 1
+        try:
+            reply = await _dispatch_home_tool(decision["tool"], user=user)
+        except Exception as exc:
+            log.exception("bobik home tool failed")
+            reply = f"🐕 Ошибка локальной команды: {exc}"
+        _STATE["replied"] = _STATE.get("replied", 0) + 1
+        log.info("bobik home tool",
+                 extra={"fields": {"user": user, "tool": decision.get("tool"),
+                                   "outbound": False}})
+        return reply
+    _STATE["gate_chat"] = _STATE.get("gate_chat", 0) + 1
+    return None
+
+
+async def ask(question: str, user: str) -> str:
+    """Вопрос в облако через шлюз; исключение превращается в вежливый ответ."""
+    try:
+        reply = await _ask_llm(question, user)
+    except Exception as exc:
+        log.exception("bobik LLM call failed")
+        _STATE["llm_last_error"] = str(exc)
+        reply = "🐕 Не смог получить ответ — попробуйте позже."
+    _count_llm_reply(user)
+    log.info("bobik LLM replied",
+             extra={"fields": {"user": user, "chars": len(question), "outbound": True}})
+    return reply
+
+
+async def answer(question: str, user: str) -> str:
+    """Полный путь @бобик для текстового вопроса (без картинок)."""
+    early = await gate_reply(question, user)
+    if early is not None:
+        return early
+    return await ask(question, user)
+
+
 # ── OCS chat polling ─────────────────────────────────────────────────────────────
 
 def _chat_url(token: str) -> str:
@@ -455,90 +523,17 @@ async def _handle_messages(token: str, messages: list[dict]) -> None:
         question = _match_llm(text)
         if question:
             user = _actor(m)
-            if not _llm_quota_left(user):
-                _STATE["llm_refused"] = _STATE.get("llm_refused", 0) + 1
-                await _send(
-                    token,
-                    "🐕 На сегодня лимит вопросов исчерпан.",
-                    settings.talk_bot_llm_display_name,
-                )
+            early = await gate_reply(question, user)
+            if early is not None:
+                await _send(token, early, settings.talk_bot_llm_display_name)
                 continue
-            # ADR-0011: safety gate + structured home tools before cloud LLM
-            use_gate = bool(
-                getattr(settings, "talk_bot_safety_gate", True)
-                or getattr(settings, "talk_bot_structured_tools", True)
-            )
-            if use_gate:
-                decision = admit(
-                    question,
-                    structured_tools=bool(
-                        getattr(settings, "talk_bot_structured_tools", True)
-                    ),
-                )
-                d = decision.get("decision")
-                if d == ADMIT_REFUSE:
-                    _STATE["gate_refuse"] = _STATE.get("gate_refuse", 0) + 1
-                    _STATE["llm_refused"] = _STATE.get("llm_refused", 0) + 1
-                    await _send(
-                        token,
-                        decision.get("message") or "🐕 Не могу.",
-                        settings.talk_bot_llm_display_name,
-                    )
-                    log.info(
-                        "talk bot gate refuse",
-                        extra={"fields": {"room": token, "user": user,
-                                          "reason": decision.get("reason"),
-                                          "outbound": False}},
-                    )
-                    continue
-                if d == ADMIT_CLARIFY:
-                    _STATE["gate_clarify"] = _STATE.get("gate_clarify", 0) + 1
-                    await _send(
-                        token,
-                        decision.get("message") or "🐕 Уточни.",
-                        settings.talk_bot_llm_display_name,
-                    )
-                    continue
-                if d == ADMIT_EXECUTE and decision.get("tool"):
-                    _STATE["gate_execute"] = _STATE.get("gate_execute", 0) + 1
-                    try:
-                        reply = await _dispatch_home_tool(
-                            decision["tool"], user=user
-                        )
-                    except Exception as exc:
-                        log.exception("talk bot home tool failed")
-                        reply = f"🐕 Ошибка локальной команды: {exc}"
-                    await _send(token, reply, settings.talk_bot_llm_display_name)
-                    _STATE["replied"] = _STATE.get("replied", 0) + 1
-                    log.info(
-                        "talk bot home tool",
-                        extra={"fields": {"room": token, "user": user,
-                                          "tool": decision.get("tool"),
-                                          "outbound": False}},
-                    )
-                    continue
-                # ADMIT_CHAT
-                _STATE["gate_chat"] = _STATE.get("gate_chat", 0) + 1
-
             # C6: фото — только ПОСЛЕ решения safety gate (раньше ветка стояла до admit()
             # и сообщение с вложением обходило gate целиком; аудит 2026-09-19, G08).
             if _image_attachment(m):
                 await _handle_image_request(token, m, question, user)
                 continue
-
-            try:
-                reply = await _ask_llm(question, user)
-            except Exception as exc:
-                log.exception("talk bot LLM call failed")
-                _STATE["llm_last_error"] = str(exc)
-                reply = "🐕 Не смог получить ответ — попробуйте позже."
+            reply = await ask(question, user)
             await _send(token, reply, settings.talk_bot_llm_display_name)
-            _count_llm_reply(user)
-            log.info(
-                "talk bot LLM replied",
-                extra={"fields": {"room": token, "user": user,
-                                  "chars": len(question), "outbound": True}},
-            )
 
 
 def _image_attachment(m: dict) -> dict | None:

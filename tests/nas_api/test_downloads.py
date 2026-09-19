@@ -18,6 +18,10 @@ API = ROOT / "services" / "nas_jetson_nano-api"
 GB = 1024 ** 3
 
 
+async def no_internal(host):
+    return False
+
+
 def load():
     os.environ.update({
         "LOG_FILE": os.path.join(tempfile.mkdtemp(), "api.jsonl"),
@@ -55,8 +59,8 @@ class FakeAria2:
             return [s for s in self.status.values() if s["status"] == "active"]
         if method == "tellWaiting":
             return [s for s in self.status.values() if s["status"] in ("waiting", "paused")]
-        if method in ("forceRemove", "unpause", "changeOption", "pauseAll",
-                      "unpauseAll", "removeDownloadResult"):
+        if method in ("forceRemove", "unpause", "changeOption", "pause",
+                      "pauseAll", "unpauseAll", "removeDownloadResult"):
             return "OK"
         raise AssertionError(method)
 
@@ -68,7 +72,7 @@ def make(dl, tmp, ssd=150 * GB, hdd=400 * GB, size=None):
         return size
 
     d = dl.Downloads(aria2=aria, ledger=dl.Ledger(str(tmp / "ledger.json")),
-                     head=head, disk_free=lambda: (ssd, hdd))
+                     head=head, disk_free=lambda: (ssd, hdd), resolve=no_internal)
     return d, aria
 
 
@@ -84,11 +88,17 @@ def test_parse_link_accepts_magnet_and_http():
     "file:///etc/passwd", "http://localhost/x", "http://192.168.0.50:8080/",
     "http://10.0.0.1/", "http://127.0.0.1/", "http://nas.local/f", "http://[::1]/",
     "http://169.254.1.1/", "magnet:?dn=no-hash", "просто текст",
+    "http://2130706433/", "http://0x7f.1/", "http://017700000001/", "http://127.1/", "http://0x7f000001/",
 ])
 def test_parse_link_rejects_internal_and_junk(bad):
     dl = load()
     with pytest.raises(dl.LinkError):
         dl.parse_link(bad)
+
+
+def test_parse_link_keeps_hex_looking_domains():
+    dl = load()
+    assert dl.parse_link("http://cafe.be/x") == "http://cafe.be/x"
 
 
 # ── выбор диска ───────────────────────────────────────────────────────────────
@@ -121,6 +131,12 @@ def test_choose_target_unknown_size_prefers_ssd():
     assert dl.choose_target(None, 30 * GB, 400 * GB) == "hdd"
 
 
+def test_choose_target_unknown_size_needs_hdd_room():
+    dl = load()
+    with pytest.raises(dl.LinkError):
+        dl.choose_target(None, 150 * GB, 45 * GB)
+
+
 # ── постановка ────────────────────────────────────────────────────────────────
 
 def test_http_link_sized_and_routed(tmp_path):
@@ -140,6 +156,24 @@ def test_http_link_refused_when_too_big(tmp_path):
     dl = load()
     d, aria = make(dl, tmp_path, size=500 * GB)
     reply = asyncio.run(d.add_link("https://example.org/huge.iso", 42, "ivan"))
+    assert reply.startswith("❌")
+    assert not any(c[0] == "addUri" for c in aria.calls)
+
+
+def test_http_link_resolving_inside_is_refused(tmp_path):
+    dl = load()
+
+    async def resolves_inside(host):
+        return True
+
+    aria = FakeAria2()
+
+    async def head(url):
+        return GB
+
+    d = dl.Downloads(aria2=aria, ledger=dl.Ledger(str(tmp_path / "l.json")), head=head,
+                     disk_free=lambda: (150 * GB, 400 * GB), resolve=resolves_inside)
+    reply = asyncio.run(d.add_link("https://example.org/a.iso", 1, "ivan"))
     assert reply.startswith("❌")
     assert not any(c[0] == "addUri" for c in aria.calls)
 
@@ -207,7 +241,7 @@ def test_ledger_survives_restart_and_broken_file(tmp_path):
 
 # ── страж места ───────────────────────────────────────────────────────────────
 
-def test_guard_pauses_all_once_and_resumes(tmp_path):
+def test_guard_pauses_own_downloads_once_and_resumes(tmp_path):
     dl = load()
     free = {"ssd": 150 * GB, "hdd": 400 * GB}
     aria = FakeAria2()
@@ -216,18 +250,18 @@ def test_guard_pauses_all_once_and_resumes(tmp_path):
         return GB
 
     d = dl.Downloads(aria2=aria, ledger=dl.Ledger(str(tmp_path / "l.json")), head=head,
-                     disk_free=lambda: (free["ssd"], free["hdd"]))
+                     disk_free=lambda: (free["ssd"], free["hdd"]), resolve=no_internal)
     asyncio.run(d.add_link("https://example.org/a.iso", 3, "ivan"))
     free["hdd"] = 45 * GB
     msgs = asyncio.run(d.tick())
-    assert ("pauseAll", ()) in aria.calls
+    assert ("pause", ("g1",)) in aria.calls
     assert msgs and msgs[0][0] == 3 and msgs[0][1].startswith("⏸")
     aria.calls.clear()
     assert asyncio.run(d.tick()) == []          # повторно не шлём
-    assert ("pauseAll", ()) not in aria.calls
+    assert ("pause", ("g1",)) not in aria.calls
     free["hdd"] = 400 * GB
     msgs = asyncio.run(d.tick())
-    assert ("unpauseAll", ()) in aria.calls
+    assert ("unpause", ("g1",)) in aria.calls
     assert msgs == [(3, "▶️ Место есть — продолжаю закачки.")]
 
 
@@ -239,9 +273,70 @@ def test_disk_unavailable_counts_as_no_space(tmp_path):
         raise OSError("Transport endpoint is not connected")
 
     d = dl.Downloads(aria2=aria, ledger=dl.Ledger(str(tmp_path / "l.json")),
-                     head=None, disk_free=broken)
+                     head=None, disk_free=broken, resolve=no_internal)
     asyncio.run(d.tick())
-    assert ("pauseAll", ()) in aria.calls
+    assert dl.Ledger(str(tmp_path / "l.json")).load()["_meta"]["paused"] is True
+
+
+def test_guard_resume_never_unpauses_unrouted_torrent(tmp_path):
+    dl = load()
+    d, aria = make(dl, tmp_path)
+    asyncio.run(d.add_torrent(b"d8:announce...e", 1, "ivan"))
+    aria.status["g1"].update(status="paused", totalLength="0")  # размер ещё неизвестен
+    asyncio.run(d.tick())
+    # hdd становится свободным, страж хочет снять паузу
+    d.disk_free = lambda: (150 * GB, 400 * GB)
+    asyncio.run(d.tick())
+    # но торрент ещё в состоянии await_dir (размер неизвестен), поэтому unpause не должно быть
+    assert ("unpause", ("g1",)) not in aria.calls
+
+
+def test_aria2_unreachable_skips_tick(tmp_path):
+    dl = load()
+
+    class BrokenAria2(FakeAria2):
+        async def call(self, method, *params):
+            if method == "tellStatus":
+                import httpx
+                raise httpx.ConnectError("down")
+            return await super().call(method, *params)
+
+    aria = BrokenAria2()
+
+    async def head(url):
+        return GB
+
+    d = dl.Downloads(aria2=aria, ledger=dl.Ledger(str(tmp_path / "l.json")), head=head,
+                     disk_free=lambda: (150 * GB, 400 * GB), resolve=no_internal)
+    asyncio.run(d.add_link("https://example.org/a.iso", 1, "ivan"))
+    msgs = asyncio.run(d.tick())
+    assert msgs == []
+    entry = dl.Ledger(str(tmp_path / "l.json")).load()["g1"]
+    assert entry["state"] == "active"
+
+
+def test_ledger_not_lost_when_tick_and_add_interleave(tmp_path):
+    dl = load()
+
+    class SlowAria(FakeAria2):
+        async def call(self, method, *params):
+            await asyncio.sleep(0)
+            return await super().call(method, *params)
+
+    aria = SlowAria()
+
+    async def head(url):
+        return GB
+
+    d = dl.Downloads(aria2=aria, ledger=dl.Ledger(str(tmp_path / "l.json")), head=head,
+                     disk_free=lambda: (150 * GB, 400 * GB), resolve=no_internal)
+
+    async def scenario():
+        await d.add_link("https://example.org/a.iso", 1, "ivan")
+        await asyncio.gather(d.tick(), d.add_link("https://example.org/b.iso", 2, "olga"))
+
+    asyncio.run(scenario())
+    assert {"g1", "g2"} <= set(dl.Ledger(str(tmp_path / "l.json")).load())
 
 
 # ── список и отмена ───────────────────────────────────────────────────────────

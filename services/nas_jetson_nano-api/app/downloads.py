@@ -7,12 +7,14 @@
 """
 from __future__ import annotations
 
+import asyncio
 import base64
 import ipaddress
 import json
 import logging
 import os
 import re
+import socket
 import time
 import urllib.parse
 
@@ -26,6 +28,8 @@ GB = 1024 ** 3
 DONE_HINT = "\\\\192.168.0.50\\hdd2tb\\Downloads"
 _LINK_RE = re.compile(r"(magnet:\?\S+|https?://\S+)", re.IGNORECASE)
 _BAD_SUFFIXES = (".local", ".lan", ".internal", ".localdomain")
+# 2130706433, 0x7f.1, 017700000001, 127.1 — такие формы понимают резолверы и HTTP-клиенты
+_NUMERIC_HOST = re.compile(r"^((0x[0-9a-f]*|[0-9]+)\.){0,3}(0x[0-9a-f]*|[0-9]+)$")
 _KEYS = ["gid", "status", "totalLength", "completedLength", "downloadSpeed",
          "files", "bittorrent", "followedBy", "errorMessage"]
 _RESUME_MARGIN = 5 * GB  # гистерезис стража: продолжаем, когда запас восстановлен с лихвой
@@ -39,6 +43,11 @@ def fmt_size(n: int) -> str:
     if n >= GB:
         return "%.1f ГБ" % (n / GB)
     return "%d МБ" % (n // (1024 * 1024))
+
+
+def _bad_ip(ip) -> bool:
+    return (ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved
+            or ip.is_multicast or ip.is_unspecified)
 
 
 def parse_link(text: str) -> str:
@@ -58,9 +67,13 @@ def parse_link(text: str) -> str:
     try:
         ip = ipaddress.ip_address(host)
     except ValueError:
-        return link
-    if (ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved
-            or ip.is_multicast or ip.is_unspecified):
+        ip = None
+        if _NUMERIC_HOST.match(host):
+            try:
+                ip = ipaddress.ip_address(socket.inet_aton(host))
+            except (OSError, ValueError):
+                raise LinkError("непонятный адрес в ссылке")
+    if ip is not None and _bad_ip(ip):
         raise LinkError("ссылки во внутреннюю сеть запрещены")
     return link
 
@@ -69,7 +82,7 @@ def choose_target(size, ssd_free: int, hdd_free: int) -> str:
     ssd_room = ssd_free - settings.dl_ssd_min_free_gb * GB
     hdd_room = hdd_free - settings.dl_hdd_min_free_gb * GB
     if size is None:
-        if ssd_room > 0:
+        if ssd_room > 0 and hdd_room > 0:
             return "ssd"
         if hdd_room > 0:
             return "hdd"
@@ -102,6 +115,20 @@ async def _head_size(url: str):
         return n or None
     except Exception:
         return None
+
+
+async def _resolves_internal(host: str) -> bool:
+    try:
+        infos = await asyncio.get_running_loop().getaddrinfo(host, None)
+    except OSError:
+        return False  # не резолвится — aria2 тоже не сможет, закачка упадёт сама
+    for info in infos:
+        try:
+            if _bad_ip(ipaddress.ip_address(info[4][0].split("%")[0])):
+                return True
+        except ValueError:
+            continue
+    return False
 
 
 def _name(st: dict, fallback: str = "") -> str:
@@ -156,12 +183,14 @@ class Ledger:
 
 
 class Downloads:
-    def __init__(self, aria2=None, ledger=None, head=None, disk_free=None, clock=time.time):
+    def __init__(self, aria2=None, ledger=None, head=None, disk_free=None, clock=time.time, resolve=None):
         self.aria2 = aria2 or Aria2()
         self.ledger = ledger or Ledger()
         self.head = head or _head_size
         self.disk_free = disk_free or _disk_free
         self.clock = clock
+        self.resolve = resolve or _resolves_internal
+        self._lock = asyncio.Lock()
 
     def _free(self) -> tuple:
         try:
@@ -177,19 +206,24 @@ class Downloads:
 
     async def add_link(self, link: str, chat_id: int, user: str) -> str:
         if link.lower().startswith("magnet:"):
-            gid = await self.aria2.call("addUri", [link], {"dir": settings.dl_ssd_dir})
-            self._record(gid, chat_id, user, "magnet", "metadata")
+            async with self._lock:
+                gid = await self.aria2.call("addUri", [link], {"dir": settings.dl_ssd_dir})
+                self._record(gid, chat_id, user, "magnet", "metadata")
             log.info("download queued", extra={"fields": {"user": user, "type": "magnet"}})
             return "⏬ Принял, получаю описание торрента…"
         name = os.path.basename(urllib.parse.urlsplit(link).path) or "файл"
+        host = (urllib.parse.urlsplit(link).hostname or "").lower()
+        if await self.resolve(host):
+            return "❌ ссылки во внутреннюю сеть запрещены"
         size = await self.head(link)
         ssd, hdd = self._free()
         try:
             target = choose_target(size, ssd, hdd)
         except LinkError as exc:
             return "❌ %s" % exc
-        gid = await self.aria2.call("addUri", [link], _options(target))
-        self._record(gid, chat_id, user, name, "active")
+        async with self._lock:
+            gid = await self.aria2.call("addUri", [link], _options(target))
+            self._record(gid, chat_id, user, name, "active")
         log.info("download queued", extra={"fields": {"user": user, "type": "http",
                                                       "size": size, "target": target}})
         size_txt = fmt_size(size) if size else "размер неизвестен"
@@ -197,12 +231,13 @@ class Downloads:
 
     async def add_torrent(self, data: bytes, chat_id: int, user: str) -> str:
         b64 = base64.b64encode(data).decode("ascii")
-        gid = await self.aria2.call("addTorrent", b64, [], {"pause": "true"})
-        self._record(gid, chat_id, user, "torrent", "await_dir")
+        async with self._lock:
+            gid = await self.aria2.call("addTorrent", b64, [], {"pause": "true"})
+            self._record(gid, chat_id, user, "torrent", "await_dir")
         log.info("download queued", extra={"fields": {"user": user, "type": "torrent"}})
         return "⏬ Принял торрент, проверяю размер…"
 
-    async def _route_paused(self, gid: str, entry: dict, st: dict, msgs: list) -> None:
+    async def _route_paused(self, gid: str, entry: dict, st: dict, msgs: list, meta: dict) -> None:
         size = int(st.get("totalLength") or 0)
         if not size:
             return  # размер ещё неизвестен — подождём следующего такта
@@ -217,15 +252,15 @@ class Downloads:
             msgs.append((entry["chat_id"], "❌ %s: %s" % (name, exc)))
             return
         await self.aria2.call("changeOption", gid, _options(target))
-        await self.aria2.call("unpause", gid)
         entry["state"] = "active"
+        if meta.get("paused"):
+            meta.setdefault("paused_gids", []).append(gid)  # снимет страж, когда место появится
+        else:
+            await self.aria2.call("unpause", gid)
         msgs.append((entry["chat_id"], "⏬ Качаю: %s — %s, на %s"
                      % (name, fmt_size(size), target.upper())))
 
-    async def tick(self) -> list:
-        msgs: list = []
-        data = self.ledger.load()
-        meta = data.pop("_meta", {})
+    async def _tick_entries(self, data: dict, meta: dict, msgs: list) -> None:
         for gid in list(data):
             entry = data[gid]
             if entry.get("state") in ("done", "error", "cancelled"):
@@ -241,14 +276,14 @@ class Downloads:
                     data[new] = dict(entry, state="await_dir")
                     del data[gid]
                     st2 = await self.aria2.call("tellStatus", new, _KEYS)
-                    await self._route_paused(new, data[new], st2, msgs)
+                    await self._route_paused(new, data[new], st2, msgs, meta)
                 elif st.get("status") == "error":
                     entry["state"] = "error"
                     msgs.append((entry["chat_id"], "❌ Не скачалось: %s — %s"
                                  % (entry["name"], st.get("errorMessage") or "ошибка")))
                 continue
             if entry["state"] == "await_dir":
-                await self._route_paused(gid, entry, st, msgs)
+                await self._route_paused(gid, entry, st, msgs, meta)
                 continue
             name = _name(st, entry.get("name", ""))
             if st.get("status") == "complete":
@@ -260,10 +295,20 @@ class Downloads:
                              % (name, st.get("errorMessage") or "ошибка")))
             elif st.get("status") == "removed":
                 entry["state"] = "cancelled"
-        await self._guard(data, meta, msgs)
-        data["_meta"] = meta
-        self.ledger.save(data)
-        return msgs
+
+    async def tick(self) -> list:
+        async with self._lock:
+            msgs: list = []
+            data = self.ledger.load()
+            meta = data.pop("_meta", {})
+            try:
+                await self._tick_entries(data, meta, msgs)
+                await self._guard(data, meta, msgs)
+            except httpx.HTTPError:
+                log.warning("aria2 недоступен — такт пропущен")
+            data["_meta"] = meta
+            self.ledger.save(data)
+            return msgs
 
     async def _guard(self, data: dict, meta: dict, msgs: list) -> None:
         ssd, hdd = self._free()
@@ -273,8 +318,13 @@ class Downloads:
                         if e.get("state") in ("active", "metadata", "await_dir")})
         if ssd < ssd_min or hdd < hdd_min:
             if not meta.get("paused"):
-                await self.aria2.call("pauseAll")
+                gids = [st["gid"] for st in await self.aria2.call("tellActive", ["gid"])]
+                gids += [st["gid"] for st in await self.aria2.call("tellWaiting", 0, 1000, ["gid", "status"])
+                         if st.get("status") == "waiting"]
+                for gid in gids:
+                    await self.aria2.call("pause", gid)
                 meta["paused"] = True
+                meta["paused_gids"] = gids
                 need = []
                 if ssd < ssd_min:
                     need.append("SSD: нужно ещё %s" % fmt_size(ssd_min - ssd))
@@ -283,8 +333,13 @@ class Downloads:
                 text = "⏸ Пауза закачек — мало места (%s)." % "; ".join(need)
                 msgs.extend((c, text) for c in chats)
         elif meta.get("paused") and ssd >= ssd_min + _RESUME_MARGIN and hdd >= hdd_min + _RESUME_MARGIN:
-            await self.aria2.call("unpauseAll")
+            for gid in meta.get("paused_gids", []):
+                try:
+                    await self.aria2.call("unpause", gid)
+                except RuntimeError:
+                    pass  # закачку успели отменить
             meta["paused"] = False
+            meta["paused_gids"] = []
             msgs.extend((c, "▶️ Место есть — продолжаю закачки.") for c in chats)
 
     async def _queue(self) -> list:
@@ -319,10 +374,11 @@ class Downloads:
         if n < 1 or n > len(items):
             return "❌ Нет закачки с номером %d — посмотрите «@бобик закачки»." % n
         st = items[n - 1]
-        ledger = self.ledger.load()
-        name = _name(st, (ledger.get(st["gid"]) or {}).get("name", ""))
-        await self.aria2.call("forceRemove", st["gid"])
-        if st["gid"] in ledger:
-            ledger[st["gid"]]["state"] = "cancelled"
-            self.ledger.save(ledger)
+        async with self._lock:
+            ledger = self.ledger.load()
+            name = _name(st, (ledger.get(st["gid"]) or {}).get("name", ""))
+            await self.aria2.call("forceRemove", st["gid"])
+            if st["gid"] in ledger:
+                ledger[st["gid"]]["state"] = "cancelled"
+                self.ledger.save(ledger)
         return "🗑 Отменил: %s" % name

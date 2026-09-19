@@ -2,7 +2,8 @@
 
 > 🇷🇺 Запрос сына, приоритет владельца. Утверждено владельцем 2026-09-19; **редакция 2** того же дня:
 > главный интерфейс — **чат с ботом @bobik_borovskoy_bot** (бот добавлен в семейную группу «Боровские»);
-> **редакция 3:** обращение к боту — по имени: «@бобик скачай <ссылка>» (решение владельца).
+> **редакция 3:** обращение к боту — по имени: «@бобик скачай <ссылка>» (решение владельца);
+> **редакция 4:** закачки до 100 ГБ и больше — большие пишутся сразу на HDD (вопрос владельца).
 > EN summary — в конце. Статус: **спецификация**; реализация — после плана; выкат — только по «деплой».
 
 ## 1. Зачем и что считается готовым
@@ -11,7 +12,7 @@
 результат по Wi-Fi или кабелем на свой компьютер. Команду он даёт **в Telegram** — там, где семья уже общается.
 
 **Готово, когда:** в семейной группе или в личке написано «@бобик скачай <magnet или HTTP-ссылка>» (или
-`.torrent`-файл с подписью «@бобик скачай») → бот отвечает «принял» → файл качается на SSD → по завершении сам оказывается в
+`.torrent`-файл с подписью «@бобик скачай») → бот отвечает «принял» → файл качается на SSD (большой — сразу на HDD) → по завершении сам оказывается в
 `\\192.168.0.50\hdd2tb\Downloads\` → бот пишет в тот же чат «✅ Готово: <имя>».
 
 ## 2. Решения
@@ -27,6 +28,8 @@
 | Транспорт бота | как в спецификации Telegram-бота: long polling через SSH SOCKS к VPS, код в контейнере NAS API | портов наружу нет; рабочий обратный туннель не трогается |
 | Порядок с Telegram-ботом | **качалка — первый срез Telegram-бота**: транспорт, белый список, команды закачек. Вопросы к LLM и фото — следующими срезами той же спецификации | приоритет владельца |
 | Steam | **не делаем** на Jetson | SteamCMD только x86, у Jetson ARM; игры Steam привязаны к аккаунту. У сына — удалённая установка из мобильного Steam на свой ПК |
+| Размер закачки | **без искусственного предела**; ≤ `DL_SSD_MAX_GB` (20 ГБ) и помещается на SSD с запасом → через SSD; больше → **сразу на HDD** (`/mnt/hdd2tb/Downloads/.incomplete`), без переноса | канал ≈ 11 МБ/с, HDD через ntfs-3g пишет ≈ 90 МБ/с — не узкое место; перенос 100 ГБ с SSD — лишние ~20 мин CPU и риск забить SSD |
+| 20 МБ в Telegram | это предел **только для `.torrent`-файла**, который бот забирает из чата (лимит Bot API на `getFile`); сам торрент по нему — любого размера. Magnet и HTTP этого предела не имеют | — |
 | Флешка в Jetson | **не на этом этапе** | два необъяснённых аппаратных сброса Jetson; SSD и HDD уже на USB |
 
 ## 3. Схема
@@ -36,7 +39,8 @@ Telegram (группа «Боровские» / личка) ⇄ VPS ══ SSH S
                                                                              │
    контейнер NAS API: telegram_front ─► downloads (команды, учёт) ─JSON-RPC+секрет─► aria2 :6800
                                                                                       │
-                          /mnt/storage/downloads/.incomplete  (SSD, идёт закачка)     │
+   ≤ 20 ГБ:               /mnt/storage/downloads/.incomplete  (SSD, идёт закачка)     │
+   > 20 ГБ:               /mnt/hdd2tb/Downloads/.incomplete    (HDD, идёт закачка)     │
                                                                                       │ on-download-complete
                           /mnt/hdd2tb/Downloads/<имя>          (HDD, готово)      ◄───┘
                                      │
@@ -67,10 +71,10 @@ Telegram (группа «Боровские» / личка) ⇄ VPS ══ SSH S
 | Компонент | Где | Ответственность |
 |---|---|---|
 | образ `homecloud_downloads` | `services/downloads/`, сборка на Jetson | Alpine + `aria2` + AriaNg (версия и SHA-256 закреплены) + `busybox httpd` |
-| `aria2.conf` | в образе | `.incomplete` на SSD, `seed-time=0`, ≤ 2 закачек одновременно, `file-allocation=falloc`, сессия переживает перезапуск |
-| `on_start.sh` | в образе | **SSD-страж**: свободно на `/mnt/storage` < `DL_SSD_MIN_FREE_GB` (40) → пауза через RPC |
-| `on_complete.sh` | в образе | перенос файла или **верхнего каталога** многофайлового торрента на HDD; при ошибке — остаётся на SSD |
-| `downloads` (модуль NAS API) | `services/nas_jetson_nano-api/app/` | разбор ссылки/файла, вызовы aria2 RPC, учёт «GID → чат, кто поставил» в атомарном JSON, опрос завершённых раз в 30 с и уведомления |
+| `aria2.conf` | в образе | `.incomplete` на SSD по умолчанию, `seed-time=0`, ≤ 2 закачек одновременно, `pause-metadata=true`, сессия переживает перезапуск; `file-allocation`: `falloc` на SSD (ext4), `none` на HDD — ставится на закачку вместе с `dir` (предвыделение 100 ГБ через ntfs-3g заняло бы часы) |
+| `on_start.sh` | в образе | страж при старте: свободно на целевом диске меньше порога → пауза через RPC |
+| `on_complete.sh` | в образе | перенос файла или **верхнего каталога** многофайлового торрента в `Downloads/`: с SSD — копированием на HDD, из `Downloads/.incomplete` — переименованием в пределах HDD; при ошибке — остаётся на месте |
+| `downloads` (модуль NAS API) | `services/nas_jetson_nano-api/app/` | разбор ссылки/файла; **выбор диска по размеру** (HTTP — размер из `HEAD` до старта; торрент — `pause-metadata`: после метаданных закачка на паузе, бот ставит `dir` и снимает паузу); отказ, если размер больше свободного на HDD минус запас; учёт «GID → чат, кто поставил» в атомарном JSON; опрос раз в 30 с: уведомления о готовности и **страж обоих дисков** (SSD ≥ `DL_SSD_MIN_FREE_GB`=40, HDD ≥ `DL_HDD_MIN_FREE_GB`=50 → пауза всех активных + сообщение) |
 | `telegram_front` (минимальный) | там же | `getUpdates`/`sendMessage`/`getFile` через SOCKS, offset после обработки, белый список, выход из чужих групп, 429 → `retry_after` |
 | юнит SOCKS | systemd на Jetson | `ssh -N -D 127.0.0.1:1080` к VPS с автоперезапуском |
 | `speed_schedule` | systemd-таймеры | 08:00 — `DL_DAY_LIMIT` (6M ≈ 48 Мбит/с), 23:00 — без лимита |
@@ -81,7 +85,8 @@ Samba, Nextcloud и VPS-сервисы **не меняются**. На VPS — �
 ## 6. Конфигурация (`config/.env` устройства; в git — пустые ключи)
 
 `TELEGRAM_BOT_TOKEN` (записан) · `TELEGRAM_USERS` (`user_id:логин` через пробел) · `TELEGRAM_FAMILY_CHAT_ID` ·
-`TELEGRAM_PROXY=socks5://127.0.0.1:1080` · `ARIA2_RPC_SECRET` · `DL_SSD_MIN_FREE_GB=40` · `DL_DAY_LIMIT=6M`.
+`TELEGRAM_PROXY=socks5://127.0.0.1:1080` · `ARIA2_RPC_SECRET` · `DL_SSD_MIN_FREE_GB=40` · `DL_HDD_MIN_FREE_GB=50` ·
+`DL_SSD_MAX_GB=20` · `DL_DAY_LIMIT=6M`.
 Значения ID — `docs/local/IDENTIFIERS.md` (вне git): группа и владелец получены `getUpdates` 2026-09-19.
 
 ## 7. Ошибки и безопасность
@@ -90,23 +95,26 @@ Samba, Nextcloud и VPS-сервисы **не меняются**. На VPS — �
   всё без обращения «@бобик»; в журнал — только метаданные обращений. Бот состоит только в семейной группе,
   из чужих выходит.
 - Чужие аккаунты и группы: один ответ «вы не в семейном списке» + сообщение владельцу с user_id; из чужих групп бот выходит.
-- Ссылки только `magnet:`, `http://`, `https://` и `.torrent` ≤ 20 МБ (лимит Bot API); `file://`, адреса LAN и
+- Ссылки только `magnet:`, `http://`, `https://` и `.torrent`-файл ≤ 20 МБ (лимит Bot API на сам файл-описание, не на закачку); `file://`, адреса LAN и
   `localhost` в HTTP-ссылках отклоняются (закачка не должна ходить во внутреннюю сеть).
 - RPC aria2 и AriaNg — только LAN, по секрету. Снаружи управление — только через бота.
 - Раздача торрентов выключена; что качать — ответственность семьи (торрент с домашнего IP виден в рое).
-- Перенос на NTFS нагружает CPU — не больше двух закачек. HDD недоступен → файл остаётся на SSD; SSD-страж
-  бережёт место Immich/Nextcloud.
+- Не больше двух закачек одновременно (CPU ntfs-3g). Страж раз в 30 с держит запас на SSD (Immich/Nextcloud)
+  и на HDD (семейный архив 1,4 ТБ): при нехватке — пауза и сообщение «нужно ещё N ГБ». HDD недоступен → закачки
+  на HDD на паузе, малые остаются на SSD.
 - Бот недоступен (VPS/SOCKS) → закачки идут дальше, уведомления приходят после восстановления; AriaNg в LAN работает.
 - В журналах — метаданные (кто, тип, размер), без ссылок целиком.
 
 ## 8. Тесты (TDD, в воротах)
 
-- `downloads`: разбор magnet/HTTP/`.torrent`; отказ `file://` и LAN-адресов; учёт GID→чат переживает
+- `downloads`: разбор magnet/HTTP/`.torrent`; отказ `file://` и LAN-адресов; выбор диска по размеру (19 ГБ → SSD,
+  100 ГБ → HDD, не помещается на SSD с запасом → HDD, больше свободного на HDD → отказ); страж: порог пересечён
+  во время закачки → пауза всех и одно сообщение; учёт GID→чат переживает
   перезапуск; уведомление уходит в исходный чат один раз; «закачки» и «отмени N».
 - `telegram_front` (`httpx.MockTransport`): белый список, группа без обращения — тишина и ничего не записано,
   «@бобик скачай», «Бобик, закачки», упоминание `@bobik_borovskoy_bot`, ответ боту,
   `.torrent`-документ через `getFile`, offset после обработки, 429 с `retry_after`, выход из чужой группы.
-- `on_complete.sh`: один файл; многофайловый торрент — переносится каталог; пробелы и кириллица; HDD недоступен;
+- `on_complete.sh`: один файл; закачка из `Downloads/.incomplete` на HDD — переименование, без копирования; многофайловый торрент — переносится каталог; пробелы и кириллица; HDD недоступен;
   имя занято → суффикс без перезаписи. `on_start.sh`: страж по порогу (RPC подменён).
 - compose: `mem_limit`, порты, тома — статическая проверка.
 
@@ -133,6 +141,9 @@ the Telegram bot: transport over an SSH SOCKS tunnel to the VPS, a whitelist, an
 questions and photos come in later slices. Anyone in the family can send a magnet link, an HTTP link or a
 `.torrent` file with "@бобик скачай". aria2 on the Jetson downloads it to
 the SSD, moves it to `/mnt/hdd2tb/Downloads` when done (visible in Samba and Nextcloud), and the bot reports back
-in the same chat. An SSD guard, no seeding, at most two parallel downloads and a daytime speed cap protect the
-system and the family's internet. AriaNg on the LAN is a fallback. The VPS only carries the SOCKS session, so
+in the same chat. Revision 4: there is no size cap. Downloads up to 20 GB go through the SSD; larger ones (100 GB and more) are
+written straight to the HDD, which keeps up with the home line. The 20 MB Telegram limit applies only to a
+`.torrent` file sent in the chat. A guard checks both disks every 30 seconds (40 GB reserve on the SSD, 50 GB on
+the HDD). No seeding, at most two parallel downloads and a daytime speed cap protect the system and the
+family's internet. AriaNg on the LAN is a fallback. The VPS only carries the SOCKS session, so
 nothing is downloaded there. Steam and a USB stick in the Jetson are out of scope.

@@ -1,0 +1,19 @@
+# Домашняя качалка (спецификация docs/superpowers/specs/2026-09-19-home-downloader-design.md).
+# RPC 6800 и AriaNg 6880 — в LAN (как остальные сервисы), доступ по ARIA2_RPC_SECRET.
+name: homecloud-downloads
+services:
+  downloads:
+    build:
+      context: ../../services/downloads
+    container_name: homecloud_downloads
+    restart: always
+    mem_limit: 192m
+    ports:
+      - "6800:6800"
+      - "6880:6880"
+    volumes:
+      - /mnt/storage/downloads:/downloads/ssd
+      - /mnt/hdd2tb/Downloads:/downloads/hdd
+      - /mnt/storage/downloads/.config:/config
+    environment:
+      ARIA2_RPC_SECRET: ${ARIA2_RPC_SECRET:?ARIA2_RPC_SECRET не задан в config/.env}

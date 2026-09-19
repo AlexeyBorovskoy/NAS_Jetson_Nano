@@ -1,0 +1,10 @@
+[Unit]
+Description=Снять лимит скорости качалки в 23:00
+
+[Timer]
+OnCalendar=*-*-* 23:00:00
+Persistent=true
+Unit=nas_jetson_nano-dl-speed-night.service
+
+[Install]
+WantedBy=timers.target

@@ -10,8 +10,9 @@ if [ -z "${ARIA2_RPC_SECRET:-}" ]; then
   [[ -r "$_nas_lay" ]] || _nas_lay=/usr/local/lib/nas_jetson_nano/layout.sh
   # shellcheck source=/dev/null
   source "$_nas_lay"
-  ARIA2_RPC_SECRET="$(grep '^ARIA2_RPC_SECRET=' "$NAS_ENV_FILE" | cut -d= -f2- | tr -d '"')"
+  ARIA2_RPC_SECRET="$(grep '^ARIA2_RPC_SECRET=' "$NAS_ENV_FILE" | cut -d= -f2- | tr -d '"' || true)"
   DL_DAY_LIMIT="${DL_DAY_LIMIT:-$(grep '^DL_DAY_LIMIT=' "$NAS_ENV_FILE" | cut -d= -f2- | tr -d '"' || true)}"
+  [ -n "${ARIA2_RPC_SECRET:-}" ] || { echo "aria2_speed: нет ARIA2_RPC_SECRET (ни в окружении, ни в ${NAS_ENV_FILE:-config/.env})" >&2; exit 1; }
 fi
 
 case "$mode" in

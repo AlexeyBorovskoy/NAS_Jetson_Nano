@@ -93,11 +93,43 @@ class Infra(unittest.TestCase):
                                    env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    universal_newlines=True)
                 self.assertEqual(p.returncode, 0, p.stderr)
-                args = io.open(env["STUB_ARGS"], encoding="utf-8").read()
-                body = io.open(env["STUB_BODY"], encoding="utf-8").read()
+                with io.open(env["STUB_ARGS"], encoding="utf-8") as fh:
+                    args = fh.read()
+                with io.open(env["STUB_BODY"], encoding="utf-8") as fh:
+                    body = fh.read()
                 self.assertNotIn("S3CR3T", args)
                 self.assertIn('"token:S3CR3T"', body)
                 self.assertIn('"max-overall-download-limit":' + limit, body)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_speed_script_fails_loudly_without_secret(self):
+        tmp = tempfile.mkdtemp()
+        try:
+            # Подготовка: пустой .env файл (grep не найдёт ARIA2_RPC_SECRET)
+            env_file = os.path.join(tmp, "config.env")
+            with io.open(env_file, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write("# пустой файл\n")
+            # Заглушка curl в PATH: не вызывается (скрипт должен упасть раньше)
+            bindir = os.path.join(tmp, "bin")
+            os.makedirs(bindir)
+            stub = os.path.join(bindir, "curl")
+            with io.open(stub, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write('#!/usr/bin/env bash\nexit 1  # не должен быть вызван\n')
+            os.chmod(stub, 0o755)
+            env = dict(os.environ,
+                       PATH=bindir + os.pathsep + os.environ.get("PATH", ""),
+                       NAS_ENV_FILE=env_file)
+            # Явно НЕ устанавливаем ARIA2_RPC_SECRET в окружении
+            if "ARIA2_RPC_SECRET" in env:
+                del env["ARIA2_RPC_SECRET"]
+            bash = shutil.which("bash") or "bash"
+            p = subprocess.run([bash, os.path.join(REPO, "scripts", "downloads", "aria2_speed.sh"), "day"],
+                               env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               universal_newlines=True)
+            # Проверяем: код ≠ 0, stderr содержит наше сообщение об ошибке
+            self.assertNotEqual(p.returncode, 0)
+            self.assertIn("ARIA2_RPC_SECRET", p.stderr)
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 

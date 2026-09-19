@@ -30,6 +30,7 @@ ssh-keyscan -t ed25519 95.163.176.103 > "$SCRATCH/vps_known_hosts"
 
 ## 3. VPS
 ```bash
+ssh root@95.163.176.103 'mkdir -p /root/naswatch'
 scp services/watchdog/vps/{nas_liveness.py,install_vps.sh} root@95.163.176.103:/root/naswatch/
 ssh root@95.163.176.103 'sshd -T | grep -iE "^(allowusers|allowgroups|denyusers) " || echo "ограничений нет"'
 ssh root@95.163.176.103 "bash /root/naswatch/install_vps.sh '$(cat "$SCRATCH/nas-watchdog.pub")'"
@@ -42,10 +43,10 @@ ssh -i "$SCRATCH/nas-watchdog" -N -L 9999:127.0.0.1:22 naswatch@95.163.176.103  
 
 ## 4. chat_id владельца
 Владелец пишет `/start` боту @bobik_borovskoy_bot. На Jetson; токен идёт через stdin, не через
-командную строку (иначе виден в `ps` на VPS), и не печатается:
+командную строку (иначе виден в `ps` на VPS), и не попадает в аргументы curl: URL передаётся через `curl -K -`:
 ```bash
 cd ~/nasa && grep '^TELEGRAM_BOT_TOKEN=' config/.env | cut -d= -f2- | tr -d '"' \
- | ssh -i ~/.ssh/id_ed25519 root@95.163.176.103 'read -r T; curl -s "https://api.telegram.org/bot$T/getUpdates"' \
+ | ssh -i ~/.ssh/id_ed25519 root@95.163.176.103 'read -r T; printf "url = \"https://api.telegram.org/bot%s/getUpdates\"\n" "$T" | curl -s -K -' \
  | python3 -c 'import json,sys; print({u["message"]["chat"]["id"] for u in json.load(sys.stdin)["result"] if "message" in u})'
 ```
 

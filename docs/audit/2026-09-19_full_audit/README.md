@@ -10,6 +10,7 @@
 | [`FINDINGS_2026-09-19.md`](FINDINGS_2026-09-19.md) | находки NAS-* с доказательствами, реестр техдолга / findings and tech-debt register |
 | [`ROADMAP_2026-09-19.md`](ROADMAP_2026-09-19.md) | план по стадиям 0–7 / staged roadmap |
 | [`EVIDENCE_2026-09-19.md`](EVIDENCE_2026-09-19.md) | команды и наблюдения / commands and observations |
+| [`REVIEW_GIGACODE_W0_2026-09-19.md`](REVIEW_GIGACODE_W0_2026-09-19.md) | разбор работы и плана GigaCode (W0.1–W0.2) / review of GigaCode's work and plan |
 | [`audit_summary.json`](audit_summary.json) | машиночитаемая сводка / machine-readable summary |
 
 Предыдущий аудит / previous audit: `docs/audit/` (2026-08-30), `docs/research/audit_new.md` (2026-09-18).

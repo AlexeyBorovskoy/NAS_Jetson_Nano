@@ -42,3 +42,13 @@ def test_password_is_not_locked_style():
 
 def test_idempotent_authorized_keys():
     assert "grep -qxF" in src()
+
+
+def test_multiline_key_rejected():
+    assert "*$'\\n'*" in src()
+
+
+def test_home_dir_mode_is_explicit():
+    s = src()
+    assert "chmod 0750 /var/lib/naswatch" in s
+    assert "chown naswatch:naswatch /var/lib/naswatch" in s

@@ -9,6 +9,9 @@ set -euo pipefail
 
 PUB="${1:?нужен публичный ключ сторожа одной строкой: ssh-ed25519 ...}"
 case "$PUB" in
+  *$'\n'*|*$'\r'*) echo "ключ должен быть одной строкой" >&2; exit 2 ;;
+esac
+case "$PUB" in
   ssh-ed25519\ *) ;;
   *) echo "ожидается ключ ssh-ed25519" >&2; exit 2 ;;
 esac
@@ -18,6 +21,9 @@ if ! id naswatch >/dev/null 2>&1; then
   useradd --system --create-home --home-dir /var/lib/naswatch --shell /bin/sh naswatch
 fi
 usermod -p '*' naswatch
+
+chown naswatch:naswatch /var/lib/naswatch
+chmod 0750 /var/lib/naswatch
 
 install -m 0755 -o root -g root "$HERE/nas_liveness.py" /usr/local/bin/nas-liveness
 install -d -m 0700 -o naswatch -g naswatch /var/lib/naswatch/.ssh

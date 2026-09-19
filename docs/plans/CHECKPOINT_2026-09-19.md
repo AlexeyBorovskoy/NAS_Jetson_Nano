@@ -135,3 +135,18 @@ d52c11b feat(w0.1): save_path restriction (G01) + smart routing + 8 image preset
 - ❌ Не открывать сервисы в интернет
 - ❌ Не форматировать HDD 2 ТБ
 - ❌ Не деплоить без «деплой»
+
+---
+
+## Итог дня 2026-09-19 (для продолжения после перезагрузки)
+
+**Выкачено на Jetson (все с правилом №13 до/после — VPS не менялся, 19 пиров):**
+- **A** — единая раскладка хоста (`scripts/lib/layout.sh`), авто-восстановление SSD снова работает, шлюз починен, сервисный токен шлюза включён.
+- **B** — restic-бэкап конфигурации/`.env`/файлов Nextcloud на HDD (ежедневно 03:40, учения 1-го числа — DRILL OK); `backups/` только чтение в Samba/Nextcloud. Пароль репо — Windows Credential Manager `nas-jetson-restic-config-hdd`.
+- **C** — NAS API: JWT везде кроме `/healthcheck`, роли семья/владелец (`admin`), CORS выкл.; шлюз не от root, откат на DeepSeek только на 429/5xx; Portainer только localhost; rpcbind выкл. C9 (SSH/пароли) оставлен как есть по решению владельца.
+
+**Следующий шаг:** Telegram-бот. Спецификация утверждена — `docs/superpowers/specs/2026-09-19-telegram-family-bot-design.md`.
+Дальше: план реализации (writing-plans) → код с тестами в git → выкат по «деплой».
+Токен бота уже в `.env` устройства (600) и в Credential Manager `nas-telegram-bot-token`; ⚠️ перед подключением семьи — Revoke и новый токен через файл, не через чат.
+
+**Ждут решения владельца:** D1–D6 (план §2.2), tenant_id Cloud.ru для S3 (B3), переписывание истории git (C7).

@@ -1,0 +1,19 @@
+[Unit]
+Description=NAS_Jetson_Nano — encrypted restic backup of config, secrets and Nextcloud files (stage B1)
+Documentation=https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/blob/main/docs/12_BACKUP_RESTORE.md
+After=local-fs.target docker.service
+RequiresMountsFor=/mnt/storage /mnt/hdd2tb
+ConditionPathIsMountPoint=/mnt/storage
+
+[Service]
+Type=oneshot
+# Device path today is /home/admin/nasa — setup_config_backup.sh substitutes it.
+Environment=NAS_JETSON_NANO_PROJECT_DIR=/home/admin/nasa
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+ExecStart=/bin/bash "${NAS_JETSON_NANO_PROJECT_DIR}/scripts/backup/config_backup.sh"
+User=root
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nas_jetson_nano-config-backup

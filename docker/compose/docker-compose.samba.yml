@@ -26,6 +26,9 @@ services:
       - ${STORAGE_ROOT:-/mnt/storage}/samba/public:/mnt/public
       # 2TB USB HDD (NTFS family archive)
       - /mnt/hdd2tb:/mnt/hdd2tb
+      # B2 (аудит 2026-09-19, NAS-BAK-002): копии на HDD — только чтение для людей.
+      # Вложенный ro-bind поверх rw-диска; пишут в backups/ только таймеры хоста (root).
+      - /mnt/hdd2tb/backups:/mnt/hdd2tb/backups:ro
       # Samba state persistence
       - samba_data:/data
     environment:

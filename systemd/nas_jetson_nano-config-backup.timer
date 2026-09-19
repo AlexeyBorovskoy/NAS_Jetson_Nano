@@ -1,0 +1,12 @@
+[Unit]
+Description=Config/secrets/Nextcloud-files restic backup daily at 03:40 (after DB dumps at 03:00)
+Documentation=https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano
+
+[Timer]
+OnCalendar=*-*-* 03:40:00
+Persistent=true
+RandomizedDelaySec=10m
+Unit=nas_jetson_nano-config-backup.service
+
+[Install]
+WantedBy=timers.target

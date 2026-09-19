@@ -67,6 +67,9 @@ services:
       - nextcloud_app:/var/www/html
       # 2TB USB HDD (NTFS, existing family archive) exposed as Nextcloud external storage
       - /mnt/hdd2tb:/mnt/hdd2tb
+      # B2 (аудит 2026-09-19, NAS-BAK-002): копии на HDD — только чтение для людей.
+      # Вложенный ro-bind поверх rw-диска; пишут в backups/ только таймеры хоста (root).
+      - /mnt/hdd2tb/backups:/mnt/hdd2tb/backups:ro
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost/status.php"]
       interval: 30s

@@ -1,0 +1,18 @@
+[Unit]
+Description=NAS_Jetson_Nano — monthly restore drill of the config backup (stage B6)
+Documentation=https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/blob/main/docs/12_BACKUP_RESTORE.md
+After=local-fs.target
+RequiresMountsFor=/mnt/storage /mnt/hdd2tb
+ConditionPathIsMountPoint=/mnt/storage
+ConditionPathIsMountPoint=/mnt/hdd2tb
+
+[Service]
+Type=oneshot
+Environment=NAS_JETSON_NANO_PROJECT_DIR=/home/admin/nasa
+Nice=15
+IOSchedulingClass=idle
+ExecStart=/bin/bash "${NAS_JETSON_NANO_PROJECT_DIR}/scripts/backup/restore_drill.sh" hdd
+User=root
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nas_jetson_nano-restore-drill

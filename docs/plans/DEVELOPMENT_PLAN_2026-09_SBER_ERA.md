@@ -52,6 +52,10 @@
 | 2026-09-19 | **A5** runbook выката этапа A | ✅ git | `DEPLOY_STAGE_A_2026-09.md` |
 | 2026-09-19 | **A6** честные статусы | ✅ git | `0f209bb` |
 | 2026-09-19 | **Выкат этапа A на Jetson** (04:37–04:45 UTC) | ✅ **device** | репо `bdba26b`; recovery `Result=success`; чат Giga 200; токен включён (401 без него, бот 🐕 ок); failed units 0; правило №13 до/после идентично |
+| 2026-09-19 | **B1** бэкап конфигурации/`.env`/`config.php`/файлов NC/Samba/дампов — restic шифр. на HDD, 7д/4н/6м, fail-closed | ✅ git; тест с настоящим restic | `config_backup.sh`, `install_restic.sh` (0.19.1, SHA-256), `setup_config_backup.sh` |
+| 2026-09-19 | **B2** `backups/` только чтение в Samba и Nextcloud (вложенный ro-bind) | ✅ git | compose nextcloud/samba, `test_backup_isolation.py` |
+| 2026-09-19 | **B6** учения по восстановлению (ежемесячно; ловят неполный снапшот) | ✅ git | `restore_drill.sh`, таймер |
+| 2026-09-19 | **B3** S3 — тот же скрипт, цель `s3.env` | готово в коде; ждёт tenant_id | `DEPLOY_STAGE_B_2026-09.md` |
 
 ### 1.1. Отозванные статусы (как найдено)
 
@@ -299,7 +303,7 @@ Nextcloud/Immich в Cloud.ru как primary; K8s; Managed RAG по альбом�
 ## 11. Следующий шаг
 
 1. ~~Этап A~~ — ✅ git + device 2026-09-19.
-2. **Этап B (данные)** в git: B1 restic конфига/NC на HDD, B2 изоляция `backups/`; затем выкат.
+2. **Этап B** — ✅ в git (B1, B2, B6; B3 готов к ключам); выкат — `DEPLOY_STAGE_B_2026-09.md` по «деплой».
 3. **Этап C** в git: C1 auth эндпоинтов NAS API + CORS, C2 RBAC, C4/C5.
 4. **Owner:** решения D1–D6 (§2.2); Cloud.ru консоль → tenant_id (B3).
 

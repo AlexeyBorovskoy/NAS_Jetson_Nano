@@ -62,9 +62,39 @@ ls -lt /mnt/storage/backups/database-dumps/ | head -5
 | Nextcloud DB | pg_dump (`nasa-backup.timer`) | L1b SSD |
 | Immich DB | pg_dump | L1b SSD |
 | Immich library | `immich_hdd_second_copy.sh` → `/mnt/hdd2tb/backups/immich` | L1 on-site |
-| Nextcloud/Immich data bulk | restic → S3 Cloud.ru (planned W3) | L2 off-site |
+| **`.env`, `config.php` Nextcloud, файлы Nextcloud, пользователи Samba, конфиги мониторинга, дампы** | `config_backup.sh` → restic (шифр.) `/mnt/hdd2tb/backups/restic-config`, ежедневно 03:40, хранение 7д/4н/6м | **L1c on-site** (этап B1, 2026-09-19) |
+| то же (набор L1c) | тот же скрипт, цель `s3.env` → Cloud.ru S3 | L2 off-site (B3, ждёт tenant_id) |
+| Immich library off-site | решение владельца D2 | L2 — нет |
 | Docker compose/config | git (+ GitVerse mirror) | L3 |
-| `.env` | encrypted off-device only | — |
+
+> 🔴 **Пароль restic-репозитория** (`/root/.config/nas-backup/hdd.pass`) обязан храниться **и вне
+> устройства** (менеджер паролей). Без него снапшоты не расшифровать — бэкап `.env` бесполезен
+> ровно в день смерти SD-карты. 🇬🇧 Keep the repository password off-device too.
+
+### 2b. Конфигурация и файлы Nextcloud (restic) / Config and Nextcloud files
+
+```bash
+sudo bash scripts/backup/install_restic.sh            # restic 0.19.1, SHA-256 закреплён
+sudo bash scripts/backup/setup_config_backup.sh       # пароль, цель hdd, init, таймеры
+bash scripts/backup/config_backup.sh --plan           # что именно копируется (из раскладки хоста)
+sudo systemctl start nas_jetson_nano-config-backup    # прогон; штамп $NAS_STATE_DIR/config-backup-hdd.stamp
+sudo systemctl start nas_jetson_nano-restore-drill    # учения: распаковка на SSD и проверка содержимого
+```
+
+Отказ **до** restic, если не смонтирован SSD/HDD или нет обязательного источника (тишина ≠ успех).
+Учения (`restore_drill.sh`, ежемесячно) проверяют содержимое: `.env` читается под `set -e`,
+`config.php` с `instanceid`, свежий дамп проходит `gzip -t`, файлы Nextcloud не пусты.
+
+**Восстановление вручную:**
+```bash
+sudo -i
+set -a; source /root/.config/nas-backup/targets/hdd.env; set +a
+restic snapshots --tag nas-config
+restic restore latest --tag nas-config --target /mnt/storage/restore-$(date +%F) --include /home/admin/nasa/config/.env
+```
+
+**Копии на HDD — только чтение для людей (B2):** в Samba и Nextcloud `backups/` смонтирован
+вложенным ro-bind поверх rw-диска. Достать файл можно, изменить или удалить — нет.
 
 ### 2a. Immich → HDD (ADR-0009)
 

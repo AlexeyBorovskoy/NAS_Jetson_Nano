@@ -148,6 +148,8 @@ jobs:
         run: |
           pip install -r services/llm-gateway/requirements.txt
           pip install pytest pydantic-settings
+          # restic — для полного круга backup → restore drill (tests/unit/test_config_backup.py)
+          sudo apt-get install -y restic
 
       - name: Unit tests (tests/unit)
         run: |

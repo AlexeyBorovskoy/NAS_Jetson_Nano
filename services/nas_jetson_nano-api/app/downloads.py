@@ -222,12 +222,22 @@ class Downloads:
         except LinkError as exc:
             return "❌ %s" % exc
         async with self._lock:
-            gid = await self.aria2.call("addUri", [link], _options(target))
+            meta = self.ledger.load().get("_meta", {})
+            opts = _options(target)
+            wait_suffix = ""
+            if meta.get("paused"):
+                opts["pause"] = "true"
+                wait_suffix = " — ждёт места"
+            gid = await self.aria2.call("addUri", [link], opts)
             self._record(gid, chat_id, user, name, "active")
+            if meta.get("paused"):
+                data = self.ledger.load()
+                data.setdefault("_meta", {}).setdefault("paused_gids", []).append(gid)
+                self.ledger.save(data)
         log.info("download queued", extra={"fields": {"user": user, "type": "http",
                                                       "size": size, "target": target}})
         size_txt = fmt_size(size) if size else "размер неизвестен"
-        return "⏬ Принял: %s — %s, на %s" % (name, size_txt, target.upper())
+        return "⏬ Принял: %s — %s, на %s%s" % (name, size_txt, target.upper(), wait_suffix)
 
     async def add_torrent(self, data: bytes, chat_id: int, user: str) -> str:
         b64 = base64.b64encode(data).decode("ascii")

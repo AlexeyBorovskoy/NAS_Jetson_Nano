@@ -280,12 +280,21 @@ def test_disk_unavailable_counts_as_no_space(tmp_path):
 
 def test_guard_resume_never_unpauses_unrouted_torrent(tmp_path):
     dl = load()
-    d, aria = make(dl, tmp_path)
+    free = {"ssd": 150 * GB, "hdd": 400 * GB}
+    aria = FakeAria2()
+
+    async def head(url):
+        return GB
+
+    d = dl.Downloads(aria2=aria, ledger=dl.Ledger(str(tmp_path / "l.json")), head=head,
+                     disk_free=lambda: (free["ssd"], free["hdd"]), resolve=no_internal)
     asyncio.run(d.add_torrent(b"d8:announce...e", 1, "ivan"))
     aria.status["g1"].update(status="paused", totalLength="0")  # размер ещё неизвестен
-    asyncio.run(d.tick())
+    free["hdd"] = 45 * GB
+    msgs = asyncio.run(d.tick())
+    assert dl.Ledger(str(tmp_path / "l.json")).load()["_meta"]["paused"] is True
     # hdd становится свободным, страж хочет снять паузу
-    d.disk_free = lambda: (150 * GB, 400 * GB)
+    free["hdd"] = 400 * GB
     asyncio.run(d.tick())
     # но торрент ещё в состоянии await_dir (размер неизвестен), поэтому unpause не должно быть
     assert ("unpause", ("g1",)) not in aria.calls
@@ -337,6 +346,38 @@ def test_ledger_not_lost_when_tick_and_add_interleave(tmp_path):
 
     asyncio.run(scenario())
     assert {"g1", "g2"} <= set(dl.Ledger(str(tmp_path / "l.json")).load())
+
+
+def test_http_link_added_during_guard_pause_waits(tmp_path):
+    dl = load()
+    free = {"ssd": 150 * GB, "hdd": 400 * GB}
+    aria = FakeAria2()
+
+    async def head(url):
+        return GB
+
+    d = dl.Downloads(aria2=aria, ledger=dl.Ledger(str(tmp_path / "l.json")), head=head,
+                     disk_free=lambda: (free["ssd"], free["hdd"]), resolve=no_internal)
+    # включаем паузу через падение SSD ниже порога
+    free["ssd"] = 30 * GB
+    asyncio.run(d.tick())
+    # добавляем HTTP-закачку 1 ГБ (попадёт на HDD, так как SSD тесно)
+    reply = asyncio.run(d.add_link("https://example.org/a.iso", 1, "ivan"))
+    assert " — ждёт места" in reply
+    # найти последний вызов addUri (для g1)
+    adduri_calls = [c for c in aria.calls if c[0] == "addUri"]
+    method, params = adduri_calls[-1]
+    assert params[1] == {"pause": "true", "dir": "/downloads/hdd/.incomplete", "file-allocation": "none"}
+    entry = dl.Ledger(str(tmp_path / "l.json")).load()["g1"]
+    assert entry["state"] == "active"
+    # проверяем, что g1 в паузе, занесена в paused_gids
+    meta = dl.Ledger(str(tmp_path / "l.json")).load()["_meta"]
+    assert "g1" in meta.get("paused_gids", [])
+    # восстанавливаем свободное место
+    free["ssd"] = 150 * GB
+    msgs = asyncio.run(d.tick())
+    # страж должен был распаузить g1
+    assert ("unpause", ("g1",)) in aria.calls
 
 
 # ── список и отмена ───────────────────────────────────────────────────────────

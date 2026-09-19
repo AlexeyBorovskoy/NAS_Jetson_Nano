@@ -10,4 +10,7 @@ touch /config/aria2.session
   printf 'rpc-secret=%s\n' "$ARIA2_RPC_SECRET" >> /tmp/aria2.conf )
 umask 022
 httpd -p 6880 -h /www
+# И6: HDD — внешний NTFS-диск; если он не примонтирован, Docker тихо подставит
+# пустой каталог вместо него. Маркер в корне Downloads отличает одно от другого.
+[ -e /downloads/hdd/.nas-hdd-marker ] || { echo "HDD не смонтирован — жду" >&2; sleep 60; exit 1; }
 exec aria2c --conf-path=/tmp/aria2.conf

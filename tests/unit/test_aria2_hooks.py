@@ -57,6 +57,21 @@ class Hooks(unittest.TestCase):
                            universal_newlines=True)
         return p.returncode
 
+    def wget_stub(self, status):
+        """Заглушка DL_WGET: печатает JSON-RPC ответ aria2.tellStatus с заданным
+        статусом ('removed'/'active'/…) либо ничего не печатает при status=None
+        (имитация недоступного aria2 — «не знаем», ничего не удаляем)."""
+        stub = os.path.join(self.t, "fake_wget_%s.sh" % (status or "none"))
+        with open(stub, "w", newline="\n") as fh:
+            fh.write("#!/usr/bin/env bash\n")
+            if status is not None:
+                fh.write('printf \'{"id":"stop","result":{"status":"%s"}}\'\n' % status)
+        os.chmod(stub, 0o755)
+        conf = os.path.join(self.t, "aria2_%s.conf" % (status or "none"))
+        with open(conf, "w", newline="\n") as fh:
+            fh.write("rpc-secret=x\n")
+        return {"DL_WGET": fwd(stub), "ARIA2_CONF": fwd(conf)}
+
     def touch(self, *parts):
         path = os.path.join(*parts)
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -101,9 +116,10 @@ class Hooks(unittest.TestCase):
         self.assertTrue(os.path.exists(f))
 
     def test_on_stop_removes_partial_top_item(self):
+        # И3: хук спрашивает статус по RPC перед удалением — заглушка отвечает "removed".
         f = self.touch(self.hddi, "Big", "part.bin")
         self.touch(self.hddi, "Big.aria2")
-        self.assertEqual(self.run_hook("on_stop.sh", f), 0)
+        self.assertEqual(self.run_hook_with_env("on_stop.sh", f, self.wget_stub("removed")), 0)
         self.assertFalse(os.path.exists(os.path.join(self.hddi, "Big")))
         self.assertFalse(os.path.exists(os.path.join(self.hddi, "Big.aria2")))
         self.assertTrue(os.path.isdir(self.hddi))
@@ -111,14 +127,40 @@ class Hooks(unittest.TestCase):
     def test_on_stop_never_touches_final_or_outside(self):
         kept = self.touch(self.final, "done.iso")
         outside = self.touch(self.t, "other", "x")
-        self.assertEqual(self.run_hook("on_stop.sh", kept), 0)
-        self.assertEqual(self.run_hook("on_stop.sh", outside), 0)
+        extra = self.wget_stub("removed")
+        self.assertEqual(self.run_hook_with_env("on_stop.sh", kept, extra), 0)
+        self.assertEqual(self.run_hook_with_env("on_stop.sh", outside, extra), 0)
         self.assertTrue(os.path.exists(kept) and os.path.exists(outside))
 
     def test_on_stop_rejects_dot_dot(self):
         victim = self.touch(self.t, "victim.txt")
-        self.assertEqual(self.run_hook("on_stop.sh", os.path.join(self.hddi, "..", "..", "victim.txt")), 0)
+        extra = self.wget_stub("removed")
+        self.assertEqual(self.run_hook_with_env(
+            "on_stop.sh", os.path.join(self.hddi, "..", "..", "victim.txt"), extra), 0)
         self.assertTrue(os.path.exists(victim))
+
+    # --- И3: on_stop не полагается только на факт вызова хука — спрашивает aria2 -----
+
+    def test_on_stop_keeps_files_when_download_still_active(self):
+        # aria2 тоже дёргает on-download-stop для прерванных (не отменённых) закачек
+        # при остановке контейнера — статус "active" значит «не трогать».
+        f = self.touch(self.hddi, "Big", "part.bin")
+        rc = self.run_hook_with_env("on_stop.sh", f, self.wget_stub("active"))
+        self.assertEqual(rc, 0)
+        self.assertTrue(os.path.exists(os.path.join(self.hddi, "Big", "part.bin")))
+
+    def test_on_stop_keeps_files_when_aria2_unreachable(self):
+        # Нет ответа от aria2 (RPC недоступен) — «не знаем», ничего не удаляем.
+        f = self.touch(self.hddi, "Big", "part.bin")
+        rc = self.run_hook_with_env("on_stop.sh", f, self.wget_stub(None))
+        self.assertEqual(rc, 0)
+        self.assertTrue(os.path.exists(os.path.join(self.hddi, "Big", "part.bin")))
+
+    def test_on_stop_removes_on_error_status(self):
+        f = self.touch(self.hddi, "Big", "part.bin")
+        rc = self.run_hook_with_env("on_stop.sh", f, self.wget_stub("error"))
+        self.assertEqual(rc, 0)
+        self.assertFalse(os.path.exists(os.path.join(self.hddi, "Big")))
 
     # --- Раунд 1 ревью: атомарный перенос, umask, UID контейнера --------------
 

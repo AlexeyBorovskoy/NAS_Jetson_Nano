@@ -45,6 +45,7 @@ class Infra(unittest.TestCase):
                     "TELEGRAM_FAMILY_CHAT_ID", "TELEGRAM_PROXY", "ARIA2_RPC_SECRET"):
             self.assertIn(key + ":", t)
         self.assertIn("socks5://172.17.0.1:1080", t)
+        self.assertIn("homecloud_downloads", t)  # качалка тоже в EXPECTED_CONTAINERS
 
     def test_socks_unit_binds_docker0_only(self):
         t = read("systemd/nas_jetson_nano-tg-socks.service")
@@ -54,10 +55,26 @@ class Infra(unittest.TestCase):
             self.assertIn(opt, t)
         self.assertIn("Restart=always", t)
 
+    def test_socks_unit_uses_same_key_and_user_as_tunnel(self):
+        # И7: тот же ключ/пользователь, что у рабочего обратного туннеля — через
+        # переменные, а не жёстко зашитый путь (устройство и ключ могут смениться).
+        t = read("systemd/nas_jetson_nano-tg-socks.service")
+        self.assertIn("-i ${VPS_SSH_KEY} ${VPS_USER}@${VPS_HOST}", t)
+        self.assertNotIn("-i /home/admin/.ssh/id_ed25519", t)
+        self.assertRegex(t, r"(?m)^Environment=VPS_USER=\S+$")
+        self.assertRegex(t, r"(?m)^Environment=VPS_SSH_KEY=\S+$")
+
     def test_entrypoint_keeps_secret_out_of_argv(self):
         t = read("services/downloads/entrypoint.sh")
         self.assertNotIn("--rpc-secret", t)
         self.assertIn("rpc-secret=", t)
+
+    def test_entrypoint_checks_hdd_marker_before_aria2(self):
+        # И6: без маркера HDD entrypoint не должен запускать aria2 на пустом каталоге,
+        # который Docker создаст сам, если реальный HDD не примонтирован.
+        t = read("services/downloads/entrypoint.sh")
+        self.assertIn("/downloads/hdd/.nas-hdd-marker", t)
+        self.assertLess(t.index(".nas-hdd-marker"), t.index("exec aria2c"))
 
     def test_env_example_has_empty_keys(self):
         t = read("config/.env.example")

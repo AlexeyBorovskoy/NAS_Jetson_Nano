@@ -42,6 +42,7 @@ services:
         homecloud_netdata
         homecloud_uptime_kuma
         homecloud_portainer
+        homecloud_downloads
       LOCAL_SERVICES: >-
         Nextcloud=http://192.168.0.50:8080/
         Immich=http://192.168.0.50:2283/

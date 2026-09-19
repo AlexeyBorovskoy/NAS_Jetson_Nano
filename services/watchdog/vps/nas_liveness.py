@@ -96,3 +96,71 @@ def save_state(state, path=None):
     with open(tmp, "w", encoding="utf-8") as fh:
         json.dump(state, fh, ensure_ascii=False)
     os.replace(tmp, path)
+
+
+# ── проверки и команды ─────────────────────────────────────────────────────────
+
+def probe(url, timeout=PROBE_TIMEOUT):
+    """HTTP-код или None. None — HTTP-ответа нет вовсе: порт закрыт, туннель
+    принял соединение и оборвал, таймаут. Любой код (и 4xx) — сервис ответил."""
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as resp:
+            return resp.status
+    except urllib.error.HTTPError as exc:
+        return exc.code
+    except Exception:
+        return None
+
+
+def cmd_check(now=None, probe_fn=probe, path=None):
+    now = time.time() if now is None else now
+    api, nc = probe_fn(API_URL), probe_fn(NC_URL)
+    key, text = classify(api, nc)
+    event, message, new = decide(load_state(path), key, text, now)
+    save_state(new, path)
+    return {"event": event, "text": message, "api": api, "nextcloud": nc,
+            "checked_at": int(now)}
+
+
+def send_telegram(token, chat_id, text):
+    req = urllib.request.Request(
+        "%s/bot%s/sendMessage" % (TG_API, token),
+        data=json.dumps({"chat_id": chat_id, "text": text}).encode("utf-8"),
+        headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            return resp.status
+    except urllib.error.HTTPError as exc:
+        return exc.code
+    except Exception:
+        return 0
+
+
+def cmd_notify(raw, send=None):
+    """Запасной путь: токен и текст приходят через stdin, на VPS не хранятся."""
+    send = send or send_telegram
+    try:
+        req = json.loads(raw)
+        token, chat_id, text = req["token"], req["chat_id"], req["text"]
+    except (ValueError, KeyError, TypeError):
+        return {"ok": False, "code": 0, "error": "bad request"}
+    code = send(token, chat_id, text)
+    return {"ok": code == 200, "code": code}
+
+
+def main(argv=None):
+    argv = sys.argv[1:] if argv is None else argv
+    raw = os.environ.get("SSH_ORIGINAL_COMMAND") or " ".join(argv) or "check"
+    cmd = raw.split()[0]
+    if cmd == "check":
+        out, rc = cmd_check(), 0
+    elif cmd == "notify":
+        out, rc = cmd_notify(sys.stdin.read()), 0
+    else:
+        out, rc = {"error": "unknown command"}, 2
+    print(json.dumps(out, ensure_ascii=False))
+    return rc
+
+
+if __name__ == "__main__":
+    sys.exit(main())

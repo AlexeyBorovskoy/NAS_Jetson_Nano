@@ -102,3 +102,90 @@ def test_broken_state_reads_as_empty(tmp_path):
 
 def test_missing_state_reads_as_empty(tmp_path):
     assert nl.load_state(str(tmp_path / "нет.json")) == {}
+
+
+import http.server
+import socket
+import threading
+
+
+def _serve(code):
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(code)
+            self.end_headers()
+
+        def log_message(self, *a):
+            pass
+
+    srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    return srv
+
+
+def _closed_port():
+    s = socket.socket()
+    s.bind(("127.0.0.1", 0))
+    port = s.getsockname()[1]
+    s.close()
+    return port
+
+
+def test_probe_returns_http_code():
+    for code in (200, 503):
+        srv = _serve(code)
+        try:
+            assert nl.probe("http://127.0.0.1:%d/" % srv.server_port, timeout=5) == code
+        finally:
+            srv.shutdown()
+
+
+def test_probe_closed_port_is_none():
+    assert nl.probe("http://127.0.0.1:%d/" % _closed_port(), timeout=5) is None
+
+
+def test_cmd_check_two_runs_alert_and_persist(tmp_path):
+    path = str(tmp_path / "state.json")
+    silent = lambda url: None
+    first = nl.cmd_check(now=T0, probe_fn=silent, path=path)
+    assert first["event"] == "none" and first["api"] is None
+    second = nl.cmd_check(now=T0 + 600, probe_fn=silent, path=path)
+    assert second["event"] == "down"
+    assert second["checked_at"] == int(T0 + 600)
+    healthy = nl.cmd_check(now=T0 + 1800, probe_fn=lambda url: 200, path=path)
+    assert healthy["event"] == "recovered" and "30 мин" in healthy["text"]
+
+
+def test_cmd_notify_passes_fields_and_reports_ok():
+    seen = {}
+
+    def fake_send(token, chat_id, text):
+        seen.update(token=token, chat_id=chat_id, text=text)
+        return 200
+
+    raw = json.dumps({"token": "T", "chat_id": "42", "text": "привет"})
+    assert nl.cmd_notify(raw, send=fake_send) == {"ok": True, "code": 200}
+    assert seen == {"token": "T", "chat_id": "42", "text": "привет"}
+
+
+def test_cmd_notify_rejects_bad_request_without_sending():
+    called = []
+    out = nl.cmd_notify("{битый", send=lambda *a: called.append(a) or 200)
+    assert out["ok"] is False and called == []
+
+
+def test_main_uses_ssh_original_command_and_prints_json(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("SSH_ORIGINAL_COMMAND", "notify")
+    monkeypatch.setattr(nl, "send_telegram", lambda t, c, x: 200)
+    monkeypatch.setattr("sys.stdin", __import__("io").StringIO(
+        json.dumps({"token": "SECRET-TOKEN", "chat_id": "1", "text": "x"})))
+    assert nl.main([]) == 0
+    out = capsys.readouterr().out
+    assert json.loads(out) == {"ok": True, "code": 200}
+    assert "SECRET-TOKEN" not in out
+
+
+def test_main_rejects_unknown_command(monkeypatch, capsys):
+    monkeypatch.setenv("SSH_ORIGINAL_COMMAND", "bash -i")
+    assert nl.main([]) == 2
+    assert "unknown" in capsys.readouterr().out

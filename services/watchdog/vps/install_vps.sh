@@ -17,6 +17,10 @@ case "$PUB" in
 esac
 HERE="$(dirname "$(readlink -f "$0")")"
 
+# Спецификация §5: "sshd -t до и после" — проверить конфиг ДО любых изменений,
+# чтобы не приписать установщику чужую, уже существовавшую поломку sshd_config.
+sshd -t
+
 if ! id naswatch >/dev/null 2>&1; then
   useradd --system --create-home --home-dir /var/lib/naswatch --shell /bin/sh naswatch
 fi

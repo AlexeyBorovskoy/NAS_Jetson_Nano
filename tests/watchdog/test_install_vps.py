@@ -25,6 +25,12 @@ def test_sshd_config_checked_and_never_restarted():
     assert not re.search(r"systemctl\s+(restart|reload|stop)\s+ssh", s)
 
 
+def test_sshd_checked_before_and_after_changes():
+    # Спецификация §5: "sshd -t до и после". "После" одной проверкой не
+    # покрывается требование "до любых изменений" — их обязано быть минимум две.
+    assert src().count("sshd -t") >= 2
+
+
 def test_does_not_touch_vpn_or_proxy_or_docker():
     s = src().lower()
     for word in ("amnezia", "nginx", "docker", "ufw", "iptables"):

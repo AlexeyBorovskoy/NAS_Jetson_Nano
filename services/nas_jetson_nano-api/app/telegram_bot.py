@@ -133,9 +133,15 @@ class TelegramBot:
         try:
             with open(self.state_path, encoding="utf-8") as fh:
                 data = json.load(fh)
-            return data if isinstance(data, dict) else {}
         except (OSError, ValueError):
             return {}
+        if not isinstance(data, dict):
+            return {}
+        # Раунд 2 (2026-09-19): раньше личка и группа делили один "strangers" —
+        # старый файл состояния считаем личным списком.
+        if "strangers" in data and "strangers_private" not in data:
+            data["strangers_private"] = data.pop("strangers")
+        return data
 
     def _save(self) -> None:
         os.makedirs(os.path.dirname(os.path.abspath(self.state_path)), exist_ok=True)
@@ -216,12 +222,16 @@ class TelegramBot:
     async def _stranger(self, msg: dict, chat: dict) -> None:
         uid = (msg.get("from") or {}).get("id")
         chat_type = chat.get("type")
-        seen = self.state.setdefault("strangers", [])
+        # Метаданные каждой попытки — до дедупликации; дедуп ограничивает только сообщения.
+        log.info("telegram stranger", extra={"fields": {"user_id": uid, "chat_type": chat_type}})
+        # Личка и группа — разные ключи: один и тот же uid обязан быть замечен в обоих
+        # контекстах (раньше общий "strangers" глушил вторую попытку целиком).
+        key = "strangers_private" if chat_type == "private" else "strangers_group"
+        seen = self.state.setdefault(key, [])
         if uid in seen:
             return
         seen.append(uid)
         self._save()
-        log.info("telegram stranger", extra={"fields": {"user_id": uid, "chat_type": chat_type}})
         name = (msg.get("from") or {}).get("first_name", "")
         if chat_type == "private":
             await self._say(chat["id"], STRANGER_TEXT)

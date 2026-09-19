@@ -235,6 +235,26 @@ def test_stranger_in_family_group_stays_silent_and_owner_is_told_once():
     assert str(STRANGER) in owner_texts[0]
 
 
+def test_stranger_group_then_private_both_reported():
+    mod, bot, tg, dl, asked = make()
+    asyncio.run(bot.handle_update(msg("@бобик привет", uid=STRANGER)))
+    asyncio.run(bot.handle_update(msg("/start", chat=STRANGER, chat_type="private", uid=STRANGER)))
+    texts = tg.texts()
+    assert [t for c, t in texts if c == STRANGER] == [mod.STRANGER_TEXT]
+    assert len([t for c, t in texts if c == OWNER]) == 2
+    assert asked == []
+
+
+def test_stranger_private_then_group_both_reported():
+    mod, bot, tg, dl, asked = make()
+    asyncio.run(bot.handle_update(msg("/start", chat=STRANGER, chat_type="private", uid=STRANGER)))
+    asyncio.run(bot.handle_update(msg("@бобик привет", uid=STRANGER)))
+    texts = tg.texts()
+    assert [t for c, t in texts if c == STRANGER] == [mod.STRANGER_TEXT]
+    assert len([t for c, t in texts if c == OWNER]) == 2
+    assert asked == []
+
+
 def test_foreign_group_is_left():
     mod, bot, tg, dl, asked = make()
     asyncio.run(bot.handle_update(msg("@бобик привет", chat=-555)))

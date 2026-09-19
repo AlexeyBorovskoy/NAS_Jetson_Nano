@@ -1,6 +1,9 @@
 # Домашняя качалка: aria2 (торренты + HTTP) и AriaNg (запасной веб-интерфейс в LAN).
 # Собирается на Jetson (arm64). Версия AriaNg и SHA-256 архива закреплены.
-FROM alpine:3.20
+# alpine:3.19 — уже есть на Jetson. Сам dockerd на устройстве сейчас не резолвит имена (ходит на
+# 127.0.1.1 после смены resolv.conf 2026-09-18), поэтому свежий базовый образ не скачать; RUN внутри
+# сборки ходит в сеть через DNS контейнеров из daemon.json и работает. См. CHECKPOINT_2026-09-19.
+FROM alpine:3.19
 ARG ARIANG_VERSION=1.3.14
 ARG ARIANG_SHA256=65bc5ed3573ef05313ea953a5c5363c8b33a4996849b2986c78660eab1a9edb2
 RUN apk add --no-cache aria2 bash busybox-extras unzip \

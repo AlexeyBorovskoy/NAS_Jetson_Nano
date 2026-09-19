@@ -89,7 +89,10 @@ def addressed_text(msg: dict, bot_username: str, callsigns: list):
     low = text.lower()
     for cs in list(callsigns) + ["@" + bot_username.lower()]:
         if cs and low.startswith(cs.lower()):
-            return text[len(cs):].lstrip(" ,:—-\t")
+            rest = text[len(cs):]
+            if rest and (rest[0].isalnum() or rest[0] == "_"):
+                continue  # «@бобикXYZ» — не обращение к боту
+            return rest.lstrip(" ,:—-\t")
     reply_from = ((msg.get("reply_to_message") or {}).get("from") or {}).get("username", "")
     if reply_from.lower() == bot_username.lower():
         return text
@@ -211,20 +214,26 @@ class TelegramBot:
             await self._say(chat_id, await self.answer(arg, login), mid)
 
     async def _stranger(self, msg: dict, chat: dict) -> None:
-        if chat.get("type") != "private":
-            return
         uid = (msg.get("from") or {}).get("id")
+        chat_type = chat.get("type")
         seen = self.state.setdefault("strangers", [])
         if uid in seen:
             return
         seen.append(uid)
         self._save()
-        await self._say(chat["id"], STRANGER_TEXT)
+        log.info("telegram stranger", extra={"fields": {"user_id": uid, "chat_type": chat_type}})
+        name = (msg.get("from") or {}).get("first_name", "")
+        if chat_type == "private":
+            await self._say(chat["id"], STRANGER_TEXT)
+            owner_text = ("🐕 Боту написал незнакомый аккаунт: %s (user_id %s). "
+                          "Если это семья — добавьте в TELEGRAM_USERS." % (name, uid))
+        else:
+            # В общем чате незнакомцу не отвечаем (не шумим), только сообщаем владельцу.
+            owner_text = ("🐕 В семейной группе к боту обратился аккаунт не из списка: %s "
+                          "(user_id %s). Если это семья — добавьте в TELEGRAM_USERS." % (name, uid))
         owner = self._owner_chat()
         if owner:
-            name = (msg.get("from") or {}).get("first_name", "")
-            await self._say(owner, "🐕 Боту написал незнакомый аккаунт: %s (user_id %s). "
-                                   "Если это семья — добавьте в TELEGRAM_USERS." % (name, uid))
+            await self._say(owner, owner_text)
 
     # ── циклы ─────────────────────────────────────────────────────────────────
     async def poll_once(self) -> None:

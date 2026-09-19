@@ -126,6 +126,16 @@ def test_addressed_text_variants():
     assert mod.addressed_text({"chat": {"type": "private"}, "text": "привет"}, "bobik_borovskoy_bot", cs) == "привет"
 
 
+def test_addressed_text_requires_word_boundary():
+    mod = load()
+    cs = ["@бобик", "бобик,"]
+    g = {"chat": {"type": "supergroup"}}
+    assert mod.addressed_text(dict(g, text="@бобикНЕКТО привет"), "bobik_borovskoy_bot", cs) is None
+    assert mod.addressed_text(dict(g, text="@bobik_borovskoy_bot_fake hi"), "bobik_borovskoy_bot", cs) is None
+    assert mod.addressed_text(dict(g, text="@бобик, привет"), "bobik_borovskoy_bot", cs) == "привет"
+    assert mod.addressed_text(dict(g, text="@бобик"), "bobik_borovskoy_bot", cs) == ""
+
+
 def test_route():
     mod = load()
     assert mod.route("скачай magnet:?xt=urn:btih:A") == ("download", "magnet:?xt=urn:btih:A")
@@ -169,6 +179,12 @@ def test_question_goes_to_gigachat_path_with_login():
     assert tg.texts() == [(FAMILY, "🐕 ответ")]
 
 
+def test_lookalike_callsign_is_not_addressed():
+    mod, bot, tg, dl, asked = make()
+    asyncio.run(bot.handle_update(msg("@бобикXYZ вопрос")))
+    assert asked == [] and dl.calls == [] and tg.texts() == []
+
+
 def test_list_and_cancel():
     mod, bot, tg, dl, asked = make()
     asyncio.run(bot.handle_update(msg("@бобик закачки")))
@@ -204,6 +220,19 @@ def test_stranger_in_private_gets_one_reply_and_owner_is_told():
     assert sum(1 for c, _ in texts if c == STRANGER) == 1
     assert any(c == OWNER and str(STRANGER) in t for c, t in texts)
     assert asked == []
+
+
+def test_stranger_in_family_group_stays_silent_and_owner_is_told_once():
+    mod, bot, tg, dl, asked = make()
+    for _ in range(2):
+        asyncio.run(bot.handle_update(msg("@бобик скачай magnet:?xt=urn:btih:A", uid=STRANGER)))
+    texts = tg.texts()
+    assert [t for c, t in texts if c == FAMILY] == []
+    assert dl.calls == []
+    assert asked == []
+    owner_texts = [t for c, t in texts if c == OWNER]
+    assert len(owner_texts) == 1
+    assert str(STRANGER) in owner_texts[0]
 
 
 def test_foreign_group_is_left():

@@ -49,6 +49,14 @@ class Hooks(unittest.TestCase):
                            universal_newlines=True)
         return p.returncode
 
+    def run_hook_with_env(self, name, path, extra_env):
+        env = dict(self.env)
+        env.update(extra_env)
+        p = subprocess.run([BASH, os.path.join(HOOKS, name), "gid1", "1", fwd(path)],
+                           env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                           universal_newlines=True)
+        return p.returncode
+
     def touch(self, *parts):
         path = os.path.join(*parts)
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -111,6 +119,52 @@ class Hooks(unittest.TestCase):
         victim = self.touch(self.t, "victim.txt")
         self.assertEqual(self.run_hook("on_stop.sh", os.path.join(self.hddi, "..", "..", "victim.txt")), 0)
         self.assertTrue(os.path.exists(victim))
+
+    # --- Раунд 1 ревью: атомарный перенос, umask, UID контейнера --------------
+
+    def test_failed_copy_leaves_no_partial_in_final(self):
+        # Подмена mv, которая пишет часть данных по целевому пути и падает — как
+        # оборвавшийся кросс-ФС mv (SSD .incomplete -> HDD Downloads).
+        stub = os.path.join(self.t, "fake_mv.sh")
+        with open(stub, "w", newline="\n") as fh:
+            fh.write("#!/usr/bin/env bash\n"
+                      'mkdir -p "$(dirname "$3")"\n'
+                      'printf part > "$3"\n'
+                      "exit 1\n")
+        os.chmod(stub, 0o755)
+        f = self.touch(self.ssd, "a.iso")
+        rc = self.run_hook_with_env("on_complete.sh", f, {"DL_MV": fwd(stub)})
+        self.assertNotEqual(rc, 0)
+        self.assertTrue(os.path.exists(f))
+        self.assertFalse(os.path.exists(os.path.join(self.final, "a.iso")))
+        leftovers = [n for n in os.listdir(self.final) if n.startswith(".incoming.")]
+        self.assertEqual(leftovers, [])
+
+    def test_success_leaves_no_temp_in_final(self):
+        f = self.touch(self.ssd, "a.iso")
+        self.assertEqual(self.run_hook("on_complete.sh", f), 0)
+        leftovers = [n for n in os.listdir(self.final) if n.startswith(".incoming.")]
+        self.assertEqual(leftovers, [])
+
+    def test_entrypoint_resets_umask_for_aria2(self):
+        with open(os.path.join(HOOKS, "entrypoint.sh"), encoding="utf-8") as fh:
+            text = fh.read()
+        lines = text.splitlines()
+        self.assertFalse(any(ln.strip() == "umask 077" for ln in lines),
+                          "umask 077 должен встречаться только внутри подоболочки")
+        self.assertIn("umask 077", text)
+        self.assertTrue(any(ln.strip() == "umask 022" for ln in lines),
+                         "после подоболочки umask должен вернуться к 022")
+
+    def test_dockerfile_prepares_dirs_for_uid_1000(self):
+        with open(os.path.join(HOOKS, "Dockerfile"), encoding="utf-8") as fh:
+            text = fh.read()
+        user_idx = text.find("USER 1000")
+        self.assertGreater(user_idx, -1)
+        chown_idx = text.find("chown -R dl:dl /config /downloads")
+        self.assertGreater(chown_idx, -1)
+        self.assertLess(chown_idx, user_idx)
+        self.assertIn("apk add --no-cache aria2 bash busybox-extras unzip", text)
 
 
 if __name__ == "__main__":

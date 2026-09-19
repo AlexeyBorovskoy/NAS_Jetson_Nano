@@ -35,4 +35,11 @@ while [ -e "$dst" ]; do
   fi
   n=$((n + 1))
 done
-mv -- "$src" "$dst" || { echo "on_complete: не перенёс $src" >&2; exit 1; }
+MV="${DL_MV:-mv}"
+tmp="$FINAL/.incoming.$$.$top"
+if ! $MV -- "$src" "$tmp"; then
+  rm -rf -- "$tmp"
+  echo "on_complete: не перенёс $src — оставлен на месте" >&2
+  exit 1
+fi
+mv -- "$tmp" "$dst" || { echo "on_complete: не переименовал $tmp" >&2; exit 1; }

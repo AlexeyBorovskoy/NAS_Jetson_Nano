@@ -5,8 +5,9 @@ set -eu
 : "${ARIA2_RPC_SECRET:?нужен ARIA2_RPC_SECRET}"
 mkdir -p /downloads/ssd/.incomplete /downloads/hdd/.incomplete /config
 touch /config/aria2.session
-umask 077
-cp /etc/aria2/aria2.conf /tmp/aria2.conf
-printf 'rpc-secret=%s\n' "$ARIA2_RPC_SECRET" >> /tmp/aria2.conf
+( umask 077
+  cp /etc/aria2/aria2.conf /tmp/aria2.conf
+  printf 'rpc-secret=%s\n' "$ARIA2_RPC_SECRET" >> /tmp/aria2.conf )
+umask 022
 httpd -p 6880 -h /www
 exec aria2c --conf-path=/tmp/aria2.conf

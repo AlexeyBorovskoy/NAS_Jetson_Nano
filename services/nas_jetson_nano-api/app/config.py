@@ -91,6 +91,9 @@ class Settings(BaseSettings):
     # Provider field for POST /v1/chat (gigachat | deepseek | ollama). Empty =
     # gateway uses LLM_PROVIDER. ADR-0008 default: gigachat.
     talk_bot_llm_provider: str = "gigachat"
+    # Сервисный токен шлюза (A3, план 2026-09-19) — тот же LLM_GATEWAY_SERVICE_TOKEN,
+    # что у шлюза. Пусто — заголовок не отправляется (шлюз без токена пускает всех).
+    llm_gateway_service_token: str = ""
     talk_bot_llm_timeout: int = 150
     # Guard against a wall-of-text question inflating the bill.
     talk_bot_llm_max_chars: int = 1000
@@ -123,6 +126,11 @@ class Settings(BaseSettings):
         "homecloud_netdata "
         "homecloud_uptime_kuma"
     )
+
+    def llm_headers(self) -> dict:
+        """Заголовки для вызова LLM Gateway: сервисный токен, если он задан."""
+        token = (self.llm_gateway_service_token or "").strip()
+        return {"X-Service-Token": token} if token else {}
 
 
 settings = Settings()

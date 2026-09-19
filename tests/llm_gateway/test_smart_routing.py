@@ -81,6 +81,11 @@ class TestSmartRouting(unittest.TestCase):
         self.assertTrue(m._is_complex_prompt("бэкап"))
         self.assertTrue(m._is_complex_prompt("восстанови"))
 
+    def test_smart_routing_can_be_enabled(self):
+        m = _reload_main({"LLM_PROVIDER": "gigachat", "LLM_SMART_ROUTING": "true"})
+        from fastapi.testclient import TestClient
+        self.assertTrue(TestClient(m.app).get("/health").json()["smart_routing_enabled"])
+
     def test_health_exposes_smart_routing(self):
         """Health endpoint should expose smart routing config."""
         m = _reload_main({
@@ -91,7 +96,9 @@ class TestSmartRouting(unittest.TestCase):
         from fastapi.testclient import TestClient
         client = TestClient(m.app)
         h = client.get("/health").json()
-        self.assertTrue(h["smart_routing_enabled"])
+        # Выключено по умолчанию до решения владельца D5 (план 2026-09-19):
+        # у Max отдельная квота, русские шаблоны не совпадают со словами.
+        self.assertFalse(h["smart_routing_enabled"])
         self.assertEqual(h["gigachat_model"], "GigaChat-2")
         self.assertEqual(h["gigachat_model_complex"], "GigaChat-2-Max")
 
@@ -210,6 +217,7 @@ class TestSavePathRestriction(unittest.TestCase):
 
     def test_output_root_is_fixed(self):
         """IMAGE_OUTPUT_ROOT should be /data/images by default."""
+        os.environ.pop("IMAGE_OUTPUT_ROOT", None)  # ворота задают свой каталог
         m = _reload_main({})
         self.assertIn("data/images", self._normalize(m._IMAGE_OUTPUT_ROOT))
 
@@ -217,6 +225,138 @@ class TestSavePathRestriction(unittest.TestCase):
         """Custom IMAGE_OUTPUT_ROOT should be respected."""
         m = _reload_main({"IMAGE_OUTPUT_ROOT": "/custom/output"})
         self.assertEqual(self._normalize(m._IMAGE_OUTPUT_ROOT), "/custom/output")
+
+
+class TestServiceTokenAuth(unittest.TestCase):
+    """W0.2 — audit_new G02: gateway service token authentication."""
+
+    def setUp(self):
+        self._env_backup = dict(os.environ)
+
+    def tearDown(self):
+        os.environ.clear()
+        os.environ.update(self._env_backup)
+        for key in list(sys.modules):
+            if key == "app" or key.startswith("app."):
+                del sys.modules[key]
+
+    def test_no_token_configured_allows_all(self):
+        """When LLM_GATEWAY_SERVICE_TOKEN is empty, all requests pass."""
+        m = _reload_main({
+            "LLM_GATEWAY_SERVICE_TOKEN": "",
+            "LLM_PROVIDER": "gigachat",
+        })
+        from fastapi.testclient import TestClient
+        client = TestClient(m.app)
+        # Chat without token — should work (token not configured)
+        r = client.post("/v1/chat", json={"prompt": "hi", "user": "t"})
+        self.assertEqual(r.status_code, 200)
+
+    def test_token_required_when_configured(self):
+        """When token is set, requests without it get 401."""
+        m = _reload_main({
+            "LLM_GATEWAY_SERVICE_TOKEN": "test-secret-token-123",
+            "LLM_PROVIDER": "gigachat",
+        })
+        from fastapi.testclient import TestClient
+        client = TestClient(m.app)
+        r = client.post("/v1/chat", json={"prompt": "hi", "user": "t"})
+        self.assertEqual(r.status_code, 401)
+
+    def test_correct_token_allows_access(self):
+        """Valid token should allow access."""
+        m = _reload_main({
+            "LLM_GATEWAY_SERVICE_TOKEN": "test-secret-token-123",
+            "LLM_PROVIDER": "gigachat",
+        })
+        from fastapi.testclient import TestClient
+        client = TestClient(m.app)
+        r = client.post(
+            "/v1/chat",
+            json={"prompt": "hi", "user": "t"},
+            headers={"X-Service-Token": "test-secret-token-123"},
+        )
+        self.assertEqual(r.status_code, 200)
+
+    def test_wrong_token_rejected(self):
+        """Wrong token should be rejected."""
+        m = _reload_main({
+            "LLM_GATEWAY_SERVICE_TOKEN": "test-secret-token-123",
+            "LLM_PROVIDER": "gigachat",
+        })
+        from fastapi.testclient import TestClient
+        client = TestClient(m.app)
+        r = client.post(
+            "/v1/chat",
+            json={"prompt": "hi", "user": "t"},
+            headers={"X-Service-Token": "wrong-token"},
+        )
+        self.assertEqual(r.status_code, 401)
+
+    def test_health_no_token_required(self):
+        """Health endpoint should work without token."""
+        m = _reload_main({
+            "LLM_GATEWAY_SERVICE_TOKEN": "test-secret-token-123",
+        })
+        from fastapi.testclient import TestClient
+        client = TestClient(m.app)
+        r = client.get("/health")
+        self.assertEqual(r.status_code, 200)
+
+    def test_image_generate_requires_token(self):
+        """Image generate should require token when configured."""
+        m = _reload_main({
+            "LLM_GATEWAY_SERVICE_TOKEN": "test-secret-token-123",
+            "GIGACHAT_AUTH_KEY": "dummy",
+        })
+        from fastapi.testclient import TestClient
+        client = TestClient(m.app)
+        r = client.post("/v1/image/generate", json={"prompt": "test"})
+        self.assertEqual(r.status_code, 401)
+
+    def test_image_presets_no_token_required(self):
+        """Image presets (read-only) should work without token."""
+        m = _reload_main({
+            "LLM_GATEWAY_SERVICE_TOKEN": "test-secret-token-123",
+        })
+        from fastapi.testclient import TestClient
+        client = TestClient(m.app)
+        r = client.get("/v1/image/presets")
+        self.assertEqual(r.status_code, 200)
+
+    def test_balance_no_token_required(self):
+        """Balance endpoint should work without token."""
+        m = _reload_main({
+            "LLM_GATEWAY_SERVICE_TOKEN": "test-secret-token-123",
+            "GIGACHAT_AUTH_KEY": "dummy",
+        })
+        from fastapi.testclient import TestClient
+        client = TestClient(m.app)
+        # Без сети: тест проверяет авторизацию, а не OAuth Сбера (прежде шёл в сеть и получал 502).
+        from unittest import mock
+        with mock.patch.object(m, "_gigachat_balance", return_value={"balance": []}):
+            r = client.get("/v1/provider/gigachat/balance")
+        self.assertEqual(r.status_code, 200)
+
+    def test_usage_no_token_required(self):
+        """Usage endpoint should work without token."""
+        m = _reload_main({
+            "LLM_GATEWAY_SERVICE_TOKEN": "test-secret-token-123",
+        })
+        from fastapi.testclient import TestClient
+        client = TestClient(m.app)
+        r = client.get("/v1/usage")
+        self.assertEqual(r.status_code, 200)
+
+    def test_redact_no_token_required(self):
+        """Redact endpoint should work without token."""
+        m = _reload_main({
+            "LLM_GATEWAY_SERVICE_TOKEN": "test-secret-token-123",
+        })
+        from fastapi.testclient import TestClient
+        client = TestClient(m.app)
+        r = client.post("/v1/redact", json={"prompt": "test"})
+        self.assertEqual(r.status_code, 200)
 
 
 if __name__ == "__main__":

@@ -50,6 +50,12 @@ services:
       LLM_LOG_RESPONSES: ${LLM_LOG_RESPONSES}
       # W0.1 — audit_new G01: fixed output root for image saves
       IMAGE_OUTPUT_ROOT: ${IMAGE_OUTPUT_ROOT:-/data/images}
+      # W0.2 — audit_new G02: service token for chat/image endpoints
+      # Once set, /v1/chat and /v1/image/* require X-Service-Token header.
+      # /health, /v1/usage, /v1/redact, /v1/provider/gigachat/balance stay public.
+      LLM_GATEWAY_SERVICE_TOKEN: ${LLM_GATEWAY_SERVICE_TOKEN:-}
+      # D5: smart routing выключен по умолчанию (отдельная квота Max)
+      LLM_SMART_ROUTING: ${LLM_SMART_ROUTING:-false}
     extra_hosts:
       # Обратный SSH-туннель со станции слушает на хосте; из контейнера он виден
       # только по этому имени. Тот же приём, что у API-контейнера.

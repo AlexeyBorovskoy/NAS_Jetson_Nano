@@ -15,6 +15,7 @@ Design notes
 * Name redaction is an explicit family-name list, not a NER model — see
   `docs/08_LLM_GATEWAY_DEEPSEEK.md` for what that does and does not cover.
 """
+import hmac
 import json
 import os
 import re
@@ -26,7 +27,7 @@ from pathlib import Path
 from typing import Literal, Optional
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Request
 from pydantic import BaseModel, Field
 
 try:
@@ -35,6 +36,42 @@ except Exception:  # pragma: no cover
     OpenAI = None
 
 app = FastAPI(title="Home Cloud LLM Gateway", version="0.3.0")
+
+# ── Service token authentication (W0.2 — audit_new G02, 2026-09-19) ─────────────
+#
+# Gateway endpoints (/v1/chat, /v1/image/*) require a service token.
+# This prevents unauthenticated LAN clients from consuming LLM quota.
+#
+# - Header: `X-Service-Token: <value>`
+# - Env var: `LLM_GATEWAY_SERVICE_TOKEN` (required in production)
+# - /health, /v1/usage, /v1/redact, /v1/provider/gigachat/balance remain public
+#   for monitoring and debugging.
+#
+# Audit note (audit_new G02): compose publishes 8090:8090 on host, and chat/image
+# endpoints have no authentication. Any LAN client can consume LLM quota.
+# Fix: service token middleware.
+
+_SERVICE_TOKEN = os.getenv("LLM_GATEWAY_SERVICE_TOKEN", "").strip()
+
+
+def _require_service_token(request: Request) -> None:
+    """FastAPI dependency: reject requests without valid service token.
+
+    Returns None on success (FastAPI calls it as a dependency).
+    Raises HTTPException(401) on failure.
+    """
+    if not _SERVICE_TOKEN:
+        # Token not configured — allow all (backward compat for first deploy).
+        # Once set, this becomes a hard gate.
+        return
+
+    header = request.headers.get("X-Service-Token", "").strip()
+    if not hmac.compare_digest(header.encode(), _SERVICE_TOKEN.encode()):
+        raise HTTPException(
+            status_code=401,
+            detail="missing or invalid service token"
+        )
+
 
 # ── Redaction ───────────────────────────────────────────────────────────────────
 
@@ -364,6 +401,16 @@ _COMPLEX_PATTERNS = [
 _COMPILED_COMPLEX = [re.compile(p, re.IGNORECASE | re.UNICODE) for p in _COMPLEX_PATTERNS]
 
 
+def _smart_routing_enabled() -> bool:
+    """Выключено по умолчанию — решение владельца D5 (план 2026-09-19).
+
+    У GigaChat-2-Max отдельная квота (~25 млн токенов против ~250 млн у GigaChat-2,
+    журнал баланса 2026-09-18): «общего бесплатного ведра» нет. Кроме того, русские
+    основы в шаблонах ограничены \b с обеих сторон и со словами не совпадают.
+    """
+    return os.getenv("LLM_SMART_ROUTING", "false").strip().lower() in ("1", "true", "yes")
+
+
 def _is_complex_prompt(text: str) -> bool:
     """Detect if a prompt needs the Max model (code, errors, diagnostics, admin).
 
@@ -487,7 +534,11 @@ def _call_gigachat_locked(system: str, user: str, model: str) -> tuple[str, int]
 # Можно переопределить через env, но всегда должен быть абсолютным путём.
 
 _IMAGE_OUTPUT_ROOT = Path(os.getenv("IMAGE_OUTPUT_ROOT", "/data/images"))
-_IMAGE_OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
+# Каталог создаётся при первой записи (_finish_image), не при импорте: импорт модуля
+# в тестах создавал /data/images — на Windows это корень диска (аудит 2026-09-19).
+
+# GigaChat отдаёт сгенерированную картинку как <img src="FILE_ID" .../> в тексте ответа.
+_IMG_TAG_RE = re.compile(r'<img\s+src="([^"]+)"', re.IGNORECASE)
 
 
 def _sanitize_save_path(requested: Optional[str]) -> Path:
@@ -861,7 +912,8 @@ def health():
         "gigachat_base": _gigachat_base(),
         "gigachat_model": os.getenv("GIGACHAT_MODEL", _DEFAULT_GIGACHAT_MODEL),
         "gigachat_model_complex": os.getenv("GIGACHAT_MODEL_COMPLEX", _DEFAULT_GIGACHAT_MODEL_COMPLEX),
-        "smart_routing_enabled": True,
+        "smart_routing_enabled": _smart_routing_enabled(),
+        "service_token_enforced": bool(_SERVICE_TOKEN),
         # W0.1 — audit_new G01
         "image_output_root": str(_IMAGE_OUTPUT_ROOT),
     }
@@ -932,7 +984,10 @@ SYSTEM_PROMPT = (
 
 
 @app.post("/v1/chat", response_model=ChatResponse)
-def chat(payload: ChatRequest):
+def chat(
+    payload: ChatRequest,
+    _auth: None = Depends(_require_service_token),
+):
     # Explicit provider always wins. Else optional local prefer, else LLM_PROVIDER.
     requested = (payload.provider or "").strip().lower()
     if requested:
@@ -946,6 +1001,9 @@ def chat(payload: ChatRequest):
     if payload.mode != "safe":
         raise HTTPException(status_code=400, detail="raw mode is disabled in Stage 1")
 
+    context = payload.context or ""
+    full = f"Task: {payload.task}\n\nContext:\n{context}\n\nPrompt:\n{payload.prompt}"
+
     if provider == "ollama":
         model = os.getenv("LLM_LOCAL_MODEL", "qwen3.5:4b")
         configured = bool(os.getenv("LLM_LOCAL_URL", "").strip())
@@ -954,7 +1012,7 @@ def chat(payload: ChatRequest):
         configured = bool(os.getenv("GIGACHAT_AUTH_KEY", "").strip())
         # Smart routing: complex prompts (code, errors, diagnostics) → Max.
         # Both models share the same freemium bucket — just smarter token use.
-        if model == _DEFAULT_GIGACHAT_MODEL and _is_complex_prompt(full):
+        if _smart_routing_enabled() and model == _DEFAULT_GIGACHAT_MODEL and _is_complex_prompt(full):
             model = os.getenv("GIGACHAT_MODEL_COMPLEX", _DEFAULT_GIGACHAT_MODEL_COMPLEX)
     elif provider == "cloudru":
         model = os.getenv(
@@ -986,8 +1044,6 @@ def chat(payload: ChatRequest):
     if not local:
         _check_budget(user)
 
-    context = payload.context or ""
-    full = f"Task: {payload.task}\n\nContext:\n{context}\n\nPrompt:\n{payload.prompt}"
     safe_full = redact(full)
 
     fallback_from: Optional[str] = None
@@ -1029,7 +1085,10 @@ def chat(payload: ChatRequest):
 
 
 @app.post("/v1/diagnostics/explain", response_model=ChatResponse)
-def explain_diagnostics(payload: ChatRequest):
+def explain_diagnostics(
+    payload: ChatRequest,
+    _auth: None = Depends(_require_service_token),
+):
     payload.task = "explain_anonymized_diagnostics"
     return chat(payload)
 
@@ -1153,7 +1212,10 @@ def _finish_image(raw: bytes, file_id: str, tokens: int, save_path: Optional[str
 
 
 @app.post("/v1/image/generate", response_model=ImageResponse)
-def image_generate(payload: ImageRequest):
+def image_generate(
+    payload: ImageRequest,
+    _auth: None = Depends(_require_service_token),
+):
     """Generate an image from a text prompt. Nothing personal leaves the house."""
     if not os.getenv("GIGACHAT_AUTH_KEY", "").strip():
         raise HTTPException(status_code=400, detail="GigaChat is not configured")
@@ -1171,7 +1233,10 @@ def image_presets():
 
 
 @app.post("/v1/image/edit", response_model=ImageResponse)
-def image_edit(payload: ImageEditRequest):
+def image_edit(
+    payload: ImageEditRequest,
+    _auth: None = Depends(_require_service_token),
+):
     """Draw a NEW image inspired by a photo. THIS SENDS THE PHOTO TO THE PROVIDER.
 
     ⚠️ NOT an editor. The provider looks at the photo, describes it in words, and

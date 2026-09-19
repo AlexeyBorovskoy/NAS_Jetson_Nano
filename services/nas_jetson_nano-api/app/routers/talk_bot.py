@@ -345,7 +345,7 @@ async def _ask_llm(question: str, user: str) -> str:
     if _prov:
         payload["provider"] = _prov
     async with httpx.AsyncClient(timeout=settings.talk_bot_llm_timeout) as client:
-        r = await client.post(settings.talk_bot_llm_url, json=payload)
+        r = await client.post(settings.talk_bot_llm_url, json=payload, headers=settings.llm_headers())
 
     if r.status_code == 429:
         _STATE["llm_refused"] = _STATE.get("llm_refused", 0) + 1
@@ -618,7 +618,7 @@ async def _handle_image_request(token: str, m: dict, question: str, user: str) -
     url = settings.talk_bot_llm_url.replace("/v1/chat", "/v1/image/edit")
     try:
         async with httpx.AsyncClient(timeout=settings.talk_bot_image_timeout) as client:
-            r = await client.post(url, json=payload)
+            r = await client.post(url, json=payload, headers=settings.llm_headers())
     except Exception as exc:
         log.exception("talk bot image call failed")
         _STATE["llm_last_error"] = str(exc)

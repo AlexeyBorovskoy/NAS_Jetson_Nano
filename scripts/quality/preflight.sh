@@ -202,6 +202,34 @@ else
     warn "tests/unit отсутствует или нет python"
 fi
 
+# ── 9. Тесты сервисов (pytest) ─────────────────────────────────────────────────
+head_ "9. Тесты сервисов / service tests (pytest)"
+#
+# История дефекта: 2026-09-19 коммит d52c11b сломал КАЖДЫЙ чат GigaChat (HTTP 500),
+# а ворота были зелёными — раздел 8 гоняет только tests/unit, тесты шлюза сюда не
+# попадали. Аудит NAS-REG-001 / NAS-QA-001. Теперь провал любого теста шлюза — провал ворот.
+# Каталоги данных уводим во временный, чтобы тесты не писали в /data (на Windows — корень диска).
+# Каждый каталог — отдельным запуском: оба сервиса называют свой пакет `app`.
+PY=$(command -v python3 || command -v python)
+if [ -n "$PY" ] && "$PY" -c "import pytest, fastapi, httpx, pydantic_settings" >/dev/null 2>&1; then
+    for SVC_TESTS in tests/llm_gateway tests/nas_api; do
+        [ -d "$SVC_TESTS" ] || continue
+        tmpd=$(mktemp -d)
+        out=$(IMAGE_OUTPUT_ROOT="$tmpd/images" LLM_USAGE_FILE="$tmpd/usage.json" \
+              "$PY" -m pytest -q -p no:cacheprovider "$SVC_TESTS" 2>&1); rc=$?
+        rm -rf "$tmpd"
+        summary=$(printf '%s\n' "$out" | tail -1)
+        if [ "$rc" -eq 0 ]; then
+            ok "$SVC_TESTS: $summary"
+        else
+            bad "$SVC_TESTS: $summary"
+            printf '%s\n' "$out" | grep -E '^FAILED|^ERROR' | head -8 | sed 's/^/      /'
+        fi
+    done
+else
+    warn "тесты сервисов не запущены: нет pytest/fastapi/httpx/pydantic-settings"
+fi
+
 # ── Итог ───────────────────────────────────────────────────────────────────────
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

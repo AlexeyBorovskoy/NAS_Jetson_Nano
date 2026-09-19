@@ -59,6 +59,8 @@ services:
       TALK_BOT_LLM_DISPLAY_NAME: ${TALK_BOT_LLM_DISPLAY_NAME:-Бобик}
       TALK_BOT_LLM_URL: ${TALK_BOT_LLM_URL:-http://host.docker.internal:8090/v1/chat}
       TALK_BOT_LLM_PROVIDER: ${TALK_BOT_LLM_PROVIDER:-gigachat}
+      # A3: тот же токен, что у шлюза; пусто — заголовок не шлётся
+      LLM_GATEWAY_SERVICE_TOKEN: ${LLM_GATEWAY_SERVICE_TOKEN:-}
       TALK_BOT_LLM_TIMEOUT: ${TALK_BOT_LLM_TIMEOUT:-150}
       TALK_BOT_LLM_MAX_CHARS: ${TALK_BOT_LLM_MAX_CHARS:-1000}
       TALK_BOT_LLM_DAILY_REPLIES: ${TALK_BOT_LLM_DAILY_REPLIES:-50}

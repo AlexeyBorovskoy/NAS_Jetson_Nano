@@ -1,0 +1,42 @@
+{
+  "audit_date": "2026-09-19",
+  "mode": "read-only",
+  "repo_head": "8ce58e2",
+  "device_repo_head": "0206261",
+  "measured_utc": "2026-09-19T03:33Z/03:45Z",
+  "system": {
+    "containers": 13, "healthy": 12, "no_healthcheck": 1, "restarts": 0, "oom_kills": 0,
+    "ram_available_mb": 1481, "zram_used_mb": 225, "usb_errors_since_boot": 0,
+    "sd_write_gb_per_13h": 4.4, "hdd_used_pct": 77, "ssd_used_pct": 7,
+    "immich_version": "2.7.5", "nextcloud_version": "33.0.4", "vps_vpn_peers": 19
+  },
+  "findings": [
+    {"id": "NAS-REG-001", "sev": "P0", "conf": "CONFIRMED", "title": "Uncommitted gateway change: GigaChat chat -> 500, _IMG_TAG_RE removed"},
+    {"id": "NAS-STO-001", "sev": "P1", "conf": "CONFIRMED", "title": "SSD auto-recovery broken since 2026-09-08 (renamed path)"},
+    {"id": "NAS-REL-001", "sev": "P1", "conf": "CONFIRMED", "title": "Power-loss resets without UPS or detection"},
+    {"id": "NAS-BAK-001", "sev": "P1", "conf": "CONFIRMED", "title": "Nextcloud files, config.php, .env, SD volumes not backed up; photos no off-site"},
+    {"id": "NAS-BAK-002", "sev": "P1", "conf": "CONFIRMED", "title": "HDD backup copy writable via family shares"},
+    {"id": "NAS-BAK-003", "sev": "P1", "conf": "NOT VERIFIED", "title": "1.4 TB archive single copy"},
+    {"id": "NAS-SEC-001", "sev": "P1", "conf": "CONFIRMED", "title": "NAS API unauthenticated endpoints + CORS *"},
+    {"id": "NAS-SEC-002", "sev": "P1", "conf": "CONFIRMED", "title": "NAS API authN != authZ; docker.sock"},
+    {"id": "NAS-SEC-003", "sev": "P1", "conf": "CONFIRMED", "title": "LLM gateway: no auth, save_path, spoofable user, fail-open budget"},
+    {"id": "NAS-SEC-004", "sev": "P2", "conf": "CONFIRMED", "title": "Giga 401 falls back to DeepSeek"},
+    {"id": "NAS-SEC-005", "sev": "P2", "conf": "CONFIRMED", "title": "SSH password auth + password reuse"},
+    {"id": "NAS-SEC-006", "sev": "P2", "conf": "CONFIRMED", "title": "Portainer/Netdata exposed in LAN"},
+    {"id": "NAS-SEC-007", "sev": "P3", "conf": "CONFIRMED", "title": "rpcbind/avahi listening"},
+    {"id": "NAS-SEC-008", "sev": "P2", "conf": "CONFIRMED", "title": "Identifiers in public CLAUDE.md"},
+    {"id": "NAS-SEC-009", "sev": "P2", "conf": "CONFIRMED", "title": "Talk image branch before gate, no size cap"},
+    {"id": "NAS-PERF-001", "sev": "P2", "conf": "CONFIRMED", "title": "~8 GB/day SD writes, no log rotation"},
+    {"id": "NAS-PERF-002", "sev": "P3", "conf": "CONFIRMED", "title": "Limits sum = RAM; microservices 91%; monitoring 430 MB"},
+    {"id": "NAS-OPS-001", "sev": "P2", "conf": "CONFIRMED", "title": "Floating image tags, dangling images"},
+    {"id": "NAS-OBS-001", "sev": "P2", "conf": "PROBABLE", "title": "Failed units not alerted"},
+    {"id": "NAS-QA-001", "sev": "P2", "conf": "CONFIRMED", "title": "CI red 35 runs; broken heredocs in 2 scripts"},
+    {"id": "NAS-DOC-001", "sev": "P2", "conf": "CONFIRMED", "title": "Docs claim unimplemented hardening"},
+    {"id": "NAS-DEP-001", "sev": "P3", "conf": "CONFIRMED", "title": "starlette/ecdsa advisories, unpinned API deps, dead backup-api"},
+    {"id": "NAS-LIFE-001", "sev": "P1", "conf": "CONFIRMED", "title": "EOL platform; Immich 2.7.5 unsupported"}
+  ],
+  "prior_risks": {"G01": "STILL PRESENT (WIP partial fix)", "G02": "STILL PRESENT", "G03": "STILL PRESENT", "G04": "STILL PRESENT", "G05": "STILL PRESENT", "G06": "STILL PRESENT", "G07": "STILL PRESENT", "G08": "STILL PRESENT", "G09": "STILL PRESENT", "CORS": "STILL PRESENT", "coturn": "STILL PRESENT"},
+  "maturity": {"storage": "L2", "backup": "L2", "security": "L2", "monitoring": "L3-", "deployment": "L1", "recovery": "L2", "documentation": "L3", "testing": "L2"},
+  "withdrawn": ["Off-site pull stopped after 09-09 (auth.log) — pull stamp shows 2026-09-19 01:05 UTC"],
+  "hardware_verdict": "No CPU/RAM/IO bottleneck; UPS justified; board replacement = lifecycle, deferrable"
+}

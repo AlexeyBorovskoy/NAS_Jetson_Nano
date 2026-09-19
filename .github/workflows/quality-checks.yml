@@ -26,14 +26,14 @@ jobs:
           ERRORS=0
           while IFS= read -r f; do
             bash -n "$f" || { echo "SYNTAX ERROR: $f"; ERRORS=$((ERRORS+1)); }
-          done < <(find scripts/ tests/ -name "*.sh" -type f | sort)
+          done < <(find scripts/ services/ tests/ -name "*.sh" -type f | sort)
           echo "Syntax check complete: errors=$ERRORS"
           exit "$ERRORS"
 
       - name: ShellCheck (warning level)
         run: |
           echo "=== ShellCheck warnings ==="
-          find scripts/ tests/ -name "*.sh" -type f | sort | while read -r f; do
+          find scripts/ services/ tests/ -name "*.sh" -type f | sort | while read -r f; do
             echo "--- $f ---"
             shellcheck --severity=warning --shell=bash "$f" || true
           done
@@ -41,7 +41,7 @@ jobs:
       - name: ShellCheck (error level, enforced)
         run: |
           echo "=== ShellCheck errors (enforced) ==="
-          find scripts/ tests/ -name "*.sh" -type f -print0 | \
+          find scripts/ services/ tests/ -name "*.sh" -type f -print0 | \
             xargs -0 shellcheck --severity=error --shell=bash --format=gcc
 
   # ---------------------------------------------------------------------------

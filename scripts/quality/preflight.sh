@@ -33,7 +33,7 @@ have() { command -v "$1" >/dev/null 2>&1; }
 
 # ── 1. Синтаксис shell ─────────────────────────────────────────────────────────
 head_ "1. Синтаксис bash / bash syntax"
-sh_files=$(find scripts tests systemd -name '*.sh' -type f 2>/dev/null)
+sh_files=$(find scripts services tests systemd -name '*.sh' -type f 2>/dev/null)
 n=0; bad_n=0
 for f in $sh_files; do
     n=$((n+1))

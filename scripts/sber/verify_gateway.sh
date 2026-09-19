@@ -11,7 +11,8 @@ echo "=== health ==="
 curl -fsS "$BASE/health" | tee /tmp/llm_health.json
 echo
 
-python3 - <<'PY' || python - <<'PY'
+PY_BIN="$(command -v python3 || command -v python)"
+"$PY_BIN" - <<'PY'
 import json, sys
 h = json.load(open("/tmp/llm_health.json", encoding="utf-8"))
 assert h.get("status") == "ok", h
@@ -28,8 +29,11 @@ if "giga.chat" not in str(h.get("gigachat_base", "")):
 PY
 
 echo "=== chat gigachat ==="
+# A3: шлюз с включённым токеном требует X-Service-Token (тот же ключ, что в .env).
+AUTH_HDR=()
+[[ -n "${LLM_GATEWAY_SERVICE_TOKEN:-}" ]] && AUTH_HDR=(-H "X-Service-Token: ${LLM_GATEWAY_SERVICE_TOKEN}")
 code=$(curl -sS -o /tmp/llm_chat.json -w "%{http_code}" \
-  -H "Content-Type: application/json" \
+  -H "Content-Type: application/json" "${AUTH_HDR[@]}" \
   -d '{"prompt":"Ответь одним словом: ок","provider":"gigachat","user":"admin"}' \
   "$BASE/v1/chat" || true)
 echo "HTTP $code"

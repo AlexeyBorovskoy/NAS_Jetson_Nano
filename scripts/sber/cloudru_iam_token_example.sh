@@ -20,7 +20,8 @@ resp=$(curl -sS -X POST \
   "https://auth.iam.cloud.ru/auth/system/openid/token")
 
 # Print only metadata + token length (avoid accidental board paste of full token)
-python3 - <<PY || python - <<PY
+PY_BIN="$(command -v python3 || command -v python)"
+"$PY_BIN" - <<PY
 import json, os, sys
 raw = '''$resp'''
 try:

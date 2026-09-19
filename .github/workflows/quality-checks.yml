@@ -129,6 +129,40 @@ jobs:
           ignore-unfixed: true
 
   # ---------------------------------------------------------------------------
+  # Service tests: LLM Gateway + NAS API (pytest).
+  # History: 2026-09-19 commit d52c11b broke every GigaChat chat (HTTP 500) while
+  # CI had no Python test job at all (audit NAS-REG-001 / NAS-QA-001).
+  # Each directory runs separately: both services name their package `app`.
+  # ---------------------------------------------------------------------------
+  service-tests:
+    name: Service tests (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r services/llm-gateway/requirements.txt
+          pip install pytest pydantic-settings
+
+      - name: Unit tests (tests/unit)
+        run: |
+          for t in tests/unit/test_*.py; do python "$t"; done
+
+      - name: LLM Gateway tests
+        run: python -m pytest -q tests/llm_gateway
+        env:
+          IMAGE_OUTPUT_ROOT: ${{ runner.temp }}/images
+          LLM_USAGE_FILE: ${{ runner.temp }}/usage.json
+
+      - name: NAS API tests
+        run: python -m pytest -q tests/nas_api
+
+  # ---------------------------------------------------------------------------
   # actionlint: validate GitHub Actions workflow files
   # ---------------------------------------------------------------------------
   actionlint:

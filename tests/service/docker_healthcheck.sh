@@ -64,7 +64,7 @@ EXPECTED_CONTAINERS=(
     "homecloud_immich_db"
     "homecloud_immich_redis"
     "homecloud_llm_gateway"
-    "homecloud_nas_jetson_nano_api"
+    "homecloud_nasa_api"
     "homecloud_samba"
     "homecloud_netdata"
     "homecloud_uptime_kuma"

@@ -177,6 +177,44 @@ HOST_PATH = re.compile(
     r"|homecloud_nas_jetson_nano_api")
 
 
+class ComposeUsesLayoutVariables(unittest.TestCase):
+    """Тот же дефект в compose: на устройстве пути томов API правились вручную
+    (`/var/log/nasa-monitor:...`), и любой `git pull` конфликтовал с этой правкой."""
+
+    def test_api_compose_host_paths_are_variables(self):
+        path = os.path.join(REPO, "docker", "compose", "docker-compose.nas_jetson_nano-api.yml")
+        offenders = []
+        with open(path, encoding="utf-8") as fh:
+            for n, line in enumerate(fh, 1):
+                stripped = line.strip()
+                if not stripped.startswith("- ") or ":" not in stripped:
+                    continue
+                host_side = stripped[2:].strip().strip('"').split(":", 1)[0]
+                if HOST_PATH.search(host_side):
+                    offenders.append("%d: %s" % (n, stripped))
+        self.assertEqual(offenders, [], "\n".join(offenders))
+
+
+class LiveApiContainerName(unittest.TestCase):
+    """H10: мониторинг ждал `homecloud_nas_jetson_nano_api`, живой контейнер —
+    `homecloud_nasa_api` (решение 2026-08-30). Ожидания давали ложную «пропажу»."""
+
+    FILES = ["docker/compose/docker-compose.nas_jetson_nano-api.yml",
+             "services/nas_jetson_nano-api/app/routers/actions.py",
+             "tests/service/docker_healthcheck.sh"]
+
+    def test_no_phantom_container_name(self):
+        bad = []
+        for rel in self.FILES:
+            with open(os.path.join(REPO, rel), encoding="utf-8") as fh:
+                for n, line in enumerate(fh, 1):
+                    if line.lstrip().startswith("#"):
+                        continue
+                    if "homecloud_nas_jetson_nano_api" in line:
+                        bad.append("%s:%d" % (rel, n))
+        self.assertEqual(bad, [])
+
+
 class NoHardcodedHostPaths(unittest.TestCase):
 
     def test_device_scripts_use_layout(self):

@@ -126,7 +126,7 @@ async def trigger_report():
         "- `homecloud_immich_server`\n"
         "- `homecloud_immich_microservices`\n"
         "- `homecloud_llm_gateway`\n"
-        "- `homecloud_nas_jetson_nano_api`\n"
+        "- `homecloud_nasa_api`\n"
         "- `homecloud_samba`\n"
         "- `homecloud_netdata`\n"
         "- `homecloud_uptime_kuma`\n"

@@ -13,12 +13,13 @@ services:
       - "8099:8099"
     volumes:
       # Shared log directory — persists JSON logs on host
-      - /var/log/nas_jetson_nano-monitor:/var/log/nas_jetson_nano-monitor
+      # Пути хоста — из раскладки (docs/35_HOST_LAYOUT.md); на устройстве заданы в config/.env
+      - ${NAS_LOG_DIR:-/var/log/nas_jetson_nano-monitor}:/var/log/nas_jetson_nano-monitor
       # Docker socket — for `docker ps` inside container
       - /var/run/docker.sock:/var/run/docker.sock:ro
       # Report script — for POST /v1/report/now
-      - /usr/local/sbin/nas_jetson_nano-send-report-telegram.sh:/usr/local/sbin/nas_jetson_nano-send-report-telegram.sh:ro
-      - /etc/nas_jetson_nano-monitor:/etc/nas_jetson_nano-monitor:ro
+      - ${NAS_SBIN_PREFIX:-/usr/local/sbin/nas_jetson_nano}-send-report-telegram.sh:/usr/local/sbin/nas_jetson_nano-send-report-telegram.sh:ro
+      - ${NAS_CONF_DIR:-/etc/nas_jetson_nano-monitor}:/etc/nas_jetson_nano-monitor:ro
     environment:
       API_LOG_LEVEL: ${NAS_JETSON_NANO_API_LOG_LEVEL:-INFO}
       JWT_SECRET: ${NAS_JETSON_NANO_API_JWT_SECRET}
@@ -33,7 +34,7 @@ services:
         homecloud_immich_db
         homecloud_immich_redis
         homecloud_llm_gateway
-        homecloud_nas_jetson_nano_api
+        homecloud_nasa_api
         homecloud_samba
         homecloud_netdata
         homecloud_uptime_kuma

@@ -3,7 +3,9 @@
 > 🇷🇺 Запрос сына, приоритет владельца. Утверждено владельцем 2026-09-19; **редакция 2** того же дня:
 > главный интерфейс — **чат с ботом @bobik_borovskoy_bot** (бот добавлен в семейную группу «Боровские»);
 > **редакция 3:** обращение к боту — по имени: «@бобик скачай <ссылка>» (решение владельца);
-> **редакция 4:** закачки до 100 ГБ и больше — большие пишутся сразу на HDD (вопрос владельца).
+> **редакция 4:** закачки до 100 ГБ и больше — большие пишутся сразу на HDD (вопрос владельца);
+> **редакция 5:** в этот же срез входят **вопросы к GigaChat** по обращению «@бобик <вопрос>» (решение владельца);
+> SOCKS слушает `172.17.0.1:1080` — Jetson напрямую до Telegram не доходит (замер 2026-09-19: 3 из 3 таймаут).
 > EN summary — в конце. Статус: **спецификация**; реализация — после плана; выкат — только по «деплой».
 
 ## 1. Зачем и что считается готовым
@@ -26,7 +28,7 @@
 | Режим приватности бота в группе | **выключен** (`/setprivacy` → Disable в @BotFather, бота перезайти в группу) | иначе Telegram не отдаёт боту текст «@бобик»: это не упоминание аккаунта, а слово. Цена — в §7 |
 | Кому | **вся семья** (решение владельца): белый список Telegram user_id + одна группа | общая папка `Downloads` |
 | Транспорт бота | как в спецификации Telegram-бота: long polling через SSH SOCKS к VPS, код в контейнере NAS API | портов наружу нет; рабочий обратный туннель не трогается |
-| Порядок с Telegram-ботом | **качалка — первый срез Telegram-бота**: транспорт, белый список, команды закачек. Вопросы к LLM и фото — следующими срезами той же спецификации | приоритет владельца |
+| Порядок с Telegram-ботом | **первый срез Telegram-бота**: транспорт, белый список, команды закачек **и вопросы к GigaChat** («@бобик <вопрос>» — тот же путь, что `@бобик` в Talk: safety gate → шлюз с токеном → квота по логину). Фото — следующим срезом | решение владельца |
 | Steam | **не делаем** на Jetson | SteamCMD только x86, у Jetson ARM; игры Steam привязаны к аккаунту. У сына — удалённая установка из мобильного Steam на свой ПК |
 | Размер закачки | **без искусственного предела**; ≤ `DL_SSD_MAX_GB` (20 ГБ) и помещается на SSD с запасом → через SSD; больше → **сразу на HDD** (`/mnt/hdd2tb/Downloads/.incomplete`), без переноса | канал ≈ 11 МБ/с, HDD через ntfs-3g пишет ≈ 90 МБ/с — не узкое место; перенос 100 ГБ с SSD — лишние ~20 мин CPU и риск забить SSD |
 | 20 МБ в Telegram | это предел **только для `.torrent`-файла**, который бот забирает из чата (лимит Bot API на `getFile`); сам торрент по нему — любого размера. Magnet и HTTP этого предела не имеют | — |
@@ -35,9 +37,10 @@
 ## 3. Схема
 
 ```
-Telegram (группа «Боровские» / личка) ⇄ VPS ══ SSH SOCKS 127.0.0.1:1080 ══► Jetson
+Telegram (группа «Боровские» / личка) ⇄ VPS ══ SSH SOCKS 172.17.0.1:1080 ══► Jetson
                                                                              │
    контейнер NAS API: telegram_front ─► downloads (команды, учёт) ─JSON-RPC+секрет─► aria2 :6800
+                                     └─► «@бобик <вопрос>» → safety gate → LLM-шлюз (токен) → GigaChat
                                                                                       │
    ≤ 20 ГБ:               /mnt/storage/downloads/.incomplete  (SSD, идёт закачка)     │
    > 20 ГБ:               /mnt/hdd2tb/Downloads/.incomplete    (HDD, идёт закачка)     │
@@ -60,6 +63,7 @@ Telegram (группа «Боровские» / личка) ⇄ VPS ══ SSH S
 | `.torrent`-файл с подписью `@бобик скачай` | ставит закачку из файла (≤ 20 МБ) |
 | `@бобик закачки` | список: номер, имя, %, скорость, осталось; последней строкой — свободно на SSD и HDD (за вычетом запаса) |
 | `@бобик отмени N` | отменяет N-ю закачку из списка |
+| `@бобик <любой другой текст>` | вопрос к GigaChat (как `@бобик` в Talk; квота общая по логину) |
 
 Сообщения группы без обращения бот **отбрасывает сразу**: не обрабатывает, не хранит, не пишет в журнал.
 
@@ -72,11 +76,11 @@ Telegram (группа «Боровские» / личка) ⇄ VPS ══ SSH S
 |---|---|---|
 | образ `homecloud_downloads` | `services/downloads/`, сборка на Jetson | Alpine + `aria2` + AriaNg (версия и SHA-256 закреплены) + `busybox httpd` |
 | `aria2.conf` | в образе | `.incomplete` на SSD по умолчанию, `seed-time=0`, ≤ 2 закачек одновременно, `pause-metadata=true`, сессия переживает перезапуск; `file-allocation`: `falloc` на SSD (ext4), `none` на HDD — ставится на закачку вместе с `dir` (предвыделение 100 ГБ через ntfs-3g заняло бы часы) |
-| `on_start.sh` | в образе | страж при старте: свободно на целевом диске меньше порога → пауза через RPC |
+| `on_stop.sh` | в образе | при отмене или ошибке удаляет недокачанное из `.incomplete` (иначе отменённые 100 ГБ остались бы на HDD). Страж места — в модуле `downloads` раз в 30 с (закачки из AriaNg он тоже видит), отдельный хук на старт не нужен |
 | `on_complete.sh` | в образе | перенос файла или **верхнего каталога** многофайлового торрента в `Downloads/`: с SSD — копированием на HDD, из `Downloads/.incomplete` — переименованием в пределах HDD; при ошибке — остаётся на месте |
 | `downloads` (модуль NAS API) | `services/nas_jetson_nano-api/app/` | разбор ссылки/файла; **выбор диска по размеру** (HTTP — размер из `HEAD` до старта; торрент — `pause-metadata`: после метаданных закачка на паузе, бот ставит `dir` и снимает паузу); отказ, если размер больше свободного на HDD минус запас; учёт «GID → чат, кто поставил» в атомарном JSON; опрос раз в 30 с: уведомления о готовности и **страж обоих дисков** (SSD ≥ `DL_SSD_MIN_FREE_GB`=40, HDD ≥ `DL_HDD_MIN_FREE_GB`=50 → пауза всех активных + сообщение) |
 | `telegram_front` (минимальный) | там же | `getUpdates`/`sendMessage`/`getFile` через SOCKS, offset после обработки, белый список, выход из чужих групп, 429 → `retry_after` |
-| юнит SOCKS | systemd на Jetson | `ssh -N -D 127.0.0.1:1080` к VPS с автоперезапуском |
+| юнит SOCKS | systemd на Jetson | `ssh -N -D 172.17.0.1:1080` к VPS с автоперезапуском: адрес docker0, иначе контейнер NAS API прокси не увидит; в LAN не слушает. Jetson напрямую до Telegram не доходит (замер 2026-09-19) |
 | `speed_schedule` | systemd-таймеры | 08:00 — `DL_DAY_LIMIT` (6M ≈ 48 Мбит/с), 23:00 — без лимита |
 | compose `docker-compose.downloads.yml` | `docker/compose/` | `mem_limit: 192m`, 6800/6880 в LAN, тома SSD и HDD, `ARIA2_RPC_SECRET` |
 
@@ -85,7 +89,7 @@ Samba, Nextcloud и VPS-сервисы **не меняются**. На VPS — �
 ## 6. Конфигурация (`config/.env` устройства; в git — пустые ключи)
 
 `TELEGRAM_BOT_TOKEN` (записан) · `TELEGRAM_USERS` (`user_id:логин` через пробел) · `TELEGRAM_FAMILY_CHAT_ID` ·
-`TELEGRAM_PROXY=socks5://127.0.0.1:1080` · `ARIA2_RPC_SECRET` · `DL_SSD_MIN_FREE_GB=40` · `DL_HDD_MIN_FREE_GB=50` ·
+`TELEGRAM_PROXY=socks5://172.17.0.1:1080` · `ARIA2_RPC_SECRET` · `DL_SSD_MIN_FREE_GB=40` · `DL_HDD_MIN_FREE_GB=50` ·
 `DL_SSD_MAX_GB=20` · `DL_DAY_LIMIT=6M`.
 Значения ID — `docs/local/IDENTIFIERS.md` (вне git): группа и владелец получены `getUpdates` 2026-09-19.
 
@@ -150,3 +154,6 @@ written straight to the HDD, which keeps up with the home line. The 20 MB Telegr
 the HDD). No seeding, at most two parallel downloads and a daytime speed cap protect the system and the
 family's internet. AriaNg on the LAN is a fallback. The VPS only carries the SOCKS session, so
 nothing is downloaded there. Steam and a USB stick in the Jetson are out of scope.
+Revision 5: GigaChat questions ("@бобик <question>") are part of the same slice and reuse the Talk path (safety
+gate, gateway token, per-login quota). The SOCKS proxy listens on the docker0 address 172.17.0.1, because the
+Jetson cannot reach Telegram directly (3 of 3 attempts timed out on 2026-09-19).

@@ -125,8 +125,8 @@ services:
   #   - Просмотр и управление compose-стеками
   #
   # Авторизация: создаётся при первом запуске (5 минут на настройку)
-  # HTTP доступ: http://<jetson-ip>:9000
-  # HTTPS доступ: https://<jetson-ip>:9443 (самоподписанный сертификат)
+  # C10 (аудит 2026-09-19): Portainer = root-доступ к Docker — только localhost.
+  # Доступ: ssh -L 9443:127.0.0.1:9443 admin@192.168.0.50 → https://127.0.0.1:9443
   # ---------------------------------------------------------------------------
   portainer:
     image: portainer/portainer-ce:latest
@@ -134,8 +134,8 @@ services:
     restart: always
     mem_limit: 128m
     ports:
-      - "9000:9000"
-      - "9443:9443"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9443:9443"
     volumes:
       # Docker socket — обязателен для управления контейнерами
       - /var/run/docker.sock:/var/run/docker.sock:ro

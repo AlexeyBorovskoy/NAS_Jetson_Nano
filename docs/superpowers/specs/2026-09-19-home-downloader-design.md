@@ -122,7 +122,7 @@ Samba, Nextcloud и VPS-сервисы **не меняются**. На VPS — �
   «@бобик скачай», «Бобик, закачки», упоминание `@bobik_borovskoy_bot`, ответ боту,
   `.torrent`-документ через `getFile`, offset после обработки, 429 с `retry_after`, выход из чужой группы.
 - `on_complete.sh`: один файл; закачка из `Downloads/.incomplete` на HDD — переименование, без копирования; многофайловый торрент — переносится каталог; пробелы и кириллица; HDD недоступен;
-  имя занято → суффикс без перезаписи. `on_start.sh`: страж по порогу (RPC подменён).
+  имя занято → суффикс без перезаписи. `on_stop.sh`: перед удалением недокачанного спрашивает статус по RPC (заглушка) — удаляет только `removed`/`error`, `active` и недоступный RPC не трогает. Страж по порогу — в модуле `downloads`, отдельного хука на старт нет.
 - compose: `mem_limit`, порты, тома — статическая проверка.
 
 ## 9. Выкат (по «деплой»)
@@ -144,8 +144,8 @@ A home downloader for the family, requested by the owner's son. Revision 2: the 
 Telegram bot @bobik_borovskoy_bot, which is now in the family group. Revision 3: the bot is addressed by
 name, as in Talk: "@бобик скачай <link>". Telegram does not treat that word as a mention, so the bot's group
 privacy mode is turned off and every message without the name is dropped at once, unstored and unlogged. The downloader is the first slice of
-the Telegram bot: transport over an SSH SOCKS tunnel to the VPS, a whitelist, and download commands. LLM
-questions and photos come in later slices. Anyone in the family can send a magnet link, an HTTP link or a
+the Telegram bot: transport over an SSH SOCKS tunnel to the VPS, a whitelist, download commands, and (revision 5)
+GigaChat questions. Photos come in a later slice. Anyone in the family can send a magnet link, an HTTP link or a
 `.torrent` file with "@бобик скачай". aria2 on the Jetson downloads it to
 the SSD, moves it to `/mnt/hdd2tb/Downloads` when done (visible in Samba and Nextcloud), and the bot reports back
 in the same chat. Revision 4: there is no size cap. Downloads up to 20 GB go through the SSD; larger ones (100 GB and more) are

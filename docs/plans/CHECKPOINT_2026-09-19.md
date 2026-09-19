@@ -221,3 +221,19 @@ device nor the VPS changed tonight.
 
 Next: a Cloud.ru spend alert, the Telegram bot + downloader implementation plan, GigaChat routing and
 `@бобик` diagnostics.
+
+## Остановка по лимиту — где продолжать (качалка + Telegram-бот)
+
+- Ветка **`feat/downloader-bot`** (на GitHub, в `main` НЕ влита), рабочая копия `../NAS_wt_dl`. План:
+  `docs/superpowers/plans/2026-09-19-home-downloader-telegram.md`; журнал исполнения — `docs/local/SDD_downloader_progress.md` (вне git).
+- ✅ Task 1 (общий ответ `@бобик`), Task 2 (модуль закачек, 2 раунда ревью), Task 3 (Telegram-фронт, 2 раунда) — ревью чистое. NAS API: 81 тест.
+- 🟠 Task 4 (образ aria2 + хуки, `1f040e9`) — ревью «нужны исправления», 3 Important (ошибки плана):
+  `umask 077` в entrypoint наследуется aria2c (файлы 600); `/config` не подготовлен для UID 1000 (контейнер может не стартовать);
+  `mv` SSD→HDD при обрыве оставляет частичный файл в `Downloads`. Minor: `unzip` явным пакетом.
+- ⏳ Task 5 (compose, SOCKS-юнит, таймеры скорости, `.env.example`), Task 6 (runbook), финальное ревью, слияние в `main`.
+- На устройство ничего не выкачено. Следующее из очереди: голосовые сообщения (Vosk локально — предложение), алерт баланса DeepSeek (3.97 $ на 2026-09-19).
+
+### EN
+Stopped on the owner's usage limit. Branch `feat/downloader-bot` is pushed but not merged. Tasks 1–3 passed review;
+task 4 needs three fixes (umask inherited by aria2c, `/config` ownership for UID 1000, partial files left on a failed
+cross-filesystem move). Tasks 5–6, the final review and the merge remain. Nothing was deployed.

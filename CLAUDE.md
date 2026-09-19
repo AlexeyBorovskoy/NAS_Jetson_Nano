@@ -21,6 +21,8 @@
 **Сделано 23.08:** локальная модель выкачена в бой третьим провайдером (`@бобик` отвечает из дома, платная квота не тратится); `ClientAliveInterval 60` на Jetson — иначе слушатель обратного туннеля висел бы ~2 ч после выключения станции; журнал systemd переведён в постоянный режим.
 **⚠️ Перезагрузка 17.08 была аппаратной, а не штатной.** `PMC reset source: TEGRA_POWER_ON_RESET`, паники в `ramoops` нет, парной строки `shutdown` в `wtmp` нет. Провал питания или PMIC-watchdog — **различить нечем**, и это записано как неизвестное, а не как удобная версия. Разбор: `docs/plans/CHECKPOINT_2026-08-23.md` §3.
 **⚠️ Отзыв собственного диагноза (2026-08-22):** я объявил, что Talk-бот «12 дней бил в стену» — **это неверно**. Замер базовой линии: 13 626 опросов, **все `304`, ноль `400`**. Все 7 975 отказов уложились в один час — тот, в котором я снял `overwritehost` и вернул проверку доверенного домена, сломав бота, который ходит по имени `host.docker.internal`. Я диагностировал собственную регрессию как застарелый дефект. Подробности — в `docs/28`, раздел 3.3.
+**Состояние на 2026-09-19:** полный аудит — `docs/audit/2026-09-19_full_audit/`; **единый план** — сводная редакция `docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md` (очередь A–F). Этап A в git закрыт: единая раскладка хоста (`scripts/lib/layout.sh`, `docs/35_HOST_LAYOUT.md`), шлюз починен (чат GigaChat был 500 после `d52c11b`), ворота и CI гоняют тесты сервисов, CI зелёный впервые с 30.08. **На устройство не выкатано** — ждёт «деплой».
+
 **Текущая точка: `docs/plans/CHECKPOINT_2026-09-12.md`** (домашняя сеть: mesh перестроен, прошивка Deco сделана наполовину, 4 гипотезы отозваны); предыдущие — `CHECKPOINT_2026-09-11.md`, `CHECKPOINT_2026-08-30.md`. Слепок сети: **`docs/34_NETWORK_SNAPSHOT_2026-09-12.md`** (перестройка mesh, замеры до/после, семь ловушек); предыдущий — `docs/28_NETWORK_SNAPSHOT_2026-08-22.md`. Предыдущая точка: `docs/plans/CHECKPOINT_2026-08-25.md`.
 
 **Сделано 30.08 (день аудита, устройство и VPS не менялись — всё read-only):**
@@ -46,7 +48,7 @@
 > `docs/plans/CHECKPOINT_2026-08-24.md`.
 
 > ⚠️ **Расхождение git ↔ устройство.** Живой Jetson работает на СТАРОМ, до-переименовочном деплое. Rename `NASA → NAS_Jetson_Nano` сделан только в git — **на устройство не выкатан**. Фактически на устройстве:
-> - Репо: **`~/nasa`**, remote `github.com/AlexeyBorovskoy/Nasa_home.git` (HEAD `0f9fd0f`, ветка `main`)
+> - Репо: **`~/nasa`**, remote `github.com/AlexeyBorovskoy/Nasa_home.git` (HEAD **`0206261`** от 2026-09-08 — +98 коммитов с переименованием подтянуты, юниты и пути остались старыми; замер 2026-09-19). **`git pull` на устройстве вне runbook'а деплоя запрещён** (A5)
 > - Контейнеры: префикс **`homecloud_*`** (не `nas_jetson_nano_*`), API-контейнер `homecloud_nasa_api`
 > - systemd-юниты: префикс **`nasa-*`** (не `nas_jetson_nano-*`)
 > - Логи мониторинга: **`/var/log/nasa-monitor/`**
@@ -76,7 +78,7 @@
 | SCSI timeout | ✅ 120s | udev правило активно |
 | USB watchdog / pre-boot / error monitor | ✅ active | `nasa-usb-watchdog.timer`, `nasa-usb-preboot.service`, `nasa-usb-monitor.service` |
 | JMS583 health timer | ✅ active (waiting) | `nasa-jms583-health.timer` ежечасно; последний прогон `errors=0 warnings=0` |
-| SSD hotplug auto-recovery | ✅ active | `nasa-ssd-recovery.service` — udev(`sda1`) → mount → preflight → Docker → контейнеры |
+| SSD hotplug auto-recovery | 🔴 **сломан с 2026-09-08** (замер 2026-09-19) | `nasa-ssd-recovery.service` в `failed` (код 127): на устройство подтянуто 98 коммитов, скрипт звал несуществующий `/home/admin/nas_jetson_nano/...`. Исправлено в git (`9ec1b15`, раскладка хоста) — **до деплоя авто-восстановления нет** |
 | smartd | ⛔ **disabled by design** | Относится **только к SSD**: quirk `152d:a583:u` → usb-storage BOT → passthrough закрыт. Здоровье SSD закрывают JMS583-таймер и USB-монитор |
 | SMART на HDD 2 ТБ | ✅ **работает** (перезамер 2026-08-23) | ⚠️ Прежде в проекте значилось, что SMART невозможен на **обоих** дисках — вывод был перенесён с моста JMS583 на RTL9201 без проверки. `smartctl -d sat /dev/sdb`: **PASSED**, наработка **2582 ч**, переназначенных/ожидающих/некорректируемых секторов — **0**, CRC-ошибок 0, самотест без ошибок. ⚠️ Уточнение: `smartctl -H` отвечает `SMART Status not supported: Incomplete response`, вердикт PASSED выносится **по атрибутам**, а не командой статуса |
 | `nasa-hdd2tb-selftest.timer` | ✅ active | короткий SMART-самотест HDD еженедельно (пн 04:30). Длинный — вручную: `smartctl -t long -d sat /dev/sdb`, 490 мин |
@@ -122,7 +124,10 @@
 > udev(`sda1`) → `nasa-ssd-recovery.service` → mount → preflight → Docker → все 13 контейнеров
 > Лог: `journalctl -u nasa-ssd-recovery` или `/var/log/nasa-monitor/ssd-recovery.log`
 >
-> Если авто-recovery не сработал (маловероятно):
+> ⚠️ **С 2026-09-08 до деплоя `9ec1b15` авто-recovery НЕ работает** (NAS-STO-001) — после переподключения запускать вручную:
+> `sudo systemctl start docker && docker ps -a` и поднять остановленные контейнеры.
+>
+> Если авто-recovery не сработал (после деплоя):
 > `sudo -S systemctl start nasa-ssd-recovery.service`
 
 **⚠️ Грабли, проверенные на практике:**
@@ -180,7 +185,10 @@
 - **`Invoke-WebRequest` занижает скорость скачивания в разы, а `getent hosts` отдаёт AAAA первой.** Первый замер Wi-Fi дал 10 Мбит/с, `curl` на том же канале в ту же секунду — 53–80. Проверка доступности TP-Link по адресам из `getent hosts` ушла в таймаут по IPv6, которого в доме нет вовсе, и выглядела как блокировка; по IPv4 всё было открыто. Полосу мерить `curl`, адреса брать `getent ahostsv4`.
 - **Отчёт, каждый день показывающий ❌ на штатное состояние, — сломанный отчёт.** Три креста «EXTERNAL ACCESS» были нормой с Фазы 1 (порты закрыты для всех, кроме VPN) и приучили их не читать. Мерить надо цепочку, от которой зависит человек (на самом VPS против `127.0.0.1`), а тревожиться — на **открытый** наружу порт, а не на закрытый.
 
-**🔜 Ближайшие задачи (канон 2026-09 — `docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`):**
+**🔜 Ближайшие задачи (канон — сводная редакция `docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`, очередь A–F от 2026-09-19; список ниже частично устарел, приоритет у плана):**
+- 🔴 **Деплой этапа A** (по «деплой»): `install_layout.sh` + скрипты раскладки (recovery!), шлюз `36c4ced`, токен бота — правило №13 до/после.
+- 🔴 **Этап B — данные:** restic конфига/`.env`/файлов NC на HDD; изолировать `backups/` от шар; S3 Cloud.ru (tenant_id — владелец).
+- 🟠 **Решения владельца D1–D6** (план §2.2): ИБП, что класть в S3, копия архива 1.4 ТБ, Immich ML, smart routing, окно Part B.
 - 🔴 **P0 deploy W1+W2** when Jetson on + «деплой»: `DEPLOY_FULL_SBER_CUTOVER.md` (Giga-2 cutover + Immich→HDD). Pack is in git.
 - 🟠 **Cloud.ru balance/grant** — FM key exists but chat **402**; then optional `CLOUDRU_FM_API_KEY` on device.
 - 🟠 **W3 S3** restic L2 off-site (after bucket). Vostro **out** of NAS architecture (ADR-0007).

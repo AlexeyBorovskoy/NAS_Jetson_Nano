@@ -17,6 +17,7 @@ Design notes
 """
 import hmac
 import json
+import logging
 import os
 import re
 import threading
@@ -36,6 +37,7 @@ except Exception:  # pragma: no cover
     OpenAI = None
 
 app = FastAPI(title="Home Cloud LLM Gateway", version="0.3.0")
+log = logging.getLogger("llm_gateway")
 
 # ── Service token authentication (W0.2 — audit_new G02, 2026-09-19) ─────────────
 #
@@ -147,19 +149,39 @@ _usage_lock = threading.Lock()
 
 
 def _load_usage() -> dict:
+    """Учёт расходов. Нет файла — чистый старт; файл есть, но не читается — ОТКАЗ.
+
+    Прежде любая ошибка чтения давала `{}`: испорченный файл обнулял счётчики и
+    отключал лимиты (fail-open, аудит 2026-09-19 G06). Бюджет, который при сбое
+    перестаёт ограничивать, — не бюджет.
+    """
     try:
-        return json.loads(USAGE_FILE.read_text(encoding="utf-8"))
-    except Exception:
+        raw = USAGE_FILE.read_text(encoding="utf-8")
+    except FileNotFoundError:
         return {}
+    except OSError as exc:
+        log.error("usage ledger unreadable: %s", exc)
+        raise HTTPException(status_code=503, detail="usage ledger unreadable — refusing (fail-closed)") from exc
+    try:
+        data = json.loads(raw)
+    except ValueError as exc:
+        log.error("usage ledger corrupted: %s", exc)
+        raise HTTPException(status_code=503, detail="usage ledger corrupted — refusing (fail-closed)") from exc
+    if not isinstance(data, dict):
+        raise HTTPException(status_code=503, detail="usage ledger malformed — refusing (fail-closed)")
+    return data
 
 
 def _save_usage(data: dict) -> None:
+    """Атомарная запись: временный файл рядом + os.replace — обрыв не оставит полфайла."""
+    tmp = USAGE_FILE.with_name(USAGE_FILE.name + ".tmp")
     try:
         USAGE_FILE.parent.mkdir(parents=True, exist_ok=True)
-        USAGE_FILE.write_text(json.dumps(data), encoding="utf-8")
-    except Exception:
-        # Never let bookkeeping break the request path; in-memory state still applies.
-        pass
+        tmp.write_text(json.dumps(data), encoding="utf-8")
+        os.replace(tmp, USAGE_FILE)
+    except OSError as exc:
+        # Ответ уже получен — не отнимаем его у человека, но громко сообщаем.
+        log.error("usage ledger NOT saved: %s", exc)
 
 
 def _today() -> str:
@@ -474,7 +496,8 @@ def _gigachat_access_token() -> str:
             raise HTTPException(status_code=502, detail=f"GigaChat OAuth transport error: {exc}") from exc
 
         if r.status_code != 200:
-            raise HTTPException(status_code=502, detail=f"GigaChat OAuth failed: HTTP {r.status_code} {r.text[:200]}")
+            raise HTTPException(status_code=502, detail=f"GigaChat OAuth failed: HTTP {r.status_code} {r.text[:200]}",
+                                headers={"X-Upstream-Status": str(r.status_code)})
 
         data = r.json()
         token = data.get("access_token", "")
@@ -513,7 +536,8 @@ def _call_gigachat_locked(system: str, user: str, model: str) -> tuple[str, int]
         raise HTTPException(status_code=502, detail=f"GigaChat transport error: {exc}") from exc
 
     if r.status_code != 200:
-        raise HTTPException(status_code=502, detail=f"GigaChat error: HTTP {r.status_code} {r.text[:200]}")
+        raise HTTPException(status_code=502, detail=f"GigaChat error: HTTP {r.status_code} {r.text[:200]}",
+                            headers={"X-Upstream-Status": str(r.status_code)})
 
     data = r.json()
     content = (data.get("choices") or [{}])[0].get("message", {}).get("content", "") or ""
@@ -791,6 +815,20 @@ def _deepseek_configured() -> bool:
     return bool(k) and k != "replace_me"
 
 
+def _giga_retryable(exc: HTTPException) -> bool:
+    """Откат на DeepSeek — только на временных сбоях: 429, 5xx, обрыв транспорта.
+
+    401/403/4xx от GigaChat или отказ OAuth — это ошибка конфигурации (просроченный
+    ключ), а не перегрузка. Раньше она незаметно уводила семейные вопросы ко второму
+    зарубежному провайдеру (аудит 2026-09-19, G07).
+    """
+    upstream = (exc.headers or {}).get("X-Upstream-Status")
+    if upstream is None:  # транспорт / наш собственный 5xx
+        return exc.status_code in (429, 502, 503)
+    code = int(upstream)
+    return code == 429 or code >= 500
+
+
 def _giga_fallback_enabled() -> bool:
     return os.getenv("LLM_GIGA_FALLBACK_DEEPSEEK", "true").strip().lower() not in (
         "false",
@@ -1058,7 +1096,7 @@ def chat(
         except HTTPException as exc:
             # ADR-0008: on Giga 429/5xx fall back to DeepSeek when enabled.
             if (
-                exc.status_code in (429, 502, 503)
+                _giga_retryable(exc)
                 and _giga_fallback_enabled()
                 and _deepseek_configured()
             ):

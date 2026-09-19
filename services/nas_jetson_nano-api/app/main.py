@@ -2,7 +2,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import logging_setup
@@ -95,7 +95,9 @@ OPENAPI_DESCRIPTION = """\
 
 ### Авторизация
 
-Часть эндпоинтов защищена JWT (🔒). Порядок:
+Все эндпоинты, кроме `/healthcheck` и входа, требуют JWT (C1, 2026-09-19). Роли (C2):
+**семья** — любой пользователь Nextcloud, только сводный статус; **владелец** — `API_OWNERS`
+и администратор Nextcloud: логи, Talk, пользователи, действия. Порядок:
 1. `POST /api/auth/login` — введи Nextcloud-логин и пароль → получи `access_token`
 2. Нажми кнопку **Authorize 🔒** вверху страницы → вставь токен
 3. Защищённые эндпоинты станут доступны
@@ -104,17 +106,17 @@ OPENAPI_DESCRIPTION = """\
 
 | Группа | Эндпоинты | Auth |
 |--------|-----------|------|
-| Система | RAM, CPU, диск, температура, контейнеры | — |
-| Хранилище | SSD статус, бэкапы | 🔒 |
-| Talk | Комнаты, участники, отправка сообщений | частично 🔒 |
-| Пользователи | Список, детали, личные DM | 🔒 |
-| Фото | Статистика Immich по серверу и пользователям | 🔒 |
-| Действия | Restart контейнера, бэкап, Telegram-отчёт | частично 🔒 |
-| Логи | Последние записи лога с фильтрами | — |
+| Система | статус, RAM, CPU, диск, температура, контейнеры | 🔒 семья |
+| Хранилище | SSD статус, бэкапы | 🔒 семья |
+| Фото | статистика по серверу / по пользователям | 🔒 семья / владелец |
+| Talk | комнаты, участники, отправка сообщений, статус бота | 🔒 владелец |
+| Пользователи | список, детали, личные DM | 🔒 владелец |
+| Действия | restart контейнера, бэкап, Telegram-отчёт, история | 🔒 владелец |
+| Логи | последние записи лога | 🔒 владелец |
 
 ### Внешний доступ
 
-`http://193.8.215.130:8099/docs`
+Только из дома или под VPN: `http://172.29.172.1:8099/docs` (публичный IP VPS не используется).
 
 ### Версия
 
@@ -178,20 +180,29 @@ app = FastAPI(
     },
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS (C1, аудит 2026-09-19): был `*` — любая страница в браузере домочадца читала
+# ответы API. Теперь только явный список origin; пусто — CORS выключен.
+_cors = [o.strip() for o in (settings.api_cors_origins or "").split(",") if o.strip()]
+if _cors:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cors,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Authorization", "Content-Type"],
+    )
 
+# Политика доступа — в одном месте (C1/C2). Публичны только /healthcheck и вход;
+# «семья» — сводный статус; всё, что раскрывает людей, логи или меняет систему, — владелец.
+# tests/nas_api/test_api_access.py проверяет это по всем маршрутам.
+_family = [Depends(auth.require_auth)]
+_owner = [Depends(auth.require_owner)]
 app.include_router(health.router)
 app.include_router(auth.router)
-app.include_router(system.router)
-app.include_router(storage.router)
-app.include_router(talk.router)
-app.include_router(talk_bot.router)
-app.include_router(users.router)
-app.include_router(photos.router)
-app.include_router(logs.router)
-app.include_router(actions.router)
+app.include_router(system.router, dependencies=_family)
+app.include_router(storage.router, dependencies=_family)
+app.include_router(photos.router, dependencies=_family)
+app.include_router(talk.router, dependencies=_owner)
+app.include_router(talk_bot.router, dependencies=_owner)
+app.include_router(users.router, dependencies=_owner)
+app.include_router(logs.router, dependencies=_owner)
+app.include_router(actions.router, dependencies=_owner)

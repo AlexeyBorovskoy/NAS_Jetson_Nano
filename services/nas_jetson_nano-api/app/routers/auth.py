@@ -11,6 +11,7 @@ TTL: NAS_JETSON_NANO_API_JWT_TTL_HOURS (default 24h).
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
@@ -107,6 +108,24 @@ async def require_auth(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return _decode_token(credentials.credentials)
+
+
+# ── Dependency: require owner role (C2) ───────────────────────────────────────
+
+def owners() -> set[str]:
+    """Логины с ролью владельца: API_OWNERS + администратор Nextcloud."""
+    names = {n.lower() for n in re.split(r"[,\s]+", settings.api_owners or "") if n}
+    if settings.nextcloud_admin_user:
+        names.add(settings.nextcloud_admin_user.lower())
+    return names
+
+
+async def require_owner(username: Annotated[str, Depends(require_auth)]) -> str:
+    """Аутентификация ≠ авторизация: вошедший член семьи — ещё не оператор NAS."""
+    if username.lower() not in owners():
+        log.warning("forbidden: %s is not an owner", username)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="owner role required")
+    return username
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────

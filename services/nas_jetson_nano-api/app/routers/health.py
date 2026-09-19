@@ -1,8 +1,10 @@
 import socket
 import time
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
+
+from app.routers.auth import require_auth
 
 VERSION = "0.1.0"
 _START = time.monotonic()
@@ -28,8 +30,9 @@ async def healthcheck():
     summary="Расширенный статус NAS_Jetson_Nano",
     description=(
         "Возвращает сводный статус: версию, время работы, hostname "
-        "и ссылки на sub-endpoints с подробными метриками."
+        "и ссылки на sub-endpoints с подробными метриками. **Требует JWT** (C1)."
     ),
+    dependencies=[Depends(require_auth)],
 )
 async def status():
     return JSONResponse(

@@ -463,10 +463,6 @@ async def _handle_messages(token: str, messages: list[dict]) -> None:
                     settings.talk_bot_llm_display_name,
                 )
                 continue
-            if _image_attachment(m):
-                await _handle_image_request(token, m, question, user)
-                continue
-
             # ADR-0011: safety gate + structured home tools before cloud LLM
             use_gate = bool(
                 getattr(settings, "talk_bot_safety_gate", True)
@@ -524,6 +520,12 @@ async def _handle_messages(token: str, messages: list[dict]) -> None:
                 # ADMIT_CHAT
                 _STATE["gate_chat"] = _STATE.get("gate_chat", 0) + 1
 
+            # C6: фото — только ПОСЛЕ решения safety gate (раньше ветка стояла до admit()
+            # и сообщение с вложением обходило gate целиком; аудит 2026-09-19, G08).
+            if _image_attachment(m):
+                await _handle_image_request(token, m, question, user)
+                continue
+
             try:
                 reply = await _ask_llm(question, user)
             except Exception as exc:
@@ -560,11 +562,18 @@ async def _download_attachment(actor: str, path: str) -> bytes:
     its own uploads; for another user's file this returns 404 and we say so
     plainly instead of pretending the photo was processed.
     """
+    limit = settings.talk_bot_max_attachment_bytes
+    buf = bytearray()
     async with httpx.AsyncClient(timeout=120.0) as client:
-        r = await client.get(_dav_url(actor, path), auth=_admin_auth())
-    if r.status_code != 200:
-        raise RuntimeError(f"WebDAV {r.status_code} для {actor}/{path}")
-    return r.content
+        async with client.stream("GET", _dav_url(actor, path), auth=_admin_auth()) as r:
+            if r.status_code != 200:
+                raise RuntimeError(f"WebDAV {r.status_code} для {actor}/{path}")
+            # C6: потоково и с пределом — раньше r.content читал файл целиком в память.
+            async for chunk in r.aiter_bytes():
+                buf.extend(chunk)
+                if len(buf) > limit:
+                    raise ValueError(f"вложение больше {limit} байт")
+    return bytes(buf)
 
 
 async def _share_image_to_room(token: str, data: bytes, filename: str) -> None:
@@ -599,8 +608,20 @@ async def _handle_image_request(token: str, m: dict, question: str, user: str) -
         "🐕 Рисую новую картинку по мотивам фото, это займёт около минуты. ⚠️ Это НЕ обработка вашего снимка: провайдер не умеет редактировать фотографии. Он посмотрит на фото, опишет его словами и нарисует НОВОЕ изображение по описанию — лица и фон будут другими.",
         settings.talk_bot_llm_display_name,
     )
+    limit = settings.talk_bot_max_attachment_bytes
+    too_big = "🐕 Фото слишком большое — максимум {} МБ.".format(limit // (1024 * 1024) or 1)
+    try:
+        declared = int(att.get("size") or 0)
+    except (TypeError, ValueError):
+        declared = 0
+    if declared > limit:
+        await _send(token, too_big, settings.talk_bot_llm_display_name)
+        return
     try:
         raw = await _download_attachment(user, att.get("path", ""))
+    except ValueError:
+        await _send(token, too_big, settings.talk_bot_llm_display_name)
+        return
     except Exception as exc:
         log.warning("talk bot cannot fetch attachment: %s", exc)
         await _send(token,

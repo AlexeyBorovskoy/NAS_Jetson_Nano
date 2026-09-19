@@ -94,6 +94,12 @@ class Settings(BaseSettings):
     # Сервисный токен шлюза (A3, план 2026-09-19) — тот же LLM_GATEWAY_SERVICE_TOKEN,
     # что у шлюза. Пусто — заголовок не отправляется (шлюз без токена пускает всех).
     llm_gateway_service_token: str = ""
+    # Роли (C2, аудит 2026-09-19): владельцы — логины Nextcloud через запятую/пробел.
+    # Администратор Nextcloud — владелец всегда (от его имени ходят алерты).
+    # Остальные вошедшие — «семья»: только чтение сводного статуса.
+    api_owners: str = ""
+    # CORS (C1): пусто — кросс-доменные запросы из браузера запрещены (было `*`).
+    api_cors_origins: str = ""
     talk_bot_llm_timeout: int = 150
     # Guard against a wall-of-text question inflating the bill.
     talk_bot_llm_max_chars: int = 1000
@@ -101,6 +107,8 @@ class Settings(BaseSettings):
     talk_bot_llm_daily_replies: int = 50
     # Картинки генерируются заметно дольше текста.
     talk_bot_image_timeout: int = 300
+    # C6: предел вложения для `@бобик` (контейнер API ограничен 128 МБ, плюс base64 +33 %).
+    talk_bot_max_attachment_bytes: int = 10 * 1024 * 1024
     # ADR-0011: safety gate + local home tools on @бобик path (no Jetson flag needed
     # for unit tests). false = legacy free-chat only after callsign.
     talk_bot_structured_tools: bool = True

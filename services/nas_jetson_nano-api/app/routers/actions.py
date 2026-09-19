@@ -79,7 +79,7 @@ class ActionHistoryResponse(BaseModel):
         "Запускает `nas_jetson_nano-send-report-telegram.sh` в фоне. "
         "Возвращает HTTP 202 сразу; фактическая отправка занимает ~10–15 с. "
         "Результат — в `/v1/logs` (уровень INFO/ERROR, logger `nas_jetson_nano_api.actions`). "
-        "Авторизация не требуется."
+        "**Только владелец** (C2)."
     ),
     status_code=202,
     tags=["Действия"],

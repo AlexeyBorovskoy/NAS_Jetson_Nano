@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.config import settings
-from app.routers.auth import require_auth
+from app.routers.auth import require_auth, require_owner
 
 log = logging.getLogger("nas_jetson_nano_api.photos")
 router = APIRouter(prefix="/v1/photos", tags=["Фото — Immich"])
@@ -151,7 +151,7 @@ async def photo_stats(_: Annotated[str, Depends(require_auth)]):
         "**Требует JWT** и переменной `IMMICH_API_KEY`."
     ),
 )
-async def photo_users_stats(_: Annotated[str, Depends(require_auth)]):
+async def photo_users_stats(_: Annotated[str, Depends(require_owner)]):
     users_raw = await _immich_get("api/users")
     if not isinstance(users_raw, list):
         raise HTTPException(status_code=502, detail="Unexpected Immich API response for /api/users")

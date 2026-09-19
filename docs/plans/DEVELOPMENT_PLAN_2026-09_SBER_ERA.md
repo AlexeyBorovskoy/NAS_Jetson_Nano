@@ -42,8 +42,8 @@
 | 2026-09-08 | S3 + restic L2 | ❌ blocked | tenant_id / CreateBucket AccessDenied |
 | 2026-09-09 | F-01 fail-closed dumps на устройстве | ✅ device | `backup_databases.sh` |
 | 2026-09-18 | `audit_new` → Hardening Sprint H01–H16 | план | `docs/research/audit_new.md` |
-| 2026-09-19 | `d52c11b` W0.1 save_path + smart routing + presets | ⚠️ **git, с P0-дефектом** | см. §1.1 |
-| 2026-09-19 | W0.2 service token | ⚠️ **не закоммичено, с регрессией** | рабочее дерево |
+| 2026-09-19 | `d52c11b` W0.1 save_path + smart routing + presets | ⚠️ git, с P0-дефектом → **исправлено в A2** | см. §1.1 |
+| 2026-09-19 | W0.2 service token | ⚠️ WIP с регрессией → **доведено в A3** | `36c4ced` |
 | 2026-09-19 | Полный аудит + разбор работы GigaCode | ✅ git | `docs/audit/2026-09-19_full_audit/` |
 | 2026-09-19 | **A1** ворота/CI гоняют тесты сервисов; heredoc-баги | ✅ git + **CI зелёный** впервые с 08-30 | `36c4ced`, `b8f50c9` |
 | 2026-09-19 | **A2** шлюз: чат/картинки восстановлены, smart routing за флагом | ✅ git (37/37) | `36c4ced` |

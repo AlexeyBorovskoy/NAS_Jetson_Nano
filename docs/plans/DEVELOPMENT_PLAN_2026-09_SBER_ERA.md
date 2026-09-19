@@ -326,7 +326,8 @@ Nextcloud/Immich в Cloud.ru как primary; K8s; Managed RAG по альбом�
     утверждены — `docs/superpowers/specs/2026-09-19-telegram-family-bot-design.md`,
     `docs/superpowers/specs/2026-09-19-home-downloader-design.md` (ред. 1–5: обращение «@бобик» по имени,
     размер закачки без предела, SOCKS на `172.17.0.1:1080`, вопросы к GigaChat — в этом же срезе; фото —
-    следующим срезом); дальше — план реализации (writing-plans), выкат — по «деплой».
+    следующим срезом). **✅ Реализовано в git 2026-09-19** (`90b52bc`, 90 тестов API, финальное ревью Opus);
+    выкат — по «деплой», runbook `DEPLOY_DOWNLOADER_2026-09.md`.
 3b. **E2** ✅ git; **D3** ✅ git — оба ждут «деплой» (D3: сначала спайк в Cloud.ru, runbook §0).
 3c. Дальше без владельца: E5 (алерт расходов Cloud.ru — **до** выката D3 и E6), E1 (маршрутизация с учётом квоты Max, закрывает D5), E3 (`@бобик` «что сломалось?»), D2 (алерт после аварийной загрузки — важнее без ИБП), затем спайк E6.
 4. **Owner:** D5 (smart routing) и D6 (окно Part B); `/start` в @bobik_borovskoy_bot для chat_id (D3).
@@ -359,8 +360,8 @@ carries ~25 VPN peers, and a rights-holder complaint could get its IP blocked). 
 downloads up to 20 GB go through the SSD, larger ones straight to the HDD; the Telegram 20 MB limit applies
 only to a `.torrent` file sent in chat. GigaChat questions ("@бобик <question>", reusing the Talk path) are
 part of this same first slice; photos come later. The Jetson cannot reach Telegram directly (3 of 3 timeouts
-measured 2026-09-19), so an SSH SOCKS tunnel listens on the docker0 address 172.17.0.1. Next: E9
-implementation plan, then E5, E1, E3, D2.
+measured 2026-09-19), so an SSH SOCKS tunnel listens on the docker0 address 172.17.0.1. E9 is
+implemented in git (`90b52bc`) and awaits an owner-triggered deploy. Next: E5, E1, E3, D2, voice messages.
 
 ## 13. Changelog
 
@@ -372,3 +373,4 @@ implementation plan, then E5, E1, E3, D2.
 | 2026-09-19 | Owner decisions D1/D2/D3/D4; E2 + D3 in git (spec, plan, runbook) |
 | 2026-09-19 | **Consolidated edition**: H* + audit 2026-09-19 + Sber decisions in one queue (A–F); withdrawn statuses §1.1; DoD §3; owner decisions §2.2; research track §8 |
 | 2026-09-19 | **E9** added — Telegram bot + home downloader, owner priority (son's request); specs approved through revisions 1–5 |
+| 2026-09-19 | **E9** implemented in git (`90b52bc`): aria2 downloader + first Telegram bot slice; awaiting deploy |

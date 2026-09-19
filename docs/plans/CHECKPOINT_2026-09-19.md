@@ -222,18 +222,22 @@ device nor the VPS changed tonight.
 Next: a Cloud.ru spend alert, the Telegram bot + downloader implementation plan, GigaChat routing and
 `@бобик` diagnostics.
 
-## Остановка по лимиту — где продолжать (качалка + Telegram-бот)
+## Качалка + первый срез Telegram-бота — реализовано в git (2026-09-19)
 
-- Ветка **`feat/downloader-bot`** (на GitHub, в `main` НЕ влита), рабочая копия `../NAS_wt_dl`. План:
-  `docs/superpowers/plans/2026-09-19-home-downloader-telegram.md`; журнал исполнения — `docs/local/SDD_downloader_progress.md` (вне git).
-- ✅ Task 1 (общий ответ `@бобик`), Task 2 (модуль закачек, 2 раунда ревью), Task 3 (Telegram-фронт, 2 раунда) — ревью чистое. NAS API: 81 тест.
-- 🟠 Task 4 (образ aria2 + хуки, `1f040e9`) — ревью «нужны исправления», 3 Important (ошибки плана):
-  `umask 077` в entrypoint наследуется aria2c (файлы 600); `/config` не подготовлен для UID 1000 (контейнер может не стартовать);
-  `mv` SSD→HDD при обрыве оставляет частичный файл в `Downloads`. Minor: `unzip` явным пакетом.
-- ⏳ Task 5 (compose, SOCKS-юнит, таймеры скорости, `.env.example`), Task 6 (runbook), финальное ревью, слияние в `main`.
-- На устройство ничего не выкачено. Следующее из очереди: голосовые сообщения (Vosk локально — предложение), алерт баланса DeepSeek (3.97 $ на 2026-09-19).
+- Ветка `feat/downloader-bot` влита в `main` (`90b52bc`). План `docs/superpowers/plans/2026-09-19-home-downloader-telegram.md`,
+  6 задач субагентами; каждая — ревью, Task 2/3/4/5 — 1–2 раунда исправлений; финальное ревью (Opus) — 8 Important,
+  одна волна исправлений, повторное ревью закрыло всё. Журнал решений — `docs/local/SDD_downloader_progress.md` (вне git).
+- Тесты: NAS API 90, хуки aria2 16, инфраструктура 10.
+- Найдено ревью и исправлено до выката (ошибки плана): обход SSRF-фильтра числовыми IP; страж снимал паузу с неразложенного
+  торрента (ушёл бы на SSD); «@бобикXYZ» уходило в GigaChat; umask 077 делал скачанное нечитаемым для Samba; потеря
+  уведомлений при недоступном Telegram (очередь outbox); хук `on_stop` мог стирать недокачанное при перезапуске контейнера
+  (теперь удаляет только подтверждённо отменённое); маркер HDD — без него качалка не пишет на SD-карту.
+- Оставлено осознанно (журнал, Ruling 12–15): рост очереди уведомлений при мёртвом Telegram; самовосстанавливающийся случай
+  metadata→followedBy при сбое RPC; маркер HDD без sudo; RPC-ошибки стража без отдельного перехвата.
+- **Выкат — только по «деплой»:** `docs/plans/DEPLOY_DOWNLOADER_2026-09.md` (владелец: @BotFather `/setprivacy` → Disable,
+  перезайти бота в группу). Следующее: голосовые сообщения (Vosk — предложение), алерт баланса DeepSeek (3.97 $).
 
 ### EN
-Stopped on the owner's usage limit. Branch `feat/downloader-bot` is pushed but not merged. Tasks 1–3 passed review;
-task 4 needs three fixes (umask inherited by aria2c, `/config` ownership for UID 1000, partial files left on a failed
-cross-filesystem move). Tasks 5–6, the final review and the merge remain. Nothing was deployed.
+The downloader and the first Telegram bot slice are implemented and merged to `main` (`90b52bc`), not deployed. Six tasks
+ran through subagents with per-task reviews and a final Opus review; eight important findings were fixed before any
+rollout. Deploy only on the owner's command using `DEPLOY_DOWNLOADER_2026-09.md`.

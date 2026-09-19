@@ -191,7 +191,7 @@
 - ✅ **Этапы B и C выкачены 2026-09-19.** S3 (B3) отложен владельцем. E2 и D3 — в git, ждут «деплой».
 - 🟠 **Telegram-бот + качалка (E9), приоритет владельца** (запрос сына) — обе спецификации утверждены
   (`docs/superpowers/specs/2026-09-19-telegram-family-bot-design.md`,
-  `docs/superpowers/specs/2026-09-19-home-downloader-design.md`, ред. 1–5); план реализации — следующий шаг, выкат — по «деплой».
+  `docs/superpowers/specs/2026-09-19-home-downloader-design.md`, ред. 1–5); **реализовано в git** (`90b52bc`), выкат — по «деплой» (`docs/plans/DEPLOY_DOWNLOADER_2026-09.md`).
 - 🟠 **Решения владельца D1–D6** (план §2.2): ИБП, что класть в S3, копия архива 1.4 ТБ, Immich ML, smart routing, окно Part B.
 - 🔴 **P0 deploy W1+W2** when Jetson on + «деплой»: `DEPLOY_FULL_SBER_CUTOVER.md` (Giga-2 cutover + Immich→HDD). Pack is in git.
 - 🟠 **Cloud.ru balance/grant** — FM key exists but chat **402**; then optional `CLOUDRU_FM_API_KEY` on device.

@@ -6,7 +6,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOG_FILE="/var/log/nas_jetson_nano-monitor/sd-wear.log"
+# Раскладка хоста — единая точка правды (scripts/lib/layout.sh, NAS-STO-001).
+_nas_lay="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/layout.sh"
+[[ -r "$_nas_lay" ]] || _nas_lay=/usr/local/lib/nas_jetson_nano/layout.sh
+# shellcheck source=../lib/layout.sh
+source "$_nas_lay"
+LOG_FILE="$NAS_LOG_DIR/sd-wear.log"
 TELEGRAM_SCRIPT="$SCRIPT_DIR/../monitoring/send_telegram.sh"
 WARNING_THRESHOLD=5  # alert if life_time_est >= 5 (50% wear)
 DEVICE="mmcblk0"

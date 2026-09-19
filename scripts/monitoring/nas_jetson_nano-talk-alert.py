@@ -26,9 +26,19 @@ import sys
 import time
 import urllib.request
 
-ENV_FILE = "/home/admin/nas_jetson_nano/config/.env"
-MONITOR_ENV = "/etc/nas_jetson_nano-monitor/nas_jetson_nano-monitor.env"
-STATE_FILE = "/var/lib/nas_jetson_nano-monitor/talk-alert-state.json"
+# Раскладка хоста — единая точка правды (scripts/lib/nas_layout.py, NAS-STO-001).
+# Из репозитория берётся ../lib, из копии в /usr/local/sbin — установленная библиотека.
+for _lib in (os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib"),
+             "/usr/local/lib/nas_jetson_nano"):
+    if os.path.isfile(os.path.join(_lib, "nas_layout.py")):
+        sys.path.insert(0, _lib)
+        break
+import nas_layout  # noqa: E402
+
+LAYOUT = nas_layout.resolve()
+ENV_FILE = LAYOUT["NAS_ENV_FILE"]
+MONITOR_ENV = os.path.join(LAYOUT["NAS_CONF_DIR"], LAYOUT["NAS_PREFIX"] + "-monitor.env")
+STATE_FILE = os.path.join(LAYOUT["NAS_STATE_DIR"], "talk-alert-state.json")
 API = "http://127.0.0.1:8099"
 DUMPS = "/mnt/storage/backups/database-dumps"
 
@@ -266,7 +276,7 @@ def send(text):
                  {"username": user, "password": password})["access_token"]
     # Технические алерты идут в комнату владельца, а не в общий семейный чат:
     # «диск заполняется» — это не то, что должно будить пятерых человек.
-    # Комната задаётся в nasa-monitor.env; без неё берётся умолчание API.
+    # Комната задаётся в <prefix>-monitor.env; без неё берётся умолчание API.
     room = read_env(MONITOR_ENV, "TALK_ALERT_ROOM") or None
     body = {"message": text}
     if room:

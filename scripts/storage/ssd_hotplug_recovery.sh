@@ -4,7 +4,13 @@
 # Flow: mount /mnt/storage → storage preflight → start Docker → start stopped containers
 set -euo pipefail
 
-LOG_DIR="/var/log/nas_jetson_nano-monitor"
+# Раскладка хоста — единая точка правды (scripts/lib/layout.sh, NAS-STO-001).
+_nas_lay="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/layout.sh"
+[[ -r "$_nas_lay" ]] || _nas_lay=/usr/local/lib/nas_jetson_nano/layout.sh
+# shellcheck source=../lib/layout.sh
+source "$_nas_lay"
+
+LOG_DIR="$NAS_LOG_DIR"
 LOG="$LOG_DIR/ssd-recovery.log"
 mkdir -p "$LOG_DIR"
 exec >> "$LOG" 2>&1
@@ -31,7 +37,7 @@ fi
 
 # Storage preflight — guards against read-only or corrupted filesystem
 log "Running storage preflight..."
-PREFLIGHT_OUT=$(bash /home/admin/nas_jetson_nano/scripts/storage/storage_preflight.sh 2>&1)
+PREFLIGHT_OUT=$(bash "$NAS_PROJECT_DIR/scripts/storage/storage_preflight.sh" 2>&1)
 echo "$PREFLIGHT_OUT"
 if echo "$PREFLIGHT_OUT" | grep -q "errors=0"; then
     log "Preflight OK"

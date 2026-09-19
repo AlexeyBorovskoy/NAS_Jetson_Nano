@@ -8,13 +8,19 @@
 
 set -uo pipefail
 
+# Раскладка хоста — единая точка правды (scripts/lib/layout.sh, NAS-STO-001).
+_nas_lay="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/layout.sh"
+[[ -r "$_nas_lay" ]] || _nas_lay=/usr/local/lib/nas_jetson_nano/layout.sh
+# shellcheck source=../lib/layout.sh
+source "$_nas_lay"
+
 DEV="${1:-/dev/sda}"
 LOG_TAG="nas_jetson_nano-smart-check"
-LOG_FILE="/var/log/nas_jetson_nano-monitor/smart-check.log"
+LOG_FILE="$NAS_LOG_DIR/smart-check.log"
 
 TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
 TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}"
-[[ -f /etc/nas_jetson_nano-monitor/telegram.env ]] && source /etc/nas_jetson_nano-monitor/telegram.env
+[[ -f "$NAS_CONF_DIR/telegram.env" ]] && source "$NAS_CONF_DIR/telegram.env"
 
 HOSTNAME_SHORT="$(hostname -s)"
 

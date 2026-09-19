@@ -2,7 +2,7 @@
 # jms583_health.sh — hourly health monitor for JMS583 USB SSD enclosure
 #
 # Collects: USB stability, I/O stats, disk health, SMART info
-# Logs to: /var/log/nas_jetson_nano-monitor/jms583-health.log
+# Logs to: $NAS_LOG_DIR/jms583-health.log (scripts/lib/layout.sh)
 # Telegram: error alerts immediately, daily summary at 09:00
 #
 # Deploy:
@@ -18,15 +18,20 @@ MOUNT="/mnt/storage"
 USB_VID="152d"
 USB_PID="a583"
 USB_PORT="2-1.3"          # USB 3.0 SuperSpeed port
-LOG_FILE="/var/log/nas_jetson_nano-monitor/jms583-health.log"
-STATE_DIR="/var/lib/nas_jetson_nano-monitor"
+# Раскладка хоста — единая точка правды (scripts/lib/layout.sh, NAS-STO-001).
+_nas_lay="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/layout.sh"
+[[ -r "$_nas_lay" ]] || _nas_lay=/usr/local/lib/nas_jetson_nano/layout.sh
+# shellcheck source=../lib/layout.sh
+source "$_nas_lay"
+LOG_FILE="$NAS_LOG_DIR/jms583-health.log"
+STATE_DIR="$NAS_STATE_DIR"
 STATE_FILE="$STATE_DIR/jms583-last-run"
 DAILY_SENT_FILE="$STATE_DIR/jms583-daily-sent"
 LOG_TAG="nas_jetson_nano-jms583"
 
 TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
 TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}"
-[[ -f /etc/nas_jetson_nano-monitor/telegram.env ]] && source /etc/nas_jetson_nano-monitor/telegram.env
+[[ -f "$NAS_CONF_DIR/telegram.env" ]] && source "$NAS_CONF_DIR/telegram.env"
 
 HOSTNAME_SHORT="$(hostname -s)"
 
@@ -242,7 +247,7 @@ if [[ "$ERRORS" -gt 0 ]]; then
 ${REPORT}
 
 ⚠️ Errors: ${ERRORS}, Warnings: ${WARNINGS}
-📋 Лог: /var/log/nas_jetson_nano-monitor/jms583-health.log"
+📋 Лог: ${LOG_FILE}"
     tg_send "$MSG"
 fi
 

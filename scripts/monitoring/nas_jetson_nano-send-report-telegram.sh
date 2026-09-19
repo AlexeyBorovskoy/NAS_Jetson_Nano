@@ -4,9 +4,14 @@
 # over SSH to VPS which has unrestricted internet access.
 set -euo pipefail
 
-CONF="/etc/nas_jetson_nano-monitor/telegram.env"
-REPORT_CMD="/usr/local/sbin/nas_jetson_nano-daily-report.sh"
-LOG_DIR="/var/log/nas_jetson_nano-monitor"
+# Раскладка хоста — единая точка правды (scripts/lib/layout.sh, NAS-STO-001).
+_nas_lay="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/layout.sh"
+[[ -r "$_nas_lay" ]] || _nas_lay=/usr/local/lib/nas_jetson_nano/layout.sh
+# shellcheck source=../lib/layout.sh
+source "$_nas_lay"
+CONF="$NAS_CONF_DIR/telegram.env"
+REPORT_CMD="${NAS_SBIN_PREFIX}-daily-report.sh"
+LOG_DIR="$NAS_LOG_DIR"
 REPORT_FILE="${LOG_DIR}/last-report.txt"
 SEND_LOG="${LOG_DIR}/last-telegram-send.json"
 VPS_HOST="${VPS_HOST:-95.163.176.103}"

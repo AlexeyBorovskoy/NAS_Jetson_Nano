@@ -3,7 +3,12 @@
 # shellcheck disable=SC2034  # variables used in printf %b heredoc expansions
 set -uo pipefail
 
-CONF="/etc/nas_jetson_nano-monitor/nas_jetson_nano-monitor.env"
+# Раскладка хоста — единая точка правды (scripts/lib/layout.sh, NAS-STO-001).
+_nas_lay="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/layout.sh"
+[[ -r "$_nas_lay" ]] || _nas_lay=/usr/local/lib/nas_jetson_nano/layout.sh
+# shellcheck source=../lib/layout.sh
+source "$_nas_lay"
+CONF="$NAS_CONF_DIR/${NAS_PREFIX}-monitor.env"
 [ -f "$CONF" ] && . "$CONF"
 
 VPS_KEY="${VPS_KEY:-/home/admin/.ssh/id_ed25519}"
@@ -54,12 +59,12 @@ done
 [ -z "$TEMP_REPORT" ] && TEMP_REPORT="  (thermal zones unavailable)\n"
 
 # Services
-TUNNEL_STATE="$(systemctl is-active nas_jetson_nano-tunnel.service 2>/dev/null || echo unknown)"
+TUNNEL_STATE="$(systemctl is-active "${NAS_UNIT_PREFIX}-tunnel.service" 2>/dev/null || echo unknown)"
 DOCKER_STATE="$(systemctl is-active docker 2>/dev/null || echo unknown)"
 NM_STATE="$(systemctl is-active NetworkManager 2>/dev/null || echo unknown)"
 
 # Containers
-EXPECTED_CONTAINERS="${EXPECTED_CONTAINERS:-homecloud_nextcloud homecloud_nextcloud_db homecloud_nextcloud_redis homecloud_immich_server homecloud_immich_microservices homecloud_immich_db homecloud_immich_redis homecloud_llm_gateway homecloud_nas_jetson_nano_api homecloud_samba homecloud_netdata homecloud_uptime_kuma homecloud_portainer}"
+EXPECTED_CONTAINERS="${EXPECTED_CONTAINERS:-homecloud_nextcloud homecloud_nextcloud_db homecloud_nextcloud_redis homecloud_immich_server homecloud_immich_microservices homecloud_immich_db homecloud_immich_redis homecloud_llm_gateway ${NAS_API_CONTAINER} homecloud_samba homecloud_netdata homecloud_uptime_kuma homecloud_portainer}"
 
 CONTAINER_REPORT=""
 WARNINGS=""
@@ -97,7 +102,8 @@ HTTP_REPORT="${HTTP_REPORT}\n$(http_check "http://localhost:19999/" "Netdata")"
 
 # Beszel monitoring via SSH to VPS
 BESZEL_REPORT=""
-BESZEL_SCRIPT="/usr/local/sbin/nas_jetson_nano-beszel-report.py"
+# Путь на VPS; VPS использует тот же префикс, что и Jetson (сверено 2026-09-19).
+BESZEL_SCRIPT="${BESZEL_SCRIPT:-${NAS_SBIN_PREFIX}-beszel-report.py}"
 if [ -f "$VPS_KEY" ]; then
     # Use mktemp to avoid predictable temp file names (security hardening)
     _BESZEL_WARN_LOCAL="$(mktemp /tmp/nas_jetson_nano-beszel-warn.XXXXXXXXXX)"
@@ -212,7 +218,7 @@ else
         && add_warning "EXT4 / I/O errors on storage device in last hour"
 fi
 [ "$TUNNEL_STATE" != "active" ] && \
-    add_warning "nas_jetson_nano-tunnel.service is ${TUNNEL_STATE}"
+    add_warning "${NAS_UNIT_PREFIX}-tunnel.service is ${TUNNEL_STATE}"
 [ "$DOCKER_STATE" != "active" ] && \
     add_warning "docker.service is ${DOCKER_STATE}"
 

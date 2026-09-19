@@ -70,6 +70,7 @@
 | 2026-09-19 | **C11** имя API-контейнера | ✅ (A4) | `a12c5bd` |
 | 2026-09-19 | **E2** алерт квоты GigaChat (порог по моделям, устаревший опрос) | ✅ git; выкат по «деплой» | `6bd36bf` |
 | 2026-09-19 | **D3** внешний сторож Cloud.ru: VPS-скрипт, задача, установщик, 39 тестов | ✅ git; спайк + выкат — `DEPLOY_D3_WATCHDOG_2026-09.md` | спецификация `126e06b` |
+| 2026-09-19 | Спецификации: Telegram-бот + домашняя качалка на Jetson (ред. 1–5), **приоритет владельца** (запрос сына) — обращение по имени «@бобик», размер закачки без предела (SSD ≤20 ГБ / HDD больше), вопросы к GigaChat в первом срезе бота, SOCKS на `172.17.0.1:1080` (Jetson не достаёт Telegram напрямую) | ✅ git (спецификации); реализация — следующий шаг | `telegram-family-bot-design.md`, `home-downloader-design.md` |
 
 ### 1.1. Отозванные статусы (как найдено)
 
@@ -221,6 +222,7 @@ NAS-*/R* — аудит 2026-09-19).
 | E6 | Immich ML в Cloud.ru Container Apps — только если укладывается в free tier (решение D4 2026-09-19). Спайк: RAM/CPU первичной индексации 7 тыс. фото, холодный старт поиска, закрытие эндпоинта (у Immich ML нет авторизации), потолок `max instances=1`. Бесплатной VM в Evolution free tier нет (проверено 2026-09-19) | Cloud.ru Container Apps | после E5 (алерт расходов) |
 | E7 | GitVerse: зеркало после каждого push, без секретов | GitVerse | — |
 | E8 | Пресеты картинок (8 шт., `d52c11b`) — оставить; проверить эндпоинт после A2 | GigaChat-2-Max | тест `/v1/image/presets` |
+| E9 | **Telegram-бот, первый срез** (приоритет владельца — запрос сына): SOCKS-транспорт, whitelist, качалка aria2 (SSD ≤20 ГБ / HDD больше, качает домашний интернет Jetson — не VPS, правило №13), вопросы GigaChat («@бобик», путь Talk). Фото — следующим срезом | GigaChat PERS (путь Talk) | спецификации утверждены 2026-09-19 (ред. 1–5); план реализации → код с тестами → выкат по «деплой» |
 
 ### Этап F — Платформа (месяц+)
 
@@ -320,9 +322,13 @@ Nextcloud/Immich в Cloud.ru как primary; K8s; Managed RAG по альбом�
 1. ~~Этап A~~ — ✅ git + device 2026-09-19.
 2. **Этап B** — ✅ git + **device** 2026-09-19 (B1, B2, B6). B3 (S3) — код готов, **отложен владельцем**; B4 Vostro pull остаётся; B5 закрыт (копии архива нет, риск принят).
 3. **Этап C** — ✅ git + **device** 2026-09-19 (кроме C9 — оставлен как есть по решению владельца).
-3a. **Telegram-бот** — спецификация утверждена (`docs/superpowers/specs/2026-09-19-telegram-family-bot-design.md`), дальше план реализации.
+3a. **Telegram-бот + качалка (E9), первый срез — приоритет владельца** (запрос сына): обе спецификации
+    утверждены — `docs/superpowers/specs/2026-09-19-telegram-family-bot-design.md`,
+    `docs/superpowers/specs/2026-09-19-home-downloader-design.md` (ред. 1–5: обращение «@бобик» по имени,
+    размер закачки без предела, SOCKS на `172.17.0.1:1080`, вопросы к GigaChat — в этом же срезе; фото —
+    следующим срезом); дальше — план реализации (writing-plans), выкат — по «деплой».
 3b. **E2** ✅ git; **D3** ✅ git — оба ждут «деплой» (D3: сначала спайк в Cloud.ru, runbook §0).
-3c. Дальше без владельца: E5 (алерт расходов Cloud.ru — **до** выката D3 и E6), Telegram-бот, E1 (маршрутизация с учётом квоты Max, закрывает D5), E3 (`@бобик` «что сломалось?»), D2 (алерт после аварийной загрузки — важнее без ИБП), затем спайк E6.
+3c. Дальше без владельца: E5 (алерт расходов Cloud.ru — **до** выката D3 и E6), E1 (маршрутизация с учётом квоты Max, закрывает D5), E3 (`@бобик` «что сломалось?»), D2 (алерт после аварийной загрузки — важнее без ИБП), затем спайк E6.
 4. **Owner:** D5 (smart routing) и D6 (окно Part B); `/start` в @bobik_borovskoy_bot для chat_id (D3).
 
 ## 12. EN summary
@@ -342,7 +348,19 @@ is research only.
 Status 2026-09-19 (evening): stages A–C are on the device. E2 (GigaChat quota alert) and D3 (Cloud.ru
 watchdog through the VPS, 44 tests) are in git and wait for an owner-triggered deploy. Owner decisions:
 S3 postponed (off-site stays on the Vostro), UPS postponed, no second copy of the 1.4 TB archive (risk
-accepted), Immich ML on Cloud.ru only within the free tier. Next: E5, the Telegram bot, E1, E3, D2.
+accepted), Immich ML on Cloud.ru only within the free tier.
+
+Later that night, the owner's son asked for a home downloader on the Jetson, and the owner gave it priority
+(E9). Two specs were approved through five revisions: the Telegram bot's main interface is chat with
+`@bobik_borovskoy_bot` in the family group, addressed by name ("@бобик ...") exactly like `@бобик` in Talk —
+so the bot's group privacy mode is turned off, and every message without the name is dropped at once,
+unstored and unlogged. aria2 downloads through the Jetson's home internet, never the VPS (rule #13: the VPS
+carries ~25 VPN peers, and a rights-holder complaint could get its IP blocked). There is no size cap:
+downloads up to 20 GB go through the SSD, larger ones straight to the HDD; the Telegram 20 MB limit applies
+only to a `.torrent` file sent in chat. GigaChat questions ("@бобик <question>", reusing the Talk path) are
+part of this same first slice; photos come later. The Jetson cannot reach Telegram directly (3 of 3 timeouts
+measured 2026-09-19), so an SSH SOCKS tunnel listens on the docker0 address 172.17.0.1. Next: E9
+implementation plan, then E5, E1, E3, D2.
 
 ## 13. Changelog
 
@@ -353,3 +371,4 @@ accepted), Immich ML on Cloud.ru only within the free tier. Next: E5, the Telegr
 | 2026-09-18 | Hardening Sprint W0.5 from `audit_new` (H01–H16) |
 | 2026-09-19 | Owner decisions D1/D2/D3/D4; E2 + D3 in git (spec, plan, runbook) |
 | 2026-09-19 | **Consolidated edition**: H* + audit 2026-09-19 + Sber decisions in one queue (A–F); withdrawn statuses §1.1; DoD §3; owner decisions §2.2; research track §8 |
+| 2026-09-19 | **E9** added — Telegram bot + home downloader, owner priority (son's request); specs approved through revisions 1–5 |

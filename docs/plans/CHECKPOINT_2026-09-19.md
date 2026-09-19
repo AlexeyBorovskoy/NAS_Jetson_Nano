@@ -170,6 +170,34 @@ Evolution free tier нет — только Container Apps; спайк E6 пос
 
 **Следующий шаг:** E5 (алерт расходов Cloud.ru) → Telegram-бот (план) → E1, E3, D2. Выкат E2/D3 — по «деплой».
 
+## Ночь 2026-09-19 — качалка и первый срез Telegram-бота (приоритет владельца)
+
+Запрос сына — качалка на Jetson; владелец дал приоритет **рядом с Telegram-ботом** (задача **E9** в плане).
+Две спецификации утверждены за пять редакций: `docs/superpowers/specs/2026-09-19-telegram-family-bot-design.md`,
+`docs/superpowers/specs/2026-09-19-home-downloader-design.md`.
+
+- **ред. 2:** главный интерфейс — чат с ботом `@bobik_borovskoy_bot` в семейной группе «Боровские» (бот уже
+  в группе, `/start` собран у всех 4 человек 2026-09-19 — ID в `docs/local/IDENTIFIERS.md`, вне git).
+- **ред. 3:** обращение к боту — **по имени**: «@бобик скачай …» или «бобик, …», как позывной `@бобик` в Talk.
+  Из этого следует цена: режим приватности бота в группе выключается (`/setprivacy` → Disable в @BotFather,
+  бота перезайти в группу) — иначе Telegram не отдаёт боту слово «@бобик», это не упоминание аккаунта.
+  Сообщения без обращения бот отбрасывает сразу: не обрабатывает, не хранит, не пишет в журнал.
+- **ред. 4:** размер закачки — **без искусственного предела**; ≤ `DL_SSD_MAX_GB` (20 ГБ) — через SSD,
+  больше — сразу на HDD (`/mnt/hdd2tb/Downloads/.incomplete`), без переноса. 20 МБ — предел **только**
+  `.torrent`-файла, который бот забирает из чата (лимит Bot API на `getFile`), не самой закачки.
+- **ред. 5:** в тот же первый срез бота входят **вопросы к GigaChat** («@бобик <вопрос>» — тот же путь,
+  что `@бобик` в Talk: safety gate → шлюз с токеном → квота по логину). Фото — следующим срезом. SOCKS-туннель
+  слушает `172.17.0.1:1080` (адрес docker0, не `127.0.0.1`) — замер 2026-09-19 показал, что Jetson напрямую
+  до Telegram не доходит (3 из 3 попыток — таймаут).
+
+Качает **Jetson через домашний интернет, не VPS** — VPS держит VPN ~25 человек, жалоба правообладателя
+хостеру грозит блокировкой IP (правило №13); заодно на VPS мало места. Замер дисков 2026-09-19: SSD 229 ГБ,
+занято 14 ГБ (Immich 13 ГБ), свободно 204 ГБ; HDD свободно 438 ГБ. Steam на Jetson не делаем (SteamCMD
+только x86); флешку в Jetson — не на этом этапе (два необъяснённых аппаратных сброса устройства).
+
+**Статус:** обе спецификации утверждены владельцем, реализация — план (writing-plans), выкат — только
+по «деплой». Устройство и VPS сегодня ночью не менялись.
+
 ---
 
 ### EN summary
@@ -178,4 +206,18 @@ In the evening, two items landed in git and wait for an owner-triggered deploy: 
 quota alert, and D3, an outside watchdog in which a Cloud.ru job asks the VPS through a single-command key
 whether the NAS answers and alerts the owner in Telegram. The owner postponed S3 and the UPS, accepted
 having no second copy of the 1.4 TB archive, and allowed Immich ML on Cloud.ru only within the free tier.
-Next: a Cloud.ru spend alert, the Telegram family bot, GigaChat routing and `@бобик` diagnostics.
+
+Later that night, the owner's son asked for a home downloader, and the owner gave it priority, next to the
+Telegram bot (plan item E9). Two specs were approved through five revisions: the bot's main interface is
+chat with `@bobik_borovskoy_bot` in the family group, addressed by name ("@бобик ...") like `@бобик` in
+Talk — which means the bot's group privacy mode is turned off, and messages without the name are dropped
+at once, unstored and unlogged. Downloads have no size cap: up to 20 GB go through the SSD, larger ones
+straight to the HDD; the 20 MB Telegram limit applies only to a `.torrent` file sent in chat. GigaChat
+questions ("@бобик <question>", the same path as Talk) are part of this same first slice; photos come
+later. aria2 downloads over the Jetson's home internet, never the VPS (rule #13). The Jetson cannot reach
+Telegram directly (3 of 3 timeouts measured 2026-09-19), so the SOCKS tunnel listens on the docker0 address
+172.17.0.1. Status: both specs approved, implementation plan next, deploy only on "деплой". Neither the
+device nor the VPS changed tonight.
+
+Next: a Cloud.ru spend alert, the Telegram bot + downloader implementation plan, GigaChat routing and
+`@бобик` diagnostics.

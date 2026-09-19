@@ -18,9 +18,10 @@ one redacting, budgeted egress to external LLMs; memory limits everywhere; ADRs 
 withdrawing wrong diagnoses.
 
 ## Top problems
-1. **P0 (commit/deploy blocker, CONFIRMED by execution):** the uncommitted gateway change breaks
-   every GigaChat chat with HTTP 500 (`full` used before assignment) and removes `_IMG_TAG_RE` still
-   in use; two existing tests fail. Not deployed.
+1. **P0 (deploy blocker, CONFIRMED by execution):** the gateway change — committed and pushed to
+   `main` as `d52c11b` while this audit ran — breaks every GigaChat chat with HTTP 500 (`full` used
+   before assignment) and removes `_IMG_TAG_RE` still in use; two existing tests fail. The pre-commit
+   gate missed it because it only runs `tests/unit`. Not deployed.
 2. **P1:** SSD auto-recovery has been broken since 2026-09-08 — the device pulled 98 renamed commits
    and the script calls a path that does not exist (exit 127). Docs say it is active.
 3. **P1:** two confirmed power-loss resets (17.08, 18.09 ~3.5 h), no UPS.

@@ -56,6 +56,7 @@
 | 2026-09-19 | **B2** `backups/` только чтение в Samba и Nextcloud (вложенный ro-bind) | ✅ git | compose nextcloud/samba, `test_backup_isolation.py` |
 | 2026-09-19 | **B6** учения по восстановлению (ежемесячно; ловят неполный снапшот) | ✅ git | `restore_drill.sh`, таймер |
 | 2026-09-19 | **B3** S3 — тот же скрипт, цель `s3.env` | готово в коде; ждёт tenant_id | `DEPLOY_STAGE_B_2026-09.md` |
+| 2026-09-19 | **Выкат этапа B на Jetson** (05:00–05:06 UTC) | ✅ **device** | restic 0.19.1 (SHA-256 OK); репо `3bdd878a61` на HDD; снапшот `291b0be5` 532 файла / 415 МиБ (196 МиБ в репо) за 12 с; учения **DRILL OK** за 5 с; `backups/` ro в Samba и Nextcloud — запись отклонена (`Read-only file system`); пароль репо — Windows Credential Manager; простой ~1.5 мин; правило №13 до/после идентично |
 
 ### 1.1. Отозванные статусы (как найдено)
 
@@ -251,9 +252,9 @@ E1..E8 — после A–C ; F — после B и D
 | Layer | What | Where | Факт 2026-09-19 |
 |---|---|---|---|
 | L0 | Immich + NC данные, БД | SSD | ✅ |
-| L1 | копия Immich | HDD `backups/immich` | ✅ ежедневно; ⚠️ доступна на запись через шары (B2) |
+| L1 | копия Immich | HDD `backups/immich` | ✅ ежедневно; с 2026-09-19 только чтение через шары (B2) |
 | L1b | дампы БД (7 шт.) | SSD | ✅ fail-closed |
-| L1c | конфиг, `.env`, файлы NC | HDD restic | ❌ нет (B1) |
+| L1c | конфиг, `.env`, файлы NC, Samba users, дампы | HDD restic (шифр.) | ✅ с 2026-09-19, ежедневно 03:40, учения ежемесячно |
 | L2 | restic шифрованный | Cloud.ru S3 | ❌ blocked (B3); **legacy L2 = Vostro pull дампов** ✅ |
 | L3 | код | GitHub + GitVerse | ✅ |
 
@@ -295,7 +296,7 @@ Nextcloud/Immich в Cloud.ru как primary; K8s; Managed RAG по альбом�
 - [x] Cloud.ru FM: adapter + live chat 200
 - [x] Amnezia peer count не уменьшался (19 на 2026-09-19)
 - [x] Этап A закрыт по DoD в git и **на устройстве** (2026-09-19, `DEPLOY_STAGE_A_2026-09.md`)
-- [ ] L1c конфиг/NC + изоляция L1 (B1–B2)
+- [x] L1c конфиг/NC + изоляция L1 (B1–B2) — на устройстве 2026-09-19
 - [ ] S3 off-site (B3)
 - [ ] Этап C (auth/RBAC) на устройстве
 - [ ] ИБП + внешний сторож (D1, D3)
@@ -303,7 +304,7 @@ Nextcloud/Immich в Cloud.ru как primary; K8s; Managed RAG по альбом�
 ## 11. Следующий шаг
 
 1. ~~Этап A~~ — ✅ git + device 2026-09-19.
-2. **Этап B** — ✅ в git (B1, B2, B6; B3 готов к ключам); выкат — `DEPLOY_STAGE_B_2026-09.md` по «деплой».
+2. **Этап B** — ✅ git + **device** 2026-09-19 (B1, B2, B6). B3 (S3) — код готов, ждёт tenant_id; B4 Vostro pull оставлен; B5 — ответ владельца D3.
 3. **Этап C** в git: C1 auth эндпоинтов NAS API + CORS, C2 RBAC, C4/C5.
 4. **Owner:** решения D1–D6 (§2.2); Cloud.ru консоль → tenant_id (B3).
 

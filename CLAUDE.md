@@ -191,7 +191,7 @@
 - ✅ **Этапы B и C выкачены 2026-09-19.** S3 (B3) отложен владельцем. E2 и D3 — в git, ждут «деплой».
 - 🟠 **Telegram-бот + качалка (E9), приоритет владельца** (запрос сына) — обе спецификации утверждены
   (`docs/superpowers/specs/2026-09-19-telegram-family-bot-design.md`,
-  `docs/superpowers/specs/2026-09-19-home-downloader-design.md`, ред. 1–5); **реализовано в git** (`90b52bc`), выкат — по «деплой» (`docs/plans/DEPLOY_DOWNLOADER_2026-09.md`).
+  `docs/superpowers/specs/2026-09-19-home-downloader-design.md`, ред. 1–5); **✅ выкачено на Jetson 2026-09-19 17:03 UTC** (`DEPLOY_DOWNLOADER_2026-09.md`): контейнер `homecloud_downloads` (aria2+AriaNg :6880), SOCKS `nas_jetson_nano-tg-socks` на 172.17.0.1:1080, бот в группе «Боровские» (приватность выкл.), объявление семье отправлено. ⚠️ dockerd не резолвит имена (ходит на 127.0.1.1 после смены resolv.conf 18.09) — новые образы не скачать до перезапуска Docker; таймеры скорости по UTC (день = 11:00–02:00 МСК).
 - 🟠 **Решения владельца D1–D6** (план §2.2): ИБП, что класть в S3, копия архива 1.4 ТБ, Immich ML, smart routing, окно Part B.
 - 🔴 **P0 deploy W1+W2** when Jetson on + «деплой»: `DEPLOY_FULL_SBER_CUTOVER.md` (Giga-2 cutover + Immich→HDD). Pack is in git.
 - 🟠 **Cloud.ru balance/grant** — FM key exists but chat **402**; then optional `CLOUDRU_FM_API_KEY` on device.

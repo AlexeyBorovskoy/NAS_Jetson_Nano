@@ -374,3 +374,4 @@ implemented in git (`90b52bc`) and awaits an owner-triggered deploy. Next: E5, E
 | 2026-09-19 | **Consolidated edition**: H* + audit 2026-09-19 + Sber decisions in one queue (A–F); withdrawn statuses §1.1; DoD §3; owner decisions §2.2; research track §8 |
 | 2026-09-19 | **E9** added — Telegram bot + home downloader, owner priority (son's request); specs approved through revisions 1–5 |
 | 2026-09-19 | **E9** implemented in git (`90b52bc`): aria2 downloader + first Telegram bot slice; awaiting deploy |
+| 2026-09-19 | **E9 deployed** on Jetson 17:03 UTC: end-to-end download + GigaChat checked, announcement sent to the family group; rule #13 identical |

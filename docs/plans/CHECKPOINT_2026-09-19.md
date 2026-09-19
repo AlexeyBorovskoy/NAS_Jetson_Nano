@@ -241,3 +241,26 @@ Next: a Cloud.ru spend alert, the Telegram bot + downloader implementation plan,
 The downloader and the first Telegram bot slice are implemented and merged to `main` (`90b52bc`), not deployed. Six tasks
 ran through subagents with per-task reviews and a final Opus review; eight important findings were fixed before any
 rollout. Deploy only on the owner's command using `DEPLOY_DOWNLOADER_2026-09.md`.
+
+## Выкат качалки и бота — 2026-09-19 16:45–17:10 UTC
+
+- Jetson `339db92` → `75a1cc8` (откат: `~/dl-rollback-PREV`); `.env` — копия `config/.env.bak.dl.*`, ключи бота и
+  `ARIA2_RPC_SECRET` (копия — Credential Manager `nas-aria2-rpc-secret`).
+- SOCKS `nas_jetson_nano-tg-socks` — только `172.17.0.1:1080`, перезапусков 0, Telegram через него 302 (и из контейнера API).
+- `homecloud_downloads` (aria2 1.37 + AriaNg 1.3.14): 6 МБ ОЗУ, запись на SSD и HDD проверена, дневной лимит применён (`OK`).
+- Владелец: приватность бота выключена, бот перезашёл в группу (`can_read_all_group_messages=True`); хвост из 19 старых
+  апдейтов сброшен до запуска бота.
+- NAS API пересобран: `telegram connected`, 52/128 МБ, Talk-бот работает. 14 контейнеров, failed 0, доступно 1,65 ГБ.
+- Сквозная проверка: HTTP-файл → SSD → перенос на HDD → «✅ Готово» доставлено (владельцу в личку — проверочно); GigaChat «🐕 ок».
+- Объявление о возможностях отправлено в «Боровские» (message_id 12). Правило №13: VPS ДО/ПОСЛЕ идентичен, 19 пиров.
+- ⚠️ **Найдено по ходу:** dockerd не резолвит имена — ходит на `127.0.1.1:53` (никто не слушает) после смены `resolv.conf`
+  18.09 13:57; `daemon.json` `dns` влияет только на контейнеры. Обход: база качалки `alpine:3.19`, уже бывшая на устройстве
+  (`75a1cc8`). Лечение — перезапуск Docker (простой всех контейнеров) в окне владельца; до него новые образы не скачать.
+- ⚠️ Отзыв утреннего вывода «Jetson напрямую Telegram не видит»: проверка шла тем же сломанным путём? Нет — `curl` на хосте
+  резолвит через `127.0.0.53` (работает); таймаут был на соединении. Вывод остаётся, но его стоит перепроверить отдельно.
+- Таймеры скорости работают по UTC: «день» = 11:00–02:00 МСК. Поправить на МСК — отдельной правкой.
+
+### EN
+The downloader and the Telegram bot were deployed at 17:03 UTC and checked end to end; the family announcement was sent.
+Rule #13 held. Found on the way: dockerd cannot resolve names since the resolv.conf change on 2026-09-18 (worked around
+with a local base image; fixing it needs a Docker restart in an owner window), and the speed timers run on UTC.

@@ -31,7 +31,7 @@ and retracted diagnoses stay in the docs, together with how they were caught.
 | Контейнеры / Containers | **13 up, healthy**, failed units 0 (live 2026-09-19, after stage C) |
 | Этапы A–C / Stages A–C | **on device 2026-09-19**: host layout + SSD auto-recovery fixed; restic config backup on HDD (daily, restore drill OK); NAS API JWT + roles, no `CORS *`; gateway service token, non-root |
 | В git, ждёт «деплой» / In git, awaiting deploy | E2 GigaChat quota alert; D3 external watchdog on Cloud.ru ([runbook](docs/plans/DEPLOY_D3_WATCHDOG_2026-09.md)) |
-| Telegram-бот + качалка / Telegram bot + downloader | **owner priority** (son's request): specs approved 2026-09-19 ([bot](docs/superpowers/specs/2026-09-19-telegram-family-bot-design.md), [downloader](docs/superpowers/specs/2026-09-19-home-downloader-design.md)); **implemented in git 2026-09-19** (aria2 + `@бобик` in Telegram, GigaChat questions; 90 API tests), not deployed — [runbook](docs/plans/DEPLOY_DOWNLOADER_2026-09.md), deploy only on "деплой" |
+| Telegram-бот + качалка / Telegram bot + downloader | **owner priority** (son's request): specs approved 2026-09-19 ([bot](docs/superpowers/specs/2026-09-19-telegram-family-bot-design.md), [downloader](docs/superpowers/specs/2026-09-19-home-downloader-design.md)); **on device 2026-09-19 17:03 UTC** — aria2 + `@бобик` in Telegram (group «Боровские» + DMs), GigaChat questions; 14 containers; [runbook](docs/plans/DEPLOY_DOWNLOADER_2026-09.md) |
 | Immich | library **~13 ГБ** on SSD; **L1 copy on HDD** `/mnt/hdd2tb/backups/immich` **13 ГБ** + timer |
 | Nextcloud | live (family) |
 | SSD `/mnt/storage` | 229 ГБ, ~6 % used (photos grow slowly) |

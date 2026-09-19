@@ -7,6 +7,10 @@ Wants=network-online.target
 Type=oneshot
 Environment=LLM_GATEWAY_URL=http://127.0.0.1:8090
 Environment=NAS_JETSON_NANO_PROJECT_DIR=/home/admin/nasa
+# E2: ответ сохраняется для алерта (talk-alert читает его без сети).
+# systemd создаёт /var/lib/nas-giga-balance и отдаёт его User=.
+StateDirectory=nas-giga-balance
+Environment=GIGA_BALANCE_FILE=/var/lib/nas-giga-balance/balance.json
 ExecStart=/bin/bash ${NAS_JETSON_NANO_PROJECT_DIR}/scripts/sber/check_gigachat_balance.sh
 User=admin
 StandardOutput=journal

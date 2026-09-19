@@ -253,8 +253,46 @@ def check_offsite_pull():
     return "offsite_pull", None
 
 
+GIGA_BALANCE_FILE = "/var/lib/nas-giga-balance/balance.json"
+GIGA_BALANCE_MAX_AGE_HOURS = 50   # опрос раз в сутки + до 30 мин джиттера
+GIGA_BALANCE_WARN_TOKENS = 2000000
+
+
+def check_giga_balance(path=None, warn_tokens=None):
+    """E2: квоты GigaChat раздельные по моделям (Max — свои ≈25 млн), и до 2026-09-19
+    ежедневный опрос только печатал их в журнал. Файл пишет опрос
+    (scripts/sber/check_gigachat_balance.sh); сюда — без сети, раз в 15 мин.
+    Старый или битый файл — тоже тревога: значит, сломан сам опрос."""
+    path = path or GIGA_BALANCE_FILE
+    if warn_tokens is None:
+        warn_tokens = int(read_env(MONITOR_ENV, "GIGA_BALANCE_WARN_TOKENS",
+                                   str(GIGA_BALANCE_WARN_TOKENS)) or GIGA_BALANCE_WARN_TOKENS)
+    try:
+        age_h = (time.time() - os.path.getmtime(path)) / 3600
+        with open(path, encoding="utf-8") as fh:
+            items = json.load(fh)["balance"]["balance"]
+        values = {str(i["usage"]): int(i["value"]) for i in items}
+    except OSError:
+        return "giga_balance", "🟠 Баланс GigaChat ни разу не опрошен: нет %s." % path
+    except (ValueError, KeyError, TypeError):
+        return "giga_balance", "🟠 Баланс GigaChat не разобрать: %s." % path
+    if age_h > GIGA_BALANCE_MAX_AGE_HOURS:
+        return "giga_balance", ("🟠 Баланс GigaChat не обновлялся %d ч — "
+                                "ежедневный опрос сломан." % age_h)
+    if not values:
+        return "giga_balance", "🟠 GigaChat вернул пустой список квот."
+    low = ["%s — %s" % (k, format(v, ",").replace(",", " "))
+           for k, v in sorted(values.items()) if v < warn_tokens]
+    if low:
+        return "giga_balance", ("🟠 Квота GigaChat кончается (порог %s токенов): %s. "
+                                "Когда кончится, бот уйдёт на DeepSeek."
+                                % (format(warn_tokens, ",").replace(",", " "),
+                                   "; ".join(low)))
+    return "giga_balance", None
+
+
 CHECKS = (check_dumps, check_storage, check_containers, check_disk, check_ram,
-          check_swap, check_hdd_smart, check_offsite_pull)
+          check_swap, check_hdd_smart, check_offsite_pull, check_giga_balance)
 
 
 # ── отправка ───────────────────────────────────────────────────────────────────
@@ -334,6 +372,7 @@ def main():
                     "swap": "подкачка zram",
                     "hdd_smart": "SMART диска с семейным архивом",
                     "offsite_pull": "off-site бэкап на Vostro снова забирает дампы",
+                    "giga_balance": "квоты GigaChat",
                 }.get(key, key))
                 sent += 1
             state[key] = {"active": False, "last_sent": prev.get("last_sent", 0)}

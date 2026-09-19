@@ -26,6 +26,7 @@ log = logging.getLogger("nas_jetson_nano_api.downloads")
 
 GB = 1024 ** 3
 DONE_HINT = "\\\\192.168.0.50\\hdd2tb\\Downloads"
+HDD_MARKER = ".nas-hdd-marker"  # И6: в корне Downloads на HDD — признак реального монтирования
 _LINK_RE = re.compile(r"(magnet:\?\S+|https?://\S+)", re.IGNORECASE)
 _BAD_SUFFIXES = (".local", ".lan", ".internal", ".localdomain")
 # 2130706433, 0x7f.1, 017700000001, 127.1 — такие формы понимают резолверы и HTTP-клиенты
@@ -102,6 +103,10 @@ def _options(target: str) -> dict:
 
 
 def _disk_free() -> tuple:
+    # И6: HDD — внешний диск на ntfs-3g; примонтирован ли он на самом деле, вместо
+    # пустого каталога-заглушки от Docker, проверяем маркером, а не только statvfs.
+    if not os.path.exists(os.path.join(settings.dl_hdd_stat_path, HDD_MARKER)):
+        raise OSError("HDD не смонтирован — нет %s" % HDD_MARKER)
     ssd = os.statvfs(settings.dl_ssd_stat_path)
     hdd = os.statvfs(settings.dl_hdd_stat_path)
     return ssd.f_bavail * ssd.f_frsize, hdd.f_bavail * hdd.f_frsize
@@ -194,9 +199,10 @@ class Downloads:
 
     def _free(self) -> tuple:
         try:
-            return self.disk_free()
+            ssd, hdd = self.disk_free()
+            return ssd, hdd, False
         except OSError:
-            return 0, 0  # диск недоступен = места нет: страж остановит закачки
+            return 0, 0, True  # диск недоступен = места нет: страж остановит закачки
 
     def _record(self, gid: str, chat_id: int, user: str, name: str, state: str) -> None:
         data = self.ledger.load()
@@ -216,7 +222,7 @@ class Downloads:
         if await self.resolve(host):
             return "❌ ссылки во внутреннюю сеть запрещены"
         size = await self.head(link)
-        ssd, hdd = self._free()
+        ssd, hdd, _ = self._free()
         try:
             target = choose_target(size, ssd, hdd)
         except LinkError as exc:
@@ -224,6 +230,9 @@ class Downloads:
         async with self._lock:
             meta = self.ledger.load().get("_meta", {})
             opts = _options(target)
+            if size is None:
+                # И4: размер неизвестен — не предвыделять место ни на SSD, ни на HDD
+                opts["file-allocation"] = "none"
             wait_suffix = ""
             if meta.get("paused"):
                 opts["pause"] = "true"
@@ -248,12 +257,23 @@ class Downloads:
         return "⏬ Принял торрент, проверяю размер…"
 
     async def _route_paused(self, gid: str, entry: dict, st: dict, msgs: list, meta: dict) -> None:
+        status = st.get("status")
+        if status in ("removed", "complete"):
+            # И2: закачку отменили/она пропала, пока ждала маршрутизации — тихо, без RPC
+            entry["state"] = "cancelled"
+            return
+        if status == "error":
+            entry["state"] = "error"
+            name = entry.get("name") or _name(st, entry.get("name", ""))
+            msgs.append((entry["chat_id"], "❌ Не скачалось: %s — %s"
+                         % (name, st.get("errorMessage") or "ошибка")))
+            return
         size = int(st.get("totalLength") or 0)
         if not size:
             return  # размер ещё неизвестен — подождём следующего такта
         name = _name(st, entry.get("name", ""))
         entry["name"] = name
-        ssd, hdd = self._free()
+        ssd, hdd, _ = self._free()
         try:
             target = choose_target(size, ssd, hdd)
         except LinkError as exc:
@@ -272,61 +292,83 @@ class Downloads:
 
     async def _tick_entries(self, data: dict, meta: dict, msgs: list) -> None:
         for gid in list(data):
-            entry = data[gid]
-            if entry.get("state") in ("done", "error", "cancelled"):
+            entry = data.get(gid)
+            if entry is None or entry.get("state") in ("done", "error", "cancelled"):
                 continue
             try:
                 st = await self.aria2.call("tellStatus", gid, _KEYS)
             except RuntimeError:
                 entry["state"] = "error"
                 continue
-            if entry["state"] == "metadata":
-                if st.get("status") == "complete" and st.get("followedBy"):
-                    new = st["followedBy"][0]
-                    data[new] = dict(entry, state="await_dir")
-                    del data[gid]
-                    st2 = await self.aria2.call("tellStatus", new, _KEYS)
-                    await self._route_paused(new, data[new], st2, msgs, meta)
-                elif st.get("status") == "error":
-                    entry["state"] = "error"
-                    msgs.append((entry["chat_id"], "❌ Не скачалось: %s — %s"
-                                 % (entry["name"], st.get("errorMessage") or "ошибка")))
-                continue
-            if entry["state"] == "await_dir":
-                await self._route_paused(gid, entry, st, msgs, meta)
-                continue
-            name = _name(st, entry.get("name", ""))
-            if st.get("status") == "complete":
-                entry["state"] = "done"
-                msgs.append((entry["chat_id"], "✅ Готово: %s — %s" % (name, DONE_HINT)))
+            try:
+                await self._tick_one(gid, entry, st, data, meta, msgs)
+            except RuntimeError:
+                # И2: сбой RPC (changeOption/unpause/forceRemove и т.п.) на ОДНОЙ
+                # записи не должен вешать такт целиком — остальные GID обрабатываются дальше.
+                log.warning("такт: сбой на закачке %s — пропускаю", gid)
+                (data.get(gid) or entry)["state"] = "error"
+
+    async def _tick_one(self, gid: str, entry: dict, st: dict, data: dict, meta: dict, msgs: list) -> None:
+        if entry["state"] == "metadata":
+            if st.get("status") == "complete" and st.get("followedBy"):
+                new = st["followedBy"][0]
+                data[new] = dict(entry, state="await_dir")
+                del data[gid]
+                st2 = await self.aria2.call("tellStatus", new, _KEYS)
+                await self._route_paused(new, data[new], st2, msgs, meta)
             elif st.get("status") == "error":
                 entry["state"] = "error"
                 msgs.append((entry["chat_id"], "❌ Не скачалось: %s — %s"
-                             % (name, st.get("errorMessage") or "ошибка")))
-            elif st.get("status") == "removed":
-                entry["state"] = "cancelled"
+                             % (entry["name"], st.get("errorMessage") or "ошибка")))
+            return
+        if entry["state"] == "await_dir":
+            await self._route_paused(gid, entry, st, msgs, meta)
+            return
+        name = _name(st, entry.get("name", ""))
+        if st.get("status") == "complete":
+            entry["state"] = "done"
+            msgs.append((entry["chat_id"], "✅ Готово: %s — %s" % (name, DONE_HINT)))
+        elif st.get("status") == "error":
+            entry["state"] = "error"
+            msgs.append((entry["chat_id"], "❌ Не скачалось: %s — %s"
+                         % (name, st.get("errorMessage") or "ошибка")))
+        elif st.get("status") == "removed":
+            entry["state"] = "cancelled"
 
     async def tick(self) -> list:
+        # И1: сообщения такта копятся в outbox и возвращаются целиком (старые
+        # неотправленные + новые), пока их не подтвердят через ack() — иначе
+        # недоступный на миг Telegram теряет уведомление насовсем.
         async with self._lock:
             msgs: list = []
             data = self.ledger.load()
             meta = data.pop("_meta", {})
+            outbox = data.pop("_outbox", [])
             try:
                 await self._tick_entries(data, meta, msgs)
                 await self._guard(data, meta, msgs)
             except httpx.HTTPError:
                 log.warning("aria2 недоступен — такт пропущен")
+            outbox.extend({"chat_id": c, "text": t} for c, t in msgs)
             data["_meta"] = meta
+            data["_outbox"] = outbox
             self.ledger.save(data)
-            return msgs
+            return [(m["chat_id"], m["text"]) for m in outbox]
+
+    async def ack(self, n: int) -> None:
+        async with self._lock:
+            data = self.ledger.load()
+            outbox = data.get("_outbox", [])
+            data["_outbox"] = outbox[n:]
+            self.ledger.save(data)
 
     async def _guard(self, data: dict, meta: dict, msgs: list) -> None:
-        ssd, hdd = self._free()
+        ssd, hdd, disk_down = self._free()
         ssd_min = settings.dl_ssd_min_free_gb * GB
         hdd_min = settings.dl_hdd_min_free_gb * GB
         chats = sorted({e["chat_id"] for e in data.values()
                         if e.get("state") in ("active", "metadata", "await_dir")})
-        if ssd < ssd_min or hdd < hdd_min:
+        if disk_down or ssd < ssd_min or hdd < hdd_min:
             if not meta.get("paused"):
                 gids = [st["gid"] for st in await self.aria2.call("tellActive", ["gid"])]
                 gids += [st["gid"] for st in await self.aria2.call("tellWaiting", 0, 1000, ["gid", "status"])
@@ -335,12 +377,17 @@ class Downloads:
                     await self.aria2.call("pause", gid)
                 meta["paused"] = True
                 meta["paused_gids"] = gids
-                need = []
-                if ssd < ssd_min:
-                    need.append("SSD: нужно ещё %s" % fmt_size(ssd_min - ssd))
-                if hdd < hdd_min:
-                    need.append("HDD: нужно ещё %s" % fmt_size(hdd_min - hdd))
-                text = "⏸ Пауза закачек — мало места (%s)." % "; ".join(need)
+                if disk_down:
+                    # И6: диск (обычно HDD — маркер пропал) реально недоступен,
+                    # это другая причина паузы, не «мало места»
+                    text = "⏸ Пауза закачек — HDD недоступен."
+                else:
+                    need = []
+                    if ssd < ssd_min:
+                        need.append("SSD: нужно ещё %s" % fmt_size(ssd_min - ssd))
+                    if hdd < hdd_min:
+                        need.append("HDD: нужно ещё %s" % fmt_size(hdd_min - hdd))
+                    text = "⏸ Пауза закачек — мало места (%s)." % "; ".join(need)
                 msgs.extend((c, text) for c in chats)
         elif meta.get("paused") and ssd >= ssd_min + _RESUME_MARGIN and hdd >= hdd_min + _RESUME_MARGIN:
             for gid in meta.get("paused_gids", []):
@@ -371,7 +418,7 @@ class Downloads:
             left = fmt_size(total - done) if total else "?"
             lines.append("%d. %s — %d%% · %.1f МБ/с · осталось %s%s"
                          % (i, name, pct, speed, left, mark))
-        ssd, hdd = self._free()
+        ssd, hdd, _ = self._free()
         free = "Свободно: SSD %s, HDD %s (с учётом запаса)" % (
             fmt_size(max(ssd - settings.dl_ssd_min_free_gb * GB, 0)),
             fmt_size(max(hdd - settings.dl_hdd_min_free_gb * GB, 0)))

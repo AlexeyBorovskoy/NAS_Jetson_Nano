@@ -162,13 +162,24 @@ class TelegramBot:
             params["reply_to_message_id"] = reply_to
         await self.api.call("sendMessage", **params)
 
+    async def _leave_foreign_group(self, chat_id: int) -> None:
+        log.info("telegram foreign group", extra={"fields": {"chat_id": chat_id}})
+        seen = self.state.setdefault("foreign_groups_notified", [])
+        if chat_id not in seen:
+            seen.append(chat_id)
+            self._save()
+            owner = self._owner_chat()
+            if owner:
+                await self._say(owner, "🐕 Меня добавили в чужую группу %s — вышел." % chat_id)
+        await self.api.call("leaveChat", chat_id=chat_id)
+
     # ── обработка ─────────────────────────────────────────────────────────────
     async def handle_update(self, upd: dict) -> None:
         mcm = upd.get("my_chat_member")
         if mcm:
             chat = mcm.get("chat") or {}
             if chat.get("type") in ("group", "supergroup") and chat.get("id") != self.family:
-                await self.api.call("leaveChat", chat_id=chat["id"])
+                await self._leave_foreign_group(chat["id"])
             return
         msg = upd.get("message")
         if not msg:
@@ -176,7 +187,7 @@ class TelegramBot:
         chat = msg.get("chat") or {}
         chat_id = chat.get("id")
         if chat.get("type") in ("group", "supergroup") and chat_id != self.family:
-            await self.api.call("leaveChat", chat_id=chat_id)
+            await self._leave_foreign_group(chat_id)
             return
         text = addressed_text(msg, self.bot_username, self.callsigns)
         if text is None:
@@ -192,9 +203,9 @@ class TelegramBot:
             "user": login, "chat_type": chat.get("type"),
             "kind": "torrent" if doc else kind}})
         mid = msg.get("message_id")
-        if text in ("", "/start") or text.startswith("/start@") or text == "/help":
-            await self._say(chat_id, HELP)
-            return
+        # Мелкая правка: ветка документа — раньше проверки пустого текста/справки.
+        # Иначе .torrent без подписи в личке (addressed_text даёт "") попадал бы
+        # в HELP и не скачивался вовсе.
         if doc and (doc.get("file_name") or "").lower().endswith(".torrent"):
             if kind != "download" and chat.get("type") != "private":
                 return
@@ -203,6 +214,9 @@ class TelegramBot:
                 return
             data = await self.api.file_bytes(doc["file_id"])
             await self._say(chat_id, await self.downloads.add_torrent(data, chat_id, login), mid)
+            return
+        if text in ("", "/start") or text.startswith("/start@") or text == "/help":
+            await self._say(chat_id, HELP)
             return
         if kind == "download":
             try:
@@ -273,8 +287,17 @@ class TelegramBot:
                 backoff = min(backoff * 2, 60)
 
     async def downloads_once(self) -> None:
-        for chat_id, text in await self.downloads.tick():
-            await self._say(chat_id, text)
+        # И1: outbox отправляется по порядку; на первой ошибке останавливаемся —
+        # остаток остаётся неподтверждённым и вернётся на следующем такте.
+        outbox = await self.downloads.tick()
+        sent = 0
+        for chat_id, text in outbox:
+            try:
+                await self._say(chat_id, text)
+            except Exception:
+                break
+            sent += 1
+        await self.downloads.ack(sent)
 
     async def downloads_forever(self, interval: int = 30) -> None:
         while True:
@@ -291,6 +314,10 @@ async def run() -> None:
     while not bot.bot_username:
         try:
             bot.bot_username = (await api.call("getMe"))["username"]
-        except (TgError, httpx.HTTPError, OSError):
+            log.info("telegram connected", extra={"fields": {"bot": bot.bot_username}})
+        except (TgError, httpx.HTTPError, OSError) as exc:
+            # И5: раньше сбой старта молчал целиком — теперь виден тип ошибки (не текст,
+            # чтобы не утёк токен из URL исключения httpx).
+            log.warning("telegram unreachable at start: %s", type(exc).__name__)
             await asyncio.sleep(30)
     await asyncio.gather(bot.poll_forever(), bot.downloads_forever())

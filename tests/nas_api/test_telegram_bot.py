@@ -67,6 +67,7 @@ class FakeTelegram:
 class FakeDownloads:
     def __init__(self):
         self.calls = []
+        self.acks = []
 
     async def add_link(self, link, chat_id, user):
         self.calls.append(("link", link, chat_id, user))
@@ -85,6 +86,9 @@ class FakeDownloads:
 
     async def tick(self):
         return [(FAMILY, "✅ Готово: x")]
+
+    async def ack(self, n):
+        self.acks.append(n)
 
 
 def make(tg=None):
@@ -202,6 +206,18 @@ def test_torrent_document_with_caption():
     assert dl.calls and dl.calls[0][0] == "torrent" and dl.calls[0][1] == b"d8:announce1:xe"
 
 
+def test_torrent_in_private_without_caption_still_downloads():
+    # Мелкая правка: ветка документа обязана идти раньше проверки пустого текста —
+    # иначе .torrent без подписи в личке уходил в «справку» вместо закачки.
+    mod, bot, tg, dl, asked = make()
+    upd = msg(None, chat=OWNER, chat_type="private", uid=OWNER,
+              document={"file_id": "F1", "file_name": "distro.torrent", "file_size": 20})
+    upd["message"].pop("text")
+    asyncio.run(bot.handle_update(upd))
+    assert dl.calls and dl.calls[0][0] == "torrent"
+    assert tg.texts() == [(OWNER, "⏬ Принял торрент, проверяю размер…")]
+
+
 def test_torrent_over_20mb_refused():
     mod, bot, tg, dl, asked = make()
     upd = msg(None, caption="@бобик скачай",
@@ -262,6 +278,18 @@ def test_foreign_group_is_left():
     assert asked == []
 
 
+def test_foreign_group_owner_notified_once():
+    # Мелкая правка: владелец узнаёт о чужой группе, но не при каждом сообщении из неё.
+    mod, bot, tg, dl, asked = make()
+    for _ in range(2):
+        asyncio.run(bot.handle_update(msg("@бобик привет", chat=-555)))
+    leave_calls = [b for m, b in tg.sent if m == "leaveChat"]
+    assert leave_calls == [{"chat_id": -555}, {"chat_id": -555}]
+    owner_texts = [t for c, t in tg.texts() if c == OWNER]
+    assert len(owner_texts) == 1
+    assert "-555" in owner_texts[0]
+
+
 def test_poll_saves_offset_after_processing(tmp_path):
     tg = FakeTelegram(updates=[dict(msg("@бобик закачки"), update_id=41)])
     mod, bot, tg, dl, asked = make(tg)
@@ -289,6 +317,28 @@ def test_download_notifications_are_sent():
     mod, bot, tg, dl, asked = make()
     asyncio.run(bot.downloads_once())
     assert tg.texts() == [(FAMILY, "✅ Готово: x")]
+    assert dl.acks == [1]          # И1: подтверждено ровно столько, сколько отправлено
+
+
+def test_download_notification_failure_keeps_outbox_unacked():
+    # И1: sendMessage падает (500) — ack(0), остальное остаётся в outbox бота-учёта.
+    def handler(request):
+        path = request.url.path
+        method = path.rsplit("/", 1)[-1]
+        if method == "sendMessage":
+            return httpx.Response(500)
+        return httpx.Response(200, json={"ok": True, "result": True})
+
+    mod = load()
+    api = mod.TgApi("TOKEN", base="https://tg.test", transport=httpx.MockTransport(handler))
+    dl = FakeDownloads()
+
+    async def answer(q, user):
+        return "🐕 ответ"
+
+    bot = mod.TelegramBot(api, dl, answer=answer, state_path=os.path.join(tempfile.mkdtemp(), "tg.json"))
+    asyncio.run(bot.downloads_once())
+    assert dl.acks == [0]
 
 
 def test_token_never_logged(caplog):

@@ -160,6 +160,16 @@ def test_http_link_refused_when_too_big(tmp_path):
     assert not any(c[0] == "addUri" for c in aria.calls)
 
 
+def test_http_link_unknown_size_skips_preallocation(tmp_path):
+    # И4: без размера (HEAD не ответил) — не предвыделять место ни на SSD, ни на HDD.
+    dl = load()
+    d, aria = make(dl, tmp_path, size=None)
+    asyncio.run(d.add_link("https://example.org/unknown", 1, "ivan"))
+    method, params = aria.calls[-1]
+    assert method == "addUri"
+    assert params[1]["file-allocation"] == "none"
+
+
 def test_http_link_resolving_inside_is_refused(tmp_path):
     dl = load()
 
@@ -212,14 +222,71 @@ def test_torrent_file_added_paused_then_routed(tmp_path):
 # ── завершение и учёт ─────────────────────────────────────────────────────────
 
 def test_completion_notified_once_to_origin_chat(tmp_path):
+    # И1: без подтверждения (ack) сообщение остаётся в outbox — эту проверку
+    # перенял test_unsent_notification_survives; здесь ack закрывает такт.
     dl = load()
     d, aria = make(dl, tmp_path, size=GB)
     asyncio.run(d.add_link("https://example.org/a.iso", 99, "ivan"))
     aria.status["g1"].update(status="complete", files=[{"path": "/downloads/ssd/.incomplete/a.iso"}])
     first = asyncio.run(d.tick())
-    second = asyncio.run(d.tick())
     assert first == [(99, "✅ Готово: a.iso — " + dl.DONE_HINT)]
+    asyncio.run(d.ack(1))
+    second = asyncio.run(d.tick())
     assert second == []
+
+
+def test_unsent_notification_survives(tmp_path):
+    # И1: Telegram недоступен → такт не должен терять уведомление.
+    dl = load()
+    d, aria = make(dl, tmp_path, size=GB)
+    asyncio.run(d.add_link("https://example.org/a.iso", 99, "ivan"))
+    aria.status["g1"].update(status="complete", files=[{"path": "/downloads/ssd/.incomplete/a.iso"}])
+    first = asyncio.run(d.tick())
+    second = asyncio.run(d.tick())  # без ack
+    assert first == [(99, "✅ Готово: a.iso — " + dl.DONE_HINT)]
+    assert second == first
+
+
+def test_await_dir_removed_becomes_cancelled_without_rpc(tmp_path):
+    # И2: закачку удалили, пока она ждала маршрутизации — no RPC, тихая отмена.
+    dl = load()
+    d, aria = make(dl, tmp_path)
+    asyncio.run(d.add_torrent(b"d8:announce...e", 5, "admin"))
+    aria.status["g1"].update(status="removed", totalLength=str(2 * GB))
+    msgs = asyncio.run(d.tick())
+    entry = dl.Ledger(str(tmp_path / "ledger.json")).load()["g1"]
+    assert entry["state"] == "cancelled"
+    assert not any(c[0] == "changeOption" for c in aria.calls)
+    assert msgs == []
+
+
+def test_tick_continues_past_gid_that_raises(tmp_path):
+    # И2: сбой RPC на одной записи (changeOption для g1) не должен останавливать
+    # такт — уведомление по g2 обязано прийти.
+    dl = load()
+
+    class FlakyAria2(FakeAria2):
+        async def call(self, method, *params):
+            if method == "changeOption" and params[0] == "g1":
+                raise RuntimeError("boom")
+            return await super().call(method, *params)
+
+    aria = FlakyAria2()
+
+    async def head(url):
+        return GB
+
+    d = dl.Downloads(aria2=aria, ledger=dl.Ledger(str(tmp_path / "l.json")), head=head,
+                     disk_free=lambda: (150 * GB, 400 * GB), resolve=no_internal)
+    asyncio.run(d.add_torrent(b"d8:announce...e", 1, "ivan"))          # g1 — await_dir
+    asyncio.run(d.add_link("https://example.org/b.iso", 2, "olga"))    # g2 — active
+    aria.status["g1"].update(status="paused", totalLength=str(2 * GB))
+    aria.status["g2"].update(status="complete",
+                             files=[{"path": "/downloads/ssd/.incomplete/b.iso"}])
+    msgs = asyncio.run(d.tick())
+    assert (2, "✅ Готово: b.iso — " + dl.DONE_HINT) in msgs
+    ledger = dl.Ledger(str(tmp_path / "l.json")).load()
+    assert ledger["g1"]["state"] == "error"
 
 
 def test_error_reported_with_reason(tmp_path):
@@ -256,6 +323,7 @@ def test_guard_pauses_own_downloads_once_and_resumes(tmp_path):
     msgs = asyncio.run(d.tick())
     assert ("pause", ("g1",)) in aria.calls
     assert msgs and msgs[0][0] == 3 and msgs[0][1].startswith("⏸")
+    asyncio.run(d.ack(len(msgs)))               # И1: бот отправил — outbox очищен
     aria.calls.clear()
     assert asyncio.run(d.tick()) == []          # повторно не шлём
     assert ("pause", ("g1",)) not in aria.calls
@@ -276,6 +344,52 @@ def test_disk_unavailable_counts_as_no_space(tmp_path):
                      head=None, disk_free=broken, resolve=no_internal)
     asyncio.run(d.tick())
     assert dl.Ledger(str(tmp_path / "l.json")).load()["_meta"]["paused"] is True
+
+
+def test_guard_pauses_with_hdd_unavailable_message(tmp_path):
+    # И6: диск недоступен (маркер HDD пропал) — сообщение другое, не «нужно ещё N ГБ».
+    dl = load()
+    aria = FakeAria2()
+
+    async def head(url):
+        return GB
+
+    hdd_up = {"v": True}
+
+    def disk_free():
+        if hdd_up["v"]:
+            return 150 * GB, 400 * GB
+        raise OSError("HDD не смонтирован")
+
+    d = dl.Downloads(aria2=aria, ledger=dl.Ledger(str(tmp_path / "l.json")), head=head,
+                     disk_free=disk_free, resolve=no_internal)
+    asyncio.run(d.add_link("https://example.org/a.iso", 3, "ivan"))
+    hdd_up["v"] = False
+    msgs = asyncio.run(d.tick())
+    assert msgs == [(3, "⏸ Пауза закачек — HDD недоступен.")]
+
+
+def test_disk_free_requires_hdd_marker(tmp_path, monkeypatch):
+    # И6: маркер `.nas-hdd-marker` в корне HDD — иначе HDD считается не смонтированным.
+    # os.statvfs — только POSIX (Jetson); на Windows подменяем, чтобы тест был переносим.
+    dl = load()
+    ssd_dir = tmp_path / "ssd"
+    hdd_dir = tmp_path / "hdd"
+    ssd_dir.mkdir()
+    hdd_dir.mkdir()
+    monkeypatch.setattr(dl.settings, "dl_ssd_stat_path", str(ssd_dir))
+    monkeypatch.setattr(dl.settings, "dl_hdd_stat_path", str(hdd_dir))
+
+    class FakeStat:
+        f_bavail = 100
+        f_frsize = 4096
+
+    monkeypatch.setattr(dl.os, "statvfs", lambda path: FakeStat(), raising=False)
+    with pytest.raises(OSError):
+        dl._disk_free()
+    (hdd_dir / dl.HDD_MARKER).write_text("x", encoding="utf-8")
+    ssd_free, hdd_free = dl._disk_free()
+    assert ssd_free == 100 * 4096 and hdd_free == 100 * 4096
 
 
 def test_guard_resume_never_unpauses_unrouted_torrent(tmp_path):

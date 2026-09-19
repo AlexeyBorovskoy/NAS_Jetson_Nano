@@ -25,13 +25,18 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 TORRENT_LIMIT = 20 * 1024 * 1024  # предел Bot API getFile — на сам .torrent, не на закачку
-HELP = ("🐕 Я Бобик. Пишите «@бобик» и дальше:\n"
+HELP = ("🐕 Я Бобик. Обращайтесь по имени — «бобик, …» — и дальше:\n"
         "• скачай <magnet или ссылка> — скачаю домой, в \\\\192.168.0.50\\hdd2tb\\Downloads\n"
         "• .torrent-файл с подписью «@бобик скачай»\n"
         "• закачки — что качается и сколько места\n"
         "• отмени N — отменить закачку N\n"
         "• любой другой вопрос — отвечу через GigaChat")
 STRANGER_TEXT = "🐕 Вы не в семейном списке — я отвечаю только своим."
+GREETING = "🐕 Гав! Я тут. Спросите что-нибудь или напишите «бобик, закачки»."
+# «бобик» отдельным словом в любой падежной форме (бобика, бобику, бобиком…); латиница
+# после имени («бобикXYZ») — не обращение.
+_BOBIK_RE = re.compile(r"(?<![\w])@?бобик[а-яё]*(?!\w)", re.IGNORECASE)
+_ANSWERED_KEEP = 300  # сколько последних отвеченных сообщений помнить (для правок)
 
 
 class TgError(Exception):
@@ -93,6 +98,14 @@ def addressed_text(msg: dict, bot_username: str, callsigns: list):
             if rest and (rest[0].isalnum() or rest[0] == "_"):
                 continue  # «@бобикXYZ» — не обращение к боту
             return rest.lstrip(" ,:—-\t")
+    # Решение владельца 2026-09-19 («пусть флудит»): семья пишет «Бобик привет», «Бобику скажи»,
+    # «а бобик знает?» — без запятой и не в начале. Любое «бобик» отдельным словом в любой
+    # падежной форме — обращение. В начале фразы имя отрезается, в середине — текст целиком.
+    m = _BOBIK_RE.search(text)
+    if m:
+        if m.start() == 0:
+            return text[m.end():].lstrip(" ,:—-!?.\t")
+        return text
     reply_from = ((msg.get("reply_to_message") or {}).get("from") or {}).get("username", "")
     if reply_from.lower() == bot_username.lower():
         return text
@@ -181,7 +194,7 @@ class TelegramBot:
             if chat.get("type") in ("group", "supergroup") and chat.get("id") != self.family:
                 await self._leave_foreign_group(chat["id"])
             return
-        msg = upd.get("message")
+        msg = upd.get("message") or upd.get("edited_message")
         if not msg:
             return
         chat = msg.get("chat") or {}
@@ -192,6 +205,15 @@ class TelegramBot:
         text = addressed_text(msg, self.bot_username, self.callsigns)
         if text is None:
             return  # не нам: не обрабатываем, не храним, не пишем в журнал
+        # Правка сообщения приходит отдельным событием. Дописали «Бобик» при правке — отвечаем;
+        # уже отвеченное сообщение, которое просто подправили, — второй раз не отвечаем.
+        key = "%s:%s" % (chat_id, msg.get("message_id"))
+        answered = self.state.setdefault("answered", [])
+        if key in answered:
+            return
+        answered.append(key)
+        del answered[:-_ANSWERED_KEEP]
+        self._save()
         uid = (msg.get("from") or {}).get("id")
         login = self.users.get(uid)
         if login is None:
@@ -215,7 +237,10 @@ class TelegramBot:
             data = await self.api.file_bytes(doc["file_id"])
             await self._say(chat_id, await self.downloads.add_torrent(data, chat_id, login), mid)
             return
-        if text in ("", "/start") or text.startswith("/start@") or text == "/help":
+        if text == "":
+            await self._say(chat_id, GREETING, mid)  # просто «Бобик» — откликнуться, а не молчать
+            return
+        if text == "/start" or text.startswith("/start@") or text == "/help":
             await self._say(chat_id, HELP)
             return
         if kind == "download":
@@ -263,7 +288,7 @@ class TelegramBot:
     async def poll_once(self) -> None:
         offset = self.state.get("offset", 0)
         updates = await self.api.call("getUpdates", offset=offset, timeout=30,
-                                      allowed_updates=["message", "my_chat_member"])
+                                      allowed_updates=["message", "edited_message", "my_chat_member"])
         for upd in updates:
             try:
                 await self.handle_update(upd)

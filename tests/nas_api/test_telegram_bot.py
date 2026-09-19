@@ -108,8 +108,13 @@ def make(tg=None):
     return mod, bot, tg, dl, asked
 
 
+_MID = [0]
+
+
 def msg(text, chat=FAMILY, chat_type="supergroup", uid=SON, **extra):
-    m = {"message_id": 5, "chat": {"id": chat, "type": chat_type},
+    # у каждого сообщения свой message_id, как в Telegram (бот помнит отвеченные — для правок)
+    _MID[0] += 1
+    m = {"message_id": _MID[0], "chat": {"id": chat, "type": chat_type},
          "from": {"id": uid, "first_name": "Ваня"}, "text": text}
     m.update(extra)
     return {"update_id": 10, "message": m}
@@ -126,7 +131,8 @@ def test_addressed_text_variants():
     assert mod.addressed_text(dict(g, text="@bobik_borovskoy_bot привет"), "bobik_borovskoy_bot", cs) == "привет"
     assert mod.addressed_text(dict(g, text="ответ", reply_to_message={"from": {"username": "bobik_borovskoy_bot"}}),
                               "bobik_borovskoy_bot", cs) == "ответ"
-    assert mod.addressed_text(dict(g, text="бобик молодец"), "bobik_borovskoy_bot", cs) is None
+    # решение владельца 2026-09-19 («пусть флудит»): «бобик» в любом месте и форме — обращение
+    assert mod.addressed_text(dict(g, text="бобик молодец"), "bobik_borovskoy_bot", cs) == "молодец"
     assert mod.addressed_text({"chat": {"type": "private"}, "text": "привет"}, "bobik_borovskoy_bot", cs) == "привет"
 
 
@@ -134,7 +140,7 @@ def test_addressed_text_requires_word_boundary():
     mod = load()
     cs = ["@бобик", "бобик,"]
     g = {"chat": {"type": "supergroup"}}
-    assert mod.addressed_text(dict(g, text="@бобикНЕКТО привет"), "bobik_borovskoy_bot", cs) is None
+    assert mod.addressed_text(dict(g, text="@бобикXYZ привет"), "bobik_borovskoy_bot", cs) is None
     assert mod.addressed_text(dict(g, text="@bobik_borovskoy_bot_fake hi"), "bobik_borovskoy_bot", cs) is None
     assert mod.addressed_text(dict(g, text="@бобик, привет"), "bobik_borovskoy_bot", cs) == "привет"
     assert mod.addressed_text(dict(g, text="@бобик"), "bobik_borovskoy_bot", cs) == ""
@@ -347,3 +353,55 @@ def test_token_never_logged(caplog):
         asyncio.run(bot.handle_update(msg("@бобик скачай magnet:?xt=urn:btih:ABC")))
     assert "TOKEN" not in caplog.text
     assert "magnet:?xt" not in caplog.text
+
+
+# ── «пусть флудит» (решение владельца 2026-09-19, по скриншоту группы) ─────────
+
+def test_bobik_anywhere_any_form_is_addressed():
+    mod = load()
+    cs = ["@бобик", "бобик,"]
+    g = {"chat": {"type": "supergroup"}}
+    at = lambda t: mod.addressed_text(dict(g, text=t), "bobik_borovskoy_bot", cs)
+    assert at("Бобик привет") == "привет"
+    assert at("Бобик! я хочу есть, но меня не кормят") == "я хочу есть, но меня не кормят"
+    assert at("Бобику скажи спасибо") == "скажи спасибо"
+    assert at("а бобик знает, сколько времени?") == "а бобик знает, сколько времени?"
+    assert at("Бобик") == ""
+    assert at("бобикXYZ привет") is None
+    assert at("мам, купи хлеба") is None
+
+
+def test_bare_bobik_gets_short_greeting():
+    mod, bot, tg, dl, asked = make()
+    asyncio.run(bot.handle_update(msg("Бобик")))
+    texts = tg.texts()
+    assert len(texts) == 1 and "Гав" in texts[0][1]
+    assert asked == []
+
+
+def test_edited_message_with_bobik_is_answered_once():
+    mod, bot, tg, dl, asked = make()
+    first = msg("я хочу есть")
+    first["message"]["message_id"] = 77
+    asyncio.run(bot.handle_update(first))          # без обращения — тишина
+    edited = {"update_id": 11, "edited_message": dict(first["message"], text="Бобик, я хочу есть")}
+    asyncio.run(bot.handle_update(edited))
+    asyncio.run(bot.handle_update(dict(edited, update_id=12)))   # правка ещё раз — не отвечаем повторно
+    assert asked == [("я хочу есть", "ivan")]
+
+
+def test_answered_message_edited_is_not_answered_again():
+    mod, bot, tg, dl, asked = make()
+    m = msg("Бобик, привет")
+    m["message"]["message_id"] = 78
+    asyncio.run(bot.handle_update(m))
+    asyncio.run(bot.handle_update({"update_id": 13, "edited_message": dict(m["message"], text="Бобик, привет!")}))
+    assert asked == [("привет", "ivan")]
+
+
+def test_poll_asks_for_edited_messages():
+    tg = FakeTelegram()
+    mod, bot, tg, dl, asked = make(tg)
+    asyncio.run(bot.poll_once())
+    params = [b for m, b in tg.sent if m == "getUpdates"][0]
+    assert "edited_message" in params["allowed_updates"]

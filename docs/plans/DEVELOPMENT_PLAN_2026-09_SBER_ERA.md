@@ -51,6 +51,7 @@
 | 2026-09-19 | **A4** единая раскладка хоста; recovery SSD; compose API через переменные; H10 | ✅ git; проверено на Jetson (stdin) | `9ec1b15`, этот коммит |
 | 2026-09-19 | **A5** runbook выката этапа A | ✅ git | `DEPLOY_STAGE_A_2026-09.md` |
 | 2026-09-19 | **A6** честные статусы | ✅ git | `0f209bb` |
+| 2026-09-19 | **Выкат этапа A на Jetson** (04:37–04:45 UTC) | ✅ **device** | репо `bdba26b`; recovery `Result=success`; чат Giga 200; токен включён (401 без него, бот 🐕 ок); failed units 0; правило №13 до/после идентично |
 
 ### 1.1. Отозванные статусы (как найдено)
 
@@ -289,7 +290,7 @@ Nextcloud/Immich в Cloud.ru как primary; K8s; Managed RAG по альбом�
 - [x] GitVerse `NAS_HOME` актуален
 - [x] Cloud.ru FM: adapter + live chat 200
 - [x] Amnezia peer count не уменьшался (19 на 2026-09-19)
-- [x] Этап A закрыт по DoD в git (2026-09-19) · [ ] этап A на устройстве (`DEPLOY_STAGE_A_2026-09.md`)
+- [x] Этап A закрыт по DoD в git и **на устройстве** (2026-09-19, `DEPLOY_STAGE_A_2026-09.md`)
 - [ ] L1c конфиг/NC + изоляция L1 (B1–B2)
 - [ ] S3 off-site (B3)
 - [ ] Этап C (auth/RBAC) на устройстве
@@ -297,9 +298,10 @@ Nextcloud/Immich в Cloud.ru как primary; K8s; Managed RAG по альбом�
 
 ## 11. Следующий шаг
 
-1. **git, без устройства:** A1 → A2 → A3 (код) → A6; параллельно C1–C5 (код + тесты).
-2. **Owner:** решения D1–D6 (§2.2); Cloud.ru консоль → tenant_id (B3).
-3. **По «деплой» (одно окно):** A3 + A4 + B2 + C1 + D6, с правилом №13 до/после.
+1. ~~Этап A~~ — ✅ git + device 2026-09-19.
+2. **Этап B (данные)** в git: B1 restic конфига/NC на HDD, B2 изоляция `backups/`; затем выкат.
+3. **Этап C** в git: C1 auth эндпоинтов NAS API + CORS, C2 RBAC, C4/C5.
+4. **Owner:** решения D1–D6 (§2.2); Cloud.ru консоль → tenant_id (B3).
 
 ## 12. EN summary
 

@@ -997,6 +997,8 @@ ssh -i "$SCRATCH/nas-watchdog" -N -L 9999:127.0.0.1:22 naswatch@95.163.176.103  
 ```
 Если `AllowUsers` задан — **стоп**: добавлять `naswatch` в sshd_config только отдельным решением.
 
+> ⚠️ Исправлено в runbook (ac5ccf3): токен не должен попадать в argv curl — см. DEPLOY_D3_WATCHDOG_2026-09.md §4.
+
 ## 4. chat_id владельца
 Владелец пишет `/start` боту @bobik_borovskoy_bot. На Jetson; токен идёт через stdin, не через
 командную строку (иначе виден в `ps` на VPS), и не печатается:

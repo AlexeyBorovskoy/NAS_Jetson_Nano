@@ -197,3 +197,38 @@ def test_main_blank_command_means_check(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(nl, "probe", lambda url, timeout=nl.PROBE_TIMEOUT: 200)
     assert nl.main([]) == 0
     assert json.loads(capsys.readouterr().out)["event"] == "none"
+
+
+def test_cmd_check_survives_state_save_failure(monkeypatch):
+    """F1: save_state падает (нет прав, диск) — cmd_check не роняет трейсбеком,
+    а возвращает обычный JSON с пометкой state_error, иначе задача раз в час
+    шлёт ЛОЖНОЕ «VPS не отвечает» вместо реальной причины."""
+
+    def boom(state, path=None):
+        raise OSError(13, "Permission denied")
+
+    monkeypatch.setattr(nl, "save_state", boom)
+    out = nl.cmd_check(now=T0, probe_fn=lambda url: 200)
+    assert out["event"] == "none"
+    assert out["state_error"] is True
+
+
+class _TrackingStdin:
+    """Запоминает, каким пределом читали stdin (F2)."""
+
+    def __init__(self, data):
+        self._s = __import__("io").StringIO(data)
+        self.calls = []
+
+    def read(self, n=-1):
+        self.calls.append(n)
+        return self._s.read(n)
+
+
+def test_main_notify_reads_bounded_stdin(monkeypatch, capsys):
+    monkeypatch.setenv("SSH_ORIGINAL_COMMAND", "notify")
+    monkeypatch.setattr(nl, "send_telegram", lambda t, c, x: 200)
+    fake = _TrackingStdin(json.dumps({"token": "T", "chat_id": "1", "text": "x"}))
+    monkeypatch.setattr("sys.stdin", fake)
+    assert nl.main([]) == 0
+    assert fake.calls == [65536]

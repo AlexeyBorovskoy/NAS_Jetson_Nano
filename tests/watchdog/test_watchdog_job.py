@@ -77,10 +77,22 @@ def test_vps_down_alerts_in_first_ten_minutes_of_hour():
     assert send.sent == [("SECRET-TOKEN", "42", wj.VPS_DOWN_TEXT)]
 
 
+def test_vps_down_alert_log_names_ssh_return_code():
+    """F3: код возврата ssh обязан быть виден в строке журнала — иначе
+    «VPS не отвечает» и «код 255 authentication failure» неразличимы в логе."""
+    log, ok = wj.run_once(ENV, at(3), FakeSsh(check_rc=255), FakeSend())
+    assert "rc=255" in log
+
+
 def test_vps_down_quiet_rest_of_hour():
     send = FakeSend()
     log, ok = wj.run_once(ENV, at(10), FakeSsh(check_rc=255), send)
     assert send.sent == [] and ok
+
+
+def test_vps_down_quiet_log_names_ssh_return_code():
+    log, ok = wj.run_once(ENV, at(10), FakeSsh(check_rc=255), FakeSend())
+    assert "rc=255" in log
 
 
 def test_garbage_from_vps_counts_as_vps_down():

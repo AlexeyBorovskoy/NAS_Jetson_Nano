@@ -118,9 +118,16 @@ def cmd_check(now=None, probe_fn=None, path=None):
     api, nc = probe_fn(API_URL), probe_fn(NC_URL)
     key, text = classify(api, nc)
     event, message, new = decide(load_state(path), key, text, now)
-    save_state(new, path)
-    return {"event": event, "text": message, "api": api, "nextcloud": nc,
-            "checked_at": int(now)}
+    result = {"event": event, "text": message, "api": api, "nextcloud": nc,
+              "checked_at": int(now)}
+    try:
+        save_state(new, path)
+    except OSError:
+        # Нет прав, диск полон и т.п. — не ронять проверку трейсбеком: вызывающая
+        # сторона (задача раз в час) иначе получит пустой rc!=0 и решит, что
+        # молчит весь VPS, а не то, что не пишется файл состояния.
+        result["state_error"] = True
+    return result
 
 
 def send_telegram(token, chat_id, text):
@@ -156,7 +163,7 @@ def main(argv=None):
     if cmd == "check":
         out, rc = cmd_check(), 0
     elif cmd == "notify":
-        out, rc = cmd_notify(sys.stdin.read()), 0
+        out, rc = cmd_notify(sys.stdin.read(65536)), 0
     else:
         out, rc = {"error": "unknown command"}, 2
     print(json.dumps(out, ensure_ascii=False))

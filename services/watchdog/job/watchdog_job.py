@@ -55,8 +55,8 @@ def run_once(env, now, ssh, send):
     if result is None or "event" not in result:
         if now.minute < 10:
             code = send(token, chat_id, VPS_DOWN_TEXT)
-            return "vps_down alerted tg=%d" % code, code == 200
-        return "vps_down quiet (не первый запуск часа)", True
+            return "vps_down alerted tg=%d rc=%d" % (code, rc), code == 200
+        return "vps_down quiet rc=%d (не первый запуск часа)" % rc, True
 
     event = result["event"]
     if event not in ALERT_EVENTS:

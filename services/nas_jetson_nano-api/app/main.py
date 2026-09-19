@@ -149,12 +149,24 @@ async def lifespan(_app: FastAPI):
             extra={"fields": {"room": settings.talk_bot_room or settings.talk_family_room}},
         )
 
+    tg_task: asyncio.Task | None = None
+    if settings.telegram_bot_enabled and settings.telegram_bot_token:
+        from app import telegram_bot
+        tg_task = asyncio.create_task(telegram_bot.run())
+        log.info("Telegram bot enabled")
+
     yield
 
     if bot_task is not None:
         bot_task.cancel()
         try:
             await bot_task
+        except asyncio.CancelledError:
+            pass
+    if tg_task is not None:
+        tg_task.cancel()
+        try:
+            await tg_task
         except asyncio.CancelledError:
             pass
     log.info("nas_jetson_nano-api stopped")

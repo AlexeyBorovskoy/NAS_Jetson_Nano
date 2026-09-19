@@ -20,6 +20,9 @@ services:
       # Report script — for POST /v1/report/now
       - ${NAS_SBIN_PREFIX:-/usr/local/sbin/nas_jetson_nano}-send-report-telegram.sh:/usr/local/sbin/nas_jetson_nano-send-report-telegram.sh:ro
       - ${NAS_CONF_DIR:-/etc/nas_jetson_nano-monitor}:/etc/nas_jetson_nano-monitor:ro
+      # Качалка: только для statvfs (свободное место), на запись боту не нужно
+      - /mnt/storage/downloads:/dl/ssd:ro
+      - /mnt/hdd2tb/Downloads:/dl/hdd:ro
     environment:
       API_LOG_LEVEL: ${NAS_JETSON_NANO_API_LOG_LEVEL:-INFO}
       JWT_SECRET: ${NAS_JETSON_NANO_API_JWT_SECRET}
@@ -39,6 +42,7 @@ services:
         homecloud_netdata
         homecloud_uptime_kuma
         homecloud_portainer
+        homecloud_downloads
       LOCAL_SERVICES: >-
         Nextcloud=http://192.168.0.50:8080/
         Immich=http://192.168.0.50:2283/
@@ -71,6 +75,16 @@ services:
       TALK_BOT_LLM_TIMEOUT: ${TALK_BOT_LLM_TIMEOUT:-150}
       TALK_BOT_LLM_MAX_CHARS: ${TALK_BOT_LLM_MAX_CHARS:-1000}
       TALK_BOT_LLM_DAILY_REPLIES: ${TALK_BOT_LLM_DAILY_REPLIES:-50}
+      # Telegram-бот, первый срез (качалка + вопросы @бобик)
+      TELEGRAM_BOT_ENABLED: ${TELEGRAM_BOT_ENABLED:-false}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_USERS: ${TELEGRAM_USERS:-}
+      TELEGRAM_FAMILY_CHAT_ID: ${TELEGRAM_FAMILY_CHAT_ID:-}
+      TELEGRAM_PROXY: ${TELEGRAM_PROXY:-socks5://172.17.0.1:1080}
+      ARIA2_RPC_SECRET: ${ARIA2_RPC_SECRET:-}
+      DL_SSD_MIN_FREE_GB: ${DL_SSD_MIN_FREE_GB:-40}
+      DL_HDD_MIN_FREE_GB: ${DL_HDD_MIN_FREE_GB:-50}
+      DL_SSD_MAX_GB: ${DL_SSD_MAX_GB:-20}
     healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8099/healthcheck', timeout=3)\""]
       interval: 30s

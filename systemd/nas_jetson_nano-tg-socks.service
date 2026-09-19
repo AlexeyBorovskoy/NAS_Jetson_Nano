@@ -1,0 +1,21 @@
+[Unit]
+Description=NAS_Jetson_Nano — SOCKS к Telegram через VPS (Jetson напрямую Telegram не видит)
+# Слушает только docker0 (172.17.0.1): контейнер NAS API видит хост по этому адресу,
+# в LAN прокси не открыт. Рабочий обратный туннель (nasa-tunnel) не трогается.
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+User=admin
+# И7: те же ключ и пользователь, что у рабочего обратного туннеля
+# (nas_jetson_nano-tunnel.service) — переменные, а не жёстко зашитый путь.
+Environment=VPS_HOST=95.163.176.103
+Environment=VPS_USER=root
+Environment=VPS_SSH_KEY=/home/admin/.ssh/id_ed25519
+EnvironmentFile=-/opt/nasa/config/.env
+ExecStart=/usr/bin/ssh -N -D 172.17.0.1:1080 -o ExitOnForwardFailure=yes -o BatchMode=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -i ${VPS_SSH_KEY} ${VPS_USER}@${VPS_HOST}
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

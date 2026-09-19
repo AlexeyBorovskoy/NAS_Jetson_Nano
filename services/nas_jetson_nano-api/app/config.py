@@ -136,6 +136,29 @@ class Settings(BaseSettings):
         "homecloud_uptime_kuma"
     )
 
+    # ── Telegram: первый срез бота (качалка + вопросы @бобик) ──────────────────────
+    telegram_bot_enabled: bool = False
+    telegram_bot_token: str = ""
+    telegram_users: str = ""  # "user_id:логин user_id:логин"
+    telegram_family_chat_id: str = ""
+    telegram_owner_login: str = "admin"
+    telegram_proxy: str = ""  # socks5://172.17.0.1:1080 — Jetson напрямую Telegram не видит
+    telegram_api: str = "https://api.telegram.org"
+    telegram_callsigns: str = "@бобик|бобик,"  # разделитель «|»: запятая — часть позывного
+    telegram_state_file: str = "/var/log/nas_jetson_nano-monitor/telegram-state.json"
+
+    # ── Качалка (aria2) ─────────────────────────────────────────────────────────────
+    aria2_rpc_url: str = "http://host.docker.internal:6800/jsonrpc"
+    aria2_rpc_secret: str = ""
+    dl_ssd_dir: str = "/downloads/ssd/.incomplete"  # путь в контейнере aria2
+    dl_hdd_dir: str = "/downloads/hdd/.incomplete"
+    dl_ssd_stat_path: str = "/dl/ssd"  # тот же диск в контейнере API (ro), для statvfs
+    dl_hdd_stat_path: str = "/dl/hdd"
+    dl_ssd_min_free_gb: int = 40
+    dl_hdd_min_free_gb: int = 50
+    dl_ssd_max_gb: int = 20
+    dl_ledger_file: str = "/var/log/nas_jetson_nano-monitor/downloads-ledger.json"
+
     def llm_headers(self) -> dict:
         """Заголовки для вызова LLM Gateway: сервисный токен, если он задан."""
         token = (self.llm_gateway_service_token or "").strip()

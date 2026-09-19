@@ -21,14 +21,16 @@ and retracted diagnoses stay in the docs, together with how they were caught.
 
 ---
 
-## Состояние на 2026-09-08 / State as of 2026-09-08
+## Состояние на 2026-09-19 / State as of 2026-09-19
 
-🇷🇺 Канон развития: [Sber-era plan](docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md) · ADR-0007/8/9.  
-🇬🇧 Development canon: same plan · ADR-0007/8/9.
+🇷🇺 Канон развития: [Sber-era plan](docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md) · ADR-0007/8/9 · [аудит 2026-09-19](docs/audit/2026-09-19_full_audit/).  
+🇬🇧 Development canon: same plan · ADR-0007/8/9 · [audit 2026-09-19](docs/audit/2026-09-19_full_audit/).
 
 | Что / What | Замер / Measurement |
 |---|---|
-| Контейнеры / Containers | **13 up** (live 2026-09-08) |
+| Контейнеры / Containers | **13 up, healthy**, failed units 0 (live 2026-09-19, after stage C) |
+| Этапы A–C / Stages A–C | **on device 2026-09-19**: host layout + SSD auto-recovery fixed; restic config backup on HDD (daily, restore drill OK); NAS API JWT + roles, no `CORS *`; gateway service token, non-root |
+| В git, ждёт «деплой» / In git, awaiting deploy | E2 GigaChat quota alert; D3 external watchdog on Cloud.ru ([runbook](docs/plans/DEPLOY_D3_WATCHDOG_2026-09.md)) |
 | Immich | library **~13 ГБ** on SSD; **L1 copy on HDD** `/mnt/hdd2tb/backups/immich` **13 ГБ** + timer |
 | Nextcloud | live (family) |
 | SSD `/mnt/storage` | 229 ГБ, ~6 % used (photos grow slowly) |
@@ -36,13 +38,13 @@ and retracted diagnoses stay in the docs, together with how they were caught.
 | LLM Gateway | **`provider=gigachat`** (GigaChat-2), DeepSeek fallback, Cloud.ru FM optional, `prefer_local=false` |
 | Talk `@бобик` | `TALK_BOT_LLM_PROVIDER=gigachat` |
 | DB dumps T0 | fresh **2026-09-08** → Vostro restic snapshot `3922949b` (emergency path) |
-| Off-site L2 S3 | ⏳ Cloud.ru bucket blocked (tenant_id) — see [S3 checklist](docs/integrations/sber/S3_AND_BUDGET_CHECKLIST.md) |
+| Off-site L2 S3 | ⏸ postponed by owner 2026-09-19 — off-site stays on Vostro; see [S3 checklist](docs/integrations/sber/S3_AND_BUDGET_CHECKLIST.md) |
 | Git mirrors | GitHub canon + [GitVerse NAS_HOME](https://gitverse.ru/Alexey_Borovskoy/NAS_HOME) (SSH OK) |
 | Реверс-туннель / Reverse tunnel | active Jetson → VPS `:10022` |
 | Habr Part 1 | [1062914](https://habr.com/ru/articles/1062914/) · 13K · 9 comments · [Part 2 plan](docs/articles/HABR_PART2_ARTICLE_PLAN_2026-09.md) |
 
-🟠 **Open debt / Открытый долг:** 🇷🇺 L2 off-site на **Cloud.ru S3** (не Vostro как канон). Vostro = legacy emergency dumps only.  
-🇬🇧 L2 off-site target is **Cloud.ru S3** (Vostro is legacy emergency only).  
+🟠 **Open debt / Открытый долг:** 🇷🇺 S3 отложен владельцем — off-site пока только дампы БД на Vostro; копии архива 1,4 ТБ нет и не будет (риск принят); ИБП отложен.  
+🇬🇧 S3 postponed by the owner — off-site is DB dumps on the Vostro only; the 1.4 TB archive has no second copy (risk accepted); UPS postponed.  
 → [ADR-0009](docs/decisions/ADR-0009-backup-ssd-hdd-s3.md) · [audit 2026-09-08](docs/audit/AUDIT_GITHUB_SBER_BILINGUAL_2026-09-08.md)
 
 ---

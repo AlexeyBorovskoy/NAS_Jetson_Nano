@@ -379,3 +379,24 @@ curl -sf "http://localhost:8099/v1/logs?limit=50&level=ERROR" | python3 -m json.
 # Отправить Telegram-отчёт вручную через API:
 curl -X POST http://localhost:8099/v1/report/now
 ```
+
+> ⚠️ С 2026-09-19 (этап C) все маршруты API, кроме `/healthcheck`, требуют JWT: токен выдаёт
+> `POST /api/auth/login` (логин Nextcloud), дальше заголовок `Authorization: Bearer <токен>`.
+> Логи, Talk и действия — только владельцу (`admin` и `API_OWNERS`).
+> 🇬🇧 Since stage C every route except `/healthcheck` needs a JWT.
+
+## 16. Квота GigaChat и внешний сторож / GigaChat quota and the outside watchdog
+
+🇷🇺
+- **Квота GigaChat (E2).** Ежедневный опрос `nas_jetson_nano-giga-balance.timer` сохраняет ответ в
+  `/var/lib/nas-giga-balance/balance.json`; `talk-alert` раз в 15 мин пишет в комнату владельца, если у
+  любой модели осталось меньше `GIGA_BALANCE_WARN_TOKENS` (по умолчанию 2 млн, `<prefix>-monitor.env`) или
+  файл старше 50 ч (сломан сам опрос). Квоты раздельные: у `GigaChat-Max` свои ≈25 млн.
+- **Внешний сторож (D3).** Задача в Cloud.ru раз в 10 мин спрашивает VPS, жив ли NAS; тревоги — в Telegram
+  владельцу. Проверить вручную (под root на VPS, не через ключ сторожа — иначе «съест» тревогу):
+  `NASWATCH_STATE=/tmp/naswatch-debug.json /usr/local/bin/nas-liveness check`. Выкат — только по
+  [`DEPLOY_D3_WATCHDOG_2026-09.md`](plans/DEPLOY_D3_WATCHDOG_2026-09.md).
+
+🇬🇧 The daily balance poll saves its answer and `talk-alert` warns when any GigaChat model drops below the
+threshold or the poll is older than 50 h. The Cloud.ru watchdog asks the VPS every 10 minutes whether the NAS
+is alive and alerts the owner in Telegram; debug it as root on the VPS with a throwaway state file.

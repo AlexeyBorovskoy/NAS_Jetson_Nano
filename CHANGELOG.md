@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — 2026-09-19 · Full audit, stages A–C on device, E2, D3 in git
+
+### Added / Добавлено
+- Full audit `docs/audit/2026-09-19_full_audit/` + review of GigaCode's W0 work; consolidated plan (queue A–F, DoD, owner decisions)
+- Host layout library `scripts/lib/layout.sh` / `nas_layout.py` (`docs/35_HOST_LAYOUT.md`)
+- restic config backup to HDD (`scripts/backup/config_backup.sh`, daily 03:40) + monthly restore drill
+- **E2** GigaChat per-model quota alert in Talk (reads the daily balance poll; stale poll alerts too)
+- **D3** external watchdog: `services/watchdog/` (VPS forced command `nas-liveness` + Cloud.ru job), 44 tests, runbook `docs/plans/DEPLOY_D3_WATCHDOG_2026-09.md`
+- Specs: Telegram family bot, D3 watchdog (`docs/superpowers/specs/`)
+
+### Changed / Изменено
+- NAS API: JWT on every route except `/healthcheck`/login; family/owner roles; no `CORS *`
+- LLM gateway: chat 500 fixed; service token required; runs as UID 10001; DeepSeek fallback only on 429/5xx; fail-closed budget
+- Samba/Nextcloud see `backups/` read-only; Portainer bound to localhost; rpcbind off
+- Quality gate and CI run service tests (`tests/llm_gateway`, `tests/nas_api`, `tests/watchdog`); shellcheck covers `services/`
+
+### Device (not only git) / На устройстве
+- Stages A, B, C deployed 2026-09-19; rule #13 (VPN on VPS) identical before/after each time
+- Owner decisions: S3 postponed (off-site stays on Vostro), UPS postponed, no second copy of the 1.4 TB archive (risk accepted), Immich ML on Cloud.ru only within free tier
+
+---
+
 ## [Unreleased] — 2026-09-08 · Sber-era live + audit
 
 ### Added

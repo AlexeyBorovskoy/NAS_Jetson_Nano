@@ -23,6 +23,8 @@
 **⚠️ Отзыв собственного диагноза (2026-08-22):** я объявил, что Talk-бот «12 дней бил в стену» — **это неверно**. Замер базовой линии: 13 626 опросов, **все `304`, ноль `400`**. Все 7 975 отказов уложились в один час — тот, в котором я снял `overwritehost` и вернул проверку доверенного домена, сломав бота, который ходит по имени `host.docker.internal`. Я диагностировал собственную регрессию как застарелый дефект. Подробности — в `docs/28`, раздел 3.3.
 **Состояние на 2026-09-19:** полный аудит — `docs/audit/2026-09-19_full_audit/`; **единый план** — сводная редакция `docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md` (очередь A–F). Этап A в git закрыт: единая раскладка хоста (`scripts/lib/layout.sh`, `docs/35_HOST_LAYOUT.md`), шлюз починен (чат GigaChat был 500 после `d52c11b`), ворота и CI гоняют тесты сервисов, CI зелёный впервые с 30.08. **Этап A выкачен на Jetson 2026-09-19 04:37–04:45 UTC** (`DEPLOY_STAGE_A_2026-09.md`): репо `bdba26b`, `/etc/nas-layout.env` (prefix `nasa`), авто-восстановление SSD `Result=success`, шлюз и API пересобраны (чат GigaChat 200, 0.6 с), **сервисный токен шлюза включён** (без токена 401, бот шлёт токен), `config/.env` → 600, failed-юнитов нет; правило №13 — VPS до/после идентичен (19 пиров).
 
+**Вечер 2026-09-19 (в git, НЕ на устройстве — ждёт «деплой»):** **E2** — алерт квоты GigaChat по моделям (`talk-alert` читает `/var/lib/nas-giga-balance/balance.json`); **D3** — внешний сторож `services/watchdog/` (Cloud.ru Job → VPS `naswatch` с ключом на одну команду → Telegram владельцу), 44 теста, runbook `docs/plans/DEPLOY_D3_WATCHDOG_2026-09.md` (сначала спайк в Cloud.ru). **Решения владельца:** S3 отложен (off-site — Vostro), ИБП отложен, копии архива 1,4 ТБ нет и не будет (риск принят), Immich ML в Cloud.ru — только в free tier. Точка: `docs/plans/CHECKPOINT_2026-09-19.md` (раздел «Вечер»).
+
 **Текущая точка: `docs/plans/CHECKPOINT_2026-09-12.md`** (домашняя сеть: mesh перестроен, прошивка Deco сделана наполовину, 4 гипотезы отозваны); предыдущие — `CHECKPOINT_2026-09-11.md`, `CHECKPOINT_2026-08-30.md`. Слепок сети: **`docs/34_NETWORK_SNAPSHOT_2026-09-12.md`** (перестройка mesh, замеры до/после, семь ловушек); предыдущий — `docs/28_NETWORK_SNAPSHOT_2026-08-22.md`. Предыдущая точка: `docs/plans/CHECKPOINT_2026-08-25.md`.
 
 **Сделано 30.08 (день аудита, устройство и VPS не менялись — всё read-only):**
@@ -186,7 +188,7 @@
 
 **🔜 Ближайшие задачи (канон — сводная редакция `docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`, очередь A–F от 2026-09-19; список ниже частично устарел, приоритет у плана):**
 - ✅ **Этап A выкачен 2026-09-19** (recovery SSD, шлюз, токен). Откат — `~/stageA-rollback/` + таблица в `DEPLOY_STAGE_A_2026-09.md`.
-- 🔴 **Этап B — данные:** restic конфига/`.env`/файлов NC на HDD; изолировать `backups/` от шар; S3 Cloud.ru (tenant_id — владелец).
+- ✅ **Этапы B и C выкачены 2026-09-19.** S3 (B3) отложен владельцем. E2 и D3 — в git, ждут «деплой».
 - 🟠 **Решения владельца D1–D6** (план §2.2): ИБП, что класть в S3, копия архива 1.4 ТБ, Immich ML, smart routing, окно Part B.
 - 🔴 **P0 deploy W1+W2** when Jetson on + «деплой»: `DEPLOY_FULL_SBER_CUTOVER.md` (Giga-2 cutover + Immich→HDD). Pack is in git.
 - 🟠 **Cloud.ru balance/grant** — FM key exists but chat **402**; then optional `CLOUDRU_FM_API_KEY` on device.

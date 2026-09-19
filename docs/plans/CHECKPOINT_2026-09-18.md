@@ -1,5 +1,15 @@
 # Точка проекта 2026-09-18 — Hardening Sprint, smart routing, аудит
 
+> ⚠️ **Поправка (аудит 2026-09-19, статусы отозваны).** «Smart routing ✅» и «тесты ✅» ниже — неверно:
+> с этой правкой каждый чат GigaChat отдавал 500, а у `GigaChat-2-Max` отдельная квота (≈25 млн), не
+> «общее ведро». Исправлено в этапе A (`36c4ced`), smart routing выключен флагом до решения D5. Разбор —
+> `DEVELOPMENT_PLAN_2026-09_SBER_ERA.md` §1.1.
+>
+> 🇬🇧 **EN summary.** GigaCode's checkpoint for 2026-09-18: smart routing to GigaChat-2-Max, five new image
+> presets, and the Hardening Sprint (H01–H16) added to the plan from `audit_new`. The "smart routing ✅ /
+> tests ✅" statuses were withdrawn by the 2026-09-19 audit: every GigaChat chat returned HTTP 500, and Max
+> has its own quota. Fixed in stage A; smart routing stays off pending owner decision D5.
+
 > **Статус:** канон развития — `docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`  
 > **Дата:** 2026-09-18  
 > **Владелец:** скоро выключил ПК — контекст сохранён здесь

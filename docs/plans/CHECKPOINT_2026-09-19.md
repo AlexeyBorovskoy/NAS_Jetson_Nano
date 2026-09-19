@@ -150,3 +150,32 @@ d52c11b feat(w0.1): save_path restriction (G01) + smart routing + 8 image preset
 Токен бота уже в `.env` устройства (600) и в Credential Manager `nas-telegram-bot-token`; ⚠️ перед подключением семьи — Revoke и новый токен через файл, не через чат.
 
 **Ждут решения владельца:** D1–D6 (план §2.2), tenant_id Cloud.ru для S3 (B3), переписывание истории git (C7).
+
+## Вечер 2026-09-19 — E2 и D3 в git, решения владельца
+
+**В git, на устройстве НЕ выкачено (ждёт «деплой»):**
+- **E2** — алерт квоты GigaChat в Talk владельцу: порог по каждой модели (2 млн), устаревший опрос (> 50 ч) —
+  тоже тревога. `6bd36bf`.
+- **D3** — внешний сторож: задача Cloud.ru раз в 10 мин → VPS (`naswatch`, ключ с одной командой) → проверка
+  NAS через туннель → Telegram владельцу. Спецификация `126e06b`, план `aa96612`, реализация субагентами
+  (5 задач, ревью каждой + финальное ревью Opus), 44 теста. Runbook `DEPLOY_D3_WATCHDOG_2026-09.md`:
+  первым шагом — спайк в Cloud.ru (доходит ли до Telegram, есть ли расписание, откуда образ).
+
+**Решения владельца:** S3 (B3) отложен — off-site на Vostro; ИБП отложен; копии архива 1,4 ТБ нет и не
+будет — риск принят (B5 закрыт); Immich ML — в Cloud.ru только в пределах free tier (бесплатной VM в
+Evolution free tier нет — только Container Apps; спайк E6 после E5).
+
+**Замер:** `getMe` бота `@bobik_borovskoy_bot` — `ok`, `can_read_all_group_messages=false`; `getUpdates` пуст —
+`/start` ещё никто не писал, chat_id владельца для D3 пока неизвестен.
+
+**Следующий шаг:** E5 (алерт расходов Cloud.ru) → Telegram-бот (план) → E1, E3, D2. Выкат E2/D3 — по «деплой».
+
+---
+
+### EN summary
+Stages A, B and C were deployed to the Jetson on 2026-09-19 with the VPN on the VPS untouched each time.
+In the evening, two items landed in git and wait for an owner-triggered deploy: E2, a per-model GigaChat
+quota alert, and D3, an outside watchdog in which a Cloud.ru job asks the VPS through a single-command key
+whether the NAS answers and alerts the owner in Telegram. The owner postponed S3 and the UPS, accepted
+having no second copy of the 1.4 TB archive, and allowed Immich ML on Cloud.ru only within the free tier.
+Next: a Cloud.ru spend alert, the Telegram family bot, GigaChat routing and `@бобик` diagnostics.

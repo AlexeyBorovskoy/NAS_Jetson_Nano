@@ -310,18 +310,20 @@ Nextcloud/Immich в Cloud.ru как primary; K8s; Managed RAG по альбом�
 - [x] Amnezia peer count не уменьшался (19 на 2026-09-19)
 - [x] Этап A закрыт по DoD в git и **на устройстве** (2026-09-19, `DEPLOY_STAGE_A_2026-09.md`)
 - [x] L1c конфиг/NC + изоляция L1 (B1–B2) — на устройстве 2026-09-19
-- [ ] S3 off-site (B3)
+- [ ] S3 off-site (B3) — ⏸ отложено владельцем 2026-09-19, off-site на Vostro
 - [x] Этап C в git и **на устройстве** (2026-09-19), кроме C9
-- [ ] ИБП + внешний сторож (D1, D3)
+- [ ] ИБП (D1) — ⏸ отложен владельцем 2026-09-19
+- [ ] Внешний сторож (D3) — ✅ git 2026-09-19 (44 теста), выкат по `DEPLOY_D3_WATCHDOG_2026-09.md`
 
 ## 11. Следующий шаг
 
 1. ~~Этап A~~ — ✅ git + device 2026-09-19.
-2. **Этап B** — ✅ git + **device** 2026-09-19 (B1, B2, B6). B3 (S3) — код готов, ждёт tenant_id; B4 Vostro pull оставлен; B5 — ответ владельца D3.
+2. **Этап B** — ✅ git + **device** 2026-09-19 (B1, B2, B6). B3 (S3) — код готов, **отложен владельцем**; B4 Vostro pull остаётся; B5 закрыт (копии архива нет, риск принят).
 3. **Этап C** — ✅ git + **device** 2026-09-19 (кроме C9 — оставлен как есть по решению владельца).
 3a. **Telegram-бот** — спецификация утверждена (`docs/superpowers/specs/2026-09-19-telegram-family-bot-design.md`), дальше план реализации.
-3b. **Этап E (Сбер-edge)** без владельца можно двигать: E2 (порог баланса Giga), E5 (алерт расходов Cloud.ru — **до** B3), E1 (маршрутизация с учётом квоты Max, закрывает D5), E3 (`@бобик` «что сломалось?»).
-4. **Owner:** решения D1–D6 (§2.2); Cloud.ru консоль → tenant_id (B3).
+3b. **E2** ✅ git; **D3** ✅ git — оба ждут «деплой» (D3: сначала спайк в Cloud.ru, runbook §0).
+3c. Дальше без владельца: E5 (алерт расходов Cloud.ru — **до** выката D3 и E6), Telegram-бот, E1 (маршрутизация с учётом квоты Max, закрывает D5), E3 (`@бобик` «что сломалось?»), D2 (алерт после аварийной загрузки — важнее без ИБП), затем спайк E6.
+4. **Owner:** D5 (smart routing) и D6 (окно Part B); `/start` в @bobik_borovskoy_bot для chat_id (D3).
 
 ## 12. EN summary
 
@@ -337,6 +339,11 @@ actions, and admin RAG over docs via FM. Stage F covers device migration, deploy
 Unverified "✅" statuses were withdrawn, and a Definition of Done is mandatory. The Photo AI Orchestrator
 is research only.
 
+Status 2026-09-19 (evening): stages A–C are on the device. E2 (GigaChat quota alert) and D3 (Cloud.ru
+watchdog through the VPS, 44 tests) are in git and wait for an owner-triggered deploy. Owner decisions:
+S3 postponed (off-site stays on the Vostro), UPS postponed, no second copy of the 1.4 TB archive (risk
+accepted), Immich ML on Cloud.ru only within the free tier. Next: E5, the Telegram bot, E1, E3, D2.
+
 ## 13. Changelog
 
 | Date | Change |
@@ -344,4 +351,5 @@ is research only.
 | 2026-09-04 | Initial plan from owner directives + probes + audits |
 | 2026-09-08 | W1/W2 device done; giga-balance timer; S3 blocker |
 | 2026-09-18 | Hardening Sprint W0.5 from `audit_new` (H01–H16) |
+| 2026-09-19 | Owner decisions D1/D2/D3/D4; E2 + D3 in git (spec, plan, runbook) |
 | 2026-09-19 | **Consolidated edition**: H* + audit 2026-09-19 + Sber decisions in one queue (A–F); withdrawn statuses §1.1; DoD §3; owner decisions §2.2; research track §8 |

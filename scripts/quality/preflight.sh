@@ -212,7 +212,7 @@ head_ "9. Тесты сервисов / service tests (pytest)"
 # Каждый каталог — отдельным запуском: оба сервиса называют свой пакет `app`.
 PY=$(command -v python3 || command -v python)
 if [ -n "$PY" ] && "$PY" -c "import pytest, fastapi, httpx, pydantic_settings" >/dev/null 2>&1; then
-    for SVC_TESTS in tests/llm_gateway tests/nas_api; do
+    for SVC_TESTS in tests/llm_gateway tests/nas_api tests/watchdog; do
         [ -d "$SVC_TESTS" ] || continue
         tmpd=$(mktemp -d)
         out=$(IMAGE_OUTPUT_ROOT="$tmpd/images" LLM_USAGE_FILE="$tmpd/usage.json" \

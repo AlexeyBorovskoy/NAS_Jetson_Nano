@@ -165,6 +165,9 @@ jobs:
       - name: NAS API tests
         run: python -m pytest -q tests/nas_api
 
+      - name: Watchdog tests (D3)
+        run: python -m pytest -q tests/watchdog
+
   # ---------------------------------------------------------------------------
   # actionlint: validate GitHub Actions workflow files
   # ---------------------------------------------------------------------------

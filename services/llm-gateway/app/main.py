@@ -268,6 +268,116 @@ _gigachat_flight_lock = threading.Lock()
 
 _DEFAULT_GIGACHAT_BASE = "https://api.giga.chat/v1"
 _DEFAULT_GIGACHAT_MODEL = "GigaChat-2"
+_DEFAULT_GIGACHAT_MODEL_COMPLEX = "GigaChat-2-Max"
+
+# Patterns that indicate a complex question requiring Max model.
+# When matched, the gateway uses GigaChat-2-Max instead of GigaChat-2.
+# This is free — both models consume from the same freemium bucket.
+_COMPLEX_PATTERNS = [
+    r"\bdocker\b",
+    r"\bcontainer\b",
+    r"\bcompose\b",
+    r"\bsystemctl\b",
+    r"\bjournalctl\b",
+    r"\berror\b",
+    r"\bошибк\b",
+    r"\bdebug\b",
+    r"\bдиагноз\b",
+    r"\bпочини\b",
+    r"\bвосстанови\b",
+    r"\bремонтируй\b",
+    r"\bкод\b",
+    r"\bconfig\b",
+    r"\bconfigur\b",
+    r"\bnginx\b",
+    r"\bfirewall\b",
+    r"\bufw\b",
+    r"\biptables\b",
+    r"\bvpn\b",
+    r"\btunnel\b",
+    r"\broute\b",
+    r"\bssh\b",
+    r"\bbackup\b",
+    r"\bбэкап\b",
+    r"\brestore\b",
+    r"\bвосстановлен\b",
+    r"\bthermal\b",
+    r"\btemperature\b",
+    r"\bтемператур\b",
+    r"\bsmart\b",
+    r"\bscrub\b",
+    r"\bfsck\b",
+    r"\bext4\b",
+    r"\bntfs\b",
+    r"\braid\b",
+    r"\bmount\b",
+    r"\bunmount\b",
+    r"\bpermission\b",
+    r"\bchmod\b",
+    r"\bchown\b",
+    r"\bcrontab\b",
+    r"\bcrontabs\b",
+    r"\bcron\b",
+    r"\bhealth\b",
+    r"\bmonitor\b",
+    r"\balert\b",
+    r"\baler\b",
+    r"\buptime_kuma\b",
+    r"\bnetdata\b",
+    r"\bbeszel\b",
+    r"\bportainer\b",
+    r"\bnextcloud\b",
+    r"\bimmich\b",
+    r"\bgigachat\b",
+    r"\bdeepseek\b",
+    r"\bcloudru\b",
+    r"\btalk\b",
+    r"\botel\b",
+    r"\bredis\b",
+    r"\bpostgres\b",
+    r"\bpg_dump\b",
+    r"\bpg_restore\b",
+    r"\bsamba\b",
+    r"\bsmb\b",
+    r"\bcifs\b",
+    r"\bwebdav\b",
+    r"\bnginx\b",
+    r"\bproxy\b",
+    r"\breverse\b",
+    r"\bautossh\b",
+    r"\btunnel\b",
+    r"\bwireguard\b",
+    r"\bamnezia\b",
+    r"\bawg\b",
+    r"\bopenvpn\b",
+    r"\bcert\b",
+    r"\bssl\b",
+    r"\bhttps\b",
+    r"\btls\b",
+    r"\bcertificate\b",
+    r"\bself[- ]signed\b",
+    r"\blet\s*['’]s\b",
+    r"\bnginx\b",
+    r"\bconfig\b",
+    r"\bconfigur\b",
+]
+_COMPILED_COMPLEX = [re.compile(p, re.IGNORECASE | re.UNICODE) for p in _COMPLEX_PATTERNS]
+
+
+def _is_complex_prompt(text: str) -> bool:
+    """Detect if a prompt needs the Max model (code, errors, diagnostics, admin).
+
+    Complex prompts consume more tokens but benefit significantly from Max's
+    better reasoning. Both models draw from the same freemium bucket, so this
+    is free — just smarter token allocation.
+
+    Returns True if the prompt likely contains technical/administrative content
+    that would benefit from GigaChat-2-Max's stronger reasoning.
+    """
+    for rx in _COMPILED_COMPLEX:
+        if rx.search(text):
+            return True
+    return False
 
 
 def _gigachat_base() -> str:
@@ -364,7 +474,73 @@ def _call_gigachat_locked(system: str, user: str, model: str) -> tuple[str, int]
     return content, tokens
 
 
-_IMG_TAG_RE = re.compile(r'<img\s+src="([^"]+)"', re.IGNORECASE)
+# ── Image output root (W0.1 — audit_new G01, 2026-09-19) ───────────────────────
+#
+# Клиент передаёт save_path, который использовался для произвольной записи
+# внутрь контейнера (включая persistent volumes). Зафиксировано в audit_new.md
+# как P0.
+#
+# Решение: фиксированный root, только basename от клиента, проверка
+# resolve().relative_to(root). Если путь выходит за root — 403.
+#
+# IMAGE_OUTPUT_ROOT по умолчанию — /data/images внутри контейнера.
+# Можно переопределить через env, но всегда должен быть абсолютным путём.
+
+_IMAGE_OUTPUT_ROOT = Path(os.getenv("IMAGE_OUTPUT_ROOT", "/data/images"))
+_IMAGE_OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
+
+
+def _sanitize_save_path(requested: Optional[str]) -> Path:
+    """Sanitize a client-provided save_path to prevent arbitrary file write.
+
+    Only the basename is trusted; the directory is always IMAGE_OUTPUT_ROOT.
+    Path traversal (.., /, \\) in the name is rejected with 403.
+
+    Returns the resolved Path inside IMAGE_OUTPUT_ROOT.
+    Raises HTTPException(403) if the path would escape the root.
+    """
+    if requested is None:
+        # No save_path requested — image returned as base64 in response body.
+        return Path("")
+
+    # Extract only the basename — strip any directory components.
+    # This prevents path traversal: "../../etc/passwd" → "passwd"
+    # Also strip leading slashes and backslashes.
+    clean_name = Path(requested).name
+    if not clean_name or clean_name == ".":
+        raise HTTPException(
+            status_code=400,
+            detail="save_path must contain a valid filename"
+        )
+
+    # Additional safety: reject names that look like paths even after .name
+    # (e.g. if someone passes "a/b" and .name returns "b" — that's OK,
+    # but if .name returns something with separators, reject it).
+    if "/" in clean_name or "\\" in clean_name:
+        raise HTTPException(
+            status_code=400,
+            detail="save_path must be a simple filename, not a path"
+        )
+
+    # Reject null bytes and other dangerous characters
+    if "\x00" in clean_name:
+        raise HTTPException(
+            status_code=400,
+            detail="save_path contains invalid characters"
+        )
+
+    result = (_IMAGE_OUTPUT_ROOT / clean_name).resolve()
+
+    # Double-check: resolved path must be under IMAGE_OUTPUT_ROOT
+    try:
+        result.relative_to(_IMAGE_OUTPUT_ROOT.resolve())
+    except ValueError:
+        raise HTTPException(
+            status_code=403,
+            detail="save_path is outside the allowed output directory"
+        )
+
+    return result
 
 
 def _gigachat_download_file(file_id: str) -> bytes:
@@ -684,6 +860,10 @@ def health():
         "giga_fallback_deepseek": _giga_fallback_enabled(),
         "gigachat_base": _gigachat_base(),
         "gigachat_model": os.getenv("GIGACHAT_MODEL", _DEFAULT_GIGACHAT_MODEL),
+        "gigachat_model_complex": os.getenv("GIGACHAT_MODEL_COMPLEX", _DEFAULT_GIGACHAT_MODEL_COMPLEX),
+        "smart_routing_enabled": True,
+        # W0.1 — audit_new G01
+        "image_output_root": str(_IMAGE_OUTPUT_ROOT),
     }
 
 
@@ -772,6 +952,10 @@ def chat(payload: ChatRequest):
     elif provider == "gigachat":
         model = os.getenv("GIGACHAT_MODEL", _DEFAULT_GIGACHAT_MODEL)
         configured = bool(os.getenv("GIGACHAT_AUTH_KEY", "").strip())
+        # Smart routing: complex prompts (code, errors, diagnostics) → Max.
+        # Both models share the same freemium bucket — just smarter token use.
+        if model == _DEFAULT_GIGACHAT_MODEL and _is_complex_prompt(full):
+            model = os.getenv("GIGACHAT_MODEL_COMPLEX", _DEFAULT_GIGACHAT_MODEL_COMPLEX)
     elif provider == "cloudru":
         model = os.getenv(
             "CLOUDRU_FM_MODEL",
@@ -889,6 +1073,27 @@ IMAGE_PRESETS: dict[str, str] = {
     "anime": "Нарисуй новое изображение в стиле аниме по мотивам этой фотографии.",
     "cartoon": "Нарисуй новое изображение в мультипликационном стиле по мотивам этой фотографии.",
     "artistic": "Нарисуй художественную иллюстрацию по мотивам этой фотографии.",
+    # Новые семейные пресеты (2026-09-18) — все бесплатны, используют GigaChat-2-Max
+    "birthday_card": (
+        "Нарисуй поздравительную открытку в ярком праздничном стиле "
+        "по мотивам этой фотографии. Добавь шарики, конфетти и праздничное настроение."
+    ),
+    "family_collage": (
+        "Нарисуй коллаж в стиле скетча или акварели по мотивам этой фотографии. "
+        "Мягкие цвета, семейная теплота."
+    ),
+    "child_drawing": (
+        "Нарисуй изображение в стиле детской рисовалки — простые формы, "
+        "яркие цвета, как будто нарисовал ребёнок. По мотивам этой фотографии."
+    ),
+    "postcard": (
+        "Нарисуй красивую открытку с видом или атмосферой по мотивам этой фотографии. "
+        "Стиль путешествий, приятные цвета."
+    ),
+    "meme": (
+        "Нарисуй семейный мем в стиле комикса из 2-4 кадров по мотивам этой фотографии. "
+        "Юмористически, но доброжелательно."
+    ),
 }
 
 # Что попросить нельзя — с объяснением, чтобы вызывающая сторона не гадала.
@@ -927,10 +1132,13 @@ def _finish_image(raw: bytes, file_id: str, tokens: int, save_path: Optional[str
     saved = None
     if save_path:
         try:
-            p = Path(save_path)
-            p.parent.mkdir(parents=True, exist_ok=True)
-            p.write_bytes(raw)
-            saved = str(p)
+            p = _sanitize_save_path(save_path)
+            if p:  # empty path means no save requested
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_bytes(raw)
+                saved = str(p)
+        except HTTPException:
+            raise
         except Exception as exc:
             raise HTTPException(status_code=500, detail=f"cannot save image: {exc}") from exc
     _record_usage(tokens, user)

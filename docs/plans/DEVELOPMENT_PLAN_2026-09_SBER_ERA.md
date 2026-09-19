@@ -1,9 +1,9 @@
 # План развития NAS_Jetson_Nano — эра Сбер / Cloud.ru (2026-09)
 
 > **Статус:** канон развития (замена операционной части `docs/31_MASTER_PLAN.md` 2026-08-22).  
-> **Дата:** 2026-09-04 · **Обновлено:** 2026-09-08 (W1/W2 device + giga-balance timer; S3 still blocked)  
+> **Дата:** 2026-09-04 · **Обновлено:** 2026-09-18 (Hardening Sprint W0.5 из audit_new; smart routing + image presets)  
 > **Входы владельца:** станция RTX и Vostro **вне проекта**; Immich 2-я копия на HDD Jetson; Сбер/Cloud.ru/GitVerse; деплой Jetson — только по «деплой».  
-> **Доказательная база:** audit 2026-08-30; probes 2026-09-04…08; offline pack + unit tests; device cutover 2026-09-08.
+> **Доказательная база:** audit 2026-08-30; probes 2026-09-04…08; offline pack + unit tests; device cutover 2026-09-08; audit_new 2026-09-18.
 >
 > 🇬🇧 Project canon for development. EN summary §14.
 
@@ -26,7 +26,8 @@
 | 2026-09-07 | docs 12 / deploy runbook | ✅ git | `12_BACKUP_RESTORE.md`, `DEPLOY_W1_GIGA_CUTOVER.md` |
 | 2026-09-08 | W2 **install on device** | ✅ device | timer enabled; rsync ~13G → `/mnt/hdd2tb/backups/immich` |
 | 2026-09-08 | W1.5 giga-balance timer | ✅ device | `nas_jetson_nano-giga-balance.timer` enabled; manual+oneshot HTTP 200 |
-| 2026-09-08 | W3.3 S3 + restic L2 dumps | ❌ blocked | CreateBucket AccessDenied; no tenant_id; restic skipped |
+| 2026-09-18 | W0.5 Hardening Sprint (audit_new) | ✅ git | gateway auth guard, save_path restriction, smart routing, presets |
+| 2026-09-18 | W3.3 S3 + restic L2 dumps | ❌ blocked | CreateBucket AccessDenied; no tenant_id; restic skipped |
 | 2026-09-04 | W3 Cloud.ru / W4 GitVerse push | ⏳ later | |
 | 2026-09-07 | Board: Sber Q&A open for `work` | ✅ | `E:\agent_coordination\shared\nas\SBER_OPEN_ACCESS_FOR_WORK.md` + BOARD #8 |
 | 2026-09-07 | Workstation inventory (dev PC) | ✅ | `artifacts/reports/WORKSTATION_INVENTORY_2026-09-07.md` |
@@ -182,6 +183,35 @@
 | 0.10 | Archive note: WAVE_0 Vostro = historical | WAVE_0 header |
 
 **Не трогать:** docker/systemd paths на устройстве в этой волне.
+
+### Волна 0.5 — Hardening Sprint (из audit_new 2026-09-18)
+
+> **Цель:** закрыть P0/P1 разрыв между policy/ADR и enforcement в коде управляющих API.  
+> **Жёсткое правило:** код в git, деплой на Jetson — только после «деплой».  
+> **Источник:** `docs/research/audit_new.md` §5 risks register, §12 roadmap 2 weeks.
+
+| # | Gap | Что меняется | Verify | Приоритет |
+|---|---|---|---|---|
+| H01 | G01 — `save_path` image API arbitrary write | Ограничить `save_path` фиксированным root; path traversal reject | regression test → 403 для `../../` | **P0** |
+| H02 | G02 — gateway auth | Добавить service token middleware для `/v1/chat` и `/v1/image/*` | 401 без токена, 200 с токеном | **P0** |
+| H03 | G03 — NAS API RBAC | Отделить `authenticated user` → `operator` → `owner` | family user не может restart | **P0** |
+| H04 | G04 — diagnostic endpoints | Закрыть `/logs`, `/metrics`, `/containers`, `/report/now`, Talk status auth'ом | unauth → 401/403 | **P0** |
+| H05 | G05 — privacy scrub HEAD | Убрать реальные room IDs, family identifiers из current HEAD | scanner clean | **P0** |
+| H06 | G06 — budget fail-closed | `_load_usage` error → 503, не silent overspend | test: corrupt JSON → 503 | **P1** |
+| H07 | G07 — fallback semantics | Giga 401/403/4xx ≠ DeepSeek fallback | test matrix 401→NO, 429→YES | **P1** |
+| H08 | G08 — image safety gate | ADR-0011 gate перед image path в talk_bot | gate precedes image | **P1** |
+| H09 | G09 — Talk attachment size | Лимит загрузки Talk attachments | prevent OOM | **P1** |
+| H10 | G14 — compose name mismatch | Исправить `homecloud_nasa_api` vs expected | no false alarms | **P1** |
+| H11 | G15 — safety gate env | Compose NAS API явно прокидывает safety flags | env visible in container | **P1** |
+| H12 | G16 — non-root containers | Gateway/API не от root, read-only rootfs где возможно | Dockerfile USER | **P1** |
+| H13 | G21 — docs separation | CURRENT vs HISTORICAL в CLAUDE/docs | agent safe flag | **P1** |
+| H14 | G24 — MAC tags in inventory | Убрать реальные MAC/service tag из публичного inventory | sanitized | **P1** |
+| H15 | Smart routing | Сложные промпты (код, ошибки, диагностика) → GigaChat-2-Max | health exposes `smart_routing_enabled` | ✅ done |
+| H16 | Image presets | +5 семейных пресетов (birthday_card, family_collage, child_drawing, postcard, meme) | presets endpoint returns 8 | ✅ done |
+
+**Зависимости:** H01–H05 можно писать без Jetson. H06–H14 — код + тесты, без деплоя.  
+**Rollback:** revert commit.  
+**Deployment:** только после «деплой» от владельца.
 
 ### Волна 1 — GigaChat family-ready на Jetson (P0 UX + cost)
 
@@ -349,6 +379,12 @@ Vostro restic (if still running) → document as **legacy optional**, not requir
 | Secret in Downloads plaintext | rotate + password manager (W4.5) |
 | Doc drift 29–31 | superseded banners W0 |
 | Device rename Part B | separate window only |
+| **Gateway arbitrary `save_path`** | **H01: fixed root + path traversal reject (audit_new G01)** |
+| **Gateway no auth** | **H02: service token middleware (audit_new G02)** |
+| **NAS API no RBAC** | **H03: operator/owner roles (audit_new G03)** |
+| **Diagnostic endpoints exposed** | **H04: auth on /logs, /metrics, /containers (audit_new G04)** |
+| **Budget fail-open** | **H06: disk error → 503 fail-closed (audit_new G06)** |
+| **Giga 401→DeepSeek fallback** | **H07: 401/403/4xx ≠ fallback (audit_new G07)** |
 
 ---
 
@@ -366,6 +402,9 @@ Vostro restic (if still running) → document as **legacy optional**, not requir
 - [x] Cloud.ru: auth probe done; FM adapter in code + live chat 200  
 - [ ] S3 off-site dumps — **deferred** until console tenant_id / Object Storage open (risk accepted short-term; L1 HDD live)  
 - [x] Amnezia peer count unchanged throughout 
+- [x] **Smart routing** — complex prompts → GigaChat-2-Max (H15)  
+- [x] **Image presets** — 8 presets total, 5 new family presets (H16)  
+- [ ] **Hardening Sprint** — H01–H14 (audit_new G01–G24)
 
 ---
 
@@ -378,6 +417,11 @@ Vostro restic (if still running) → document as **legacy optional**, not requir
 - Production dependency on workstation or Vostro.  
 - Opening service ports on VPS beyond VPN model.  
 - Committing Cloud.ru/GitVerse/Giga secrets.
+- **In-place Jetson upgrade** (audit_new G17: read-only inventory first).  
+- **Automatic deployment** (audit_new A11: only after owner «деплой»).  
+- **ASUDD mutation tools in @бобик** (audit_new A10: family assistant stays simple).  
+- **Kubernetes for one Jetson** (audit_new A08: increases complexity without solving P0/P1).  
+- **Family photos to external LLM** (audit_new A09: AGENTS + ADR-0010 block this).
 
 ---
 
@@ -413,6 +457,9 @@ Vostro restic (if still running) → document as **legacy optional**, not requir
 1. **Owner console:** open Object Storage → copy **tenant_id** → bucket `nas-home-restic` + S3 keys → then restic L2 dumps only.  
 2. **Secrets hygiene** — password manager; leave Downloads plaintext.  
 3. Optional: Immich HDD restore drill (1 file); Talk smoke `@бобик`.  
+4. **Hardening Sprint W0.5** — H01–H14 из таблицы выше, код + тесты в git, без деплоя.
+
+W1/W2/giga-balance timer done on device 2026-09-08. FM chat verified paid. Smart routing + presets done 2026-09-18. Offline pack: [`OFFLINE_SBER_READY_PACK.md`](OFFLINE_SBER_READY_PACK.md).
 
 W1/W2/giga-balance timer done on device 2026-09-08. FM chat verified paid. Offline pack: [`OFFLINE_SBER_READY_PACK.md`](OFFLINE_SBER_READY_PACK.md).
 
@@ -420,7 +467,7 @@ W1/W2/giga-balance timer done on device 2026-09-08. FM chat verified paid. Offli
 
 ## 14. EN summary
 
-Architecture shifts from four nodes (Jetson, roaming RTX, Vostro, VPS) to **Jetson as system of record**, **VPS as network edge**, **Cloud.ru + GigaChat as RU AI/storage edge**. Workstation and Vostro leave the design. Immich gets an on-site HDD second copy; true off-site becomes encrypted S3. LLM becomes Giga-first with DeepSeek fallback and optional Foundation Models. Repo structure gains `docs/integrations/sber/`, three ADRs, and superseded banners on plans 29–31. Execution is five waves: docs → Giga cutover → HDD backup → Cloud.ru/GitVerse → maturity. Hard safety rules (Amnezia, redaction, no photo analysis, no secrets in git) stay.
+Architecture shifts from four nodes (Jetson, roaming RTX, Vostro, VPS) to **Jetson as system of record**, **VPS as network edge**, **Cloud.ru + GigaChat as RU AI/storage edge**. Workstation and Vostro leave the design. Immich gets an on-site HDD second copy; true off-site becomes encrypted S3. LLM becomes Giga-first with DeepSeek fallback and optional Foundation Models. Repo structure gains `docs/integrations/sber/`, three ADRs, and superseded banners on plans 29–31. Execution is six waves: docs → Giga cutover → HDD backup → **Hardening Sprint (gateway auth, RBAC, save_path, budget, fallback)** → Cloud.ru/GitVerse → maturity. Hard safety rules (Amnezia, redaction, no photo analysis, no secrets in git) stay. Smart routing (complex prompts → Max) and 8 image presets added 2026-09-18.
 
 ---
 
@@ -431,3 +478,4 @@ Architecture shifts from four nodes (Jetson, roaming RTX, Vostro, VPS) to **Jets
 | 2026-09-04 | Initial plan from owner directives + probes + audits |
 | 2026-09-04 | Progress log; W0 done in git; W1 templates; deploy gated |
 | 2026-09-08 | W1/W2 device done; giga-balance timer; S3 blocker reconfirmed; restic L2 skipped |
+| 2026-09-18 | Hardening Sprint W0.5 from audit_new (H01–H16); smart routing + image presets done |

@@ -18,7 +18,7 @@ pre-mesh network and were removed rather than kept alongside.
 
 | Параметр / Item | Значение / Value | Как получено / Source |
 |---|---|---|
-| Шлюз / Gateway | TP-Link **EC220-G5**, `192.168.0.1`, `5C:62:8B:4D:82:8C` | ARP + ping-свип |
+| Шлюз / Gateway | TP-Link **EC220-G5**, `192.168.0.1`, `<MAC:ec220>` | ARP + ping-свип |
 | Проводная подсеть / Wired subnet | `192.168.0.0/24` — живы только `.1` и `.50` | свип 254 адресов с Jetson |
 | Jetson eth0 | `192.168.0.50`, **1000 Мбит/с Full** | `ethtool eth0` |
 | Mesh | **TP-Link Deco E4, EU/4.0**, узлы `hallway` (главный) и `living_room` | наклейка + веб-интерфейс |

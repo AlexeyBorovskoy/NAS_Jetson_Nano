@@ -319,8 +319,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Deployed / Выкачено на устройство (2026-08-10, вечер)
 
 - 🇷🇺 **Семейный ИИ-помощник заработал.** У каждого своя комната в Nextcloud Talk
-  (`nx4ud9c6` Алексей · `qnxnugq4` olga · `2pnixgv2` ivan · `z6u9hsu4` ulyana ·
-  `ta7cinuy` anna · `37pcobmf` общая), бот слушает все шесть параллельно.
+  (`<room:owner>` Алексей · `<room:olga>` olga · `<room:ivan>` ivan · `<room:ulyana>` ulyana ·
+  `<room:anna>` anna · `<room:family>` общая), бот слушает все шесть параллельно.
   Два позывных: `нас <команда>` считается дома, **`@бобик <вопрос>`** уходит наружу.
 - 🇷🇺 **GigaChat подключён вторым провайдером** — с полной проверкой TLS через бандл
   НУЦ Минцифры (`config/certs/`). Оба провайдера ходят через одно редактирование
@@ -537,7 +537,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `scripts/monitoring/jms583_health.sh` + `systemd/nas_jetson_nano-jms583-health.{service,timer}` —
     ежечасный мониторинг: USB ошибки, скорость I/O, статус очереди; Telegram-алерт
 - **Nextcloud Talk** — семейный чат на базе Nextcloud spreed v23.0.7:
-  - Группа «Семья» (`token: 37pcobmf`), 5 участников: admin, olga, ivan, ulyana, anna
+  - Группа «Семья» (`token: <room:family>`), 5 участников: admin, olga, ivan, ulyana, anna
   - Пользователь `anna` (Talk-only) добавлен в Nextcloud
   - `artifacts/users/ANNA_setup.txt` — памятка для Anna (Talk-only)
   - Памятки OLGA/IVAN/ULYANA переписаны: Talk → первый раздел
@@ -560,7 +560,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **NEXTCLOUD_ADMIN_PASSWORD** в `.env` на Jetson исправлен (регистр: `all270174bae` → `ALL_270174_bae`)
 - **Nextcloud `overwrite.cli.url`** → `https://193.8.215.130:8443` — исправлен для корректного
   browser redirect при login через Talk/Nextcloud app на Android
-- **Дубликаты Talk-комнат** (3 шт.) удалены через `occ talk:room:delete`; осталась одна `37pcobmf`
+- **Дубликаты Talk-комнат** (3 шт.) удалены через `occ talk:room:delete`; осталась одна `<room:family>`
 
 ### Security / Безопасность
 

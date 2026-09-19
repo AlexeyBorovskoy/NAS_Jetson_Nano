@@ -85,7 +85,7 @@ Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
 2: dummy0: <BROADCAST,NOARP> mtu 1500 qdisc noop state DOWN group default qlen 1000
     link/ether 26:0c:6a:e5:6e:bb brd ff:ff:ff:ff:ff:ff
 3: eth0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc pfifo_fast state DOWN group default qlen 1000
-    link/ether 00:04:4b:e6:88:dc brd ff:ff:ff:ff:ff:ff
+    link/ether <MAC:jetson-eth0> brd ff:ff:ff:ff:ff:ff
 4: l4tbr0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
     link/ether 42:89:7a:6b:07:a9 brd ff:ff:ff:ff:ff:ff
     inet 192.168.55.1/24 brd 192.168.55.255 scope global l4tbr0

@@ -283,7 +283,7 @@ DHCP and routing on the EC220-G5 **stay in place**.
 
 | Устройство / Device | MAC | Адрес / Address |
 |---|---|---|
-| Jetson Nano | `00:04:4b:e6:88:dc` | `192.168.0.50` |
+| Jetson Nano | `<MAC:jetson-eth0>` | `192.168.0.50` |
 | Vostro 15 (план / planned) | — | `192.168.0.60` |
 | Deco #1 | — | `192.168.0.2` |
 | Deco #2 | — | `192.168.0.3` |

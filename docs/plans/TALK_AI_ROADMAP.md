@@ -38,7 +38,7 @@ Later — the same thing **by voice** (voice messages / a call).
 
 | Кубик / Block | Порт / Port | Что умеет / What it does | Статус / Status |
 |---|---|---|---|
-| **Nextcloud Talk** | 8080 (spreed) | Семейный чат/звонки, комната «Семья» (токен `37pcobmf`, 5 участников) / Family chat/calls, "Семья" room (token `37pcobmf`, 5 participants) | ✅ интегрирован / integrated |
+| **Nextcloud Talk** | 8080 (spreed) | Семейный чат/звонки, комната «Семья» (токен `<room:family>`, 5 участников) / Family chat/calls, "Семья" room (token `<room:family>`, 5 participants) | ✅ интегрирован / integrated |
 | **LLM Gateway** | 8090 | FastAPI → DeepSeek, privacy-контур: redaction email/телефонов/секретов, mock без ключа, raw-mode запрещён / FastAPI → DeepSeek, privacy layer: redaction of email/phone/secrets, mock without a key, raw mode forbidden | ✅ Stage 1 |
 | **nas_jetson_nano-api** | 8099 | JWT-оркестратор: `/v1/talk/notify`, `/v1/users/{u}/notify`, метрики, фото (Immich), сторедж, действия (restart, backup) / JWT orchestrator: `/v1/talk/notify`, `/v1/users/{u}/notify`, metrics, photos (Immich), storage, actions (restart, backup) | ✅ v0.6.0 |
 

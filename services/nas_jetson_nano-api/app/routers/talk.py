@@ -127,7 +127,7 @@ class NotifyRequest(BaseModel):
             "Токен комнаты Talk. Если не указан — используется семейная группа "
             f"(TALK_FAMILY_ROOM, сейчас: `{settings.talk_family_room}`)."
         ),
-        examples=["37pcobmf"],
+        examples=["abcd2345"],
     )
 
 
@@ -147,7 +147,7 @@ class NotifyResponse(BaseModel):
     description=(
         "Возвращает все комнаты Nextcloud Talk (группы, личные чаты, системные). "
         "Данные запрашиваются через OCS API с правами администратора. "
-        "Семейная группа «Семья» имеет токен `37pcobmf`."
+        "Семейная группа «Семья» имеет токен `<room:family>`."
     ),
 )
 async def list_rooms():
@@ -175,7 +175,7 @@ async def list_rooms():
     description=(
         "Информация о конкретной комнате: название, описание, список участников с их статусом. "
         "`session_ids > 0` означает что участник сейчас онлайн в чате. "
-        "Токен семейной группы: `37pcobmf`."
+        "Токен семейной группы: `<room:family>`."
     ),
 )
 async def get_room(token: str):

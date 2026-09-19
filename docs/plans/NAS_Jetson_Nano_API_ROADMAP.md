@@ -52,7 +52,7 @@
 
 - Используется Nextcloud OCS Talk API (`/ocs/v2.php/apps/spreed/api/v4/...`)
 - Admin-credentials из env (`NEXTCLOUD_ADMIN_USER`, `NEXTCLOUD_ADMIN_PASSWORD`)
-- Семейная комната: токен `37pcobmf`, группа «Семья», 5 участников
+- Семейная комната: токен `<room:family>`, группа «Семья», 5 участников
 
 ---
 

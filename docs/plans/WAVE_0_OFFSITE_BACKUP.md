@@ -285,13 +285,13 @@ exactly the class of failure that hit on 08-22–08-24 (the path missing
 (`*.bak.20260824` рядом), синтаксис проверен (`py_compile`, `bash -n`) до
 установки, регрессия проверена реальным прогоном с Vostro (снэпшот
 `21501345`, штамп обновился сам). Тестовое сообщение дошло в комнату
-владельца (`nx4ud9c6`), не в общий чат.
+владельца (`<room:owner>`), не в общий чат.
 
 🇬🇧 Both files on the Jetson were changed on the device with backups
 (`*.bak.20260824` kept alongside), syntax was checked (`py_compile`, `bash -n`)
 before installation, regression was verified with a real run from Vostro
 (snapshot `21501345`, the stamp updated on its own). The test message arrived
-in the owner's room (`nx4ud9c6`), not in the shared chat.
+in the owner's room (`<room:owner>`), not in the shared chat.
 
 ## Отложено отдельным решением / Deferred to a separate decision
 

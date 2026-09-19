@@ -24,7 +24,7 @@ Design notes
 Enable (in config/.env):
     TALK_BOT_ENABLED=true
     # optional:
-    TALK_BOT_ROOM=37pcobmf
+    TALK_BOT_ROOM=<room:family>
     TALK_BOT_TRIGGER=нас
     TALK_BOT_DISPLAY_NAME=NAS Bot
     # Phase C — free-form questions to the provider (empty = off):

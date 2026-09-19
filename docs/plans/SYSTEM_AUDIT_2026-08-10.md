@@ -200,7 +200,7 @@ SSD breakdown: immich 8.9G, backups 150M, logs 488K, the rest is housekeeping.
 - Nextcloud **33.0.4**, `installed:true`, `maintenance:false`, `needsDbUpgrade:false`.
 - Immich **2.7.5**, 7098 ассетов (6686 фото + 412 видео), 23 альбома, upload 5.8 ГБ.
 - LLM Gateway: `{"status":"ok","provider":"deepseek","redaction":"true"}`.
-- Talk-бот: `enabled:true, running:true, room:37pcobmf, processed:13, last_error:null`.
+- Talk-бот: `enabled:true, running:true, room:<room:family>, processed:13, last_error:null`.
 - Nextcloud external storage `/HDD-2TB` — mount id 1, Local → `/mnt/hdd2tb`, applicable All,
   `files_external` 1.25.1; каталог виден и из контейнера Nextcloud, и из контейнера Samba.
 
@@ -208,7 +208,7 @@ SSD breakdown: immich 8.9G, backups 150M, logs 488K, the rest is housekeeping.
 - Nextcloud **33.0.4**, `installed:true`, `maintenance:false`, `needsDbUpgrade:false`.
 - Immich **2.7.5**, 7098 assets (6686 photos + 412 videos), 23 albums, 5.8 GB uploaded.
 - LLM Gateway: `{"status":"ok","provider":"deepseek","redaction":"true"}`.
-- Talk bot: `enabled:true, running:true, room:37pcobmf, processed:13, last_error:null`.
+- Talk bot: `enabled:true, running:true, room:<room:family>, processed:13, last_error:null`.
 - Nextcloud external storage `/HDD-2TB` — mount id 1, Local → `/mnt/hdd2tb`, applicable All,
   `files_external` 1.25.1; the directory is visible both from the Nextcloud container and from
   the Samba container.

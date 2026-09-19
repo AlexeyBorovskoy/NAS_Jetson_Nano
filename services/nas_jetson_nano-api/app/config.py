@@ -58,7 +58,8 @@ class Settings(BaseSettings):
     nextcloud_admin_password: str = ""  # Set via NEXTCLOUD_ADMIN_PASSWORD
 
     # Talk (Nextcloud spreed) — default family room token
-    talk_family_room: str = "37pcobmf"
+    # Токен комнаты — только из окружения (TALK_FAMILY_ROOM); C7: не в коде публичного репо.
+    talk_family_room: str = ""
 
     # ── Talk AI bot (Phase A, polling) ──────────────────────────────────────
     # Disabled by default: enabling starts a background long-poll loop that

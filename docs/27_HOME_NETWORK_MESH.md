@@ -138,7 +138,7 @@ Jetson's `192.168.0.50` address are fully preserved.
 | Шлюз / Gateway | TP-Link / Aginet **EC220-G5**, `192.168.0.1`, гигабит / gigabit | web UI |
 | Подсеть / Subnet | `192.168.0.0/24` | `ip route` на Jetson / on the Jetson |
 | Jetson eth0 | `192.168.0.50`, **1000 Мбит/с Full / 1000 Mbps Full**, 0 ошибок / 0 errors | `ethtool eth0` |
-| **Jetson MAC** | **`00:04:4b:e6:88:dc`** | `ip link` |
+| **Jetson MAC** | **`<MAC:jetson-eth0>`** | `ip link` |
 | Профиль сети Jetson / Jetson network profile | NetworkManager `nasa-lan`, **статический IP / static IP** | `nmcli` |
 | SSID | `TP-Link_828C` (2.4) и/and `TP-Link_828C_5G` (5) — разные имена / different names | `netsh wlan` |
 | Рабочая станция / Workstation | 802.11ac, 5 ГГц, канал/channel 48, сигнал/signal **48 %** | `netsh wlan` |
@@ -203,7 +203,7 @@ device needs to be connected, it goes into Deco #2.
 |---|---|---|---|
 | Deco #1 (шлюз / gateway) | — | `192.168.0.1` | задаётся вручную в приложении / set manually in the app |
 | Deco #2 (satellite) | — | `192.168.0.3` | резервирование / reservation |
-| **Jetson Nano** | `00:04:4b:e6:88:dc` | **`192.168.0.50`** | **статика на самом Jetson** + резервирование в Deco как страховка / **static on the Jetson itself** + Deco reservation as a safety net |
+| **Jetson Nano** | `<MAC:jetson-eth0>` | **`192.168.0.50`** | **статика на самом Jetson** + резервирование в Deco как страховка / **static on the Jetson itself** + Deco reservation as a safety net |
 | Vostro 15 (если приедет домой / if it comes home) | — | `192.168.0.60` | резервирование / reservation |
 | Рабочая станция Windows / Windows workstation | — | DHCP | — |
 | Телефоны, ТВ, IoT / Phones, TV, IoT | — | DHCP / гостевая сеть / guest network | — |
@@ -320,7 +320,7 @@ longer be at hand.
    ping 192.168.0.50
    ssh admin@192.168.0.50 "hostname; ip -4 -br addr show eth0; ip route"
    ```
-3. `More → Advanced → Address Reservation` → добавить `00:04:4b:e6:88:dc` → `192.168.0.50`.
+3. `More → Advanced → Address Reservation` → добавить `<MAC:jetson-eth0>` → `192.168.0.50`.
    Это страховка: если кто-то однажды переведёт Jetson на DHCP, адрес не уедет.
 4. DHCP-пул сузить до `192.168.0.100–192.168.0.199`.
 
@@ -331,7 +331,7 @@ longer be at hand.
    ping 192.168.0.50
    ssh admin@192.168.0.50 "hostname; ip -4 -br addr show eth0; ip route"
    ```
-3. `More → Advanced → Address Reservation` → add `00:04:4b:e6:88:dc` → `192.168.0.50`.
+3. `More → Advanced → Address Reservation` → add `<MAC:jetson-eth0>` → `192.168.0.50`.
    This is insurance: if someone ever switches the Jetson to DHCP, the address will not drift.
 4. Narrow the DHCP pool to `192.168.0.100–192.168.0.199`.
 

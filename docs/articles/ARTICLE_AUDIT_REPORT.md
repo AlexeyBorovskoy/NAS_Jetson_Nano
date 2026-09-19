@@ -43,7 +43,7 @@
 | Фото в Immich / Photos in Immich | **6 484** фото + **210** видео / **6 484** photos + **210** videos · Immich v2.7.5 |
 | Контакты Nextcloud / Nextcloud contacts | 2 151 (синхронизируются через DAVx⁵ / synced via DAVx⁵) |
 | Android-статус / Android status | Immich ✅ Nextcloud ✅ DAVx⁵ ✅ **Talk ✅** |
-| Семейный чат / Family chat | Nextcloud Talk «Семья» / "Family" (token: 37pcobmf) · 5 участников / 5 members |
+| Семейный чат / Family chat | Nextcloud Talk «Семья» / "Family" (token: <room:family>) · 5 участников / 5 members |
 | NAS_Jetson_Nano API | **v0.6.0** · 20 endpoints · Talk + Users + Photos + Actions |
 | VPS | 193.8.215.130 (Vienna) · nginx reverse proxy · HTTPS self-signed 10y |
 | Мониторинг / Monitoring | Beszel Hub VPS:8091 + Telegram daily report 09:00 |

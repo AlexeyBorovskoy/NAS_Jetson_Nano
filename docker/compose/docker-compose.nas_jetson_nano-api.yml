@@ -51,7 +51,7 @@ services:
       # C6: предел вложения для @бобик, байт
       TALK_BOT_MAX_ATTACHMENT_BYTES: ${TALK_BOT_MAX_ATTACHMENT_BYTES:-10485760}
       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
-      TALK_FAMILY_ROOM: ${TALK_FAMILY_ROOM:-37pcobmf}
+      TALK_FAMILY_ROOM: ${TALK_FAMILY_ROOM:-}
       IMMICH_API_KEY: ${IMMICH_API_KEY}
       # Talk AI bot (Phase A). Disabled by default; set TALK_BOT_ENABLED=true in .env to activate.
       TALK_BOT_ENABLED: ${TALK_BOT_ENABLED:-false}

@@ -47,12 +47,16 @@ Telegram ⇄ интернет ⇄ VPS ══ SSH SOCKS (новый юнит) ═
 
 ## 4. Функции
 
-1. **Вопросы.** В личке — любое сообщение. В группе — только `@bobik_borovskoy_bot` или
-   ответ боту. Путь: gate → шлюз (`X-Service-Token`) → GigaChat. Квота по логину, общая с Talk.
+> **Поправка 2026-09-19 (решение владельца):** в группе к боту обращаются **по имени** — «@бобик …» или
+> «бобик, …», как в Talk; режим приватности в группе **выключается**, сообщения без обращения отбрасываются
+> сразу, не хранятся и не пишутся в журнал. Первый срез бота — качалка (`2026-09-19-home-downloader-design.md`).
+
+1. **Вопросы.** В личке — любое сообщение. В группе — только с обращением «@бобик» / «бобик,»,
+   упоминанием `@bobik_borovskoy_bot` или ответом боту. Путь: gate → шлюз (`X-Service-Token`) → GigaChat. Квота по логину, общая с Talk.
    Во время ожидания показывается «печатает…».
 2. **Фото → Immich.** Из лички — в личную библиотеку отправителя (его API-ключ Immich). Из группы —
    в альбом «Из Telegram», которым поделились с семьёй (ключ `admin`), и **только** при подписи
-   с упоминанием бота. Режим приватности в группе включён (проверено: `can_read_all_group_messages=false`).
+   с обращением к боту («@бобик»). Режим приватности в группе выключается (см. поправку выше).
    «Фото» (сжатое Telegram) сохраняется с подсказкой «для оригинала — файлом»; «файл» приходит
    оригиналом с EXIF. Лимит Bot API — 20 МБ: больше — честный отказ и совет загрузить через
    приложение Immich. Анализа фото нет: `LLM_ALLOW_IMAGE_ANALYSIS=false`.
@@ -97,7 +101,7 @@ Telegram ⇄ интернет ⇄ VPS ══ SSH SOCKS (новый юнит) ═
 ## 8. Тесты
 
 - `bot_core`: команды, gate до фото, квоты, роли — через фейковый канал.
-- `telegram_front`: `httpx.MockTransport` — белый список, группа без упоминания, 20 МБ,
+- `telegram_front`: `httpx.MockTransport` — белый список, группа без обращения «@бобик», 20 МБ,
   сжатое фото против файла, повтор offset, 429 с `retry_after`, выход из чужой группы.
 - Регрессия Talk: существующие тесты `tests/nas_api` и `tests/unit` зелёные после выделения ядра.
 - Ворота и CI без изменений (тесты сервисов уже в них).
@@ -123,3 +127,7 @@ per-login quotas), photos to Immich (DMs to the sender's personal library, group
 mention to a shared album), notifications in both channels, and local status commands. Access is
 limited by a whitelist of user IDs (admin, olga, ivan, ulyana) and one family group. Telegram
 Serverless was rejected because it cannot reach the NAS without exposing it to the internet.
+
+Amendment 2026-09-19: in the group the bot is addressed by name ("@бобик ..."), as in Talk. Group privacy
+mode is turned off, and messages without the name are dropped at once, unstored and unlogged. The first slice
+of the bot is the home downloader.

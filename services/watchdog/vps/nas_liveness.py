@@ -112,7 +112,8 @@ def probe(url, timeout=PROBE_TIMEOUT):
         return None
 
 
-def cmd_check(now=None, probe_fn=probe, path=None):
+def cmd_check(now=None, probe_fn=None, path=None):
+    probe_fn = probe_fn or probe
     now = time.time() if now is None else now
     api, nc = probe_fn(API_URL), probe_fn(NC_URL)
     key, text = classify(api, nc)
@@ -150,8 +151,8 @@ def cmd_notify(raw, send=None):
 
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
-    raw = os.environ.get("SSH_ORIGINAL_COMMAND") or " ".join(argv) or "check"
-    cmd = raw.split()[0]
+    parts = (os.environ.get("SSH_ORIGINAL_COMMAND") or " ".join(argv)).split()
+    cmd = parts[0] if parts else "check"
     if cmd == "check":
         out, rc = cmd_check(), 0
     elif cmd == "notify":

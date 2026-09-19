@@ -189,3 +189,11 @@ def test_main_rejects_unknown_command(monkeypatch, capsys):
     monkeypatch.setenv("SSH_ORIGINAL_COMMAND", "bash -i")
     assert nl.main([]) == 2
     assert "unknown" in capsys.readouterr().out
+
+
+def test_main_blank_command_means_check(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("SSH_ORIGINAL_COMMAND", "   ")
+    monkeypatch.setattr(nl, "STATE_FILE", str(tmp_path / "state.json"))
+    monkeypatch.setattr(nl, "probe", lambda url, timeout=nl.PROBE_TIMEOUT: 200)
+    assert nl.main([]) == 0
+    assert json.loads(capsys.readouterr().out)["event"] == "none"

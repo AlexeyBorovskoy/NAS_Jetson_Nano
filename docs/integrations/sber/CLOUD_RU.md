@@ -375,3 +375,74 @@ and versioning without `NoncurrentVersionExpiration` silently accrues billable s
 
 Foundation Models exposes exactly two methods and no balance endpoint; its key is a third,
 separate service-account secret.
+
+---
+
+## Object Storage: доступ получен и проверен (2026-09-20)
+
+### 🔑 Отдельный S3-ключ НЕ понадобился
+
+Проверено замером: **существующий IAM-ключ владельца работает как ключ Object Storage**,
+если подставить его в документированной форме. Новый ключ в кабинете выпускать не нужно.
+
+| Форма `AWS Access Key ID` | Результат |
+|---|---|
+| `<tenant_id>:<keyId>` | ✅ **работает** |
+| `<tenant_id>.<keyId>` | ✅ работает (точка вместо двоеточия) |
+| просто `<keyId>` | ⛔ `403 InvalidAccessKeyId` |
+
+`AWS Secret Access Key` — тот же `secret`, что и у IAM-ключа.
+Это уточняет прежнюю запись «S3-ключи — третий отдельный секрет»: **отдельный ключ можно
+выпустить, но обязательным он не является**; достаточно префикса `tenant_id`.
+
+### Параметры подключения (из консоли, Object Storage → Параметры работы с API)
+
+| Параметр | Значение |
+|---|---|
+| Endpoint | `https://s3.cloud.ru` |
+| Регион | `ru-central-1` |
+| Имя сервиса | `s3` |
+| Подпись | AWS Signature v4 |
+| `tenant_id` | в консоли; в git не кладём |
+
+### Корзина проекта
+
+Создана владельцем 2026-09-20: **`nas-immich-offsite`**, класс **стандартный**
+(бесплатные 15 ГБ действуют только для него), версионирование выключено.
+
+### Проверка доступа — полный цикл, а не только чтение
+
+Замер 2026-09-20 (`boto3`, подпись v4):
+
+```
+ListBuckets  : OK, корзин 1 — nas-immich-offsite
+HeadBucket   : OK
+PutObject    : OK (37 байт)
+GetObject    : OK, содержимое совпало по sha256
+ListObjects  : OK
+DeleteObject : OK (тестовый объект удалён)
+```
+
+Права на запись подтверждены, тестовый объект за собой убран. Прошлая ошибка
+`CreateBucket AccessDenied` не воспроизводится — роль текущей учётной записи достаточна.
+
+⚠️ Что ещё не сделано: репозиторий `restic` в этой корзине не создан, фотографии Immich
+не залиты, восстановление из облака не проверялось. До этого момента **off-site копии
+фотографий по-прежнему нет** — есть только подтверждённый доступ к месту, где она будет.
+
+---
+
+### EN summary (storage access verified)
+
+No separate storage key was needed: the owner's existing **IAM key works as an Object Storage
+key** when the Access Key ID is given as `<tenant_id>:<keyId>` (the dotted form works too, the
+bare key ID returns `403 InvalidAccessKeyId`). Endpoint `https://s3.cloud.ru`, region
+`ru-central-1`, AWS Signature v4. The project bucket `nas-immich-offsite` was created in the
+standard class (the free 15 GB apply to that class only) with versioning off.
+
+Access was verified as a full round trip rather than a read: ListBuckets, HeadBucket, PutObject,
+GetObject with a sha256 comparison, ListObjects and DeleteObject all succeeded, and the test
+object was removed afterwards. The earlier `CreateBucket AccessDenied` does not reproduce.
+
+Still missing: no restic repository exists in the bucket, no photos are uploaded and no restore
+has been exercised — so there is still **no off-site copy**, only a verified place for one.

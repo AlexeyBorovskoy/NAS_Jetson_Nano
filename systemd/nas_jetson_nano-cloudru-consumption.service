@@ -1,0 +1,25 @@
+[Unit]
+Description=NAS_Jetson_Nano — Cloud.ru spend/consumption poll (E5)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=NAS_JETSON_NANO_PROJECT_DIR=/home/admin/nasa
+# E5: снимок сохраняется для алерта (talk-alert читает его без сети).
+# systemd создаёт /var/lib/nas-cloudru-consumption и отдаёт его User=.
+StateDirectory=nas-cloudru-consumption
+Environment=CLOUDRU_CONSUMPTION_FILE=/var/lib/nas-cloudru-consumption/consumption.json
+# CLOUDRU_KEY_ID / CLOUDRU_KEY_SECRET — отдельная пара IAM-ключей устройства,
+# НЕ ключ владельца из Windows Credential Manager. См. config/.env.example
+# и scripts/sber/check_cloudru_consumption.py (шапка файла, «открытый вопрос»).
+# Путь — как у nas_jetson_nano-tg-socks.service: на устройстве это по-прежнему
+# /opt/nasa (rename в git на /opt/nas_jetson_nano ещё не выкачен, см. CLAUDE.md
+# «Расхождение git ↔ устройство»). "-" — файл необязателен, чтобы юнит не падал
+# на ещё не мигрированной машине.
+EnvironmentFile=-/opt/nasa/config/.env
+ExecStart=/usr/bin/python3 ${NAS_JETSON_NANO_PROJECT_DIR}/scripts/sber/check_cloudru_consumption.py
+User=admin
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nas_jetson_nano-cloudru-consumption

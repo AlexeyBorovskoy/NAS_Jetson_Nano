@@ -400,3 +400,32 @@ curl -X POST http://localhost:8099/v1/report/now
 🇬🇧 The daily balance poll saves its answer and `talk-alert` warns when any GigaChat model drops below the
 threshold or the poll is older than 50 h. The Cloud.ru watchdog asks the VPS every 10 minutes whether the NAS
 is alive and alerts the owner in Telegram; debug it as root on the VPS with a throwaway state file.
+
+## 17. Расходы Cloud.ru / Cloud.ru spend alert (E5)
+
+🇷🇺
+- **Зачем.** D3 (внешний сторож) и Object Storage (вторая копия фото) рассчитаны на бесплатный тариф
+  Cloud.ru. Тариф кончается молча — счёт обнаруживается постфактум. API **не отдаёт остаток** тарифа
+  (ни поля, ни метода), поэтому лимиты держатся в конфиге сборщика и вычитаются из измеренного
+  потребления.
+- **Сбор.** `nas_jetson_nano-cloudru-consumption.timer` ежедневно (10:30 + до 30 мин джиттера) запускает
+  `scripts/sber/check_cloudru_consumption.py`: IAM-токен → `agreement_id` (не хардкодится, берётся заново
+  каждый раз) → `/v1/consumption` за текущий месяц. Снимок — в
+  `/var/lib/nas-cloudru-consumption/consumption.json`, без сети для самого алерта.
+- **Тревога** (`talk-alert`, `check_cloudru_consumption`): (а) **любой ненулевой расход** — тревога
+  безусловно, для этого проекта это уже событие; (б) приближение к границе бесплатного тарифа по
+  конкретной категории — порог `CLOUDRU_WARN_PERCENT` (по умолчанию 80%, `<prefix>-monitor.env`).
+  Категория без данных («не сматчилась») не считается нулём и в тревогу не попадает — только матчёные.
+  Снимок старше 30 ч — тревога о сломанном опросе, не тишина.
+- **Ключ на устройстве.** Отдельная пара `CLOUDRU_KEY_ID`/`CLOUDRU_KEY_SECRET` в `config/.env` —
+  **не** ключ владельца из Windows Credential Manager на ноутбуке.
+- ⚠️ Сопоставление категорий потребления (Container Apps Services/Jobs, Object Storage) с ответом API
+  **не проверено на живых данных** — на 2026-09-20 эти сервисы ещё не разворачивались. Денежный алерт (а)
+  от этого сопоставления не зависит и остаётся рабочим в любом случае.
+
+🇬🇧 The daily poll fetches an IAM token, a fresh `agreement_id`, and this month's consumption, then writes
+a snapshot the alert reads without network access. Any nonzero cost triggers an alert unconditionally;
+approaching a free-tier limit triggers a separate, configurable-threshold warning that only fires for
+categories the poll could actually match to a consumption row — an unmatched category is treated as
+"no data", never as zero. The device uses its own IAM key pair in `config/.env`, separate from the
+owner's workstation key.

@@ -291,8 +291,65 @@ def check_giga_balance(path=None, warn_tokens=None):
     return "giga_balance", None
 
 
+CLOUDRU_CONSUMPTION_FILE = "/var/lib/nas-cloudru-consumption/consumption.json"
+CLOUDRU_CONSUMPTION_MAX_AGE_HOURS = 30   # опрос — раз в сутки systemd-таймером + джиттер
+CLOUDRU_WARN_PERCENT = 80                # приближение к границе бесплатного тарифа
+
+
+def check_cloudru_consumption(path=None, warn_percent=None):
+    """E5: расходы Cloud.ru. Проект держит в Cloud.ru внешнего сторожа (D3) и
+    копию фото (Object Storage) в расчёте на бесплатный тариф — он кончается
+    молча, счёт обнаруживается постфактум. API не отдаёт остаток тарифа
+    (см. scripts/sber/check_cloudru_consumption.py) — вычитание уже сделано
+    сборщиком, здесь только читаем снимок без сети и решаем, тревожить ли.
+
+    Два независимых пути, оба из задачи E5 (требование 2):
+      а) любой ненулевой денежный расход — тревога БЕЗУСЛОВНО, сопоставление
+         категорий сборщиком тут ни при чём и повлиять на этот путь не может;
+      б) приближение к границе бесплатного тарифа по конкретной категории —
+         порог настраивается, категории без данных («не сматчилось») в счёт
+         не идут (нет данных ≠ ноль)."""
+    path = path or CLOUDRU_CONSUMPTION_FILE
+    if warn_percent is None:
+        warn_percent = int(read_env(MONITOR_ENV, "CLOUDRU_WARN_PERCENT",
+                                    str(CLOUDRU_WARN_PERCENT)) or CLOUDRU_WARN_PERCENT)
+    try:
+        age_h = (time.time() - os.path.getmtime(path)) / 3600
+        with open(path, encoding="utf-8") as fh:
+            state = json.load(fh)
+        total_cost = float(state["total_cost"])
+        tiers = state.get("free_tier") or []
+        services = state.get("by_service") or []
+    except OSError:
+        return "cloudru_consumption", "🟠 Расходы Cloud.ru ни разу не опрошены: нет %s." % path
+    except (ValueError, KeyError, TypeError):
+        return "cloudru_consumption", "🟠 Снимок расходов Cloud.ru не разобрать: %s." % path
+
+    if age_h > CLOUDRU_CONSUMPTION_MAX_AGE_HOURS:
+        return "cloudru_consumption", ("🟠 Расходы Cloud.ru не опрашивались %d ч — "
+                                       "опрос сломан." % age_h)
+
+    if round(total_cost, 2) > 0:
+        top = sorted(services, key=lambda r: -(r.get("cost") or 0))[:3]
+        breakdown = "; ".join("%s — %.2f" % (r.get("servname", "?"), r.get("cost", 0))
+                              for r in top)
+        return "cloudru_consumption", ("🔴 На Cloud.ru появился расход: %.2f за текущий "
+                                       "месяц. %s" % (total_cost, breakdown))
+
+    near = ["%s — %d%% (%.1f из %.1f %s)"
+           % (t["label"], t["percent"], t["used"], t["limit"], t["unit_label"])
+           for t in tiers
+           if t.get("matched") and t.get("percent") is not None
+           and t["percent"] >= warn_percent]
+    if near:
+        return "cloudru_consumption", ("🟠 Приближение к границе бесплатного тарифа "
+                                       "Cloud.ru: " + "; ".join(near))
+    return "cloudru_consumption", None
+
+
 CHECKS = (check_dumps, check_storage, check_containers, check_disk, check_ram,
-          check_swap, check_hdd_smart, check_offsite_pull, check_giga_balance)
+          check_swap, check_hdd_smart, check_offsite_pull, check_giga_balance,
+          check_cloudru_consumption)
 
 
 # ── отправка ───────────────────────────────────────────────────────────────────
@@ -373,6 +430,7 @@ def main():
                     "hdd_smart": "SMART диска с семейным архивом",
                     "offsite_pull": "off-site бэкап на Vostro снова забирает дампы",
                     "giga_balance": "квоты GigaChat",
+                    "cloudru_consumption": "расходы Cloud.ru",
                 }.get(key, key))
                 sent += 1
             state[key] = {"active": False, "last_sent": prev.get("last_sent", 0)}

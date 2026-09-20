@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Cloud.ru consumption/spend check 10:30
+
+[Timer]
+OnCalendar=*-*-* 10:30:00
+Persistent=true
+RandomizedDelaySec=30m
+Unit=nas_jetson_nano-cloudru-consumption.service
+
+[Install]
+WantedBy=timers.target

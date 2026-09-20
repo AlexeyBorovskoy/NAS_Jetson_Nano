@@ -319,3 +319,11 @@ session stopped. Owner decisions recorded: token limits raised, «забудь»
 The conversation-memory branch is merged to `main` (`5ddd116`) after the final-review fix wave; the new Talk-cycle
 test was verified by the controller against two mutations. Not deployed yet — deploy raises the token limits,
 recreates the gateway container so it re-reads `.env`, rebuilds the NAS API and checks the flow in the family group.
+
+### Выкат памяти разговора — 2026-09-20 (по «деплой»)
+
+Jetson `8f05c61`. `.env` → `LLM_USER_DAILY_TOKEN_LIMIT=60000`, `LLM_DAILY_TOKEN_LIMIT=250000` (копия `.env.bak.mem.*`);
+контейнер шлюза **пересоздан** — `/v1/usage` подтверждает новые лимиты; NAS API пересобран, `telegram connected`.
+Сквозная проверка на живом GigaChat: «Запомни число 7» → «запомнил», следом «какое число?» → «7»; «забудь» очистил.
+14 контейнеров, failed 0, API 52/128 МБ, шлюз 48/256 МБ, доступно 1,24 ГБ ОЗУ. Правило №13: VPS до/после идентичен, 19 пиров.
+Через сутки снять `curl -s http://127.0.0.1:8090/v1/usage` и сверить расход с оценкой 1200 токенов на вопрос.

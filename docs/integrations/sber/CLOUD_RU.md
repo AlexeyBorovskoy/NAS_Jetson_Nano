@@ -54,6 +54,14 @@ curl -s http://127.0.0.1:8090/v1/chat -H 'Content-Type: application/json' \
 
 Probe notes: `docs/plans/AUTH_PROBE_*.md`, `AUTH_PROBE_FM_KEY_SMOKE_2026-09-07.md`.
 
+## Access keys (2026-09-20)
+
+IAM access key pair for SA `home-nas-api` received from the owner: **no expiry** (владелец сделал бессрочными).
+Verified 2026-09-20: `grant_type=access_key` → HTTP 200, `token_len=1295`, `expires_in=3600`.
+Stored **only** in Windows Credential Manager (`nas-cloudru-iam`, user = Key ID) and in the owner's local file
+outside git (`kaggle/` is git-ignored). Never in the repository, never in argv, never printed.
+Unblocks: D3 watchdog job in Container Apps, E5 spend alert, E6 Immich ML spike.
+
 ## Do not
 
 - Primary host Nextcloud/Immich in Cloud.ru.

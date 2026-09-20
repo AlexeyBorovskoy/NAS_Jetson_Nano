@@ -264,3 +264,39 @@ rollout. Deploy only on the owner's command using `DEPLOY_DOWNLOADER_2026-09.md`
 The downloader and the Telegram bot were deployed at 17:03 UTC and checked end to end; the family announcement was sent.
 Rule #13 held. Found on the way: dockerd cannot resolve names since the resolv.conf change on 2026-09-18 (worked around
 with a local base image; fixing it needs a Docker restart in an owner window), and the speed timers run on UTC.
+
+## Точка 2026-09-20 — где остановились (лимит владельца)
+
+**В бою на Jetson:** качалка + Telegram-бот (обращение «бобик» в любой форме), E2 (алерт квоты GigaChat),
+сторона VPS для сторожа D3, Docker с починенным DNS. 14 контейнеров, failed 0.
+
+**Память разговора @бобик — ветка `feat/bobik-dialog`** (worktree `../NAS_wt_dlg`, в `main` НЕ влита):
+- ✅ Task 1–3 сделаны и прошли ревью (коммиты `3472f06`, `31ac359`, `5b738ca`, `3f010a2`, `32c1b88`), 116 тестов.
+- 🟠 Финальное ревью (Opus): **нужны исправления до слияния** — (1) нет ни одного теста Talk-цикла: мутация
+  «ключ = константа» (слияние всех 6 комнат в одну нить) проходит все 116 тестов; (2) `test_downloads_are_not_remembered`
+  проходит вхолостую; (3) строка в CHANGELOG. Плюс дешёвые мелочи: `llm_failed_last` в инициализаторе `_STATE`,
+  обрезка имени говорящего, докстринг. **Волна исправлений запущена субагентом, результат не получен** (лимит).
+- Решения владельца 2026-09-20: лимиты токенов подняты (60k/человек, 250k дом, коммит `7f84ce8`); «забудь» — только Telegram.
+- Выкат памяти (по «деплой»): `.env` устройства → новые лимиты → **пересоздать** контейнер шлюза (`up -d`, не `restart`)
+  → пересобрать NAS API → проверка в группе → через сутки `curl -s :8090/v1/usage`.
+
+**Голосовые сообщения:** запущено исследование субагентом (Vosk / whisper.cpp / SaluteSpeech, роль Kaggle),
+результат — `docs/research/VOICE_MESSAGES_RESEARCH_2026-09-20.md`, **не получен** (лимит).
+
+**Kaggle** заведён как ресурс подготовительных работ (`docs/integrations/kaggle/README.md`), ключ — в `.gitignore`
+и Credential Manager `nas-kaggle-api`. Исправлена своя ошибка: каталог `kaggle/` не был под игнором.
+
+**Этап G** (инженерный стандарт и чистка репозитория) поставлен в план из мастер-промта с поправками;
+G0 (Gitleaks, Dependabot, CodeQL, проверка гигиены) можно делать раньше. Базовая линия: 545 файлов, 20,2 МБ,
+docs+assets = 96 % дерева, один скриншот в 6 копиях.
+
+**Статья на Хабр:** журнал доказательств `docs/articles/HABR_PART2_MATERIALS.md`, пополняется по ходу (DoD §3 п. 5).
+
+**Ждёт владельца:** ключ Cloud.ru (Key ID + Secret) для второй половины сторожа D3.
+
+### EN
+Stopped on the owner's usage limit. Live on the Jetson: downloader, Telegram bot, E2 quota alert, the VPS half of
+the D3 watchdog, Docker DNS fixed. The conversation-memory branch is complete but not merged: the final review
+requires a Talk-cycle test (a mutation merging all six Talk rooms into one thread passes all 116 tests), one
+vacuous test fixed and a CHANGELOG line; the fix wave and the voice-message research were still running when the
+session stopped. Owner decisions recorded: token limits raised, «забудь» stays Telegram-only.

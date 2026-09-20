@@ -27,7 +27,7 @@ Choose the entry point that fits what you want to learn:
 |---|---|---|
 | Builders and reviewers on GitHub | [Architecture](docs/03_ARCHITECTURE.md) · [decisions](docs/decisions/ADR-0007-node-model-jetson-sor-cloud-edge.md) · [quality gate](docs/32_QUALITY_GATE.md) | Code, decisions, setup limits, failure reports, and reproducible checks |
 | DEV Community readers | [DEV article brief](docs/articles/DEV_ARTICLE_BRIEF.md) | An English story about a 4 GB Jetson, free resources, measured trade-offs, and failures; article in preparation |
-| Хабр / Habr readers | [Published Part 1](https://habr.com/ru/articles/1062914/) · [Part 2 plan](docs/articles/HABR_PART2_ARTICLE_PLAN_2026-09.md) | Русская история домашнего облака и план продолжения |
+| Хабр / Habr readers | [Published Part 1](https://habr.com/ru/articles/1062914/) · [Part 2 brief](docs/articles/HABR_PART2_BRIEF.md) | Русская история домашнего облака и план продолжения |
 
 The [publication map](docs/articles/PUBLICATION_CHANNELS.md) explains what belongs on each
 platform and what still needs verification. / [Карта публикаций](docs/articles/PUBLICATION_CHANNELS.md)
@@ -219,7 +219,7 @@ not an off-site backup. There is no high availability.
 
 ## Статьи / Articles
 
-- 🇷🇺 [Опубликованная статья на Хабре](https://habr.com/ru/articles/1062914/) · [план части 2](docs/articles/HABR_PART2_ARTICLE_PLAN_2026-09.md)
+- 🇷🇺 [Опубликованная статья на Хабре](https://habr.com/ru/articles/1062914/) · [предварительный бриф части 2](docs/articles/HABR_PART2_BRIEF.md)
 - 🇬🇧 [DEV article brief](docs/articles/DEV_ARTICLE_BRIEF.md) — in preparation, not published
 - [Publication channels / Каналы публикации](docs/articles/PUBLICATION_CHANNELS.md)
 - 🇬🇧 [Hackaday.io project draft](docs/articles/hackaday_project_en.md)

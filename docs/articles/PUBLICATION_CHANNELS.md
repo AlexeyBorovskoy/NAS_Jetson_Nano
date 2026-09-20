@@ -6,7 +6,7 @@
 |---|---|---|---|
 | **GitHub** | “What is implemented, and can I inspect or reuse it?” | Current architecture, status with dates, setup constraints, code, tests, decisions, known limitations | README, ADRs, runbooks, source and CI |
 | **DEV Community** | “What can I learn from this build?” | An English engineering story: a 4 GB Jetson, mostly free components, failure analysis, measurements and trade-offs | [DEV brief](DEV_ARTICLE_BRIEF.md), selected public commits and diagrams |
-| **Хабр** | «Зачем это понадобилось семье и как проект пережил рост?» | Русская история эксплуатации, развитие функций, ошибки и честная стоимость | [Часть 1](https://habr.com/ru/articles/1062914/), [план части 2](HABR_PART2_ARTICLE_PLAN_2026-09.md) |
+| **Хабр** | «Зачем это понадобилось семье и как проект пережил рост?» | Русская история эксплуатации, развитие функций, ошибки и честная стоимость | [Часть 1](https://habr.com/ru/articles/1062914/), [бриф части 2](HABR_PART2_BRIEF.md) |
 
 ## Shared factual core / Общая основа фактов
 

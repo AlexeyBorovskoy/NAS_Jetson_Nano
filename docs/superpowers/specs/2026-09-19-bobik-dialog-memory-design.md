@@ -49,8 +49,10 @@ Telegram / Talk ─► talk_bot.answer(question, user, dialog=(ключ, имя 
 - В память попадают только обращения к Бобику и его ответы. Сообщения без обращения, как и раньше,
   не читаются и не хранятся. Закачки («скачай», «закачки», «отмени N») в историю не пишутся.
 - «бобик, забудь» (и «забудь» в личке) → `forget(ключ)` → «🐕 Забыл, начнём сначала.»
+  **Только в Telegram** (решение владельца 2026-09-20): в Talk команды нет, память там стирается сама
+  через 30 минут тишины. Talk семья не использует, отдельную команду туда не делаем.
 - Группа и личка, разные комнаты Talk — независимые разговоры.
-- Лимит ответов на человека в сутки и бюджеты шлюза не меняются.
+- Лимит ответов на человека в сутки остаётся 50; токенные лимиты шлюза подняты (см. §6).
 
 ## 6. Ошибки и безопасность
 
@@ -58,6 +60,12 @@ Telegram / Talk ─► talk_bot.answer(question, user, dialog=(ключ, имя 
   размер истории в символах).
 - История проходит фильтр личных данных шлюза вместе с вопросом.
 - Цена: вопрос с историей тратит больше токенов (до ~3000 символов истории сверху) — лимиты шлюза действуют.
+  Замер 2026-09-20 до памяти: 144 токена на вопрос (12 вопросов = 1728 токенов). С историей ожидается ~1200.
+  Решение владельца 2026-09-20: лимиты подняты до 60 000 токенов в сутки на человека и 250 000 на дом
+  (было 20 000 и 100 000) — это квота GigaChat, деньги не тратятся. Проверить расход по людям через сутки
+  после выката: `curl -s http://127.0.0.1:8090/v1/usage`.
+- В группе история общая, поэтому вопрос одного члена семьи частично оплачивается из квоты следующего
+  спрашивающего — прямое следствие «одной нити на группу» (§2).
 - Safety gate не видит историю: опасная просьба, разбитая на реплики, проверяется по каждой новой реплике
   (как и сейчас).
 
@@ -73,15 +81,21 @@ Telegram / Talk ─► talk_bot.answer(question, user, dialog=(ключ, имя 
 
 ## 8. Выкат (по «деплой»)
 
-Пересборка NAS API (≈15 с простоя), `telegram connected` в журнале, проверка в группе: вопрос → уточнение
-без повтора темы → «бобик, забудь». Правило №13 не затрагивается (VPS не меняется).
+1. В `config/.env` устройства: `LLM_USER_DAILY_TOKEN_LIMIT=60000`, `LLM_DAILY_TOKEN_LIMIT=250000`.
+2. Пересоздать контейнер шлюза, чтобы он перечитал `.env` (`up -d`, без `--build`; `restart` не перечитывает).
+3. Пересборка NAS API (≈15 с простоя), `telegram connected` в журнале.
+4. Проверка в группе: вопрос → уточнение без повтора темы → «бобик, забудь».
+5. Через сутки — `curl -s http://127.0.0.1:8090/v1/usage`: расход по людям против новых лимитов.
+Правило №13 не затрагивается (VPS не меняется).
 
 ---
 
 ### EN summary
 Conversation memory for @bobik. The family group shares one conversation thread in which the bot knows who
 said what; each direct chat and each Talk room has its own. The bot keeps the last 10 turns in process memory
-only and forgets a conversation after 30 minutes of silence or on "бобик, забудь"; nothing is written to disk.
+only and forgets a conversation after 30 minutes of silence or on "бобик, забудь" (Telegram only — Talk has no
+such command by the owner's decision); nothing is written to disk. Per-person token limits were raised to 60k/day
+(250k for the household) because a question now carries up to 3000 characters of history.
 The history is sent through the gateway's existing `context` field, so the gateway, its PII redaction and its
 per-person quotas are unchanged. Only messages addressed to the bot and its answers are remembered; downloads,
 gate refusals and home tools are not. The safety gate still judges only the new question.

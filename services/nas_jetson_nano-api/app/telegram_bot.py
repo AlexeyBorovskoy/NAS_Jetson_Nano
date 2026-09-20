@@ -31,9 +31,20 @@ HELP = ("🐕 Я Бобик. Обращайтесь по имени — «боб
         "• закачки — что качается и сколько места\n"
         "• отмени N — отменить закачку N\n"
         "• забудь — начать разговор заново\n"
+        "• что сломалось — статус дома (только владельцу)\n"
         "• любой другой вопрос — отвечу через GigaChat")
 STRANGER_TEXT = "🐕 Вы не в семейном списке — я отвечаю только своим."
 GREETING = "🐕 Гав! Я тут. Спросите что-нибудь или напишите «бобик, закачки»."
+# E3: состояние дома — только владельцу, остальным вежливый отказ (не «не понял»).
+HEALTH_OWNER_ONLY_TEXT = "🐕 Состояние дома — это к владельцу, не ко всем."
+# «что сломалось», «всё/все работает(?)», «как дела/там дома», «как сервер», «статус дома».
+_HEALTH_RE = re.compile(
+    r"^(что\s+сломалось|"
+    r"(?:всё|все)(?:\s+ли)?\s+работает|"
+    r"как\s+дела\s+дома|как\s+(?:там\s+)?сервер|"
+    r"статус\s+дома|что\s+не\s+так(?:\s+дома)?)\s*\??$",
+    re.IGNORECASE,
+)
 # «бобик» отдельным словом в любой падежной форме (бобика, бобику, бобиком…); латиница
 # после имени («бобикXYZ») — не обращение.
 _BOBIK_RE = re.compile(r"(?<![\w])@?бобик[а-яё]*(?!\w)", re.IGNORECASE)
@@ -126,6 +137,8 @@ def route(text: str):
         return "cancel", int(m.group(1))
     if low.startswith("забудь"):
         return "forget", None
+    if _HEALTH_RE.match(low):
+        return "health", None
     return "ask", text.strip()
 
 
@@ -261,11 +274,21 @@ class TelegramBot:
             from app import dialog as dialog_mem
             dialog_mem.MEMORY.forget("tg:%s" % chat_id)
             await self._say(chat_id, "🐕 Забыл, начнём сначала.", mid)
+        elif kind == "health":
+            await self._say(chat_id, await self._health_reply(login), mid)
         else:
             speaker = (msg.get("from") or {}).get("first_name") or login
             await self.api.call("sendChatAction", chat_id=chat_id, action="typing")
             reply = await self.answer(arg, login, dialog=("tg:%s" % chat_id, speaker))
             await self._say(chat_id, reply, mid)
+
+    async def _health_reply(self, login: str) -> str:
+        """E3: «что сломалось?» — только владельцу (settings.telegram_owner_login).
+        Остальным членам семьи — вежливый отказ, а не подробности о системе."""
+        if login != settings.telegram_owner_login:
+            return HEALTH_OWNER_ONLY_TEXT
+        from app.routers import talk_bot as talk_bot_mod
+        return await talk_bot_mod._build_health()
 
     async def _stranger(self, msg: dict, chat: dict) -> None:
         uid = (msg.get("from") or {}).get("id")

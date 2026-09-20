@@ -447,3 +447,50 @@ def test_downloads_are_not_remembered():
     asyncio.run(bot.handle_update(msg("бобик, закачки")))
     assert dialog.MEMORY.history(key) == ""
     assert asked == []
+
+
+# ── «что сломалось?» (E3) ────────────────────────────────────────────────────────
+
+def test_route_recognizes_health_phrasings():
+    mod = load()
+    for phrase in ("что сломалось", "Что сломалось?", "всё работает?", "все работает",
+                   "всё ли работает", "как дела дома", "как там сервер", "как сервер",
+                   "статус дома", "что не так", "что не так дома"):
+        assert mod.route(phrase) == ("health", None), phrase
+
+
+def test_route_does_not_misfire_on_unrelated_question():
+    mod = load()
+    # «что случилось» без «дома» — обычный вопрос, не запрос статуса; ложное
+    # срабатывание отправило бы владельца читать диагностику вместо ответа на вопрос.
+    assert mod.route("что случилось с ценами на нефть")[0] == "ask"
+    assert mod.route("как дела у тебя")[0] == "ask"
+
+
+def test_health_command_owner_gets_report(monkeypatch):
+    mod, bot, tg, dl, asked = make()
+    from app.routers import talk_bot as talk_bot_mod
+
+    async def fake_health():
+        return "✅ Дома всё в порядке — контейнеры, диски и бэкапы штатно."
+
+    monkeypatch.setattr(talk_bot_mod, "_build_health", fake_health)
+    asyncio.run(bot.handle_update(msg("бобик, что сломалось", uid=OWNER)))
+    assert tg.texts() == [(FAMILY, "✅ Дома всё в порядке — контейнеры, диски и бэкапы штатно.")]
+    assert asked == []
+
+
+def test_health_command_family_member_is_refused_without_checking_anything(monkeypatch):
+    mod, bot, tg, dl, asked = make()
+    from app.routers import talk_bot as talk_bot_mod
+    called = []
+
+    async def fake_health():
+        called.append(1)
+        return "✅ ..."
+
+    monkeypatch.setattr(talk_bot_mod, "_build_health", fake_health)
+    asyncio.run(bot.handle_update(msg("бобик, что сломалось", uid=SON)))
+    assert called == []  # регрессия: не владелец не должен даже триггерить проверки
+    assert tg.texts() == [(FAMILY, mod.HEALTH_OWNER_ONLY_TEXT)]
+    assert asked == []

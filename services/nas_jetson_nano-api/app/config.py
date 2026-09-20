@@ -159,6 +159,10 @@ class Settings(BaseSettings):
     dl_ssd_max_gb: int = 20
     dl_ledger_file: str = "/var/log/nas_jetson_nano-monitor/downloads-ledger.json"
 
+    # E3: «что сломалось?» читает уже посчитанный снимок Phase E (talk-alert), а не
+    # пересчитывает SMART/swap/off-site/баланс заново — из контейнера API это и не проверить.
+    talk_alert_state_file: str = "/var/lib/nas_jetson_nano-monitor/talk-alert-state.json"
+
     def llm_headers(self) -> dict:
         """Заголовки для вызова LLM Gateway: сервисный токен, если он задан."""
         token = (self.llm_gateway_service_token or "").strip()

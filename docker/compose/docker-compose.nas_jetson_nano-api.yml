@@ -20,6 +20,8 @@ services:
       # Report script — for POST /v1/report/now
       - ${NAS_SBIN_PREFIX:-/usr/local/sbin/nas_jetson_nano}-send-report-telegram.sh:/usr/local/sbin/nas_jetson_nano-send-report-telegram.sh:ro
       - ${NAS_CONF_DIR:-/etc/nas_jetson_nano-monitor}:/etc/nas_jetson_nano-monitor:ro
+      # E3: снимок активных алертов Phase E (talk-alert) — для «бобик, что сломалось»
+      - ${NAS_STATE_DIR:-/var/lib/nas_jetson_nano-monitor}:/var/lib/nas_jetson_nano-monitor:ro
       # Качалка: только для statvfs (свободное место), на запись боту не нужно
       - /mnt/storage/downloads:/dl/ssd:ro
       - /mnt/hdd2tb/Downloads:/dl/hdd:ro

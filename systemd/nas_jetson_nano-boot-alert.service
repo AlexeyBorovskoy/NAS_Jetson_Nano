@@ -1,0 +1,32 @@
+[Unit]
+Description=NAS_Jetson_Nano — alert after an unclean boot (D2)
+# Сеть нужна, чтобы дойти до Telegram; SOCKS-туннель поднимается отдельным
+# юнитом, и если он ещё не готов — скрипт сам не пометит boot_id обработанным
+# и Restart=on-failure даст ему следующую попытку.
+After=network-online.target nas_jetson_nano-tg-socks.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=NAS_JETSON_NANO_PROJECT_DIR=/home/admin/nasa
+# Состояние (последний обработанный boot_id) — чтобы алерт не повторялся при
+# каждом перезапуске юнита. Путь скрипт берёт из раскладки: NAS_STATE_DIR,
+# на устройстве это /var/lib/nasa-monitor (владелец root). Поэтому юнит
+# работает от root — своего StateDirectory здесь не заводим, чтобы состояние
+# лежало рядом с остальным состоянием мониторинга.
+# Путь как у nas_jetson_nano-tg-socks.service: на устройстве по-прежнему
+# /opt/nasa (rename в git на /opt/nas_jetson_nano не выкачен, см. CLAUDE.md
+# «Расхождение git ↔ устройство»). "-" — файл необязателен.
+EnvironmentFile=-/opt/nasa/config/.env
+EnvironmentFile=-/home/admin/nasa/config/.env
+ExecStart=/usr/bin/python3 /home/admin/nasa/scripts/monitoring/nas_jetson_nano-boot-alert.py
+# Telegram может быть недоступен в первые секунды после загрузки — повторяем.
+Restart=on-failure
+RestartSec=60
+# Ограничение числа попыток: 5 раз за 10 минут, дальше юнит сдаётся,
+# и факт остаётся в журнале (Storage=persistent с 2026-08-23).
+StartLimitBurst=5
+StartLimitIntervalSec=600
+
+[Install]
+WantedBy=multi-user.target

@@ -254,3 +254,124 @@ VPS it is meant to watch. Limits: one execution ≤ 3600 s, 5 concurrent runs pe
 organisation, smallest size 0.1 vCPU / 256 Mi. Images come from Cloud.ru's Artifact Registry;
 pulling straight from Docker Hub is not documented. A watchdog at the smallest size running a
 minute every 15 minutes costs a few percent of the free Jobs tier.
+
+---
+
+## Биллинг, Object Storage и Foundation Models (2026-09-20, проверено)
+
+> 🇷🇺 Пути API взяты из официальных OpenAPI-файлов Cloud.ru
+> (`cloud.ru/docs/api/specs/billing/ug/_specs/swagger.yaml` и `swagger2.yaml` — отдаются
+> без авторизации; сам сайт документации — SPA, тело статей инструментам не даётся).
+> Ключевые вызовы **подтверждены живым запросом** с ключа владельца.
+
+### 1. Потребление: рабочий рецепт
+
+🔴 **`agreement_id` обязателен.** Именно из-за него был `400`: с корректными датами, но без
+договора запрос всё равно отвергается. Проверено обоими способами.
+
+```
+# 1. договор
+GET https://organization.api.cloud.ru/v3/agreements
+    -> 200 {"agreements":[{"id":"<uuid>","status":"AGREEMENT_STATUS_ACTIVE",...}]}
+
+# 2. потребление - три обязательных параметра
+GET https://organization.api.cloud.ru/v1/consumption
+    ?agreement_id=<uuid>&start_date=2026-09-01T00:00:00Z&end_date=2026-09-20T23:59:59Z
+    -> 200 {"consumptions":[{sku, servname, resource_id, usedate, amount, cost, unit, usefact}]}
+```
+
+Замер 2026-09-20: на аккаунте владельца видно реальное потребление GigaChat-2-Max за сентябрь.
+Есть также `/v2/consumption` (дополнительно требует `page_filter.page_size`) и
+`/v1/consumption/static` (у владельца пуст). Для алерта достаточно v1.
+
+`agreement_id` в скриптах **не хардкодить** — брать из `/v3/agreements`, тогда смена договора
+ничего не сломает. Значения идентификаторов в репозиторий не кладём, только путь получения.
+
+### 2. 🔴 Остаток бесплатного тарифа API НЕ отдаёт
+
+Ни одного поля «сколько осталось» в ответе `consumption` нет; отдельного метода баланса в
+документации биллинга тоже нет — в оглавлении справочника ровно два метода, v1 и v2
+consumption. «Порог баланса» в личном кабинете — про автосписание с карты у физлиц, к
+бесплатному тарифу отношения не имеет.
+
+**Следствие для алерта расходов:** лимиты надо держать у себя и вычитать из них потребление
+за текущий месяц. Известные лимиты (официальные страницы, 2026-09-20):
+
+| Сервис | Бесплатно в месяц |
+|---|---|
+| Container Apps Services | 25 vCPU·ч + 50 ГБ·ч |
+| Container Apps Jobs | 5 vCPU·ч + 10 ГБ·ч |
+| Object Storage | 15 ГБ хранения · 10 ТБ исходящего трафика · 100 000 операций записи · 1 000 000 чтений |
+
+Всё — на организацию целиком, остаток не переносится на следующий месяц.
+
+### 3. Object Storage — закрывает P0 проекта бесплатно
+
+| Что | Значение |
+|---|---|
+| Endpoint | `https://s3.cloud.ru`, регион `ru-central-1` |
+| Протокол | обычный S3 — `restic` и `aws-cli` работают штатно |
+| Создание бакета | `aws s3 mb s3://<bucket> --endpoint-url https://s3.cloud.ru` |
+| Классы хранения | `STANDARD`, `COLD`, `ICE`, `SINGLE` (заголовок `X-Amz-Storage-Class`) |
+| Версионирование | поддерживается полностью |
+| Lifecycle | `Expiration` и `NoncurrentVersionExpiration` — да; **`Transition` (автосмена класса) заявлен, но НЕ работает** |
+
+🔴 **S3-ключи — третий, отдельный секрет**, не IAM-ключ и не ключ Foundation Models:
+
+- `AWS Access Key ID` = **`<tenant_id>:<key_id>`**, `AWS Secret Access Key` = Key Secret;
+- `tenant_id` — из личного кабинета: Хранение данных → Object Storage → Параметры работы с API;
+- ключ выдаётся только через личный кабинет, API для генерации нет.
+
+**Вероятная причина прошлой ошибки `CreateBucket AccessDenied`** (сентябрь): не хватало роли.
+Полные права на операции хранилища дают `s3e.admin`, роль с действием `s3e.tenant.edit`, либо
+«Администратор проекта». Документация не привязывает код ошибки к роли прямо — перед следующей
+попыткой проверить роль у того аккаунта, которым выпущен ключ.
+
+**Экономика для задачи «вторая копия фотографий Immich вне дома» (~9 ГБ):**
+9 ГБ меньше 15 ГБ бесплатного хранения, разовая заливка 9 ГБ несопоставимо меньше 10 ТБ
+бесплатного трафика, операций на порядки меньше бесплатных.
+**Сценарий укладывается в бесплатный тариф целиком.**
+⚠️ Версионирование без `NoncurrentVersionExpiration` тихо накопит платный объём — старые
+версии тарифицируются как обычное хранение.
+
+Цены сверх бесплатного (официальный тариф, договор `260619` от 29.06.2026, без НДС):
+STANDARD 1.5075 ₽/ГБ·мес, SINGLE 0.93, COLD 0.8025, ICE 0.40125; исходящий трафик сверх
+10 ТБ — 0.96 ₽/ГБ. У COLD и ICE объект тарифицируется не менее чем 128 КБ.
+
+### 4. Foundation Models
+
+- База: `https://foundation-models.api.cloud.ru/v1`, OpenAI-совместимый.
+- В официальной спецификации **ровно два метода**: `GET /v1/models` и `POST /v1/chat/completions`.
+  **Метода баланса или квоты нет.**
+- `CLOUDRU_FM_API_KEY` — **отдельный ключ сервисного аккаунта** с областью «Foundation Models»,
+  выпускается в личном кабинете. Это не IAM-ключ и не S3-ключ.
+- Записанная в проекте ошибка `chat 402` объясняется, скорее всего, окончанием акционной
+  бесплатной раздачи моделей, а не исчерпанием тарифной квоты: фиксированного free tier у FM
+  в документации нет, бесплатные периоды были акциями без формальной даты окончания.
+
+**Итого три независимых секрета Cloud.ru**, у каждого своя область и своё место выдачи:
+IAM `keyId`/`secret` (есть, бессрочный, в Credential Manager), S3 Key ID/Secret (ещё нет),
+FM API key (есть). Хранить раздельными записями, не пытаться переиспользовать один.
+
+---
+
+### EN summary (billing, storage, models)
+
+Consumption needs **three** mandatory parameters, and the missing one was `agreement_id`, not the
+dates: `GET https://organization.api.cloud.ru/v1/consumption?agreement_id=<uuid>&start_date=...&end_date=...`
+returns 200, verified on the owner account, which already shows GigaChat-2-Max usage. The
+agreement itself comes from `GET /v3/agreements`. **No API returns the remaining free-tier
+allowance** — neither a field nor an endpoint exists, so an alert must hold the documented limits
+itself and subtract measured consumption.
+
+Object Storage speaks plain S3 at `https://s3.cloud.ru` (region `ru-central-1`), so `restic` works
+unchanged. Its free tier — **15 GB of storage, 10 TB egress, 100k write and 1M read operations per
+month, permanently** — covers the project P0 entirely: the ~9 GB Immich library fits with room to
+spare, making an off-site copy of the family photos free. Storage keys are a **separate** secret
+from the IAM key: Access Key ID is `<tenant_id>:<key_id>`, issued only through the console, and
+bucket creation needs the `s3e.admin` / `s3e.tenant.edit` / project-admin role — the likely cause
+of the earlier `CreateBucket AccessDenied`. Lifecycle `Transition` is advertised but does not work,
+and versioning without `NoncurrentVersionExpiration` silently accrues billable storage.
+
+Foundation Models exposes exactly two methods and no balance endpoint; its key is a third,
+separate service-account secret.

@@ -4,7 +4,6 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Jetson%20Nano%204GB%20·%20ARM64-76B900)
-![Services](https://img.shields.io/badge/containers-13%20up-blue)
 ![Docs](https://img.shields.io/badge/docs-RU%20%2F%20EN-informational)
 
 > 🇷🇺 Семейное облако на NVIDIA Jetson Nano 2019 года: фотографии, файлы, контакты и
@@ -19,6 +18,21 @@
 Everything here was verified by a live command, and the measurement date is stated. Mistakes
 and retracted diagnoses stay in the docs, together with how they were caught.
 
+## Start here / С чего начать
+
+This repository is the **source of evidence and implementation**, not a one-click NAS product.
+Choose the entry point that fits what you want to learn:
+
+| Audience | Start with | What you will find |
+|---|---|---|
+| Builders and reviewers on GitHub | [Architecture](docs/03_ARCHITECTURE.md) · [decisions](docs/decisions/ADR-0007-node-model-jetson-sor-cloud-edge.md) · [quality gate](docs/32_QUALITY_GATE.md) | Code, decisions, setup limits, failure reports, and reproducible checks |
+| DEV Community readers | [DEV article brief](docs/articles/DEV_ARTICLE_BRIEF.md) | An English story about a 4 GB Jetson, free resources, measured trade-offs, and failures; article in preparation |
+| Хабр / Habr readers | [Published Part 1](https://habr.com/ru/articles/1062914/) · [Part 2 plan](docs/articles/HABR_PART2_ARTICLE_PLAN_2026-09.md) | Русская история домашнего облака и план продолжения |
+
+The [publication map](docs/articles/PUBLICATION_CHANNELS.md) explains what belongs on each
+platform and what still needs verification. / [Карта публикаций](docs/articles/PUBLICATION_CHANNELS.md)
+разделяет задачи GitHub, DEV.to и Хабра.
+
 ---
 
 ## Состояние на 2026-09-19 / State as of 2026-09-19
@@ -31,7 +45,7 @@ and retracted diagnoses stay in the docs, together with how they were caught.
 | Контейнеры / Containers | **13 up, healthy**, failed units 0 (live 2026-09-19, after stage C) |
 | Этапы A–C / Stages A–C | **on device 2026-09-19**: host layout + SSD auto-recovery fixed; restic config backup on HDD (daily, restore drill OK); NAS API JWT + roles, no `CORS *`; gateway service token, non-root |
 | В git, ждёт «деплой» / In git, awaiting deploy | E2 GigaChat quota alert; D3 external watchdog on Cloud.ru ([runbook](docs/plans/DEPLOY_D3_WATCHDOG_2026-09.md)) |
-| Telegram-бот + качалка / Telegram bot + downloader | **owner priority** (son's request): specs approved 2026-09-19 ([bot](docs/superpowers/specs/2026-09-19-telegram-family-bot-design.md), [downloader](docs/superpowers/specs/2026-09-19-home-downloader-design.md)); **on device 2026-09-19 17:03 UTC** — aria2 + `@бобик` in Telegram (group «Боровские» + DMs), GigaChat questions; 14 containers; [runbook](docs/plans/DEPLOY_DOWNLOADER_2026-09.md) |
+| Telegram-бот + качалка / Telegram bot + downloader | **on device 2026-09-19 17:03 UTC** — aria2 + `@бобик` in Telegram, GigaChat questions; 14 containers; [runbook](docs/plans/DEPLOY_DOWNLOADER_2026-09.md). Voice recognition is a later experiment, not part of this result. |
 | Immich | library **~13 ГБ** on SSD; **L1 copy on HDD** `/mnt/hdd2tb/backups/immich` **13 ГБ** + timer |
 | Nextcloud | live (family) |
 | SSD `/mnt/storage` | 229 ГБ, ~6 % used (photos grow slowly) |
@@ -73,7 +87,7 @@ and retracted diagnoses stay in the docs, together with how they were caught.
 ```
    Интернет / Internet
           │
-   ┌──────┴───────┐  VPS (Frankfurt) · 95.163.176.103 · borovskoy.dynv6.net
+   ┌──────┴───────┐  VPS · network edge
    │  nginx       │  наружу открыты только 22, 443, 40568/udp
    │  AmneziaWG   │  сервисные порты — ТОЛЬКО из VPN
    └──────┬───────┘
@@ -152,11 +166,10 @@ mandatory** — a database on microSD will not survive.
 [`SECURITY.md`](SECURITY.md)
 
 **Куда идём / Where next**
-[`31_MASTER_PLAN`](docs/31_MASTER_PLAN.md) — **сводный план**: роли узлов, сеть, покупки ·
-[`30_NEXT_LEAP`](docs/30_NEXT_LEAP.md) — следующий рывок: память, ответы и голос дома ·
-[`29_COMPUTE_AND_LLM_ROADMAP`](docs/29_COMPUTE_AND_LLM_ROADMAP.md) — вычисления, Kaggle, локальные модели ·
-[`ROADMAP_STEP2`](docs/plans/ROADMAP_STEP2_2026-08.md) ·
-[`POST_HABR_FEEDBACK`](docs/plans/POST_HABR_FEEDBACK_2026-08.md) — разбор критики читателей
+[`DEVELOPMENT_PLAN_2026-09_SBER_ERA`](docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md) — current development plan ·
+[`ADR-0007`](docs/decisions/ADR-0007-node-model-jetson-sor-cloud-edge.md) — accepted node model ·
+[`Kaggle`](docs/integrations/kaggle/README.md) — experimental preparation, not production ·
+[`VOICE_MESSAGES_RESEARCH`](docs/research/VOICE_MESSAGES_RESEARCH_2026-09-20.md) — voice recognition research, not deployment
 
 **Как это делалось / How it was built**
 [`20_AGENT_OPERATING_MODEL`](docs/20_AGENT_OPERATING_MODEL.md) — работа с ИИ-агентами ·
@@ -169,7 +182,8 @@ mandatory** — a database on microSD will not survive.
 🇷🇺
 - ✅ Наружу на VPS открыты **только** 22, 443 и 40568/udp. Сервисы — только через VPN.
 - ✅ Секретов в git нет; история очищена, пароли ротированы (2026-06-28).
-- ✅ Фотографии наружу не уходят: `LLM_ALLOW_IMAGE_ANALYSIS=false`.
+- ✅ Анализ семейных фото внешней LLM выключен: `LLM_ALLOW_IMAGE_ANALYSIS=false`.
+  Отправленные через Telegram медиа проходят через инфраструктуру Telegram.
 - ✅ Свободные вопросы уходят к внешней модели **только по явному позывному** и после
   редактирования персональных данных.
 - 🟠 **Внутри домашней LAN сегментации нет** — любой, кто знает пароль Wi-Fi, видит сервисы.
@@ -178,7 +192,8 @@ mandatory** — a database on microSD will not survive.
 🇬🇧
 - ✅ Only 22, 443 and 40568/udp are world-reachable; services are VPN-only.
 - ✅ No secrets in git; history rewritten, passwords rotated.
-- ✅ Photos never leave: `LLM_ALLOW_IMAGE_ANALYSIS=false`.
+- ✅ Family photos are not sent to an external LLM: `LLM_ALLOW_IMAGE_ANALYSIS=false`.
+  Media submitted through Telegram still transit Telegram's infrastructure.
 - ✅ Free-form questions leave only on an explicit callsign, after PII redaction.
 - 🟠 **No segmentation inside the home LAN** — the Wi-Fi password is the real perimeter.
 - 🟠 Self-signed TLS, issued for a single address.
@@ -190,20 +205,23 @@ mandatory** — a database on microSD will not survive.
 🇷🇺 Список нужен, чтобы не обещать лишнего:
 
 - **Не готовый продукт.** Это домашний сервер одной семьи, опубликованный целиком.
-- **GPU Jetson не используется** — CUDA 10.2 против требуемых 11/12. Это структурное
-  ограничение платформы, а не недоделка. Machine learning выносится на другой узел.
-- **Off-site бэкап фото пока не сделан** — БД (фаза 1) уже реплицируется на Vostro,
-  фото Immich (~6 ГБ, фаза 2) — главный открытый долг.
+- **Локальная LLM не развёрнута.** GigaChat используется через шлюз. GPU Jetson не
+  используется сервисами в рабочем контуре; локальное распознавание речи исследуется отдельно.
+- **Off-site бэкап фото пока не сделан.** Копия Immich на HDD находится в том же доме;
+  она не заменяет внешнюю копию.
 - **Высокой доступности нет.** Одна плата, один блок питания.
 
-🇬🇧 The same list: not a product, the Jetson GPU is unusable (CUDA 10.2 vs 11/12 required),
-no off-site backup yet, no high availability.
+🇬🇧 Not a packaged product or a local LLM server. The Jetson GPU is not used by production
+services; local speech recognition is under investigation. The Immich HDD copy is on-site,
+not an off-site backup. There is no high availability.
 
 ---
 
 ## Статьи / Articles
 
-- 🇷🇺 [Черновик статьи для Habr](docs/articles/habr_article_ru.md)
+- 🇷🇺 [Опубликованная статья на Хабре](https://habr.com/ru/articles/1062914/) · [план части 2](docs/articles/HABR_PART2_ARTICLE_PLAN_2026-09.md)
+- 🇬🇧 [DEV article brief](docs/articles/DEV_ARTICLE_BRIEF.md) — in preparation, not published
+- [Publication channels / Каналы публикации](docs/articles/PUBLICATION_CHANNELS.md)
 - 🇬🇧 [Hackaday.io project draft](docs/articles/hackaday_project_en.md)
 - Разбор критики читателей / reader feedback: [`POST_HABR_FEEDBACK`](docs/plans/POST_HABR_FEEDBACK_2026-08.md)
 

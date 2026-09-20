@@ -45,6 +45,7 @@ import httpx
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
+from app import dialog as dialog_mem
 from app.bobik_gate import (
     ADMIT_CHAT,
     ADMIT_CLARIFY,
@@ -79,6 +80,7 @@ _STATE: dict = {
     "llm_day": "",
     "llm_day_replies": 0,
     "llm_last_error": None,
+    "llm_failed_last": False,
     # ADR-0011 gate counters
     "gate_refuse": 0,
     "gate_clarify": 0,
@@ -322,7 +324,7 @@ def _count_llm_reply(user: str) -> None:
     by_user[user] = by_user.get(user, 0) + 1
 
 
-async def _ask_llm(question: str, user: str) -> str:
+async def _ask_llm(question: str, user: str, context: str = "") -> str:
     """Send a free-form question through the redaction gateway.
 
     This is the ONLY place in the bot that talks to the outside world. It goes
@@ -339,6 +341,9 @@ async def _ask_llm(question: str, user: str) -> str:
         # Who asked — the gateway bills and rate-limits per person.
         "user": user,
     }
+    if context:
+        # История разговора: шлюз фильтрует её вместе с вопросом (safe_full = redact(full)).
+        payload["context"] = context
     # ADR-0008: explicit provider (default gigachat). Empty setting → omit field,
     # gateway falls back to LLM_PROVIDER.
     _prov = (settings.talk_bot_llm_provider or "").strip().lower()
@@ -354,17 +359,21 @@ async def _ask_llm(question: str, user: str) -> str:
             detail = (r.json() or {}).get("detail", "")
         except Exception:
             pass
+        _STATE["llm_failed_last"] = True
         if "personal daily limit" in detail:
             return "🐕 У тебя закончился дневной лимит вопросов. Продолжим завтра."
         return "🐕 Общий лимит на сегодня исчерпан. Спросите завтра."
     if r.status_code != 200:
         _STATE["llm_last_error"] = f"HTTP {r.status_code}"
+        _STATE["llm_failed_last"] = True
         return f"🐕 Не смог спросить — шлюз ответил {r.status_code}."
 
     data = r.json()
     content = (data.get("content") or "").strip()
     if not content:
+        _STATE["llm_failed_last"] = True
         return "🐕 Ответ пришёл пустым."
+    _STATE["llm_failed_last"] = False
     return f"🐕 {content}"
 
 
@@ -414,26 +423,43 @@ async def gate_reply(question: str, user: str) -> str | None:
     return None
 
 
-async def ask(question: str, user: str) -> str:
+async def ask(question: str, user: str, context: str = "") -> str:
     """Вопрос в облако через шлюз; исключение превращается в вежливый ответ."""
     try:
-        reply = await _ask_llm(question, user)
+        reply = await _ask_llm(question, user, context=context)
     except Exception as exc:
         log.exception("bobik LLM call failed")
         _STATE["llm_last_error"] = str(exc)
         reply = "🐕 Не смог получить ответ — попробуйте позже."
+        _STATE["llm_failed_last"] = True
     _count_llm_reply(user)
     log.info("bobik LLM replied",
-             extra={"fields": {"user": user, "chars": len(question), "outbound": True}})
+             extra={"fields": {"user": user, "chars": len(question),
+                               "context_chars": len(context), "outbound": True}})
     return reply
 
 
-async def answer(question: str, user: str) -> str:
+def remember(dialog: tuple | None, question: str, reply: str) -> None:
+    """Запомнить пару «вопрос-ответ». Неудачный ответ шлюза в историю не пишем.
+    Инвариант: между записью флага в _ask_llm/ask и чтением здесь нет await — при
+    добавлении асинхронности флаг нужно передавать явно, иначе параллельные чаты
+    перепутают результаты."""
+    if not dialog or _STATE.get("llm_failed_last"):
+        return
+    key, speaker = dialog
+    dialog_mem.MEMORY.add(key, speaker, question)
+    dialog_mem.MEMORY.add(key, "Бобик", reply.lstrip("🐕").strip())
+
+
+async def answer(question: str, user: str, dialog=None) -> str:
     """Полный путь @бобик для текстового вопроса (без картинок)."""
     early = await gate_reply(question, user)
     if early is not None:
         return early
-    return await ask(question, user)
+    context = dialog_mem.MEMORY.history(dialog[0]) if dialog else ""
+    reply = await ask(question, user, context=context)
+    remember(dialog, question, reply)
+    return reply
 
 
 # ── OCS chat polling ─────────────────────────────────────────────────────────────
@@ -532,7 +558,9 @@ async def _handle_messages(token: str, messages: list[dict]) -> None:
             if _image_attachment(m):
                 await _handle_image_request(token, m, question, user)
                 continue
-            reply = await ask(question, user)
+            dialog = ("talk:%s" % token, m.get("actorDisplayName") or user)
+            reply = await ask(question, user, context=dialog_mem.MEMORY.history(dialog[0]))
+            remember(dialog, question, reply)
             await _send(token, reply, settings.talk_bot_llm_display_name)
 
 

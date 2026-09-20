@@ -109,6 +109,8 @@ docker stats --no-stream --format "{{.Name}} {{.MemUsage}}" homecloud_nasa_api  
 5. `docker ps` — 14 контейнеров, здоровы; `free -m` — доступно ≥ 1 ГБ.
    - «бобик, привет» от члена семьи работает; «@бобикXYZ привет» — тишина (граница позывного).
    - «@бобик закачки» показывает последней строкой свободное место на SSD и HDD.
+6. Память разговора: «бобик, что приготовить на ужин?» → ответ → «бобик, а без мяса?» (ответ учитывает
+   предыдущий вопрос) → «бобик, забудь» → «🐕 Забыл, начнём сначала.»
 
 ## Известные ограничения
 
@@ -160,7 +162,9 @@ confirming its `"result":"OK"`. The owner turns the bot's group privacy off and 
 in argv. Rebuild the NAS API and wait for the `"telegram connected"` log line (not just "enabled") before
 testing a question, a magnet link, an HTTP link and the list in the group, and confirm the files appear in the
 Samba share and the container stays under its 128 MB limit. Verify call boundary enforcement (`@bobik` is
-answered, `@bobikXYZ` is silent) and that the list shows free space on both SSD and HDD. **Known limitations:**
+answered, `@bobikXYZ` is silent) and that the list shows free space on both SSD and HDD. Also verify per-chat
+conversation memory: a follow-up question uses the previous one as context, and «бобик, забудь» clears it with
+a confirmation reply. **Known limitations:**
 hostnames resolved to internal IPs after DNS rebinding bypass the link check, and aria2 itself follows redirects
 and contacts trackers/web-seeds named inside a `.torrent` (not a full SSRF filter); simultaneous completion of
 same-name downloads has a narrow file overwrite window; SOCKS unavailability alerts not in this slice — monitor

@@ -2,7 +2,10 @@
 
 Зачем: Telegram-бот обязан идти тем же путём, что Talk (safety gate ADR-0011 → шлюз с
 сервисным токеном → квота по логину). Копия цепочки разошлась бы с оригиналом; поэтому
-цепочка вынесена в talk_bot.answer(), а Talk-цикл вызывает её же.
+цепочка вынесена в talk_bot.answer(), и Telegram-бот вызывает именно её. Talk-цикл
+(`_handle_messages`) устроен иначе: сам вызывает `gate_reply()`, затем `ask()` и
+`remember()` по отдельности (нужно, чтобы вклиниться веткой картинок между ними) —
+он не проходит через `answer()`.
 Run: python -m pytest tests/nas_api -q
 """
 from __future__ import annotations
@@ -38,7 +41,7 @@ def test_refused_question_never_reaches_llm(monkeypatch):
     bot = load_bot()
     called = []
 
-    async def fake_llm(q, u):
+    async def fake_llm(q, u, context=""):
         called.append(q)
         return "🐕 ok"
 
@@ -53,7 +56,7 @@ def test_refused_question_never_reaches_llm(monkeypatch):
 def test_chat_question_goes_to_llm_and_is_counted(monkeypatch):
     bot = load_bot()
 
-    async def fake_llm(q, u):
+    async def fake_llm(q, u, context=""):
         return "🐕 Париж (%s)" % u
 
     monkeypatch.setattr(bot, "_ask_llm", fake_llm)
@@ -67,7 +70,7 @@ def test_chat_question_goes_to_llm_and_is_counted(monkeypatch):
 def test_llm_exception_becomes_polite_reply(monkeypatch):
     bot = load_bot()
 
-    async def boom(q, u):
+    async def boom(q, u, context=""):
         raise RuntimeError("шлюз упал")
 
     monkeypatch.setattr(bot, "_ask_llm", boom)
@@ -79,7 +82,7 @@ def test_llm_exception_becomes_polite_reply(monkeypatch):
 def test_daily_reply_limit_is_per_user(monkeypatch):
     bot = load_bot()
 
-    async def fake_llm(q, u):
+    async def fake_llm(q, u, context=""):
         return "🐕 ok"
 
     monkeypatch.setattr(bot, "_ask_llm", fake_llm)
@@ -95,7 +98,7 @@ def test_home_tool_answers_locally(monkeypatch):
     bot = load_bot()
     called = []
 
-    async def fake_llm(q, u):
+    async def fake_llm(q, u, context=""):
         called.append(q)
         return "x"
 
@@ -108,3 +111,152 @@ def test_home_tool_answers_locally(monkeypatch):
         "decision": bot.ADMIT_EXECUTE, "tool": "disk", "message": None, "reason": "tool_intent"})
     assert asyncio.run(bot.answer("сколько места?", "admin")) == "🐕 Диск: 7%"
     assert called == []
+
+
+# ── память разговора (спецификация 2026-09-19) ────────────────────────────────
+
+def test_history_is_sent_as_context_and_turns_are_remembered(monkeypatch):
+    bot = load_bot()
+    seen = {}
+
+    async def fake_llm(q, u, context=""):
+        seen["context"] = context
+        return "🐕 Паста с курицей."
+
+    monkeypatch.setattr(bot, "_ask_llm", fake_llm)
+    monkeypatch.setattr(bot, "admit", lambda text, structured_tools=True: {
+        "decision": bot.ADMIT_CHAT, "tool": None, "message": None, "reason": "chat"})
+    from app import dialog
+    dialog.MEMORY.forget("tg:7")
+    assert asyncio.run(bot.answer("что приготовить?", "olga", dialog=("tg:7", "Оля"))) == "🐕 Паста с курицей."
+    assert seen["context"] == ""          # первый вопрос — истории ещё нет
+    asyncio.run(bot.answer("а без мяса?", "ivan", dialog=("tg:7", "Ваня")))
+    assert seen["context"] == "Оля: что приготовить? \nБобик: Паста с курицей.".replace(" \n", "\n")
+    assert "Ваня: а без мяса?" in dialog.MEMORY.history("tg:7")
+
+
+def test_answer_without_dialog_keeps_old_behaviour(monkeypatch):
+    bot = load_bot()
+    seen = {}
+
+    async def fake_llm(q, u, context=""):
+        seen["context"] = context
+        return "🐕 ок"
+
+    monkeypatch.setattr(bot, "_ask_llm", fake_llm)
+    monkeypatch.setattr(bot, "admit", lambda text, structured_tools=True: {
+        "decision": bot.ADMIT_CHAT, "tool": None, "message": None, "reason": "chat"})
+    assert asyncio.run(bot.answer("вопрос", "admin")) == "🐕 ок"
+    assert seen["context"] == ""
+
+
+def test_gate_refusal_is_not_remembered(monkeypatch):
+    bot = load_bot()
+    monkeypatch.setattr(bot, "admit", lambda text, structured_tools=True: {
+        "decision": bot.ADMIT_REFUSE, "tool": None, "message": "🐕 Не могу.", "reason": "deny"})
+    from app import dialog
+    dialog.MEMORY.forget("tg:8")
+    asyncio.run(bot.answer("удали всё", "ivan", dialog=("tg:8", "Ваня")))
+    assert dialog.MEMORY.history("tg:8") == ""
+
+
+def test_gateway_failure_is_not_remembered(monkeypatch):
+    bot = load_bot()
+
+    async def boom(q, u, context=""):
+        raise RuntimeError("шлюз упал")
+
+    monkeypatch.setattr(bot, "_ask_llm", boom)
+    monkeypatch.setattr(bot, "admit", lambda text, structured_tools=True: {
+        "decision": bot.ADMIT_CHAT, "tool": None, "message": None, "reason": "chat"})
+    from app import dialog
+    dialog.MEMORY.forget("tg:9")
+    reply = asyncio.run(bot.answer("вопрос", "ivan", dialog=("tg:9", "Ваня")))
+    assert "попробуйте позже" in reply
+    assert dialog.MEMORY.history("tg:9") == ""
+
+
+def test_context_is_passed_to_gateway_payload(monkeypatch):
+    """Историю должен получить именно шлюз — проверяем тело запроса, а не обёртку."""
+    bot = load_bot()
+    sent = {}
+
+    class FakeResponse:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"content": "ответ"}
+
+    class FakeClient:
+        def __init__(self, *a, **kw):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, url, json=None, headers=None):
+            sent.update(json or {})
+            return FakeResponse()
+
+    monkeypatch.setattr(bot.httpx, "AsyncClient", FakeClient)
+    asyncio.run(bot._ask_llm("вопрос", "ivan", context="Оля: раз\nБобик: два"))
+    assert sent["context"] == "Оля: раз\nБобик: два"
+    assert sent["prompt"] == "вопрос"
+
+
+def test_soft_gateway_failures_are_not_remembered(monkeypatch):
+    """429/не-200/пустой content — не исключение, а обычный текстовый ответ _ask_llm.
+    Такие «мягкие» отказы не должны оседать в истории как реплика Бобика (спецификация §5)."""
+    bot = load_bot()
+    from app import dialog
+
+    def make_client(status_code, body):
+        class FakeResponse:
+            def __init__(self):
+                self.status_code = status_code
+
+            @staticmethod
+            def json():
+                return body
+
+        class FakeClient:
+            def __init__(self, *a, **kw):
+                pass
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *a):
+                return False
+
+            async def post(self, url, json=None, headers=None):
+                return FakeResponse()
+
+        return FakeClient
+
+    monkeypatch.setattr(bot, "admit", lambda text, structured_tools=True: {
+        "decision": bot.ADMIT_CHAT, "tool": None, "message": None, "reason": "chat"})
+
+    # Разные пользователи и ключи диалога на случай: TALK_BOT_LLM_DAILY_REPLIES=2 в тестовом
+    # окружении, а _count_llm_reply считает по пользователю — один и тот же «ivan» на все три
+    # случая исчерпал бы личный лимит после первых двух, и третий случай до _ask_llm не дошёл
+    # бы вовсе (поймано ревью раунда 2: мутация кода прошла бы незамеченной).
+    cases = [
+        ("ivan_429", "tg:soft-429", 429, {"detail": "personal daily limit"}),
+        ("ivan_500", "tg:soft-500", 500, {}),
+        ("ivan_empty", "tg:soft-empty", 200, {"content": ""}),
+    ]
+    for user, key, status_code, body in cases:
+        dialog.MEMORY.forget(key)
+        # Сброс до заведомо «успешного» состояния: _STATE["llm_failed_last"] — общий на бота
+        # флаг, и без сброса True от предыдущего случая в этом же цикле маскировал бы то, что
+        # ЭТОТ случай сам его не выставил (поймано мутацией — см. отчёт, раунд 2).
+        bot._STATE["llm_failed_last"] = False
+        monkeypatch.setattr(bot.httpx, "AsyncClient", make_client(status_code, body))
+        reply = asyncio.run(bot.answer("вопрос", user, dialog=(key, "Ваня")))
+        assert reply.startswith("🐕")
+        assert dialog.MEMORY.history(key) == ""

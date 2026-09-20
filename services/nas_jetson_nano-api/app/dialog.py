@@ -40,7 +40,8 @@ class DialogMemory:
         if not key or not text:
             return
         chat = self._fresh(key) or {"seen": self.clock(), "turns": []}
-        chat["turns"].append((speaker or "Кто-то", text))
+        speaker = (speaker or "Кто-то")[:40]
+        chat["turns"].append((speaker, text))
         del chat["turns"][: -self.max_turns]
         chat["seen"] = self.clock()
         self._chats[key] = chat

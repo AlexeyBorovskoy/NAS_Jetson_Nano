@@ -446,3 +446,4 @@ def test_downloads_are_not_remembered():
     asyncio.run(bot.handle_update(msg("бобик, скачай magnet:?xt=urn:btih:ABC")))
     asyncio.run(bot.handle_update(msg("бобик, закачки")))
     assert dialog.MEMORY.history(key) == ""
+    assert asked == []

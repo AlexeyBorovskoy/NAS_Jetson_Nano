@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **D3** external watchdog: `services/watchdog/` (VPS forced command `nas-liveness` + Cloud.ru job), 44 tests, runbook `docs/plans/DEPLOY_D3_WATCHDOG_2026-09.md`
 - Specs: Telegram family bot, D3 watchdog (`docs/superpowers/specs/`)
 - Specs: home downloader on the Jetson (aria2, revisions 1–5) — owner priority (son's request); first bot slice now covers downloads + GigaChat questions, photos later (`docs/superpowers/specs/2026-09-19-home-downloader-design.md`)
+- `@бобик` conversation memory: shared thread per Telegram group, own thread per private chat and per Talk room; 10 turns / 30 min idle, RAM only (no disk); "бобик, забудь" clears it (`docs/superpowers/specs/2026-09-19-bobik-dialog-memory-design.md`)
 
 ### Changed / Изменено
 - NAS API: JWT on every route except `/healthcheck`/login; family/owner roles; no `CORS *`

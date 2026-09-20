@@ -2,7 +2,10 @@
 
 Зачем: Telegram-бот обязан идти тем же путём, что Talk (safety gate ADR-0011 → шлюз с
 сервисным токеном → квота по логину). Копия цепочки разошлась бы с оригиналом; поэтому
-цепочка вынесена в talk_bot.answer(), а Talk-цикл вызывает её же.
+цепочка вынесена в talk_bot.answer(), и Telegram-бот вызывает именно её. Talk-цикл
+(`_handle_messages`) устроен иначе: сам вызывает `gate_reply()`, затем `ask()` и
+`remember()` по отдельности (нужно, чтобы вклиниться веткой картинок между ними) —
+он не проходит через `answer()`.
 Run: python -m pytest tests/nas_api -q
 """
 from __future__ import annotations

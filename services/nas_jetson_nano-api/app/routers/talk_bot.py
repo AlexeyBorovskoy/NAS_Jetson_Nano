@@ -80,6 +80,7 @@ _STATE: dict = {
     "llm_day": "",
     "llm_day_replies": 0,
     "llm_last_error": None,
+    "llm_failed_last": False,
     # ADR-0011 gate counters
     "gate_refuse": 0,
     "gate_clarify": 0,

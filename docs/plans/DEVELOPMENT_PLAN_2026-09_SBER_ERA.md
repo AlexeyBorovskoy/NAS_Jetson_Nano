@@ -370,6 +370,17 @@ Nextcloud/Immich в Cloud.ru как primary; K8s; Managed RAG по альбом�
     выкат — по «деплой», runbook `DEPLOY_DOWNLOADER_2026-09.md`.
 3b. **E2** ✅ git; **D3** ✅ git — оба ждут «деплой» (D3: сначала спайк в Cloud.ru, runbook §0).
 3c. Дальше без владельца: E5 (алерт расходов Cloud.ru — **до** выката D3 и E6), E1 (маршрутизация с учётом квоты Max, закрывает D5), E3 (`@бобик` «что сломалось?»), D2 (алерт после аварийной загрузки — важнее без ИБП), затем спайк E6.
+3d. **E10 — голосовые сообщения `@бобик`. Движок выбран владельцем 2026-09-20: Vosk small-ru.**
+    Основание — бейк-офф на самом Jetson (`docs/research/VOICE_BENCHMARK_JETSON_2026-09-20.md`):
+    RTF 0.35–1.25 против 1.38–9.95 у whisper.cpp tiny, WER 17.07 % против 62.20 % на 15 фразах
+    Golos (farfield), модель 46.2 МБ. Конвертация голосовых из OGG/Opus — `opus-tools`, не `ffmpeg`
+    (в 9× меньше места, в 4.7× быстрее). Не проверено и остаётся риском: качество на **живых**
+    голосах семьи (целевые фразы в бейк-оффе синтезированы `espeak-ng`) и поведение под памятью
+    Jetson при резидентной модели (244.8 МБ пик). Следующий шаг — спецификация среза: где живёт
+    распознавание (отдельный контейнер против процесса в API), лимит длины голосового, что делать
+    при неуверенном распознавании. ⚠️ Установка «по официальной инструкции» на Jetson не пройдёт:
+    `alphacephei.com` и апекс `github.com` с устройства недостижимы (TLS-таймаут), работают только
+    их CDN-поддомены и HuggingFace.
 4. **Owner:** D5 (smart routing) и D6 (окно Part B); `/start` в @bobik_borovskoy_bot для chat_id (D3).
 
 ## 12. EN summary
@@ -415,3 +426,4 @@ implemented in git (`90b52bc`) and awaits an owner-triggered deploy. Next: E5, E
 | 2026-09-19 | **E9** added — Telegram bot + home downloader, owner priority (son's request); specs approved through revisions 1–5 |
 | 2026-09-19 | **E9** implemented in git (`90b52bc`): aria2 downloader + first Telegram bot slice; awaiting deploy |
 | 2026-09-19 | **E9 deployed** on Jetson 17:03 UTC: end-to-end download + GigaChat checked, announcement sent to the family group; rule #13 identical |
+| 2026-09-20 | **E10 engine chosen — Vosk small-ru** for voice messages (owner, on the Jetson bake-off); stage H added earlier; HDD inventory partial after the ntfs-3g hang |

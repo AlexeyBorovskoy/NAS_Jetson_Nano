@@ -6,8 +6,15 @@
 
 ## Available materials
 
+For the current separation between GitHub, DEV Community, and Хабр, start with
+[`PUBLICATION_CHANNELS.md`](PUBLICATION_CHANNELS.md). The English DEV article is
+planned in [`DEV_ARTICLE_BRIEF.md`](DEV_ARTICLE_BRIEF.md); neither page is a published article.
+
 | File | Language | Purpose | Status |
 |---|---|---|---|
+| PUBLICATION_CHANNELS.md | EN/RU | What each public platform should explain | active plan |
+| DEV_ARTICLE_BRIEF.md | EN | Evidence-based DEV article structure | preliminary |
+| HABR_PART2_BRIEF.md | RU | Current angle for the second Habr article | preliminary |
 | habr_article_ru.md | RU | Черновик статьи для Habr / Habr article draft | draft / черновик |
 | habr_ready.md | RU | Habr article — clean paste for Markdown editor | ready |
 | habr_wysiwyg.html | RU | Habr article — HTML for WYSIWYG editor paste | ready |
@@ -41,7 +48,8 @@ See [reddit/](reddit/) folder:
 ## Статус публикаций / Publication status
 
 - Habr — Часть 1 / Part 1: **опубликовано / published** → https://habr.com/ru/articles/1062914/ (2026-07-25, 13K / 9 comments as of 2026-09-08)
-- Habr — Часть 2 plan: [`HABR_PART2_ARTICLE_PLAN_2026-09.md`](HABR_PART2_ARTICLE_PLAN_2026-09.md)
+- Habr — Часть 2: [актуальный предварительный бриф](HABR_PART2_BRIEF.md) · [ранний подробный план](HABR_PART2_ARTICLE_PLAN_2026-09.md)
 - Habr — Часть 2 / Part 2: в подготовке / in preparation (Шаг 2 — см. `docs/plans/POST_HABR_FEEDBACK_2026-08.md`)
+- DEV Community — article not published; [English brief](DEV_ARTICLE_BRIEF.md)
 - GitHub Pages: https://alexeyborovskoy.github.io/NAS_Jetson_Nano/articles/habr_article_ru.html
 - Подробнее / Details: [publication_status.md](publication_status.md)

@@ -300,3 +300,22 @@ the D3 watchdog, Docker DNS fixed. The conversation-memory branch is complete bu
 requires a Talk-cycle test (a mutation merging all six Talk rooms into one thread passes all 116 tests), one
 vacuous test fixed and a CHANGELOG line; the fix wave and the voice-message research were still running when the
 session stopped. Owner decisions recorded: token limits raised, «забудь» stays Telegram-only.
+
+## Память разговора — завершено в git 2026-09-20
+
+Ветка `feat/bobik-dialog` влита в `main` (`5ddd116`), 119 тестов API зелёные. Волна исправлений после
+финального ревью (Opus) прошла: добавлен тест Talk-цикла — контроллер проверил его двумя мутациями
+(подмена ключа на общий → слияние 6 комнат Talk в одну нить; удаление памяти из Talk-цикла) — обе падают,
+код восстановлен. Закрыты также пустой тест закачек и строка CHANGELOG.
+
+**На устройстве не выкачено.** Порядок выката (по «деплой»): `.env` → `LLM_USER_DAILY_TOKEN_LIMIT=60000`,
+`LLM_DAILY_TOKEN_LIMIT=250000` → **пересоздать** контейнер шлюза (`up -d`, не `restart`) → пересобрать NAS API
+→ проверка в группе (вопрос → уточнение → «бобик, забудь») → через сутки `curl -s :8090/v1/usage`.
+
+Решения владельца: лимиты подняты (замер 2026-09-20: 144 токена на вопрос без истории); «забудь» — только Telegram.
+Голосовые сообщения: исследование готово (`docs/research/VOICE_MESSAGES_RESEARCH_2026-09-20.md`), реализация не начата.
+
+### EN
+The conversation-memory branch is merged to `main` (`5ddd116`) after the final-review fix wave; the new Talk-cycle
+test was verified by the controller against two mutations. Not deployed yet — deploy raises the token limits,
+recreates the gateway container so it re-reads `.env`, rebuilds the NAS API and checks the flow in the family group.

@@ -358,17 +358,21 @@ async def _ask_llm(question: str, user: str, context: str = "") -> str:
             detail = (r.json() or {}).get("detail", "")
         except Exception:
             pass
+        _STATE["llm_failed_last"] = True
         if "personal daily limit" in detail:
             return "🐕 У тебя закончился дневной лимит вопросов. Продолжим завтра."
         return "🐕 Общий лимит на сегодня исчерпан. Спросите завтра."
     if r.status_code != 200:
         _STATE["llm_last_error"] = f"HTTP {r.status_code}"
+        _STATE["llm_failed_last"] = True
         return f"🐕 Не смог спросить — шлюз ответил {r.status_code}."
 
     data = r.json()
     content = (data.get("content") or "").strip()
     if not content:
+        _STATE["llm_failed_last"] = True
         return "🐕 Ответ пришёл пустым."
+    _STATE["llm_failed_last"] = False
     return f"🐕 {content}"
 
 
@@ -420,24 +424,25 @@ async def gate_reply(question: str, user: str) -> str | None:
 
 async def ask(question: str, user: str, context: str = "") -> str:
     """Вопрос в облако через шлюз; исключение превращается в вежливый ответ."""
-    failed = False
     try:
         reply = await _ask_llm(question, user, context=context)
     except Exception as exc:
         log.exception("bobik LLM call failed")
         _STATE["llm_last_error"] = str(exc)
         reply = "🐕 Не смог получить ответ — попробуйте позже."
-        failed = True
+        _STATE["llm_failed_last"] = True
     _count_llm_reply(user)
     log.info("bobik LLM replied",
              extra={"fields": {"user": user, "chars": len(question),
                                "context_chars": len(context), "outbound": True}})
-    _STATE["llm_failed_last"] = failed
     return reply
 
 
-def remember(dialog, question: str, reply: str) -> None:
-    """Запомнить пару «вопрос-ответ». Неудачный ответ шлюза в историю не пишем."""
+def remember(dialog: tuple | None, question: str, reply: str) -> None:
+    """Запомнить пару «вопрос-ответ». Неудачный ответ шлюза в историю не пишем.
+    Инвариант: между записью флага в _ask_llm/ask и чтением здесь нет await — при
+    добавлении асинхронности флаг нужно передавать явно, иначе параллельные чаты
+    перепутают результаты."""
     if not dialog or _STATE.get("llm_failed_last"):
         return
     key, speaker = dialog

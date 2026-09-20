@@ -203,3 +203,49 @@ def test_context_is_passed_to_gateway_payload(monkeypatch):
     asyncio.run(bot._ask_llm("вопрос", "ivan", context="Оля: раз\nБобик: два"))
     assert sent["context"] == "Оля: раз\nБобик: два"
     assert sent["prompt"] == "вопрос"
+
+
+def test_soft_gateway_failures_are_not_remembered(monkeypatch):
+    """429/не-200/пустой content — не исключение, а обычный текстовый ответ _ask_llm.
+    Такие «мягкие» отказы не должны оседать в истории как реплика Бобика (спецификация §5)."""
+    bot = load_bot()
+    from app import dialog
+
+    def make_client(status_code, body):
+        class FakeResponse:
+            def __init__(self):
+                self.status_code = status_code
+
+            @staticmethod
+            def json():
+                return body
+
+        class FakeClient:
+            def __init__(self, *a, **kw):
+                pass
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *a):
+                return False
+
+            async def post(self, url, json=None, headers=None):
+                return FakeResponse()
+
+        return FakeClient
+
+    monkeypatch.setattr(bot, "admit", lambda text, structured_tools=True: {
+        "decision": bot.ADMIT_CHAT, "tool": None, "message": None, "reason": "chat"})
+
+    cases = [
+        (429, {"detail": "personal daily limit"}),
+        (500, {}),
+        (200, {"content": ""}),
+    ]
+    for status_code, body in cases:
+        dialog.MEMORY.forget("tg:soft")
+        monkeypatch.setattr(bot.httpx, "AsyncClient", make_client(status_code, body))
+        reply = asyncio.run(bot.answer("вопрос", "ivan", dialog=("tg:soft", "Ваня")))
+        assert reply.startswith("🐕")
+        assert dialog.MEMORY.history("tg:soft") == ""

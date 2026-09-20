@@ -67,3 +67,111 @@ Unblocks: D3 watchdog job in Container Apps, E5 spend alert, E6 Immich ML spike.
 - Primary host Nextcloud/Immich in Cloud.ru.
 - Managed RAG over family photos.
 - Put Key ID/Secret / FM key in git.
+
+---
+
+## Проверенный доступ к платформе (2026-09-20) / Verified platform access
+
+> 🇷🇺 Всё ниже — **замер**, а не документация: каждая строка получена реальным запросом
+> 2026-09-20 с бессрочного ключа владельца. EN summary в конце раздела.
+
+### 1. Авторизация (работает)
+
+```
+POST https://iam.api.cloud.ru/api/v1/auth/token
+Content-Type: application/json
+{"keyId": "<KeyID>", "secret": "<Secret>"}
+→ 200, access_token (~1287 симв.), expires_in=3600
+```
+
+Ключи владельца **бессрочные**, лежат в Windows Credential Manager, ресурс `nas-cloudru-iam`
+(username = KeyID, password = Secret). В репозиторий и на устройство не попадают.
+
+🔴 **Ответ авторизации содержит `id_token`, а в нём — почта и телефон владельца.**
+Печатать тело ответа целиком нельзя никогда; выводить только длину токена и `expires_in`.
+Фильтровать все поля, оканчивающиеся на `_token`, а не только `access_token`.
+
+### 2. Container Apps
+
+| Что | Значение |
+|---|---|
+| Базовый URL | `https://containers.api.cloud.ru` |
+| ⛔ Неверно (имени не существует) | `containerapps.api.cloud.ru` — `curl` rc=6, not resolved |
+| Обязательный параметр | **`projectId=<uuid>` в query у каждого запроса** |
+| Рабочий путь | `GET /v1/containers?projectId=<uuid>` → **200**, `{"data": [], "total": "0"}` |
+| Где взять `projectId` | адресная строка `console.cloud.ru` (идентификаторы — вне git) |
+
+🔴 **Главная ловушка платформы: этот API отвечает `503` вместо `404` и вместо `400`.**
+Проверено перебором: без `projectId` рабочий путь `/v1/containers` даёт `503`; с `projectId`
+двенадцать путей (`jobs`, `container-jobs`, `tasks`, `executions`, `registries`, `secrets`,
+`volumes`, `domains` и др.) дают `503`, и только `containers` — `200`. Без токена те же пути
+дают `403 RBAC: access denied`, то есть авторизация проходит раньше маршрутизации.
+**Вывод: `503` от Cloud.ru НЕ означает «сервис недоступен». Он означает «я не понял запрос».**
+Повтор с задержками 0/5/15/30/60/90 с ничего не меняет — проверено, 12 попыток подряд.
+
+### 3. Биллинг и потребление
+
+| Что | Значение |
+|---|---|
+| Базовый URL | `https://organization.api.cloud.ru` |
+| ⛔ Неверно | `billing.api.cloud.ru` — хост живой, но это не API потребления |
+| Путь | `GET /v1/consumption` — без токена `403`, с токеном **`400`** (не хватает обязательных параметров) |
+| Документация | https://cloud.ru/docs/billing/ug/topics/api-ref_start, v2 — `api_consumptionv2` |
+
+### 4. Бесплатный тариф Container Apps (подтверждён официальной страницей 2026-09-20)
+
+Источник: https://cloud.ru/docs/container-apps-evolution/ug/topics/overview__free-tier
+
+- **Container Services:** 50 ГБ·ч RAM + 25 vCPU·ч в месяц.
+- **Container Jobs:** 10 ГБ·ч RAM + 5 vCPU·ч в месяц.
+- Лимиты — **на всю организацию**, не на контейнер; остаток **не переносится** на следующий месяц.
+- Container Jobs — не более **10 штук** на организацию.
+
+Практическое следствие: постоянно работающий контейнер съедает 25 vCPU·ч примерно за сутки.
+Для сторожа (D3) годится только задание, просыпающееся по расписанию, а не сервис.
+
+### 5. Отзыв собственного диагноза (как найдено)
+
+**Было записано** (`docs/research/IMMICH_ML_CLOUDRU_TRIAL_2026-09-20.md`, утро 2026-09-20):
+«Container Apps API систематически возвращает 503 на всех путях `/v1/`, сервис недоступен,
+пробный прогон невозможен». На этом основании были заморожены D3 и E6.
+
+**Факт:** диагноз неверен. Во-первых, запросы шли на **несуществующее имя хоста**
+`containerapps.api.cloud.ru`. Во-вторых, `503` у этой платформы — ответ по умолчанию на
+непонятный запрос, а не признак аварии. С правильным хостом и обязательным `projectId`
+API отвечает `200`.
+
+**Как найдено:** владелец спросил, во что упираются D3 и E6, раз все допуски выданы.
+Перепроверка заняла один запрос: `curl` к `containerapps.api.cloud.ru` вернул rc=6
+(имя не резолвится) — то есть утренний «503» физически не мог прийти оттуда.
+
+**Урок — повторение уже записанного в `CLAUDE.md`:** отрицательный результат не называет
+причину, он называет только себя. Симптом «сервис отвечает 503» был объяснён поломкой
+на стороне провайдера прежде, чем была проверена входная величина — существует ли вообще
+адрес, по которому стучались. В том же разборе было зафиксировано наблюдение, которое
+прямо указывало на ошибку: **«503 даёт даже заведомо неверный путь»**. Наблюдение верное,
+вывод из него сделан противоположный правильному.
+
+---
+
+### EN summary (verified access, 2026-09-20)
+
+Auth works: `POST https://iam.api.cloud.ru/api/v1/auth/token` with `{"keyId","secret"}` returns
+an hour-long `access_token`; the owner's keys never expire and live in Windows Credential Manager
+(`nas-cloudru-iam`). The auth response also carries an `id_token` holding the owner's e-mail and
+phone — never print that body.
+
+Container Apps live at `https://containers.api.cloud.ru` (the name `containerapps.api.cloud.ru`
+does not exist at all) and **require `projectId` as a query parameter on every call**:
+`GET /v1/containers?projectId=<uuid>` returns 200. The platform's key trap is that it answers
+**503 instead of 404 or 400** — a missing `projectId` or an unknown route both yield 503, so a
+503 here means "I did not understand the request", not "the service is down". Retrying with
+backoff changes nothing. Consumption/billing lives at `https://organization.api.cloud.ru`
+(`GET /v1/consumption`, 400 until the required parameters are supplied), not at
+`billing.api.cloud.ru`. Free tier, confirmed on the official page: Services 50 GB·h + 25 vCPU·h
+per month, Jobs 10 GB·h + 5 vCPU·h, org-wide, non-transferable, max 10 jobs.
+
+An earlier diagnosis in this repository — "the Container Apps API returns 503 everywhere, the
+service is unavailable" — is **withdrawn**: it was measured against a hostname that does not
+resolve, and it misread the platform's default error code. The evidence that would have caught
+it was already in that same document: even a deliberately wrong path returned 503.

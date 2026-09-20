@@ -97,8 +97,8 @@ def make(tg=None):
     api = mod.TgApi("TOKEN", base="https://tg.test", transport=httpx.MockTransport(tg.handler))
     asked = []
 
-    async def answer(q, user):
-        asked.append((q, user))
+    async def answer(q, user, dialog=None):
+        asked.append((q, user, dialog))
         return "🐕 ответ"
 
     dl = FakeDownloads()
@@ -184,7 +184,7 @@ def test_bad_link_explained():
 def test_question_goes_to_gigachat_path_with_login():
     mod, bot, tg, dl, asked = make()
     asyncio.run(bot.handle_update(msg("бобик, столица Франции?")))
-    assert asked == [("столица Франции?", "ivan")]
+    assert [a[:2] for a in asked] == [("столица Франции?", "ivan")]
     assert ("sendChatAction", {"chat_id": FAMILY, "action": "typing"}) in tg.sent
     assert tg.texts() == [(FAMILY, "🐕 ответ")]
 
@@ -387,7 +387,7 @@ def test_edited_message_with_bobik_is_answered_once():
     edited = {"update_id": 11, "edited_message": dict(first["message"], text="Бобик, я хочу есть")}
     asyncio.run(bot.handle_update(edited))
     asyncio.run(bot.handle_update(dict(edited, update_id=12)))   # правка ещё раз — не отвечаем повторно
-    assert asked == [("я хочу есть", "ivan")]
+    assert [a[:2] for a in asked] == [("я хочу есть", "ivan")]
 
 
 def test_answered_message_edited_is_not_answered_again():
@@ -396,7 +396,7 @@ def test_answered_message_edited_is_not_answered_again():
     m["message"]["message_id"] = 78
     asyncio.run(bot.handle_update(m))
     asyncio.run(bot.handle_update({"update_id": 13, "edited_message": dict(m["message"], text="Бобик, привет!")}))
-    assert asked == [("привет", "ivan")]
+    assert [a[:2] for a in asked] == [("привет", "ivan")]
 
 
 def test_poll_asks_for_edited_messages():
@@ -405,3 +405,44 @@ def test_poll_asks_for_edited_messages():
     asyncio.run(bot.poll_once())
     params = [b for m, b in tg.sent if m == "getUpdates"][0]
     assert "edited_message" in params["allowed_updates"]
+
+
+# ── память разговора (спецификация 2026-09-19) ────────────────────────────────
+
+def test_group_uses_one_key_and_real_speaker_names():
+    mod, bot, tg, dl, asked = make()
+    m1 = msg("бобик, что приготовить?", uid=SON)
+    m1["message"]["from"]["first_name"] = "Ваня"
+    m2 = msg("бобик, а без мяса?", uid=OWNER)
+    m2["message"]["from"]["first_name"] = "Алексей"
+    asyncio.run(bot.handle_update(m1))
+    asyncio.run(bot.handle_update(m2))
+    assert [a[2] for a in asked] == [("tg:%d" % FAMILY, "Ваня"), ("tg:%d" % FAMILY, "Алексей")]
+
+
+def test_private_chat_has_its_own_key():
+    mod, bot, tg, dl, asked = make()
+    asyncio.run(bot.handle_update(msg("привет", chat=OWNER, chat_type="private", uid=OWNER)))
+    assert asked[0][2][0] == "tg:%d" % OWNER
+
+
+def test_forget_clears_the_conversation():
+    mod, bot, tg, dl, asked = make()
+    from app import dialog
+    key = "tg:%d" % FAMILY
+    dialog.MEMORY.forget(key)
+    dialog.MEMORY.add(key, "Ваня", "что приготовить?")
+    asyncio.run(bot.handle_update(msg("бобик, забудь")))
+    assert dialog.MEMORY.history(key) == ""
+    assert asked == []
+    assert "Забыл" in tg.texts()[0][1]
+
+
+def test_downloads_are_not_remembered():
+    mod, bot, tg, dl, asked = make()
+    from app import dialog
+    key = "tg:%d" % FAMILY
+    dialog.MEMORY.forget(key)
+    asyncio.run(bot.handle_update(msg("бобик, скачай magnet:?xt=urn:btih:ABC")))
+    asyncio.run(bot.handle_update(msg("бобик, закачки")))
+    assert dialog.MEMORY.history(key) == ""

@@ -30,6 +30,7 @@ HELP = ("🐕 Я Бобик. Обращайтесь по имени — «боб
         "• .torrent-файл с подписью «@бобик скачай»\n"
         "• закачки — что качается и сколько места\n"
         "• отмени N — отменить закачку N\n"
+        "• забудь — начать разговор заново\n"
         "• любой другой вопрос — отвечу через GigaChat")
 STRANGER_TEXT = "🐕 Вы не в семейном списке — я отвечаю только своим."
 GREETING = "🐕 Гав! Я тут. Спросите что-нибудь или напишите «бобик, закачки»."
@@ -123,6 +124,8 @@ def route(text: str):
     m = re.match(r"отмени\s+(\d+)", low)
     if m:
         return "cancel", int(m.group(1))
+    if low.startswith("забудь"):
+        return "forget", None
     return "ask", text.strip()
 
 
@@ -254,9 +257,15 @@ class TelegramBot:
             await self._say(chat_id, await self.downloads.list_text(), mid)
         elif kind == "cancel":
             await self._say(chat_id, await self.downloads.cancel(arg), mid)
+        elif kind == "forget":
+            from app import dialog as dialog_mem
+            dialog_mem.MEMORY.forget("tg:%s" % chat_id)
+            await self._say(chat_id, "🐕 Забыл, начнём сначала.", mid)
         else:
+            speaker = (msg.get("from") or {}).get("first_name") or login
             await self.api.call("sendChatAction", chat_id=chat_id, action="typing")
-            await self._say(chat_id, await self.answer(arg, login), mid)
+            reply = await self.answer(arg, login, dialog=("tg:%s" % chat_id, speaker))
+            await self._say(chat_id, reply, mid)
 
     async def _stranger(self, msg: dict, chat: dict) -> None:
         uid = (msg.get("from") or {}).get("id")

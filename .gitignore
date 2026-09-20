@@ -100,3 +100,7 @@ DNS/
 # локальные env-файлы служб (шаблоны *.env.example остаются в git)
 config/*.env
 !config/*.env.example
+
+# Kaggle API token (заведён 2026-09-20): ключ только локально и в Credential Manager.
+# Документация ресурса — docs/integrations/kaggle/README.md (без секретов).
+kaggle/

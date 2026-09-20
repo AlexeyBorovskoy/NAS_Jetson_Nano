@@ -175,3 +175,82 @@ An earlier diagnosis in this repository — "the Container Apps API returns 503 
 service is unavailable" — is **withdrawn**: it was measured against a hostname that does not
 resolve, and it misread the platform's default error code. The evidence that would have caught
 it was already in that same document: even a deliberately wrong path returned 503.
+
+---
+
+## Карта API Container Apps и Jobs (2026-09-20, проверено)
+
+> 🇷🇺 Источник путей — исходный код официально рекомендованного Cloud.ru MCP-сервера
+> `github.com/Nick1994209/cloudru-containerapps-mcp` (на него ссылается туториал Cloud.ru
+> `container-apps__vibecode-django-photo-app-mcp-server`). Документация на сайте —
+> одностраничное приложение, её тело инструментам не отдаётся; код оказался надёжнее.
+> Ключевые пути **подтверждены живым запросом** с ключа владельца.
+
+### 🔴 Jobs живут в **`/v2`**, и версии перемешаны внутри одного сервиса
+
+Это и было причиной «503 на всех путях»: перебор шёл по `/v1`, где заданий нет вовсе.
+
+| Ресурс | Действие | Путь | Статус |
+|---|---|---|---|
+| Containers | список | `GET /v1/containers?projectId=` | ✅ 200 (замер) |
+| Containers | список | `GET /v2/containers?projectId=&pageSize=` | ✅ 200 (замер) |
+| Containers | создать | `POST /v2/containers/` | из кода |
+| Containers | пуск/стоп | `POST /v2/containers/{name}:start` / `:stop` | из кода |
+| Containers | логи | `GET /v2/containers/{name}/logs` | из кода |
+| **Jobs** | **список** | **`GET /v2/jobs?projectId=&pageSize=`** | ✅ **200 (замер)** |
+| **Jobs** | **создать** | **`POST /v2/jobs`** | из кода |
+| **Jobs** | **запустить** | **`POST /v2/jobs/{name}:execute`** | из кода |
+| **Jobs** | **статус запусков** | **`GET /v2/jobs/{name}/executions?projectId=&pageSize=`** | из кода |
+| Jobs | изменить / удалить | `PATCH` / `DELETE /v2/jobs/{name}?projectId=` | из кода |
+
+Несуществующий путь в `/v2` отвечает честным **404** (`/v2/registries` — замер), в отличие
+от `/v1`, где всё неизвестное превращается в `503`.
+
+### Что важно знать до проектирования
+
+| Вопрос | Ответ | Источник |
+|---|---|---|
+| **Встроенное расписание (cron)** | **НЕТ.** Ни страницы в документации, ни поля `schedule`/`cron`/`trigger` в структурах API. Задание запускается только вызовом `:execute` | оглавление `guides__container-jobs` + структуры `CreateJobRequest`/`PatchJobRequest` |
+| ⚠️ Ложный след | «Cron Job» у Cloud.ru есть, но это **другой продукт** — Cloud Container Engine (управляемый Kubernetes). К Container Jobs и бесплатному тарифу отношения не имеет | `cloud.ru/docs/cce/ug/topics/guides__workload-cron-jobs-create` |
+| Максимум одного запуска | **3600 с** (1 час) | `concepts__jobs` |
+| Одновременных запусков одного задания | не более 5 | `guides__job-run` |
+| Заданий на организацию | не более 10 | `overview__limitations` |
+| Минимальные ресурсы | **0.1 vCPU / 256 Ми** (шаги: 0.1/256, 0.2/512, 0.3/768, 0.5/1024, 1/4096) | код `ParseCPU` |
+| Откуда образ | Artifact Registry Cloud.ru — своего проекта или публичных реестров **внутри Cloud.ru**. Прямой Docker Hub / ghcr.io документацией не подтверждён | `concepts__container`, `guides__job-create` |
+| Переменные и секреты | `template.containers[].env` = `[{"name","value","type"}]`; значение может быть ссылкой на секрет из сервиса Secret Management. Точный enum для `type` не найден | `concepts__runtime` |
+| Статусы задания | `created → publishing → ready`, далее `suspended*`, `deleting/deleted`, `error` | `concepts__jobs-status` |
+| Статусы запуска | `creating → running → succeeded / failed / canceled` | там же |
+| Логи конкретного запуска Job | отдельного метода в клиенте нет (у Containers — есть). Основной сигнал — `executionStatus` | код `jobs.go` |
+| SSH внутрь | только для Container **Service**, не для Job: свой образ с `openssh-server`, `ssh -i key <name>.<project>@ssh.containers.cloud.ru -p 2222` | `guides__ssh-access` |
+
+### Следствие для D3 (внешний сторож)
+
+Расписания внутри сервиса нет, поэтому задание обязан кто-то будить снаружи. Это меняет
+исходный замысел D3: Cloud.ru перестаёт быть независимым наблюдателем, если будить его
+будет тот же VPS, за которым он в том числе должен присматривать. Решение по схеме
+запуска — за владельцем; варианты и цена каждого разобраны при постановке D3.
+
+Минимальная конфигурация сторожа (0.1 vCPU, 256 Ми, запуск раз в 15 минут по минуте)
+расходует около 0.1 vCPU·ч и 0.25 ГБ·ч в месяц — это единицы процентов бесплатного
+лимита Jobs (5 vCPU·ч и 10 ГБ·ч).
+
+---
+
+### EN summary (API map)
+
+Container **Jobs live under `/v2`**, not `/v1` — that alone explains the earlier "503 on every
+path": the probing was done in v1, which has no jobs at all. Confirmed live with the owner's
+key: `GET /v2/jobs?projectId=…` returns 200. Unknown paths under `/v2` answer a proper 404,
+while `/v1` turns everything unknown into 503. Jobs are created with `POST /v2/jobs`, run with
+`POST /v2/jobs/{name}:execute`, and their outcome is read from
+`GET /v2/jobs/{name}/executions`. Paths come from the source of the MCP server Cloud.ru's own
+tutorial recommends; the docs site is a JS application whose body tools cannot retrieve.
+
+**There is no built-in schedule**: no cron page in the docs and no `schedule`/`cron`/`trigger`
+field in the API structures. Cloud.ru's "Cron Job" belongs to a different product (managed
+Kubernetes) and does not apply here. So a job must be woken from outside — which changes the
+D3 design, since Cloud.ru stops being an independent observer if the waking is done by the very
+VPS it is meant to watch. Limits: one execution ≤ 3600 s, 5 concurrent runs per job, 10 jobs per
+organisation, smallest size 0.1 vCPU / 256 Mi. Images come from Cloud.ru's Artifact Registry;
+pulling straight from Docker Hub is not documented. A watchdog at the smallest size running a
+minute every 15 minutes costs a few percent of the free Jobs tier.

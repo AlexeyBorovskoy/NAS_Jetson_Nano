@@ -84,7 +84,8 @@ def main():
 
     # ── чистые функции, без сети ────────────────────────────────────────────
     cost, by_service, by_bucket = mod.summarize(CONSUMPTION_MIXED["consumptions"])
-    case("сумма cost по всем строкам верна (в этой выборке — 0)", cost == 0, cost)
+    case("деньги по всем строкам верны (в этой выборке ставки нулевые — 0)",
+         cost == 0, cost)
     case("группировка по servname — два сервиса, не три строки",
          set(by_service) == {"GigaChat-2-Max", "Container Apps Services"},
          sorted(by_service))
@@ -148,8 +149,11 @@ def main():
          "start_date=" in calls[2][1] and "end_date=" in calls[2][1], calls[2][1])
 
     case("poll() записал файл", os.path.exists(out), out)
-    case("ненулевой расход виден в снимке (Object Storage 12.5)",
-         state["total_cost"] == 12.5, state)
+    # 2026-09-21: прежде здесь ожидалось 12.5 — то есть СТАВКА тарифа.
+    # `cost` — цена за единицу, деньги = amount * cost = 20 ГБ * 12.5 = 250.
+    # Подробности и история дефекта — tests/unit/test_cloudru_cost_is_a_rate.py.
+    case("ненулевой расход виден в снимке (20 ГБ по ставке 12.5 = 250)",
+         state["total_cost"] == 250.0, state)
 
     with io.open(out, encoding="utf-8") as fh:
         raw_on_disk = fh.read()

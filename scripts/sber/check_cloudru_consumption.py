@@ -41,6 +41,20 @@ Foundation Models. Названия взяты из официальных ст�
 категория ниже ни разу не сматчится — это осознанный страховочный контур,
 а не то же самое, что точный учёт по категориям.
 
+🔴 ИСПРАВЛЕНО 2026-09-21: поле `cost` — это СТАВКА тарифа за единицу, а не
+начисленная сумма. Прежняя версия складывала столбец `cost` и завышала расход
+в ~123 раза: на живой выгрузке за сентябрь сумма `cost` = 953.34 ₽ при реально
+начисленных 7.72 ₽ (`amount` × ставка). Хуже завышения был второй дефект:
+условие тревоги `total_cost > 0` срабатывало от самого НАЛИЧИЯ тарифной
+строки — в выгрузке шесть строк Object Storage с `amount = 0` (бесплатный
+тариф) дали бы тревогу на пустом месте. Признак, по которому видно без
+разбора: у входных и генерируемых токенов GigaChat-2-Max стоит одинаковое
+466.67 — реальное потребление не совпадает до копейки, совпадают ставки.
+Найдено соседним проектом (доска, m0138), подтверждено здесь независимым
+замером с устройства 2026-09-21. Разделение полей: деньги считать по
+`amount`, бесплатный тариф — по `usefact` (у Object Storage `amount = 0`,
+а `usefact` показывает реальные ГБ и операции).
+
 Источник ключа на устройстве — открытый вопрос, решённый в задаче E5: ключи
 владельца лежат в Windows Credential Manager на ноутбуке (`nas-cloudru-iam`),
 это НЕ Jetson. Решение по умолчанию: отдельная пара ключей IAM для устройства
@@ -171,7 +185,12 @@ def summarize(consumptions):
     total_cost = 0.0
     for item in consumptions:
         name = str(item.get("servname") or item.get("sku") or "?")
-        cost = float(item.get("cost") or 0)
+        # 🔴 `cost` — СТАВКА тарифа за единицу, а не начисленная сумма.
+        # Деньги = amount * cost; `amount` — тарифицируемое количество,
+        # `usefact` — фактическое потребление (для бесплатного тарифа).
+        rate = float(item.get("cost") or 0)
+        amount = float(item.get("amount") or 0)
+        money = amount * rate
         usefact_raw = item.get("usefact")
         usefact = float(usefact_raw if usefact_raw is not None
                         else (item.get("amount") or 0))
@@ -179,7 +198,7 @@ def summarize(consumptions):
 
         srow = by_service.setdefault(name, {"cost": 0.0, "usefact": 0.0,
                                             "unit": unit, "count": 0})
-        srow["cost"] += cost
+        srow["cost"] += money
         srow["usefact"] += usefact
         if unit:
             srow["unit"] = unit
@@ -190,7 +209,7 @@ def summarize(consumptions):
         brow["usefact"] += usefact
         brow["count"] += 1
 
-        total_cost += cost
+        total_cost += money
     return total_cost, by_service, by_bucket
 
 

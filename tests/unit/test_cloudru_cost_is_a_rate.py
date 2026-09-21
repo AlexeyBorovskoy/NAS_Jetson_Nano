@@ -1,26 +1,45 @@
 #!/usr/bin/env python3
-"""E5: поле `cost` у Cloud.ru — СТАВКА тарифа, а не начисленная сумма.
+"""E5: деньги в биллинге Cloud.ru лежат в `amount`. Ни складывать ставки, ни умножать.
 
-ИСТОРИЯ ДЕФЕКТА (без неё проверка — балласт). До 2026-09-21 сборщик складывал
-столбец `cost` и считал это деньгами. На живой выгрузке за сентябрь 2026 это
-давало 953.34 ₽ при реально начисленных 7.72 ₽ — завышение в ~123 раза,
-потому что у токенов единица «млн шт»: 466.67 ₽ за МИЛЛИОН токенов, а
-израсходовано 0.014 миллиона.
+ИСТОРИЯ ДЕФЕКТА (без неё проверка — балласт). Одну выгрузку прочли неверно
+дважды подряд, обе версии успели побывать в коде или в рекомендации:
 
-Второй дефект был опаснее завышения: тревога `total_cost > 0` срабатывала от
-самого НАЛИЧИЯ тарифной строки. В выгрузке шесть строк Object Storage с
-`amount = 0` (всё в бесплатном тарифе) — они подняли бы тревогу на пустом
-месте, и её быстро научились бы не читать.
+    сумма `cost`            953.34 ₽   — сложение СТАВОК тарифа. Неверно.
+    сумма `amount * cost`     7.7222 ₽ — умножение денег на ставку второй раз.
+                                         Неверно, и эта версия была выкачена
+                                         и закреплена тестом.
+    сумма `amount`            0.0263 ₽ — ВЕРНО (0.0321 с НДС).
 
-Найдено соседним проектом (доска, m0138), подтверждено независимым замером с
-Jetson 2026-09-21. Данные ниже — та самая выгрузка, не выдуманная.
+За полтора месяца на счету израсходовано две с половиной копейки, а не 953 ₽
+и не 7.72 ₽.
 
-Разделение полей, проверенное на живых данных:
-  * `amount`  — тарифицируемое количество → ДЕНЬГИ = amount * cost;
-  * `usefact` — фактическое потребление → БЕСПЛАТНЫЙ ТАРИФ.
-У Object Storage `amount = 0`, а `usefact` показывает реальные 0.19 ГБ и
-операции: сложи их как деньги — получишь ноль, сложи как потребление —
-увидишь, сколько бесплатного тарифа съедено.
+СЕМАНТИКА ПОЛЕЙ, доказанная замером 2026-09-21 на 13 строках из 13:
+    usefact    — количество в единице из `unit` (млн шт, ГБ, тыс. шт);
+    cost       — ставка тарифа, рублей за единицу;
+    amount     — НАЧИСЛЕНО, рублей без НДС, ровно = usefact * cost;
+    amount_nds — начислено с НДС, ровно = amount * 1.22.
+
+Решающий довод — НДС: он лежит на `amount`. На количество НДС не начисляют,
+значит `amount` — денежная величина, а не «тарифицируемое количество», как
+здесь было записано в первой редакции этого файла.
+
+ПРИЗНАК, КОТОРЫЙ БЫЛ ПЕРЕД ГЛАЗАМИ И НЕ БЫЛ ИСПОЛЬЗОВАН: отношение
+`amount / usefact` у токенов даёт ровно 466.67 — то есть ставку. Значит
+`amount` уже произведение. Число стояло в собственной выгрузке, и его хватило
+бы, чтобы не выкатывать вторую неверную версию. Родня правилу проекта:
+объяснение появилось раньше, чем была проверена входная величина.
+
+⚠️ ЧЕГО ЭТОТ ТЕСТ НЕ ДОКАЗЫВАЕТ. Для Object Storage равенство
+`amount = usefact * cost` не проверено ничем: там `amount = 0`, и ноль
+умножается на что угодно. Что значит `usefact` для хранения — мгновенные ГБ,
+среднесуточные или ГБ·сутки — **неизвестно**: в день, когда в корзине лежало
+7.5 ГБ, биллинг показал 0.0656 и 0.1250. Расхождение в 60 раз не объяснено
+(указано соседним проектом, доска m0142). Поэтому сопоставление
+FREE_TIER_LIMITS по хранилищу остаётся НЕПРОВЕРЕННЫМ.
+
+Найдено соседним проектом (m0138), им же отозвано и исправлено (m0141),
+подтверждено здесь независимым замером с Jetson. Данные ниже — та самая
+выгрузка, не выдуманная.
 
 Запуск (идёт и на Jetson с Python 3.6):
     python3 tests/unit/test_cloudru_cost_is_a_rate.py
@@ -38,32 +57,34 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 COLLECTOR = os.path.join(HERE, "..", "..", "scripts", "sber",
                          "check_cloudru_consumption.py")
 
-# Живая выгрузка GET /v1/consumption за 2026-09-01…21, аккаунт владельца.
+# Живая выгрузка GET /v1/consumption, аккаунт владельца, замер 2026-09-21.
 LIVE_ROWS = [
     {"servname": "БЯМ GigaChat-2-Max входные токены", "unit": "млн шт",
-     "amount": 0.01446677, "usefact": 0.00003100, "cost": 466.67},
+     "amount": 0.01446677, "amount_nds": 0.01764946, "usefact": 0.00003100, "cost": 466.67},
     {"servname": "БЯМ GigaChat-2-Max генерируемые токены", "unit": "млн шт",
-     "amount": 0.00186668, "usefact": 0.00000400, "cost": 466.67},
+     "amount": 0.00186668, "amount_nds": 0.00227735, "usefact": 0.00000400, "cost": 466.67},
     {"servname": "БЯМ GigaChat3-10B-A1.8B входные токены", "unit": "млн шт",
-     "amount": 0.00997000, "usefact": 0.00099700, "cost": 10.0},
+     "amount": 0.00997000, "amount_nds": 0.01216340, "usefact": 0.00099700, "cost": 10.0},
     {"servname": "БЯМ GigaChat3-10B-A1.8B генерируемые токены", "unit": "млн шт",
-     "amount": 0.00002000, "usefact": 0.00000200, "cost": 10.0},
+     "amount": 0.00002000, "amount_nds": 0.00002440, "usefact": 0.00000200, "cost": 10.0},
     {"servname": "Объектное хранилище Стандартное", "unit": "ГБ",
-     "amount": 0.0, "usefact": 0.19066740, "cost": 0.0},
+     "amount": 0.0, "amount_nds": 0.0, "usefact": 0.19066740, "cost": 0.0},
     {"servname": "Объектное хранилище Исходящий трафик", "unit": "ГБ",
-     "amount": 0.0, "usefact": 0.01042504, "cost": 0.0},
+     "amount": 0.0, "amount_nds": 0.0, "usefact": 0.01042504, "cost": 0.0},
     {"servname": "Объектное хранилище Стандартное операции L", "unit": "тыс. шт",
-     "amount": 0.0, "usefact": 0.124, "cost": 0.0},
+     "amount": 0.0, "amount_nds": 0.0, "usefact": 0.124, "cost": 0.0},
     {"servname": "Объектное хранилище Стандартное операции H", "unit": "тыс. шт",
-     "amount": 0.0, "usefact": 0.030, "cost": 0.0},
+     "amount": 0.0, "amount_nds": 0.0, "usefact": 0.030, "cost": 0.0},
     {"servname": "Объектное хранилище Стандартное операции G", "unit": "тыс. шт",
-     "amount": 0.0, "usefact": 0.074, "cost": 0.0},
+     "amount": 0.0, "amount_nds": 0.0, "usefact": 0.074, "cost": 0.0},
     {"servname": "Объектное хранилище Стандартное операции P", "unit": "тыс. шт",
-     "amount": 0.0, "usefact": 0.494, "cost": 0.0},
+     "amount": 0.0, "amount_nds": 0.0, "usefact": 0.494, "cost": 0.0},
 ]
 
-REAL_TOTAL = 7.7222        # amount * ставка, сверено с соседним проектом
-BUGGY_TOTAL = 953.34       # сумма столбца cost — то, что считалось раньше
+REAL_TOTAL = 0.02632345       # сумма amount — деньги, взятые готовыми
+REAL_TOTAL_NDS = 0.03211461   # сумма amount_nds = amount * 1.22
+BUGGY_SUM_COST = 953.34       # сложение ставок — первая неверная версия
+BUGGY_AMOUNT_X_COST = 7.7222  # деньги * ставка — вторая неверная версия
 
 
 def load_module():
@@ -75,27 +96,45 @@ def load_module():
 
 def main():
     mod = load_module()
-    failures = 0
+    failed = [0]
 
     def case(title, ok, detail=""):
-        nonlocal_failures[0] += 0 if ok else 1
+        failed[0] += 0 if ok else 1
         print("%s %s%s" % ("OK  " if ok else "ПАДЕНИЕ", title,
                            ("  — %s" % detail) if detail else ""))
 
-    nonlocal_failures = [0]
+    # Сами данные — тоже проверка: если выгрузка перестанет сходиться,
+    # толкование полей придётся пересматривать, а не подгонять код.
+    prod_ok = sum(1 for r in LIVE_ROWS
+                  if abs(r["usefact"] * r["cost"] - r["amount"]) <= max(1e-9, abs(r["amount"]) * 1e-6))
+    case("на живых данных amount == usefact * cost",
+         prod_ok == len(LIVE_ROWS), "сошлось %d из %d" % (prod_ok, len(LIVE_ROWS)))
+
+    nds_ok = sum(1 for r in LIVE_ROWS
+                 if (abs(r["amount_nds"] - r["amount"] * 1.22) < 1e-6
+                     if r["amount"] else r["amount_nds"] == 0))
+    case("на живых данных amount_nds == amount * 1.22 (НДС на деньгах)",
+         nds_ok == len(LIVE_ROWS), "сошлось %d из %d" % (nds_ok, len(LIVE_ROWS)))
 
     total, by_service, by_bucket = mod.summarize(LIVE_ROWS)
 
-    case("деньги считаются как amount * ставка, а не суммой ставок",
-         abs(total - REAL_TOTAL) < 0.01, "получено %.4f, ожидалось %.4f" % (total, REAL_TOTAL))
+    case("деньги берутся из amount готовыми",
+         abs(total - REAL_TOTAL) < 1e-6,
+         "получено %.8f, ожидалось %.8f" % (total, REAL_TOTAL))
 
-    case("прежнее завышение в ~123 раза не воспроизводится",
-         abs(total - BUGGY_TOTAL) > 900, "получено %.2f, дефектное было %.2f" % (total, BUGGY_TOTAL))
+    case("сложение ставок (953.34) не воспроизводится",
+         abs(total - BUGGY_SUM_COST) > 900,
+         "получено %.6f" % total)
+
+    case("умножение денег на ставку (7.7222) не воспроизводится",
+         abs(total - BUGGY_AMOUNT_X_COST) > 7,
+         "получено %.6f" % total)
 
     free_only = [r for r in LIVE_ROWS if r["amount"] == 0]
     total_free, _, bucket_free = mod.summarize(free_only)
     case("строки бесплатного тарифа (amount=0) не поднимают денежную тревогу",
-         total_free == 0.0, "total_cost=%.6f по %d строкам" % (total_free, len(free_only)))
+         total_free == 0.0,
+         "total_cost=%.8f по %d строкам" % (total_free, len(free_only)))
 
     storage = bucket_free.get(("Объектное хранилище Стандартное", "ГБ"))
     case("usefact сохранён для учёта бесплатного тарифа",
@@ -103,17 +142,32 @@ def main():
          "хранилище: %s" % (storage["usefact"] if storage else "строки нет"))
 
     gmax = by_service.get("БЯМ GigaChat-2-Max входные токены")
-    case("разбивка по услуге тоже в деньгах, а не в ставках",
-         gmax is not None and abs(gmax["cost"] - 6.7512) < 0.01,
-         "получено %.4f, ставка была бы 466.67" % (gmax["cost"] if gmax else -1))
+    case("разбивка по услуге — деньги, а не ставка и не произведение",
+         gmax is not None and abs(gmax["cost"] - 0.01446677) < 1e-8,
+         "получено %.8f, ставка была бы 466.67" % (gmax["cost"] if gmax else -1))
+
+    case("НДС считается отдельным полем, а не домножением на лету",
+         gmax is not None and abs(gmax["cost_nds"] - 0.01764946) < 1e-8,
+         "получено %.8f" % (gmax["cost_nds"] if gmax else -1))
+
+    nds_total = sum(r["cost_nds"] for r in by_service.values())
+    case("сумма с НДС совпадает с выгрузкой",
+         abs(nds_total - REAL_TOTAL_NDS) < 1e-6,
+         "получено %.8f, ожидалось %.8f" % (nds_total, REAL_TOTAL_NDS))
 
     case("vCPU·ч и ГБ·ч не смешиваются: ключ by_bucket — (услуга, единица)",
          all(isinstance(k, tuple) and len(k) == 2 for k in by_bucket),
          "ключей: %d" % len(by_bucket))
 
-    failures = nonlocal_failures[0]
-    print("\nпадений: %d" % failures)
-    return 1 if failures else 0
+    no_usefact = [{"servname": "Без usefact", "unit": "ГБ", "amount": 5.0,
+                   "amount_nds": 6.1, "cost": 2.5}]
+    t2, s2, _ = mod.summarize(no_usefact)
+    case("строка без usefact: деньги верны, количество не подменяется деньгами",
+         t2 == 5.0 and s2["Без usefact"]["usefact"] == 0.0,
+         "деньги=%.2f, usefact=%.2f" % (t2, s2["Без usefact"]["usefact"]))
+
+    print("\nпадений: %d" % failed[0])
+    return 1 if failed[0] else 0
 
 
 if __name__ == "__main__":

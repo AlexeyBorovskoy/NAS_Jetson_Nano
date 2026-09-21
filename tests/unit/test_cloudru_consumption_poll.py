@@ -49,22 +49,28 @@ AGREEMENTS_OK = {"agreements": [{"id": "agr-fake-abc",
 # Реальность боевого аккаунта (задача E5, требование 4): GigaChat-2-Max уже
 # тратит квоту, и Container Apps Services сюда добавлены как второй сервис —
 # ответ должен корректно сгруппироваться, а не свалиться в одну кучу.
+# 🔴 2026-09-21: `amount` — это НАЧИСЛЕННЫЕ РУБЛИ (= usefact * cost), а не
+# количество. Прежняя редакция фикстуры клала в `amount` штуки и часы — такая
+# выгрузка от Cloud.ru прийти не может. Здесь всё в бесплатном тарифе:
+# ставка 0 → начислено 0, а количество живёт в `usefact`.
 CONSUMPTION_MIXED = {"consumptions": [
     {"sku": "giga-2-max", "servname": "GigaChat-2-Max", "resource_id": "r1",
-     "usedate": "2026-09-01", "amount": 100, "cost": 0, "unit": "token",
-     "usefact": 100},
+     "usedate": "2026-09-01", "amount": 0, "amount_nds": 0, "cost": 0,
+     "unit": "token", "usefact": 100},
     {"sku": "ca-svc-vcpu", "servname": "Container Apps Services",
-     "resource_id": "r2", "usedate": "2026-09-05", "amount": 3.5, "cost": 0,
-     "unit": "vCPU*hour", "usefact": 3.5},
+     "resource_id": "r2", "usedate": "2026-09-05", "amount": 0, "amount_nds": 0,
+     "cost": 0, "unit": "vCPU*hour", "usefact": 3.5},
     {"sku": "ca-svc-ram", "servname": "Container Apps Services",
-     "resource_id": "r3", "usedate": "2026-09-05", "amount": 4.0, "cost": 0,
-     "unit": "GB*hour", "usefact": 4.0},
+     "resource_id": "r3", "usedate": "2026-09-05", "amount": 0, "amount_nds": 0,
+     "cost": 0, "unit": "GB*hour", "usefact": 4.0},
 ]}
 
+# 20 ГБ по ставке 12.5 ₽/ГБ → начислено 250 ₽ (305 с НДС). Величины связаны
+# так же, как в живой выгрузке: amount = usefact * cost.
 CONSUMPTION_WITH_COST = {"consumptions": [
     {"sku": "os-storage", "servname": "Object Storage", "resource_id": "r4",
-     "usedate": "2026-09-10", "amount": 20, "cost": 12.5, "unit": "GB",
-     "usefact": 20},
+     "usedate": "2026-09-10", "amount": 250, "amount_nds": 305, "cost": 12.5,
+     "unit": "GB", "usefact": 20},
 ]}
 
 
@@ -150,9 +156,9 @@ def main():
 
     case("poll() записал файл", os.path.exists(out), out)
     # 2026-09-21: прежде здесь ожидалось 12.5 — то есть СТАВКА тарифа.
-    # `cost` — цена за единицу, деньги = amount * cost = 20 ГБ * 12.5 = 250.
+    # Деньги лежат готовыми в `amount`: 20 ГБ по ставке 12.5 = 250 ₽.
     # Подробности и история дефекта — tests/unit/test_cloudru_cost_is_a_rate.py.
-    case("ненулевой расход виден в снимке (20 ГБ по ставке 12.5 = 250)",
+    case("ненулевой расход виден в снимке (начислено 250)",
          state["total_cost"] == 250.0, state)
 
     with io.open(out, encoding="utf-8") as fh:

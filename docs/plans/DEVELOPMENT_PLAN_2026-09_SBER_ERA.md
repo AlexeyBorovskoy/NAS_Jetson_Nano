@@ -39,6 +39,7 @@
 | 2026-09-07 | FM chat (после пополнения) | ✅ 200 | `AUTH_PROBE_FM_KEY_SMOKE_2026-09-07.md` |
 | 2026-09-07 | GitVerse mirror `NAS_HOME` (HTTPS) | ✅ | |
 | 2026-09-08 | **Device:** Giga-2 cutover, `prefer_local=false`, Immich→HDD timer, giga-balance timer | ✅ device | |
+| 2026-09-22 | **P0 L1 Immich→HDD подтверждён замером** (таймер active, 13 G/13 G, sha256 3/3). Запись 21.09 «W2 не выкачен» отозвана. L2 S3 пуст | ✅ device | `CHECKPOINT_2026-09-22.md` |
 | 2026-09-08 | S3 + restic L2 | ❌ blocked | tenant_id / CreateBucket AccessDenied |
 | 2026-09-09 | F-01 fail-closed dumps на устройстве | ✅ device | `backup_databases.sh` |
 | 2026-09-18 | `audit_new` → Hardening Sprint H01–H16 | план | `docs/research/audit_new.md` |
@@ -359,6 +360,7 @@ Nextcloud/Immich в Cloud.ru как primary; K8s; Managed RAG по альбом�
 
 ## 11. Следующий шаг
 
+0. ~~P0 «Immich только на SSD»~~ — ✅ device 2026-09-22: W2 таймер в бою, 13 G HDD, sha256 3/3 (`CHECKPOINT_2026-09-22.md`). L2 S3 не возвращали.
 1. ~~Этап A~~ — ✅ git + device 2026-09-19.
 2. **Этап B** — ✅ git + **device** 2026-09-19 (B1, B2, B6). B3 (S3) — код готов, **отложен владельцем**; B4 Vostro pull остаётся; B5 закрыт (копии архива нет, риск принят).
 3. **Этап C** — ✅ git + **device** 2026-09-19 (кроме C9 — оставлен как есть по решению владельца).

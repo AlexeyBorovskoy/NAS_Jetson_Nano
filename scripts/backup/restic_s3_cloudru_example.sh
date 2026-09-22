@@ -21,6 +21,9 @@ set -euo pipefail
 : "${AWS_SECRET_ACCESS_KEY:?set AWS_SECRET_ACCESS_KEY}"
 
 export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-ru-central-1}"
+# Cloud.ru S3 rejects virtual-hosted buckets with HTTP 400.
+# restic/minio default lookup can be dns — force path-style.
+RESTIC_S3_OPTS=(-o s3.bucket-lookup=path -o "s3.region=${AWS_DEFAULT_REGION}")
 
 # Prefer DB dumps first — small, high value. Photos only after explicit OK.
 SRC_DUMPS="${SRC_DUMPS:-/mnt/storage/backups/database-dumps}"
@@ -31,7 +34,7 @@ if [[ ! -d "$SRC_DUMPS" ]]; then
 fi
 
 if [[ "${INIT:-0}" == "1" ]]; then
-  restic -r "$RESTIC_REPOSITORY" init
+  restic "${RESTIC_S3_OPTS[@]}" -r "$RESTIC_REPOSITORY" init
 fi
 
 ARGS=(backup --verbose)
@@ -44,12 +47,12 @@ if [[ -n "$SRC_EXTRA" ]]; then
   ARGS+=("$SRC_EXTRA")
 fi
 
-echo "restic ${ARGS[*]}"
-restic -r "$RESTIC_REPOSITORY" "${ARGS[@]}"
+echo "restic ${RESTIC_S3_OPTS[*]} ${ARGS[*]}"
+restic "${RESTIC_S3_OPTS[@]}" -r "$RESTIC_REPOSITORY" "${ARGS[@]}"
 
 if [[ "${PRUNE:-0}" == "1" ]]; then
-  restic -r "$RESTIC_REPOSITORY" forget --keep-daily 7 --keep-weekly 4 --keep-monthly 6 --prune
+  restic "${RESTIC_S3_OPTS[@]}" -r "$RESTIC_REPOSITORY" forget --keep-daily 7 --keep-weekly 4 --keep-monthly 6 --prune
 fi
 
 echo "snapshots:"
-restic -r "$RESTIC_REPOSITORY" snapshots
+restic "${RESTIC_S3_OPTS[@]}" -r "$RESTIC_REPOSITORY" snapshots

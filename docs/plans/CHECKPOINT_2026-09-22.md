@@ -1,7 +1,7 @@
-# Точка проекта 2026-09-22 — P0 (вторая копия Immich) закрыт на HDD
+# Точка проекта 2026-09-22 — P0 L1 закрыт; restic path-style; туннель Jetson лёг
 
 > Устройство не перенастраивалось. VPN/Amnezia не трогались.  
-> Замеры: SSH `jetson-via-vps`, 2026-09-22.
+> Замеры: SSH `jetson-via-vps` (утро); днём VPS жив, `:10022` нет.
 
 ## P0 закрыт (L1, не S3)
 
@@ -37,8 +37,45 @@ Checkpoint 2026-09-21 утверждал: фото Immich **в одном экз
 - Этот файл — текущая точка.
 - `CLAUDE.md`, `DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`, `docs/integrations/sber/CLOUD_RU.md` — статус P0.
 
-## Следующее (не P0)
+## restic S3 400 (день)
 
-1. Причина restic S3 `400` **с Jetson** (если снова понадобится off-site).  
-2. Выкат E9 / D3 по «деплой».  
-3. `usefact` Object Storage — непроверено.
+| Факт | |
+|------|--|
+| restic на Jetson | 0.19.1 linux/arm64 `/usr/local/bin/restic` |
+| Ключ | `AWS_ACCESS_KEY_ID` LEN=69, 1 `:` (форма `tenant:keyId`) |
+| Репозиторий в `.env` | нет `RESTIC_REPOSITORY`; сборка `s3:https://s3.cloud.ru/nas-immich-offsite/immich` |
+| Префикс `immich/` | пуст (удаление 21.09) |
+| Гипотеза 400 | Cloud.ru path-style; dns/virtual-host → 400. В git: `-o s3.bucket-lookup=path` |
+| Живой A/B probe | **не выполнен** — туннель Jetson уже мёртв |
+| Коммит | `5c7258b` `restic_s3_cloudru_probe.sh` + example |
+
+## Сеть (день)
+
+| Узел | Статус |
+|------|--------|
+| VPS `95.163.176.103` | SSH OK; `amnezia-xray` / `amnezia-awg2` Up |
+| VPS `:10022` Jetson reverse | **не слушает** |
+| VPS `:10222` Vostro reverse | **не слушает** |
+| `ssh jetson-via-vps` | fail (stdio forwarding) |
+| `ssh admin@192.168.0.50` с этой станции | timeout (станция не в домашней LAN) |
+| Amnezia | не трогали |
+
+Из дома Jetson = `192.168.0.50`. Не из дома = только пока жив reverse на VPS.
+
+## Зеркала git
+
+| Remote | URL | 22.09 |
+|--------|-----|--------|
+| origin (канон) | GitHub `NAS_Jetson_Nano` HTTPS | `5c7258b` запушен |
+| gitverse | `git@gitverse.ru:Alexey_Borovskoy/NAS_HOME.git` SSH | **таймаут :22** при пуше `ee262ea` и повтор |
+
+Не «нельзя сделать зеркало», а **с этой сети SSH на gitverse.ru:22 не проходит**. Канон — GitHub; GitVerse — зеркало, когда порт жив (`git push gitverse main` и `main:master`).
+
+HEAD на момент точки: после коммита этой правки.
+
+## Следующее
+
+1. Из дома: поднять Jetson reverse (`autossh` / юнит туннеля) — без Amnezia.  
+2. На Jetson: `sudo bash scripts/backup/restic_s3_cloudru_probe.sh`  
+3. `git push gitverse main; git push gitverse main:master` когда :22 GitVerse отвечает  
+4. E9/D3 — по «деплой»

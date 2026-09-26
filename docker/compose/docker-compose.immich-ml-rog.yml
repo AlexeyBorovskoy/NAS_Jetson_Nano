@@ -1,27 +1,56 @@
-# Immich ML worker for Windows ROG (RTX 3050 Ti) — FREE home-LAN pilot
-# Not for WAN. Bind only to LAN; see docs/plans/IMMICH_ML_ROG_FREE_PILOT.md
+# Immich ML worker for Windows ROG (RTX 3050 Ti) — FREE home-LAN pilot / batch (D4, вариант Б).
+# Not for WAN. Порт биндится ТОЛЬКО на 127.0.0.1 (аудит 2026-08-30, риск CF-4:
+# CORS/порты "*" — здесь тот же принцип: наружу ничего, наружу видно только через
+# обратный SSH-туннель scripts/workstation/immich_ml_station.ps1, который явно
+# привязывается на стороне Jetson к docker-мосту 172.17.0.1, а не к LAN.
+# Runbook: docs/plans/IMMICH_ML_STATION_RUNBOOK.ru.md (RU) /
+#          docs/plans/IMMICH_ML_STATION_RUNBOOK.md (EN).
+# Контекст решения: docs/plans/D4_IMMICH_ML_DECISION.md,
+#                    docs/plans/IMMICH_ML_ROG_FREE_PILOT.md.
 name: immich-ml-rog
 
 services:
   immich-machine-learning:
     container_name: immich_ml_rog
+    # Образ закреплён по версии сервера на Jetson (IMMICH_VERSION=v2.7.5, D6/DEP-2,
+    # 2026-09-26) — тот же дефект, что уронил бы ML-версию вперёд молча: ML-воркер
+    # и сервер обязаны быть одной версии Immich. НЕ менять на ...:release-cuda.
     image: ${IMMICH_ML_IMAGE:-ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-v2.7.5}-cuda}
     restart: unless-stopped
     ports:
-      - "${IMMICH_ML_HOST_BIND:-0.0.0.0}:${IMMICH_ML_PORT:-3003}:3003"
+      # 🔴 По умолчанию 127.0.0.1, не 0.0.0.0 — родня аудиту CF-4 (порты "*"/наружу).
+      # Видимость из docker-сети Jetson даёт ТОЛЬКО обратный SSH-туннель,
+      # см. scripts/workstation/immich_ml_station.ps1.
+      - "${IMMICH_ML_HOST_BIND:-127.0.0.1}:${IMMICH_ML_PORT:-3003}:3003"
     volumes:
       - immich_ml_rog_cache:/cache
     environment:
       TZ: ${TZ:-Europe/Moscow}
       MACHINE_LEARNING_WORKERS: ${MACHINE_LEARNING_WORKERS:-1}
       MACHINE_LEARNING_WORKER_TIMEOUT: ${MACHINE_LEARNING_WORKER_TIMEOUT:-300}
-    gpus: all
+    # GPU: NVIDIA RTX 3050 Ti (4 ГиБ VRAM), драйвер 596.36 — с запасом выше минимума
+    # Immich (драйвер ≥545/CUDA 12.3, compute capability ≥5.2; Ampere = CC 8.6).
+    # Синтаксис подтверждён docs.immich.app/features/ml-hardware-acceleration
+    # (2026-09-26): именно deploy.resources.reservations.devices, а не top-level
+    # `gpus:`, работает без Swarm в Docker Compose V2 / Docker Desktop.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:3003/ping', timeout=5)\" || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 120s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   immich_ml_rog_cache:

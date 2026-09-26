@@ -9,9 +9,11 @@ import json
 import os
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 import httpx
+import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 API = ROOT / "services" / "nas_jetson_nano-api"
@@ -494,3 +496,152 @@ def test_health_command_family_member_is_refused_without_checking_anything(monke
     assert called == []  # регрессия: не владелец не должен даже триггерить проверки
     assert tg.texts() == [(FAMILY, mod.HEALTH_OWNER_ONLY_TEXT)]
     assert asked == []
+
+
+# ── живучесть циклов (инцидент 20–26.09: контейнер «здоров», бот глух шесть дней) ──
+
+class TunnelError(Exception):
+    """Аналог socksio.exceptions.ProtocolError из инцидента: НЕ httpx.HTTPError."""
+
+
+def tunnel_error():
+    """Ошибка обрыва SOCKS-туннеля — тот самый класс, если socksio установлен."""
+    try:
+        from socksio.exceptions import ProtocolError
+    except ImportError:
+        return TunnelError("обрыв SOCKS-туннеля")
+    return ProtocolError("обрыв SOCKS-туннеля")
+
+
+class FlakyApi:
+    """Опрос падает ошибкой туннеля, пока open не станет True; считает попытки.
+
+    Успешный вызов обязан уступить управление циклу событий (`await sleep`) — иначе
+    цикл опроса крутится синхронно и не даёт ни отменить задачу, ни сработать таймауту."""
+
+    def __init__(self):
+        self.open = False
+        self.calls = 0
+        self.ok = 0
+
+    async def call(self, method, **params):
+        self.calls += 1
+        if not self.open:
+            raise tunnel_error()
+        self.ok += 1
+        await asyncio.sleep(0.01)
+        return []
+
+
+async def _no_answer(q, user, dialog=None):
+    raise AssertionError("в этих тестах к модели не обращаются")
+
+
+def bot_with(mod, api):
+    return mod.TelegramBot(api, FakeDownloads(), answer=_no_answer,
+                           state_path=os.path.join(tempfile.mkdtemp(), "tg.json"))
+
+
+@pytest.fixture
+def fast_retry(monkeypatch):
+    """Бэкофф цикла (1 с и больше) не должен растягивать тест; поведение то же.
+
+    asyncio.sleep — общий объект модуля, monkeypatch вернёт его после теста."""
+    real = asyncio.sleep
+
+    async def capped(delay, *args):
+        return await real(min(delay, 0.05))
+
+    monkeypatch.setattr(asyncio, "sleep", capped)
+
+
+async def _until(cond, timeout=5.0):
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + timeout
+    while not cond() and loop.time() < deadline:
+        await asyncio.sleep(0.005)
+    return cond()
+
+
+async def _drive(coro, cond, timeout=5.0):
+    """Крутит корутину, пока не выполнится условие, затем гасит её."""
+    task = asyncio.ensure_future(coro)
+    try:
+        return await _until(cond, timeout)
+    finally:
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+
+def test_poll_forever_survives_non_httpx_error(fast_retry):
+    # 20.09 SOCKS-прокси отдал socksio.ProtocolError — не наследника httpx.HTTPError;
+    # цикл умер молча. Опрос обязан продолжаться: отказ — не конец цикла.
+    mod = load()
+    assert not issubclass(type(tunnel_error()), httpx.HTTPError)
+    api = FlakyApi()
+    bot = bot_with(mod, api)
+
+    async def scenario():
+        assert await _drive(bot.poll_forever(), lambda: api.calls >= 3)
+        assert api.ok == 0                        # отказы продолжаются — значит цикл живой
+        assert mod.STATUS["state"] == "unreachable"
+        api.open = True                           # туннель поднялся
+        assert await _drive(bot.poll_forever(), lambda: api.ok >= 2)
+
+    asyncio.run(scenario())
+    assert bot.beats.get("poll") is not None      # пульс есть — супервизор не перезапустит
+
+
+def test_status_reflects_unreachable_and_recovery(fast_retry):
+    # /healthcheck отдаёт эти поля: «здоровый контейнер с глухим ботом» больше не выглядит нормой.
+    mod = load()
+    mod.STATUS["state"] = "starting"
+    api = FlakyApi()
+    bot = bot_with(mod, api)
+
+    async def scenario():
+        assert await _drive(bot.poll_forever(), lambda: mod.STATUS["state"] == "unreachable")
+        api.open = True
+        assert await _drive(bot.poll_forever(), lambda: mod.STATUS["state"] == "ok")
+
+    asyncio.run(scenario())
+    assert mod.STATUS["last_ok"] > 0
+
+
+def test_supervise_restarts_a_crashed_loop():
+    mod = load()
+    beats, runs = {}, []
+
+    async def factory():
+        runs.append(1)
+        if len(runs) < 3:
+            raise RuntimeError("boom")             # цикл упал: процесс жив, бот глух
+        while True:
+            beats["loop"] = time.monotonic()       # живой цикл бьёт пульс
+            await asyncio.sleep(0.01)
+
+    ok = asyncio.run(_drive(mod.supervise("loop", factory, beats, stale_after=5,
+                                          check_every=0.01, restart_delay=0.01),
+                            lambda: len(runs) >= 3, timeout=3))
+    assert ok, "упавший цикл должен быть перезапущен"
+    assert mod.STATUS["restarts"] >= 2
+
+
+def test_supervise_cancels_a_loop_without_pulse():
+    mod = load()
+    beats, started, cancelled = {}, [], []
+
+    async def factory():
+        started.append(1)
+        try:
+            await asyncio.sleep(3600)              # завис: пульса нет
+        except asyncio.CancelledError:
+            cancelled.append(1)
+            raise
+
+    ok = asyncio.run(_drive(mod.supervise("loop", factory, beats, stale_after=0.05,
+                                          check_every=0.01, restart_delay=0.01),
+                            lambda: len(started) >= 2, timeout=3))
+    assert ok, "зависший цикл должен быть отменён и перезапущен"
+    assert cancelled, "зависший цикл обязан быть отменён, а не оставлен висеть"
+    assert mod.STATUS["restarts"] >= 1

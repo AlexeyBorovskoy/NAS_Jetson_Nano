@@ -163,6 +163,24 @@ class Settings(BaseSettings):
     # пересчитывает SMART/swap/off-site/баланс заново — из контейнера API это и не проверить.
     talk_alert_state_file: str = "/var/lib/nas_jetson_nano-monitor/talk-alert-state.json"
 
+    # ── Голосовые сообщения (E10) ───────────────────────────────────────────────
+    # Спецификация: docs/superpowers/specs/2026-09-20-voice-messages-design.md.
+    # Имя хоста — container_name из docker-compose.stt.yml (общая сеть homecloud_internal).
+    stt_url: str = "http://homecloud_stt:8790/stt"
+    # Правило проекта: таймаут вызывающего строго больше самоограничения вызываемого.
+    # homecloud_stt сам себя ограничивает ~90 с (20 с декодирование + распознавание 65 с звука
+    # при RTF≈1); здесь — с запасом.
+    stt_timeout: float = 120.0
+    voice_max_seconds: int = 60
+    voice_max_bytes: int = 2 * 1024 * 1024
+    # Сколько голосовое ждёт своей очереди на распознавание (в клиенте — asyncio.Semaphore(1)
+    # в app/stt.py), прежде чем честно отказать, а не копить ожидающих.
+    voice_queue_wait: float = 120.0
+    # Словарь исправлений «было=стало» через «|» (идея «словаря терминов» из статьи про
+    # Whisper): типичные искажения распознавания (позывной, имена) правятся по целым словам,
+    # без учёта регистра. Пусто по умолчанию — пополняется по мере накопления опыта.
+    voice_corrections: str = ""
+
     def llm_headers(self) -> dict:
         """Заголовки для вызова LLM Gateway: сервисный токен, если он задан."""
         token = (self.llm_gateway_service_token or "").strip()

@@ -390,6 +390,164 @@ def test_ledger_survives_restart_and_broken_file(tmp_path):
     assert dl.Ledger(str(tmp_path / "ledger.json")).load() == {}
 
 
+# ── сверка журнала с очередью aria2 после рестарта (_reconcile, 26.09) ────────
+
+def make_clocked(dl, tmp_path, aria, now):
+    """make() плюс подконтрольные часы: иначе срок LOST_GRACE мерился бы от текущего времени."""
+    d, _ = make(dl, tmp_path)
+    d.aria2 = aria
+    d.clock = lambda: now
+    return d
+
+
+def seed(dl, tmp_path, entries):
+    """Журнал «как после рестарта aria2» — записи кладём прямо в файл учёта."""
+    ledger = dl.Ledger(str(tmp_path / "ledger.json"))
+    ledger.save(entries)
+    return ledger
+
+
+def ledger_of(dl, tmp_path):
+    return dl.Ledger(str(tmp_path / "ledger.json")).load()
+
+
+def test_reconcile_marks_vanished_gid_lost_silently(tmp_path):
+    # Инцидент 26.09: aria2 перезапустился, GID из журнала в очереди больше нет.
+    # Запись обязана стать «lost» — и молча: она не пропала, а ждёт сверки.
+    dl = load()
+
+    class RestartedAria2(FakeAria2):
+        async def call(self, method, *params):
+            if method == "tellStatus":
+                raise RuntimeError("aria2: GID not found")
+            return await super().call(method, *params)
+
+    aria = RestartedAria2()
+    d = make_clocked(dl, tmp_path, aria, now=1000)
+    seed(dl, tmp_path, {"g1": {"chat_id": 42, "user": "ivan", "name": "a.iso",
+                               "state": "active", "created": 900}})
+    assert asyncio.run(d.tick()) == []
+    entry = ledger_of(dl, tmp_path)["g1"]
+    assert entry["state"] == "lost"
+    assert entry["lost_at"] == 1000
+
+
+def test_reconcile_adopts_restarted_download_by_info_hash(tmp_path):
+    # aria2 поднял торрент из сессии с НОВЫМ GID: старая запись находит его по info-hash,
+    # переезжает на новый GID и тут же получает папку человека (changeOption + unpause).
+    dl = load()
+    aria = FakeAria2()
+    d = make_clocked(dl, tmp_path, aria, now=1000)
+    seed(dl, tmp_path, {"g1": {"chat_id": 7, "user": "olga", "name": "Distro",
+                               "state": "lost", "lost_at": 900, "info_hash": "HASH1"}})
+    aria.status["g9"] = {"gid": "g9", "status": "paused", "infoHash": "HASH1",
+                         "totalLength": str(30 * GB), "completedLength": "0",
+                         "downloadSpeed": "0", "bittorrent": {"info": {"name": "Distro"}},
+                         "files": []}
+    msgs = asyncio.run(d.tick())
+    ledger = ledger_of(dl, tmp_path)
+    assert "g1" not in ledger                       # сироты под старым GID не остаётся
+    entry = ledger["g9"]
+    assert entry["chat_id"] == 7 and entry["user"] == "olga"
+    assert entry["state"] == "active" and "lost_at" not in entry
+    assert ("changeOption", ("g9", {"dir": HDD_INC + "/.u/olga",
+                                    "file-allocation": "none"})) in aria.calls
+    assert ("unpause", ("g9",)) in aria.calls
+    assert msgs == [(7, "⏬ Качаю: Distro — 30.0 ГБ, на HDD")]
+
+
+def test_reconcile_adopts_old_record_without_hash_by_torrent_name(tmp_path):
+    # Записи, поставленные до 26.09, info-hash не знали — такие сопоставляем по имени
+    # торрента. Состояние «error» тоже подлежит сверке: закачка могла ожить.
+    dl = load()
+    aria = FakeAria2()
+    d = make_clocked(dl, tmp_path, aria, now=1000)
+    seed(dl, tmp_path, {"g1": {"chat_id": 5, "user": "ivan", "name": "Movie",
+                               "state": "error", "created": 900}})
+    aria.status["g7"] = {"gid": "g7", "status": "active", "totalLength": str(2 * GB),
+                         "completedLength": "0", "downloadSpeed": "0",
+                         "bittorrent": {"info": {"name": "Movie"}}, "files": []}
+    assert asyncio.run(d.tick()) == []              # идёт своим ходом — сообщать нечего
+    ledger = ledger_of(dl, tmp_path)
+    assert "g1" not in ledger
+    assert ledger["g7"]["chat_id"] == 5
+    assert ledger["g7"]["state"] == "active"
+
+
+def test_reconcile_matches_two_same_named_records_to_two_gids(tmp_path):
+    # Иначе двое с одним и тем же фильмом склеились бы в одну запись: второй GID
+    # остался бы без учёта, а первый получил бы чужой chat_id.
+    dl = load()
+    aria = FakeAria2()
+    d = make_clocked(dl, tmp_path, aria, now=1000)
+    seed(dl, tmp_path, {
+        "old1": {"chat_id": 11, "user": "ivan", "name": "Movie", "state": "lost", "lost_at": 900},
+        "old2": {"chat_id": 22, "user": "olga", "name": "Movie", "state": "lost", "lost_at": 900}})
+    for gid in ("g7", "g8"):
+        aria.status[gid] = {"gid": gid, "status": "active", "totalLength": str(2 * GB),
+                            "completedLength": "0", "downloadSpeed": "0",
+                            "bittorrent": {"info": {"name": "Movie"}}, "files": []}
+    assert asyncio.run(d.tick()) == []
+    ledger = ledger_of(dl, tmp_path)
+    assert "old1" not in ledger and "old2" not in ledger
+    assert {ledger["g7"]["user"], ledger["g8"]["user"]} == {"ivan", "olga"}
+    assert ledger["g7"]["user"] != ledger["g8"]["user"]
+
+
+def test_reconcile_does_not_adopt_magnet_without_metadata(tmp_path):
+    # У magnet-закачки описания ещё нет: ни имени, ни размера — усыновлять нечего.
+    # Ждём followedBy, а не подсовываем закачке чужое имя.
+    dl = load()
+    aria = FakeAria2()
+    d = make_clocked(dl, tmp_path, aria, now=1000)
+    seed(dl, tmp_path, {"g1": {"chat_id": 3, "user": "ivan", "name": "Distro",
+                               "state": "lost", "lost_at": 900, "info_hash": "HASH1"}})
+    aria.status["g3"] = {"gid": "g3", "status": "active", "infoHash": "HASH1", "files": []}
+    aria.status["g4"] = {"gid": "g4", "status": "active", "infoHash": "HASH1",
+                         "bittorrent": {}, "files": []}
+    assert asyncio.run(d.tick()) == []
+    ledger = ledger_of(dl, tmp_path)
+    assert ledger["g1"]["state"] == "lost"          # запись осталась ждать
+    assert "g3" not in ledger and "g4" not in ledger
+
+
+def test_reconcile_expires_lost_record_after_grace(tmp_path):
+    # Час прошёл, GID так и не вернулся — честная ошибка вместо вечного «lost».
+    dl = load()
+    aria = FakeAria2()
+    d = make_clocked(dl, tmp_path, aria, now=10_000)
+    seed(dl, tmp_path, {
+        "old": {"chat_id": 8, "user": "ivan", "name": "Movie", "state": "lost",
+                "lost_at": 10_000 - dl.LOST_GRACE - 1},
+        "fresh": {"chat_id": 9, "user": "olga", "name": "Serial", "state": "lost",
+                  "lost_at": 10_000 - dl.LOST_GRACE}})
+    msgs = asyncio.run(d.tick())
+    ledger = ledger_of(dl, tmp_path)
+    assert ledger["old"]["state"] == "error"
+    assert ledger["fresh"]["state"] == "lost"       # ровно на границе срока — ещё ждём
+    assert msgs == [(8, "❌ Закачка потерялась после перезапуска качалки: Movie — "
+                        "пришлите ссылку ещё раз.")]
+    asyncio.run(d.ack(len(msgs)))
+    assert asyncio.run(d.tick()) == []              # второй раз не пугаем
+
+
+def test_reconcile_saves_info_hash_of_adopted_download(tmp_path):
+    # Приняли по имени — но хеш из очереди обязан попасть в запись: следующая сверка
+    # найдёт закачку по нему, а не по имени (имена у людей совпадают).
+    dl = load()
+    aria = FakeAria2()
+    d = make_clocked(dl, tmp_path, aria, now=1000)
+    seed(dl, tmp_path, {"g1": {"chat_id": 4, "user": "ivan", "name": "Movie",
+                               "state": "lost", "lost_at": 900}})
+    aria.status["g9"] = {"gid": "g9", "status": "paused", "infoHash": "HASH9",
+                         "totalLength": str(3 * GB), "completedLength": "0",
+                         "downloadSpeed": "0", "bittorrent": {"info": {"name": "Movie"}},
+                         "files": []}
+    msgs = asyncio.run(d.tick())
+    assert ledger_of(dl, tmp_path)["g9"]["info_hash"] == "HASH9"
+    assert msgs == [(4, "⏬ Качаю: Movie — 3.0 ГБ, на HDD")]
+
+
 # ── страж места ───────────────────────────────────────────────────────────────
 
 def test_guard_pauses_own_downloads_once_and_resumes(tmp_path):

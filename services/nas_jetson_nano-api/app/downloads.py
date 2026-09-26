@@ -107,6 +107,13 @@ def user_folder(user) -> str:
     return str(user) if user and _LOGIN_RE.match(str(user)) else "family"
 
 
+def _family_chat_id():
+    """ID семейной группы Telegram или None, если не задан. Решение владельца
+    2026-09-26: сообщения о закачках всегда видны в группе, даже если ссылку
+    прислали боту в личку."""
+    return int(settings.telegram_family_chat_id) if settings.telegram_family_chat_id else None
+
+
 def user_dir(user) -> str:
     return "%s/%s/%s" % (settings.dl_hdd_dir.rstrip("/"), USER_PREFIX, user_folder(user))
 
@@ -238,11 +245,35 @@ class Downloads:
                      "created": int(self.clock())}
         self.ledger.save(data)
 
+    def _notify(self, msgs: list, chat_id: int, text: str, user: str = "") -> None:
+        """Решение владельца 2026-09-26: сообщение о закачке уходит в исходный чат
+        и, если это не группа, ещё и в группу — с пометкой, чья закачка. Если группа
+        не задана или совпадает с исходным чатом — сообщение одно, как раньше."""
+        msgs.append((chat_id, text))
+        family = _family_chat_id()
+        if family is not None and family != chat_id:
+            msgs.append((family, "👤 %s: %s" % (user_folder(user), text)))
+
+    def _notify_accept(self, chat_id: int, user: str, label: str) -> None:
+        """Приём закачки не из группы — уведомление в группу кладём в outbox сразу
+        (решение владельца 2026-09-26); ответ в исходный чат при этом не меняется —
+        его отправляет бот из текста, который вернули add_link/add_torrent."""
+        family = _family_chat_id()
+        if family is None or family == chat_id:
+            return
+        data = self.ledger.load()
+        outbox = data.get("_outbox", [])
+        outbox.append({"chat_id": family,
+                       "text": "👤 %s: ⏬ Принял к скачиванию: %s" % (user_folder(user), label)})
+        data["_outbox"] = outbox
+        self.ledger.save(data)
+
     async def add_link(self, link: str, chat_id: int, user: str) -> str:
         if link.lower().startswith("magnet:"):
             async with self._lock:
                 gid = await self.aria2.call("addUri", [link], {"dir": user_dir(user)})
                 self._record(gid, chat_id, user, "magnet", "metadata")
+                self._notify_accept(chat_id, user, "magnet")
             log.info("download queued", extra={"fields": {"user": user, "type": "magnet"}})
             return "⏬ Принял, получаю описание торрента…"
         name = os.path.basename(urllib.parse.urlsplit(link).path) or "файл"
@@ -264,6 +295,7 @@ class Downloads:
                 wait_suffix = " — ждёт места"
             gid = await self.aria2.call("addUri", [link], opts)
             self._record(gid, chat_id, user, name, "active")
+            self._notify_accept(chat_id, user, name)
             if meta.get("paused"):
                 data = self.ledger.load()
                 data.setdefault("_meta", {}).setdefault("paused_gids", []).append(gid)
@@ -278,6 +310,7 @@ class Downloads:
         async with self._lock:
             gid = await self.aria2.call("addTorrent", b64, [], {"pause": "true"})
             self._record(gid, chat_id, user, "torrent", "await_dir")
+            self._notify_accept(chat_id, user, "торрент")
         log.info("download queued", extra={"fields": {"user": user, "type": "torrent"}})
         return "⏬ Принял торрент, проверяю размер…"
 
@@ -290,8 +323,8 @@ class Downloads:
         if status == "error":
             entry["state"] = "error"
             name = entry.get("name") or _name(st, entry.get("name", ""))
-            msgs.append((entry["chat_id"], "❌ Не скачалось: %s — %s"
-                         % (name, st.get("errorMessage") or "ошибка")))
+            self._notify(msgs, entry["chat_id"], "❌ Не скачалось: %s — %s"
+                         % (name, st.get("errorMessage") or "ошибка"), entry.get("user", ""))
             return
         size = total_size(st)
         if not size:
@@ -306,7 +339,7 @@ class Downloads:
         except LinkError as exc:
             await self.aria2.call("forceRemove", gid)
             entry["state"] = "error"
-            msgs.append((entry["chat_id"], "❌ %s: %s" % (name, exc)))
+            self._notify(msgs, entry["chat_id"], "❌ %s: %s" % (name, exc), entry.get("user", ""))
             return
         await self.aria2.call("changeOption", gid, _options(target, entry.get("user", "")))
         entry["state"] = "active"
@@ -314,8 +347,8 @@ class Downloads:
             meta.setdefault("paused_gids", []).append(gid)  # снимет страж, когда место появится
         else:
             await self.aria2.call("unpause", gid)
-        msgs.append((entry["chat_id"], "⏬ Качаю: %s — %s, на %s"
-                     % (name, fmt_size(size), target.upper())))
+        self._notify(msgs, entry["chat_id"], "⏬ Качаю: %s — %s, на %s"
+                     % (name, fmt_size(size), target.upper()), entry.get("user", ""))
 
     async def _tick_entries(self, data: dict, meta: dict, msgs: list) -> None:
         for gid in list(data):
@@ -369,8 +402,8 @@ class Downloads:
         for e in lost.values():
             if e.get("state") == "lost" and now - e.get("lost_at", now) > LOST_GRACE:
                 e["state"] = "error"
-                msgs.append((e["chat_id"], "❌ Закачка потерялась после перезапуска качалки: %s — "
-                             "пришлите ссылку ещё раз." % e.get("name", "?")))
+                self._notify(msgs, e["chat_id"], "❌ Закачка потерялась после перезапуска качалки: %s — "
+                             "пришлите ссылку ещё раз." % e.get("name", "?"), e.get("user", ""))
 
     async def _tick_one(self, gid: str, entry: dict, st: dict, data: dict, meta: dict, msgs: list) -> None:
         if entry["state"] == "metadata":
@@ -382,8 +415,8 @@ class Downloads:
                 await self._route_paused(new, data[new], st2, msgs, meta)
             elif st.get("status") == "error":
                 entry["state"] = "error"
-                msgs.append((entry["chat_id"], "❌ Не скачалось: %s — %s"
-                             % (entry["name"], st.get("errorMessage") or "ошибка")))
+                self._notify(msgs, entry["chat_id"], "❌ Не скачалось: %s — %s"
+                             % (entry["name"], st.get("errorMessage") or "ошибка"), entry.get("user", ""))
             return
         if entry["state"] == "await_dir":
             await self._route_paused(gid, entry, st, msgs, meta)
@@ -391,11 +424,12 @@ class Downloads:
         name = _name(st, entry.get("name", ""))
         if st.get("status") == "complete":
             entry["state"] = "done"
-            msgs.append((entry["chat_id"], "✅ Готово: %s — %s" % (name, done_hint(entry.get("user", "")))))
+            self._notify(msgs, entry["chat_id"], "✅ Готово: %s — %s"
+                         % (name, done_hint(entry.get("user", ""))), entry.get("user", ""))
         elif st.get("status") == "error":
             entry["state"] = "error"
-            msgs.append((entry["chat_id"], "❌ Не скачалось: %s — %s"
-                         % (name, st.get("errorMessage") or "ошибка")))
+            self._notify(msgs, entry["chat_id"], "❌ Не скачалось: %s — %s"
+                         % (name, st.get("errorMessage") or "ошибка"), entry.get("user", ""))
         elif st.get("status") == "removed":
             entry["state"] = "cancelled"
 
@@ -430,8 +464,14 @@ class Downloads:
     async def _guard(self, data: dict, meta: dict, msgs: list) -> None:
         ssd, hdd, disk_down = await self._free()
         hdd_min = settings.dl_hdd_min_free_gb * GB
-        chats = sorted({e["chat_id"] for e in data.values()
-                        if e.get("state") in ("active", "metadata", "await_dir")})
+        chats = {e["chat_id"] for e in data.values()
+                 if e.get("state") in ("active", "metadata", "await_dir")}
+        family = _family_chat_id()
+        if family is not None:
+            # Решение владельца 2026-09-26: пауза/возобновление — не только тем, у кого
+            # активная закачка, но и в группу, если её среди них ещё нет.
+            chats.add(family)
+        chats = sorted(chats)
         if disk_down or hdd < hdd_min:
             if not meta.get("paused"):
                 gids = [st["gid"] for st in await self.aria2.call("tellActive", ["gid"])]

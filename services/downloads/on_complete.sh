@@ -9,11 +9,18 @@ FINAL="${DL_FINAL:-/downloads/hdd}"
 path="${3:-}"
 [ -n "$path" ] || exit 0   # метаданные magnet: файла нет
 
-src="" top=""
+src="" top="" dest="$FINAL"
 for root in "$SSD_INC" "$HDD_INC"; do
   case "$path" in
     "$root"/*)
       rel="${path#"$root"/}"
+      # 2026-09-26: у каждого члена семьи своя папка — .incomplete/.u/<логин>/… → Downloads/<логин>/
+      case "$rel" in
+        .u/*/*)
+          user="${rel#.u/}"; user="${user%%/*}"
+          case "$user" in ""|*[!A-Za-z0-9_-]*) exit 0 ;; esac
+          root="$root/.u/$user"; rel="${rel#.u/"$user"/}"; dest="$FINAL/$user" ;;
+      esac
       top="${rel%%/*}"
       src="$root/$top"
       break ;;
@@ -22,6 +29,10 @@ done
 case "$top" in ""|"."|"..") exit 0 ;; esac
 [ -e "$src" ] || exit 0
 [ -d "$FINAL" ] || { echo "on_complete: нет $FINAL — оставляю $src" >&2; exit 1; }
+if [ "$dest" != "$FINAL" ]; then
+  mkdir -p -- "$dest" || { echo "on_complete: не создал $dest — оставляю $src" >&2; exit 1; }
+fi
+FINAL="$dest"
 
 dst="$FINAL/$top"
 n=2

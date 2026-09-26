@@ -1,9 +1,10 @@
 """Домашняя качалка: закачки через aria2 по командам из чата.
 
 Спецификация: docs/superpowers/specs/2026-09-19-home-downloader-design.md.
-Малое (≤ DL_SSD_MAX_GB и помещается на SSD с запасом) качается на SSD и переносится
-хуком aria2 на HDD; большое — сразу на HDD (канал ≈ 11 МБ/с, ntfs-3g ≈ 90 МБ/с).
-Страж раз в 30 с держит запас на SSD (Immich/Nextcloud) и HDD (архив 1,4 ТБ).
+Решение владельца 2026-09-26: всё качается ТОЛЬКО на HDD, у каждого члена семьи своя
+папка — недокачанное в `.incomplete/.u/<логин>/`, готовое хук aria2 переносит в
+`Downloads/<логин>/`. SSD закачки не трогают (там Immich/Nextcloud).
+Страж раз в 30 с держит запас на HDD (архив 1,4 ТБ).
 """
 from __future__ import annotations
 
@@ -26,6 +27,8 @@ log = logging.getLogger("nas_jetson_nano_api.downloads")
 
 GB = 1024 ** 3
 DONE_HINT = "\\\\192.168.0.50\\hdd2tb\\Downloads"
+USER_PREFIX = ".u"  # .incomplete/.u/<логин>/… — хуки отличают папку человека от каталога торрента
+_LOGIN_RE = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 HDD_MARKER = ".nas-hdd-marker"  # И6: в корне Downloads на HDD — признак реального монтирования
 _LINK_RE = re.compile(r"(magnet:\?\S+|https?://\S+)", re.IGNORECASE)
 _BAD_SUFFIXES = (".local", ".lan", ".internal", ".localdomain")
@@ -80,26 +83,42 @@ def parse_link(text: str) -> str:
 
 
 def choose_target(size, ssd_free: int, hdd_free: int) -> str:
-    ssd_room = ssd_free - settings.dl_ssd_min_free_gb * GB
+    """Всегда HDD (решение владельца 2026-09-26); SSD для закачек не используется."""
     hdd_room = hdd_free - settings.dl_hdd_min_free_gb * GB
     if size is None:
-        if ssd_room > 0 and hdd_room > 0:
-            return "ssd"
         if hdd_room > 0:
             return "hdd"
-        raise LinkError("нет места ни на SSD, ни на HDD")
+        raise LinkError("нет места на HDD")
     if size > hdd_room:
         raise LinkError("не помещается: нужно %s, на HDD доступно %s"
                         % (fmt_size(size), fmt_size(max(hdd_room, 0))))
-    if size <= settings.dl_ssd_max_gb * GB and size <= ssd_room:
-        return "ssd"
     return "hdd"
 
 
-def _options(target: str) -> dict:
-    if target == "ssd":
-        return {"dir": settings.dl_ssd_dir, "file-allocation": "falloc"}
-    return {"dir": settings.dl_hdd_dir, "file-allocation": "none"}
+def user_folder(user) -> str:
+    """Папка человека — его логин из TELEGRAM_USERS; всё непохожее на логин — «family»."""
+    return str(user) if user and _LOGIN_RE.match(str(user)) else "family"
+
+
+def user_dir(user) -> str:
+    return "%s/%s/%s" % (settings.dl_hdd_dir.rstrip("/"), USER_PREFIX, user_folder(user))
+
+
+def done_hint(user) -> str:
+    return DONE_HINT + "\\" + user_folder(user)
+
+
+def _options(target: str, user="") -> dict:
+    return {"dir": user_dir(user), "file-allocation": "none"}
+
+
+def total_size(st: dict) -> int:
+    """Размер закачки. У торрента на паузе aria2 отдаёт totalLength=0, хотя длины файлов
+    уже известны (инцидент 2026-09-26: пять торрентов вечно ждали «размера»)."""
+    size = int(st.get("totalLength") or 0)
+    if size:
+        return size
+    return sum(int(f.get("length") or 0) for f in st.get("files") or [])
 
 
 def _disk_free() -> tuple:
@@ -213,7 +232,7 @@ class Downloads:
     async def add_link(self, link: str, chat_id: int, user: str) -> str:
         if link.lower().startswith("magnet:"):
             async with self._lock:
-                gid = await self.aria2.call("addUri", [link], {"dir": settings.dl_ssd_dir})
+                gid = await self.aria2.call("addUri", [link], {"dir": user_dir(user)})
                 self._record(gid, chat_id, user, "magnet", "metadata")
             log.info("download queued", extra={"fields": {"user": user, "type": "magnet"}})
             return "⏬ Принял, получаю описание торрента…"
@@ -229,10 +248,7 @@ class Downloads:
             return "❌ %s" % exc
         async with self._lock:
             meta = self.ledger.load().get("_meta", {})
-            opts = _options(target)
-            if size is None:
-                # И4: размер неизвестен — не предвыделять место ни на SSD, ни на HDD
-                opts["file-allocation"] = "none"
+            opts = _options(target, user)  # И4: file-allocation=none — место не предвыделяем
             wait_suffix = ""
             if meta.get("paused"):
                 opts["pause"] = "true"
@@ -268,7 +284,7 @@ class Downloads:
             msgs.append((entry["chat_id"], "❌ Не скачалось: %s — %s"
                          % (name, st.get("errorMessage") or "ошибка")))
             return
-        size = int(st.get("totalLength") or 0)
+        size = total_size(st)
         if not size:
             return  # размер ещё неизвестен — подождём следующего такта
         name = _name(st, entry.get("name", ""))
@@ -281,7 +297,7 @@ class Downloads:
             entry["state"] = "error"
             msgs.append((entry["chat_id"], "❌ %s: %s" % (name, exc)))
             return
-        await self.aria2.call("changeOption", gid, _options(target))
+        await self.aria2.call("changeOption", gid, _options(target, entry.get("user", "")))
         entry["state"] = "active"
         if meta.get("paused"):
             meta.setdefault("paused_gids", []).append(gid)  # снимет страж, когда место появится
@@ -327,7 +343,7 @@ class Downloads:
         name = _name(st, entry.get("name", ""))
         if st.get("status") == "complete":
             entry["state"] = "done"
-            msgs.append((entry["chat_id"], "✅ Готово: %s — %s" % (name, DONE_HINT)))
+            msgs.append((entry["chat_id"], "✅ Готово: %s — %s" % (name, done_hint(entry.get("user", "")))))
         elif st.get("status") == "error":
             entry["state"] = "error"
             msgs.append((entry["chat_id"], "❌ Не скачалось: %s — %s"
@@ -364,11 +380,10 @@ class Downloads:
 
     async def _guard(self, data: dict, meta: dict, msgs: list) -> None:
         ssd, hdd, disk_down = self._free()
-        ssd_min = settings.dl_ssd_min_free_gb * GB
         hdd_min = settings.dl_hdd_min_free_gb * GB
         chats = sorted({e["chat_id"] for e in data.values()
                         if e.get("state") in ("active", "metadata", "await_dir")})
-        if disk_down or ssd < ssd_min or hdd < hdd_min:
+        if disk_down or hdd < hdd_min:
             if not meta.get("paused"):
                 gids = [st["gid"] for st in await self.aria2.call("tellActive", ["gid"])]
                 gids += [st["gid"] for st in await self.aria2.call("tellWaiting", 0, 1000, ["gid", "status"])
@@ -382,14 +397,9 @@ class Downloads:
                     # это другая причина паузы, не «мало места»
                     text = "⏸ Пауза закачек — HDD недоступен."
                 else:
-                    need = []
-                    if ssd < ssd_min:
-                        need.append("SSD: нужно ещё %s" % fmt_size(ssd_min - ssd))
-                    if hdd < hdd_min:
-                        need.append("HDD: нужно ещё %s" % fmt_size(hdd_min - hdd))
-                    text = "⏸ Пауза закачек — мало места (%s)." % "; ".join(need)
+                    text = "⏸ Пауза закачек — мало места (HDD: нужно ещё %s)." % fmt_size(hdd_min - hdd)
                 msgs.extend((c, text) for c in chats)
-        elif meta.get("paused") and ssd >= ssd_min + _RESUME_MARGIN and hdd >= hdd_min + _RESUME_MARGIN:
+        elif meta.get("paused") and hdd >= hdd_min + _RESUME_MARGIN:
             for gid in meta.get("paused_gids", []):
                 try:
                     await self.aria2.call("unpause", gid)
@@ -409,7 +419,7 @@ class Downloads:
         ledger = self.ledger.load()
         lines = []
         for i, st in enumerate(items, 1):
-            total = int(st.get("totalLength") or 0)
+            total = total_size(st)
             done = int(st.get("completedLength") or 0)
             pct = int(done * 100 / total) if total else 0
             speed = int(st.get("downloadSpeed") or 0) / (1024 * 1024)
@@ -419,9 +429,8 @@ class Downloads:
             lines.append("%d. %s — %d%% · %.1f МБ/с · осталось %s%s"
                          % (i, name, pct, speed, left, mark))
         ssd, hdd, _ = self._free()
-        free = "Свободно: SSD %s, HDD %s (с учётом запаса)" % (
-            fmt_size(max(ssd - settings.dl_ssd_min_free_gb * GB, 0)),
-            fmt_size(max(hdd - settings.dl_hdd_min_free_gb * GB, 0)))
+        free = "Свободно на HDD: %s (с учётом запаса)" % fmt_size(
+            max(hdd - settings.dl_hdd_min_free_gb * GB, 0))
         if not lines:
             return "Закачек нет.\n" + free
         return "\n".join(lines + [free])

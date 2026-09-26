@@ -29,6 +29,12 @@ for root in "$SSD_INC" "$HDD_INC"; do
   case "$path" in
     "$root"/*)
       rel="${path#"$root"/}"
+      case "$rel" in
+        .u/*/*)  # папка члена семьи (2026-09-26): .incomplete/.u/<логин>/<top>
+          user="${rel#.u/}"; user="${user%%/*}"
+          case "$user" in ""|*[!A-Za-z0-9_-]*) exit 0 ;; esac
+          root="$root/.u/$user"; rel="${rel#.u/"$user"/}" ;;
+      esac
       top="${rel%%/*}"
       case "$top" in ""|"."|"..") exit 0 ;; esac
       rm -rf -- "$root/$top" "$root/$top.aria2"

@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import re
+import time
 
 import httpx
 
@@ -146,6 +147,7 @@ class TelegramBot:
     def __init__(self, api: TgApi, downloads, answer=None, state_path=None):
         self.api = api
         self.downloads = downloads
+        self.beats: dict = {}  # пульс циклов для супервизора
         if answer is None:
             from app.routers import talk_bot
             answer = talk_bot.answer
@@ -329,19 +331,29 @@ class TelegramBot:
             self.state["offset"] = upd["update_id"] + 1
             self._save()
 
+    def _beat(self, loop: str) -> None:
+        self.beats[loop] = time.monotonic()
+
     async def poll_forever(self) -> None:
+        # 2026-09-26: ловим ЛЮБОЕ исключение, а не только httpx/OSError. SOCKS-прокси
+        # при обрыве туннеля отдаёт socksio.ProtocolError — он не наследник httpx.HTTPError,
+        # цикл умер молча 20.09 и бот не слышал семью шесть дней при «здоровом» контейнере.
         backoff = 1
         while True:
             try:
                 await self.poll_once()
                 backoff = 1
+                STATUS["last_ok"] = time.time()
+                STATUS["state"] = "ok"
             except TgError as exc:
                 await asyncio.sleep(exc.retry_after or backoff)
                 backoff = min(backoff * 2, 60)
-            except (httpx.HTTPError, OSError) as exc:
+            except Exception as exc:
+                STATUS["state"] = "unreachable"
                 log.warning("telegram unreachable: %s", type(exc).__name__)
                 await asyncio.sleep(backoff)
                 backoff = min(backoff * 2, 60)
+            self._beat("poll")
 
     async def downloads_once(self) -> None:
         # И1: outbox отправляется по порядку; на первой ошибке останавливаемся —
@@ -362,19 +374,66 @@ class TelegramBot:
                 await self.downloads_once()
             except Exception:
                 log.exception("downloads tick failed")
+            self._beat("downloads")
             await asyncio.sleep(interval)
+
+
+# Состояние для /healthcheck: без токена и без содержимого сообщений.
+STATUS = {"state": "starting", "last_ok": 0.0, "restarts": 0}
+
+# Один проход poll_once не дольше таймаута httpx (45 с), пауза — не дольше 60 с;
+# пульса нет 5 минут — цикл завис (например, повис на рукопожатии SOCKS), перезапускаем.
+STALE_AFTER = 300
+CHECK_EVERY = 30
+RESTART_DELAY = 5
+
+
+async def supervise(name: str, factory, beats: dict, stale_after: float = STALE_AFTER,
+                    check_every: float = CHECK_EVERY, restart_delay: float = RESTART_DELAY) -> None:
+    """Держит цикл живым: упал — перезапуск, завис без пульса — отмена и перезапуск.
+
+    Цикл не должен умирать молча: процесс при этом жив, healthcheck зелёный,
+    а бот глух (инцидент 20–26.09). Супервизор сам не падает ни от чего, кроме отмены."""
+    while True:
+        beats[name] = time.monotonic()
+        task = asyncio.ensure_future(factory())
+        reason = ""
+        while not reason:
+            done, _ = await asyncio.wait({task}, timeout=check_every)
+            if done:
+                exc = None if task.cancelled() else task.exception()
+                reason = "упал: %s" % type(exc).__name__ if exc else "завершился"
+            elif time.monotonic() - beats.get(name, 0) > stale_after:
+                reason = "завис без пульса %d с" % stale_after
+                task.cancel()
+                try:
+                    await task
+                except BaseException:  # noqa: B036 — отменённая или упавшая задача, причина уже названа
+                    pass
+        STATUS["restarts"] += 1
+        log.error("telegram: цикл %s %s — перезапуск", name, reason)
+        await asyncio.sleep(restart_delay)
+
+
+async def connect(api: TgApi, bot: "TelegramBot", retry: float = 30) -> None:
+    while not bot.bot_username:
+        try:
+            bot.bot_username = (await api.call("getMe"))["username"]
+            STATUS["state"] = "ok"
+            STATUS["last_ok"] = time.time()
+            log.info("telegram connected", extra={"fields": {"bot": bot.bot_username}})
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            # И5: виден тип ошибки, но не текст — чтобы не утёк токен из URL исключения httpx.
+            STATUS["state"] = "unreachable"
+            log.warning("telegram unreachable at start: %s", type(exc).__name__)
+            await asyncio.sleep(retry)
 
 
 async def run() -> None:
     api = TgApi(settings.telegram_bot_token, proxy=settings.telegram_proxy or None)
     bot = TelegramBot(api, downloads_mod.Downloads())
-    while not bot.bot_username:
-        try:
-            bot.bot_username = (await api.call("getMe"))["username"]
-            log.info("telegram connected", extra={"fields": {"bot": bot.bot_username}})
-        except (TgError, httpx.HTTPError, OSError) as exc:
-            # И5: раньше сбой старта молчал целиком — теперь виден тип ошибки (не текст,
-            # чтобы не утёк токен из URL исключения httpx).
-            log.warning("telegram unreachable at start: %s", type(exc).__name__)
-            await asyncio.sleep(30)
-    await asyncio.gather(bot.poll_forever(), bot.downloads_forever())
+    await connect(api, bot)
+    await asyncio.gather(supervise("poll", bot.poll_forever, bot.beats),
+                         supervise("downloads", bot.downloads_forever, bot.beats))

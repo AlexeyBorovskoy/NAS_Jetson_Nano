@@ -169,6 +169,9 @@ async def lifespan(_app: FastAPI):
             await tg_task
         except asyncio.CancelledError:
             pass
+        except Exception as exc:
+            # 26.09: упавшая задача бота роняла shutdown («Application shutdown failed»)
+            log.warning("telegram task ended with %s", type(exc).__name__)
     log.info("nas_jetson_nano-api stopped")
 
 

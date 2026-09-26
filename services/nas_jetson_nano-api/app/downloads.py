@@ -35,7 +35,13 @@ _BAD_SUFFIXES = (".local", ".lan", ".internal", ".localdomain")
 # 2130706433, 0x7f.1, 017700000001, 127.1 — такие формы понимают резолверы и HTTP-клиенты
 _NUMERIC_HOST = re.compile(r"^((0x[0-9a-f]*|[0-9]+)\.){0,3}(0x[0-9a-f]*|[0-9]+)$")
 _KEYS = ["gid", "status", "totalLength", "completedLength", "downloadSpeed",
-         "files", "bittorrent", "followedBy", "errorMessage"]
+         "files", "bittorrent", "followedBy", "errorMessage", "infoHash"]
+# Рестарт aria2 (пересоздание контейнера, сбой) поднимает торрент из сессии с НОВЫМ GID:
+# в сессии хранится magnet, описание скачивается заново (инцидент 2026-09-26). Такие
+# записи журнала — «lost»: сверка находит их в очереди по info-hash (или имени) и
+# переносит на новый GID; не нашла за час — честная ошибка с сообщением.
+_ADOPTABLE = ("lost", "error")
+LOST_GRACE = 3600
 _RESUME_MARGIN = 5 * GB  # гистерезис стража: продолжаем, когда запас восстановлен с лихвой
 
 
@@ -289,6 +295,8 @@ class Downloads:
             return  # размер ещё неизвестен — подождём следующего такта
         name = _name(st, entry.get("name", ""))
         entry["name"] = name
+        if st.get("infoHash"):
+            entry["info_hash"] = st["infoHash"]
         ssd, hdd, _ = self._free()
         try:
             target = choose_target(size, ssd, hdd)
@@ -309,12 +317,14 @@ class Downloads:
     async def _tick_entries(self, data: dict, meta: dict, msgs: list) -> None:
         for gid in list(data):
             entry = data.get(gid)
-            if entry is None or entry.get("state") in ("done", "error", "cancelled"):
+            if entry is None or entry.get("state") in ("done", "error", "cancelled", "lost"):
                 continue
             try:
                 st = await self.aria2.call("tellStatus", gid, _KEYS)
             except RuntimeError:
-                entry["state"] = "error"
+                # GID пропал — чаще всего aria2 перезапустился; ищет _reconcile()
+                entry["state"] = "lost"
+                entry["lost_at"] = int(self.clock())
                 continue
             try:
                 await self._tick_one(gid, entry, st, data, meta, msgs)
@@ -323,6 +333,41 @@ class Downloads:
                 # записи не должен вешать такт целиком — остальные GID обрабатываются дальше.
                 log.warning("такт: сбой на закачке %s — пропускаю", gid)
                 (data.get(gid) or entry)["state"] = "error"
+
+    async def _reconcile(self, data: dict, meta: dict, msgs: list) -> None:
+        """Восстановление после рестарта aria2: чужие для журнала закачки в очереди
+        сопоставляются с потерянными записями по info-hash, у старых записей — по имени."""
+        lost = {g: e for g, e in data.items()
+                if e.get("state") in _ADOPTABLE and e.get("name") not in ("", "magnet", "torrent")}
+        if not lost:
+            return
+        queue = list(await self.aria2.call("tellActive", _KEYS))
+        queue += list(await self.aria2.call("tellWaiting", 0, 1000, _KEYS))
+        for st in queue:
+            gid = st.get("gid")
+            if gid in data or not ((st.get("bittorrent") or {}).get("info")):
+                continue  # своя запись или magnet ещё без описания — подождём followedBy
+            ih, nm = st.get("infoHash"), _name(st)
+            old = next((g for g, e in lost.items()
+                        if (ih and e.get("info_hash") == ih)
+                        or (not e.get("info_hash") and e.get("name") == nm)), None)
+            if old is None:
+                continue
+            entry = lost.pop(old)
+            del data[old]
+            entry.pop("lost_at", None)
+            entry["state"] = "await_dir" if st.get("status") == "paused" else "active"
+            data[gid] = entry
+            log.info("закачка восстановлена после рестарта aria2",
+                     extra={"fields": {"user": entry.get("user"), "old": old, "new": gid}})
+            if entry["state"] == "await_dir":
+                await self._route_paused(gid, entry, st, msgs, meta)
+        now = int(self.clock())
+        for e in lost.values():
+            if e.get("state") == "lost" and now - e.get("lost_at", now) > LOST_GRACE:
+                e["state"] = "error"
+                msgs.append((e["chat_id"], "❌ Закачка потерялась после перезапуска качалки: %s — "
+                             "пришлите ссылку ещё раз." % e.get("name", "?")))
 
     async def _tick_one(self, gid: str, entry: dict, st: dict, data: dict, meta: dict, msgs: list) -> None:
         if entry["state"] == "metadata":
@@ -362,6 +407,7 @@ class Downloads:
             outbox = data.pop("_outbox", [])
             try:
                 await self._tick_entries(data, meta, msgs)
+                await self._reconcile(data, meta, msgs)
                 await self._guard(data, meta, msgs)
             except httpx.HTTPError:
                 log.warning("aria2 недоступен — такт пропущен")

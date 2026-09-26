@@ -247,6 +247,7 @@ the safety check is mandatory.
 | Documentation | Documentation Subagent | write set, doc links, consistency notes |
 | Service work | Service Implementation Subagent | bounded patch and verification |
 | Post-change checks | Verification Subagent | command results and residual risk |
+| Mechanical / CHEAP work | DeepSeek worker (`ds-worker` card), not a Claude subagent | task card, `RESULT.json`, diff for the lead's review |
 
 ## 9. Domain-Specific Role Agents (Prompt A model)
 
@@ -280,3 +281,37 @@ When a task touches multiple domains, the order is:
 2. **Network/Hardware Agent** — safety check if network or storage is involved.
 3. **SysApps or Code Agent** — implementation within bounded write set.
 4. **Docs Agent** again — update CHANGELOG, PROJECT_TREE, affected docs.
+
+## 10. DeepSeek worker / Исполнитель DeepSeek
+
+🇬🇧 Since 2026-09-26 (ADR-0012, hard rule №16 in `CLAUDE.md`) the model has a second executor.
+Claude leads and dispatches: understanding, decomposition, architecture, hard reasoning and
+debugging, integration, review, final verification, the done decision. Mechanical work classified
+**CHEAP** goes to the DeepSeek worker as a `ds-worker` card instead of a Claude subagent. By
+construction the worker has no ssh, curl or web; it never sets DONE and never pushes or merges.
+Only the lead's `review --accept` closes a task, after verifying its claims against code or by a
+command.
+
+**Never delegated (CRITICAL for this project):** tunnels, the VPS, Amnezia/WireGuard/xray,
+external access, data on the NAS disks (`/mnt/storage`, `/mnt/hdd2tb`), the live Jetson.
+
+| Task class | Who does it |
+|---|---|
+| CHEAP — search, inventory, config and log comparison, docs, tests, mechanics | DeepSeek worker (`ds-worker` card) |
+| MEDIUM — bounded implementation, several related files | split: the worker gathers evidence, Claude integrates and reviews |
+| EXPENSIVE — architecture, cross-module changes, hard debugging | Claude; the worker gets bounded auxiliary work only |
+| CRITICAL — tunnels, VPS, external access, NAS disks, live Jetson | Claude only; the owner approves any irreversible step |
+
+🇷🇺 С 2026-09-26 (ADR-0012, жёсткое правило №16 в `CLAUDE.md`) в модели два исполнителя. Claude —
+ведущий и диспетчер: понимание задачи, декомпозиция, архитектура, сложные рассуждения и отладка,
+интеграция, рецензия, итоговая проверка, решение о завершении. Механику класса **CHEAP** получает
+исполнитель DeepSeek карточкой `ds-worker`, а не субагент Claude. У исполнителя нет ssh, curl и веба
+по построению; он не ставит DONE, не пушит и не сливает. Задачу закрывает только `review --accept`
+ведущего — после проверки утверждений по коду или командой.
+
+**Не делегируется никогда (CRITICAL для проекта):** туннели, VPS, Amnezia/WireGuard/xray, доступ
+снаружи, данные на дисках NAS (`/mnt/storage`, `/mnt/hdd2tb`), живой Jetson.
+
+Класс задачи → исполнитель — в таблице выше. Полный регламент и решения проекта —
+`docs/handoff/DEEPSEEK_WORKER.md`; решение — `docs/decisions/ADR-0012-deepseek-worker.md`; жёсткое
+правило — №16 в `CLAUDE.md`.

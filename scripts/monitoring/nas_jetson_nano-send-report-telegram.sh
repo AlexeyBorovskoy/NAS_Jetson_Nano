@@ -14,7 +14,6 @@ REPORT_CMD="${NAS_SBIN_PREFIX}-daily-report.sh"
 LOG_DIR="$NAS_LOG_DIR"
 REPORT_FILE="${LOG_DIR}/last-report.txt"
 SEND_LOG="${LOG_DIR}/last-telegram-send.json"
-VPS_HOST="${VPS_HOST:-95.163.176.103}"
 VPS_USER="${VPS_USER:-root}"
 VPS_KEY="${VPS_KEY:-/home/admin/.ssh/id_ed25519}"
 
@@ -26,6 +25,12 @@ if [ ! -f "$CONF" ]; then
 fi
 
 . "$CONF"
+
+# OPS-2 (аудит 2026-09-26): адрес VPS — из того же .env, что у туннеля, а не зашитый.
+# Зашитый 95.163.176.103 заблокировал домашний провайдер 18.09 — отчёт молча падал с 23.09.
+_nas_vps_env="${NAS_TUNNEL_ENV:-/opt/${NAS_PREFIX:-nasa}/config/.env}"
+_nas_vps_host="$(sed -n 's/^VPS_HOST=//p' "$_nas_vps_env" 2>/dev/null | tr -d '"' | tail -1)"
+VPS_HOST="${VPS_HOST:-${_nas_vps_host:-95.163.176.103}}"
 
 if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ]; then
     echo "ERROR: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is empty"

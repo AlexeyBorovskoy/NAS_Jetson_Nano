@@ -8,6 +8,11 @@ _nas_lay="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/layout.sh"
 [[ -r "$_nas_lay" ]] || _nas_lay=/usr/local/lib/nas_jetson_nano/layout.sh
 # shellcheck source=../lib/layout.sh
 source "$_nas_lay"
+# OPS-2 (аудит 2026-09-26): адрес VPS — из того же .env, что у туннеля, а не зашитый.
+# Зашитый 95.163.176.103 заблокировал домашний провайдер 18.09 — отчёт молча падал с 23.09.
+_nas_vps_env="${NAS_TUNNEL_ENV:-/opt/${NAS_PREFIX:-nasa}/config/.env}"
+_nas_vps_host="$(sed -n 's/^VPS_HOST=//p' "$_nas_vps_env" 2>/dev/null | tr -d '"' | tail -1)"
+SERVER_IP="${SERVER_IP:-${_nas_vps_host:-95.163.176.103}}"
 CONF="$NAS_CONF_DIR/${NAS_PREFIX}-monitor.env"
 [ -f "$CONF" ] && . "$CONF"
 

@@ -1,0 +1,10 @@
+[Unit]
+Description=NAS Jetson Nano: сторож контейнеров каждые 2 минуты
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=2min
+AccuracySec=20s
+
+[Install]
+WantedBy=timers.target

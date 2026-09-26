@@ -1,0 +1,14 @@
+[Unit]
+Description=NAS Jetson Nano: сторож контейнеров и сетевой барьер качалки (OPS-1, API-2/3)
+Documentation=https://github.com/AlexeyBorovskoy/NAS_Jetson_Nano/blob/main/docs/audit/2026-09-26_full_audit/REPORT.md
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+# Пути — только из раскладки хоста (SD-2: никаких литералов /home/admin/...).
+EnvironmentFile=/etc/nas-layout.env
+# Барьер первым и с «-»: его сбой не должен мешать сторожу поднимать контейнеры.
+ExecStart=-/bin/bash "${NAS_PROJECT_DIR}/scripts/network/dl_egress_guard.sh"
+ExecStart=/usr/bin/python3 "${NAS_PROJECT_DIR}/scripts/monitoring/nas_jetson_nano-container-watchdog.py"
+TimeoutStartSec=300

@@ -168,6 +168,12 @@ jobs:
       - name: Watchdog tests (D3)
         run: python -m pytest -q tests/watchdog
 
+      # BK-1 (аудит 2026-09-26): отдельным процессом — у сервисов одинаковое имя пакета app (QA-2).
+      - name: Backup API tests
+        run: |
+          pip install python-multipart==0.0.20
+          python -m pytest -q tests/backup_api
+
   # ---------------------------------------------------------------------------
   # actionlint: validate GitHub Actions workflow files
   # ---------------------------------------------------------------------------

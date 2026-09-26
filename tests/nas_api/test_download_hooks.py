@@ -111,6 +111,93 @@ def test_on_complete_ignores_path_outside_roots(tmp_path):
     assert list(final.iterdir()) == []
 
 
+# ── HK-1: имя занимает параллельная закачка (аудит 2026-09-26) ────────────────
+
+def barrier_mv(tmp_path: Path) -> dict:
+    """DL_MV, который выравнивает два параллельных хука перед переносом.
+
+    Без барьера гонка воспроизводится через раз: хук, перенёсший файл первым, уводит
+    второго на свободный суффикс, и тест зеленеет даже на сломанном коде. Барьер держит
+    оба процесса до переноса — в старом коде оба успевают выбрать одно и то же имя.
+    """
+    bar = tmp_path / "barrier"
+    bar.mkdir()
+    stub = tmp_path / "barrier_mv.sh"
+    stub.write_text(
+        "#!/bin/bash\n"
+        'd="${NAS_BARRIER_DIR:?}"\n'
+        ': > "$d/$$"\n'                        # отметка «дошёл до переноса»
+        "i=0\n"
+        'while [ "$(ls "$d" | wc -l)" -lt 2 ]; do\n'
+        '  i=$((i + 1)); [ "$i" -gt 500 ] && break\n'   # ~10 с — и перестаём ждать
+        "  sleep 0.02\n"
+        "done\n"
+        'exec mv "$@"\n', encoding="utf-8")
+    stub.chmod(0o755)
+    return {"DL_MV": stub.as_posix(), "NAS_BARRIER_DIR": bar.as_posix()}
+
+
+def run_two(paths: list, env: dict):
+    """Два хука одновременно — как aria2 при `max-concurrent-downloads=2`."""
+    procs = [subprocess.Popen([BASH, str(HOOKS / "on_complete.sh"), "g%d" % (i + 1), "1", p.as_posix()],
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,
+                              env={**os.environ, **env})
+             for i, p in enumerate(paths)]
+    made = [p.communicate(timeout=120) for p in procs]
+    assert [p.returncode for p in procs] == [0, 0], made
+
+
+def test_on_complete_parallel_same_name_keeps_both_files(tmp_path):
+    # HK-1: две закачки с одним итоговым именем из разных .incomplete. Прежде оба хука
+    # выбирали имя до переноса, и второй молча затирал первый — файл пропадал.
+    inc, final = layout(tmp_path)
+    ssd = tmp_path / "ssd" / ".incomplete"
+    srcs, env = [], {**env_for(tmp_path), **barrier_mv(tmp_path)}
+    for root, data in ((ssd, b"one"), (inc, b"two")):
+        p = root / ".u" / LOGIN / "a.iso"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_bytes(data)
+        srcs.append(p)
+    run_two(srcs, env)
+    assert sorted(p.name for p in (final / LOGIN).iterdir()) == ["a (2).iso", "a.iso"]
+    assert sorted(p.read_bytes() for p in (final / LOGIN).iterdir()) == [b"one", b"two"]
+    assert [p.exists() for p in srcs] == [False, False]
+
+
+def test_on_complete_parallel_same_folder_name_keeps_both_folders(tmp_path):
+    # Тот же случай, но закачки — каталоги (многофайловый торрент). Здесь mv особенно
+    # опасен: в СУЩЕСТВУЮЩИЙ каталог он кладёт ВНУТРЬ, а не поверх, — проигравший
+    # обязан уехать на « (2)», а не спрятаться папкой внутри чужой.
+    inc, final = layout(tmp_path)
+    ssd = tmp_path / "ssd" / ".incomplete"
+    srcs, env = [], {**env_for(tmp_path), **barrier_mv(tmp_path)}
+    for root, data in ((ssd, b"one"), (inc, b"two")):
+        p = root / ".u" / LOGIN / "Movie"
+        p.mkdir(parents=True, exist_ok=True)
+        (p / "a.mkv").write_bytes(data)
+        srcs.append(p)
+    run_two(srcs, env)
+    assert sorted(p.name for p in (final / LOGIN).iterdir()) == ["Movie", "Movie (2)"]
+    assert sorted((final / LOGIN / d / "a.mkv").read_bytes()
+                  for d in ("Movie", "Movie (2)")) == [b"one", b"two"]
+    assert [p.exists() for p in srcs] == [False, False]
+
+
+def test_on_complete_taken_name_gets_suffix(tmp_path):
+    # Закачки разошлись во времени: занятое имя уводит перенос на « (2)», чужой файл цел.
+    inc, final = layout(tmp_path)
+    (final / LOGIN).mkdir(parents=True, exist_ok=True)
+    (final / LOGIN / "a.iso").write_bytes(b"first")
+    src = inc / ".u" / LOGIN / "a.iso"
+    src.parent.mkdir(parents=True, exist_ok=True)
+    src.write_bytes(b"second")
+    r = run_hook("on_complete.sh", ["g9", "1", src.as_posix()], env_for(tmp_path))
+    assert r.returncode == 0, r.stderr
+    assert (final / LOGIN / "a.iso").read_bytes() == b"first"
+    assert (final / LOGIN / "a (2).iso").read_bytes() == b"second"
+    assert not src.exists()
+
+
 # ── on_stop.sh: отменённое удаляется, прерванное остаётся ─────────────────────
 
 def fake_wget(tmp_path: Path, status: str) -> str:

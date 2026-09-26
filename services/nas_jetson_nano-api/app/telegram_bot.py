@@ -18,6 +18,7 @@ import time
 import httpx
 
 from app import downloads as downloads_mod
+from app import stt as stt_mod
 from app.config import settings
 
 log = logging.getLogger("nas_jetson_nano_api.telegram")
@@ -33,9 +34,19 @@ HELP = ("🐕 Я Бобик. Обращайтесь по имени — «боб
         "• отмени N — отменить закачку N\n"
         "• забудь — начать разговор заново\n"
         "• что сломалось — статус дома (только владельцу)\n"
-        "• любой другой вопрос — отвечу через GigaChat")
+        "• любой другой вопрос — отвечу через GigaChat\n"
+        "• можно голосом (до 60 с) — «скачай» голосом не выполняю, ссылку пришлите текстом")
 STRANGER_TEXT = "🐕 Вы не в семейном списке — я отвечаю только своим."
-GREETING = "🐕 Гав! Я тут. Спросите что-нибудь или напишите «бобик, закачки»."
+GREETING = ("🐕 Гав! Я тут. Спросите что-нибудь или напишите «бобик, закачки» "
+            "— можно и голосом (до 60 с).")
+# E10: голосовые (docs/superpowers/specs/2026-09-20-voice-messages-design.md).
+VOICE_PREFIX_FMT = "🎤 Расслышал: %s\n\n"
+VOICE_TOO_LONG_TEXT = "🎤 Голосовое длиннее 60 с — напишите текстом, пожалуйста."
+VOICE_FAILED_TEXT = "🎤 Не разобрал голосовое — напишите текстом."
+VOICE_EMPTY_TEXT = "🎤 Не разобрал ни слова — повторите или напишите текстом."
+VOICE_UNAVAILABLE_OWNER_TEXT = "🎤 Распознавание голосовых недоступно"
+VOICE_DOWNLOAD_BLOCKED_TEXT = "Ссылку голосом не продиктовать — пришлите её текстом."
+VOICE_UNAVAILABLE_NOTIFY_INTERVAL = 3600  # не чаще раза в час — не спамить владельца
 # E3: состояние дома — только владельцу, остальным вежливый отказ (не «не понял»).
 HEALTH_OWNER_ONLY_TEXT = "🐕 Состояние дома — это к владельцу, не ко всем."
 # «что сломалось», «всё/все работает(?)», «как дела/там дома», «как сервер», «статус дома».
@@ -220,9 +231,23 @@ class TelegramBot:
         if chat.get("type") in ("group", "supergroup") and chat_id != self.family:
             await self._leave_foreign_group(chat_id)
             return
+        voice = msg.get("voice")
+        if voice is not None:
+            # E10: голосовое — обрабатывается ДО addressed_text, потому что в группе
+            # обращение узнаётся только после распознавания (спецификация §4, §5).
+            await self._handle_voice(msg, chat, chat_id, voice)
+            return
         text = addressed_text(msg, self.bot_username, self.callsigns)
         if text is None:
             return  # не нам: не обрабатываем, не храним, не пишем в журнал
+        await self._dispatch(msg, chat, chat_id, text)
+
+    async def _dispatch(self, msg: dict, chat: dict, chat_id, text: str, voice_prefix: str = "") -> None:
+        """Общая обработка адресованного сообщения — текстом или после распознавания
+        голоса. Правила обращения и разбор команд не дублируются (спецификация E10 §4):
+        голос лишь подставляет text и идёт этим же путём. voice_prefix непусто только
+        для голосовых — уходит перед любым ответом («Расслышал: …»), а «скачай» из
+        голоса не выполняется (ссылку не продиктовать, спецификация §6/§8)."""
         # Правка сообщения приходит отдельным событием. Дописали «Бобик» при правке — отвечаем;
         # уже отвеченное сообщение, которое просто подправили, — второй раз не отвечаем.
         key = "%s:%s" % (chat_id, msg.get("message_id"))
@@ -241,8 +266,12 @@ class TelegramBot:
         kind, arg = route(text)
         log.info("telegram command", extra={"fields": {
             "user": login, "chat_type": chat.get("type"),
-            "kind": "torrent" if doc else kind}})
+            "kind": "torrent" if doc else kind, "voice": bool(voice_prefix)}})
         mid = msg.get("message_id")
+
+        async def reply(body: str, reply_to=mid) -> None:
+            await self._say(chat_id, voice_prefix + body, reply_to)
+
         # Мелкая правка: ветка документа — раньше проверки пустого текста/справки.
         # Иначе .torrent без подписи в личке (addressed_text даёт "") попадал бы
         # в HELP и не скачивался вовсе.
@@ -250,39 +279,120 @@ class TelegramBot:
             if kind != "download" and chat.get("type") != "private":
                 return
             if int(doc.get("file_size") or 0) > TORRENT_LIMIT:
-                await self._say(chat_id, "❌ .torrent-файл больше 20 МБ — пришлите magnet-ссылку.", mid)
+                await reply("❌ .torrent-файл больше 20 МБ — пришлите magnet-ссылку.")
                 return
             data = await self.api.file_bytes(doc["file_id"])
-            await self._say(chat_id, await self.downloads.add_torrent(data, chat_id, login), mid)
+            await reply(await self.downloads.add_torrent(data, chat_id, login))
             return
         if text == "":
-            await self._say(chat_id, GREETING, mid)  # просто «Бобик» — откликнуться, а не молчать
+            await reply(GREETING)  # просто «Бобик» — откликнуться, а не молчать
             return
         if text == "/start" or text.startswith("/start@") or text == "/help":
-            await self._say(chat_id, HELP)
+            await reply(HELP, reply_to=None)
             return
         if kind == "download":
+            if voice_prefix:
+                # E10 §6/§8: ссылку голосом не продиктовать, ошибка распознавания в
+                # адресе = закачка не того. add_link/add_torrent не вызываются.
+                await reply(VOICE_DOWNLOAD_BLOCKED_TEXT)
+                return
             try:
                 link = downloads_mod.parse_link(arg)
             except downloads_mod.LinkError as exc:
-                await self._say(chat_id, "❌ %s" % exc, mid)
+                await reply("❌ %s" % exc)
                 return
-            await self._say(chat_id, await self.downloads.add_link(link, chat_id, login), mid)
+            await reply(await self.downloads.add_link(link, chat_id, login))
         elif kind == "list":
-            await self._say(chat_id, await self.downloads.list_text(), mid)
+            await reply(await self.downloads.list_text())
         elif kind == "cancel":
-            await self._say(chat_id, await self.downloads.cancel(arg), mid)
+            await reply(await self.downloads.cancel(arg))
         elif kind == "forget":
             from app import dialog as dialog_mem
             dialog_mem.MEMORY.forget("tg:%s" % chat_id)
-            await self._say(chat_id, "🐕 Забыл, начнём сначала.", mid)
+            await reply("🐕 Забыл, начнём сначала.")
         elif kind == "health":
-            await self._say(chat_id, await self._health_reply(login), mid)
+            await reply(await self._health_reply(login))
         else:
             speaker = (msg.get("from") or {}).get("first_name") or login
             await self.api.call("sendChatAction", chat_id=chat_id, action="typing")
-            reply = await self.answer(arg, login, dialog=("tg:%s" % chat_id, speaker))
-            await self._say(chat_id, reply, mid)
+            answer_text = await self.answer(arg, login, dialog=("tg:%s" % chat_id, speaker))
+            await reply(answer_text)
+
+    # ── голосовые (E10) ──────────────────────────────────────────────────────
+    # Спецификация: docs/superpowers/specs/2026-09-20-voice-messages-design.md.
+    def _count_voice(self, key: str) -> None:
+        """Счётчики voice_ok/voice_ignored/voice_failed/voice_too_long — без содержимого."""
+        self.state[key] = self.state.get(key, 0) + 1
+        self._save()
+
+    async def _notify_owner_voice_down(self) -> None:
+        """Не чаще раза в час (state, не память процесса) — иначе каждое голосовое
+        в группе при упавшем/занятом STT спамит владельца отдельным сообщением."""
+        last = self.state.get("voice_unavailable_notified_at", 0)
+        if time.time() - last < VOICE_UNAVAILABLE_NOTIFY_INTERVAL:
+            return
+        self.state["voice_unavailable_notified_at"] = time.time()
+        self._save()
+        owner = self._owner_chat()
+        if owner:
+            await self._say(owner, VOICE_UNAVAILABLE_OWNER_TEXT)
+
+    async def _handle_voice(self, msg: dict, chat: dict, chat_id, voice: dict) -> None:
+        """🔴 Приватность (спецификация §5): если в распознанном тексте нет «бобика» —
+        сам текст не пишется НИКУДА (ни в лог, ни в state, ни в память диалога), только
+        счётчик без содержимого. Во всех log-вызовах этого метода — только длительность
+        и исход, никогда сам распознанный текст."""
+        chat_type = chat.get("type")
+        mid = msg.get("message_id")
+        uid = (msg.get("from") or {}).get("id")
+        login = self.users.get(uid)
+        if login is None:
+            # Голос незнакомца не распознаётся вовсе: ни ресурс STT, ни риск утечки текста.
+            if chat_type == "private":
+                await self._stranger(msg, chat)
+            return  # в группе — тихо выходим: неизвестно, было ли обращение к боту
+
+        duration = voice.get("duration") or 0
+        file_size = int(voice.get("file_size") or 0)
+        if duration > settings.voice_max_seconds or file_size > settings.voice_max_bytes:
+            log.info("voice too long", extra={"fields": {"duration": duration, "size": file_size}})
+            self._count_voice("voice_too_long")
+            if chat_type == "private":
+                await self._say(chat_id, VOICE_TOO_LONG_TEXT, mid)
+            return  # файл не скачивается вовсе; в группе — молча, не спамим
+
+        try:
+            data = await self.api.file_bytes(voice["file_id"], limit=settings.voice_max_bytes)
+            text = await stt_mod.transcribe(data)
+        except (TgError, stt_mod.SttUnavailable, stt_mod.SttBusy) as exc:
+            log.warning("voice recognition failed", extra={"fields": {"error": type(exc).__name__}})
+            self._count_voice("voice_failed")
+            if chat_type == "private":
+                await self._say(chat_id, VOICE_FAILED_TEXT, mid)
+            else:
+                await self._notify_owner_voice_down()
+            return
+
+        if not text:
+            log.info("voice empty result", extra={"fields": {"seconds": duration}})
+            self._count_voice("voice_failed")
+            if chat_type == "private":
+                await self._say(chat_id, VOICE_EMPTY_TEXT, mid)
+            return  # в группе — молча; в память диалога ничего не пишется
+
+        fake_msg = dict(msg)
+        fake_msg.pop("voice", None)
+        fake_msg["text"] = text
+        addressed = addressed_text(fake_msg, self.bot_username, self.callsigns)
+        if addressed is None:
+            # Группа, «бобика» в тексте нет — правило приватности §5.
+            log.info("voice ignored: no callsign in group")
+            self._count_voice("voice_ignored")
+            return
+
+        log.info("voice recognized", extra={"fields": {"seconds": duration}})
+        self._count_voice("voice_ok")
+        await self._dispatch(fake_msg, chat, chat_id, addressed, voice_prefix=VOICE_PREFIX_FMT % text)
 
     async def _health_reply(self, login: str) -> str:
         """E3: «что сломалось?» — только владельцу (settings.telegram_owner_login).

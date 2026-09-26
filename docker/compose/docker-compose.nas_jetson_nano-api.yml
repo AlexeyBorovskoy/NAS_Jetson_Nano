@@ -87,6 +87,8 @@ services:
       DL_SSD_MIN_FREE_GB: ${DL_SSD_MIN_FREE_GB:-40}
       DL_HDD_MIN_FREE_GB: ${DL_HDD_MIN_FREE_GB:-50}
       DL_SSD_MAX_GB: ${DL_SSD_MAX_GB:-20}
+      # E10: голосовые — распознавание в отдельном контейнере homecloud_stt (та же сеть)
+      STT_URL: ${STT_URL:-http://homecloud_stt:8790/stt}
     healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8099/healthcheck', timeout=3)\""]
       interval: 30s

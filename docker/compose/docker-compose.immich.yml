@@ -40,7 +40,7 @@ services:
       - homecloud_internal
 
   immich-server:
-    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-v2.7.5}
     container_name: homecloud_immich_server
     restart: always
     mem_limit: 1024m
@@ -73,7 +73,7 @@ services:
       - homecloud_internal
 
   immich-microservices:
-    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-v2.7.5}
     container_name: homecloud_immich_microservices
     command: ['start.sh', 'microservices']
     restart: always

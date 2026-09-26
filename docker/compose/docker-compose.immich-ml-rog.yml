@@ -5,7 +5,7 @@ name: immich-ml-rog
 services:
   immich-machine-learning:
     container_name: immich_ml_rog
-    image: ${IMMICH_ML_IMAGE:-ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}-cuda}
+    image: ${IMMICH_ML_IMAGE:-ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-v2.7.5}-cuda}
     restart: unless-stopped
     ports:
       - "${IMMICH_ML_HOST_BIND:-0.0.0.0}:${IMMICH_ML_PORT:-3003}:3003"

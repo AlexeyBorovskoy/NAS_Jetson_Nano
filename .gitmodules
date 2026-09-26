@@ -1,0 +1,4 @@
+[submodule "tools/deepseek-worker"]
+	path = tools/deepseek-worker
+	url = https://github.com/AlexeyBorovskoy/deepseek-worker.git
+	branch = master

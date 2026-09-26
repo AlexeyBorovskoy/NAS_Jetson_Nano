@@ -1,0 +1,45 @@
+# ds-worker для NAS_Jetson_Nano. Ядро — E:/deepseek-worker (README, docs/PROTOCOL.md).
+# Решения проекта — docs/handoff/DEEPSEEK_WORKER.md.
+
+[board]
+dir = "ds_board"                 # история задач, вне git (.gitignore)
+
+[git]
+base_branch = "main"
+worktree_root = "E:/"            # путь проекта содержит пробелы — worktree вне его
+worktree_prefix = "nas-ds-"
+
+[key]
+# Ключ владельца (общий счёт с Белгородом). Значение не печатать и не коммитить.
+file = "C:/Users/Alexey/.config/belgorod/deepseek-worker-key"
+
+[limits]
+max_turns = 30
+
+[security]
+# Worktree содержит только файлы git (репозиторий и так публичный). Запреты ниже
+# закрывают то, что лежит РЯДОМ: основная копия с .env и docs/local, настройки
+# Claude (в allowlist копятся настоящие секреты), доска соседей, ключи.
+deny_read = [
+  "**/.env*",
+  "**/*secret*",
+  "**/*token*",
+  "**/*.pass",
+  "**/*.pem",
+  "**/*.key",
+  "**/id_*",
+  "**/awg*.conf",
+  "**/wg*.conf",
+  "**/xray*.json",
+  "**/docs/local/**",
+  "**/DNS/**",
+  "**/.claude/**",
+  "~/.config/**",
+  "~/.ssh/**",
+  "~/.claude/**",
+  "//e/Linux mint/virtual_VM/shared/NAS_Jetson_Nano/**",
+  "//e/agent_coordination/**",
+]
+
+[worker]
+language = "ru"

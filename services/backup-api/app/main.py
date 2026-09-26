@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import secrets
 import time
 import uuid
@@ -143,27 +144,51 @@ def create_backup(payload: BackupCreateRequest, _: str = Depends(require_bearer)
     )
 
 
+# BK-1 (аудит 2026-09-26): и backup_id, и имя файла приходят от клиента и шли в путь как
+# есть — «bk_/../../x» и «../../x» писали за пределы STORAGE_ROOT.
+_BACKUP_ID_RE = re.compile(r"^bk_[A-Za-z0-9_-]{1,64}$")
+_FILENAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._ -]{0,127}$")
+
+
+def _safe_target(backup_id: str, filename: Optional[str]) -> Path:
+    if not _BACKUP_ID_RE.match(backup_id or ""):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid backup_id")
+    name = (filename or "payload.bin").replace("\\", "/").rsplit("/", 1)[-1]
+    if not _FILENAME_RE.match(name) or name in (".", ".."):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid filename")
+    root = STORAGE_ROOT.resolve()
+    out = (root / backup_id / name).resolve()
+    try:
+        out.relative_to(root / backup_id)
+    except ValueError:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid filename") from None
+    return out
+
+
 @app.post("/api/v1/backups/upload", status_code=status.HTTP_202_ACCEPTED)
 def upload_backup(
     backup_id: str,
     file: UploadFile,
     _: str = Depends(require_bearer),
 ) -> dict:
-    if not backup_id.startswith("bk_"):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid backup_id")
+    out_path = _safe_target(backup_id, file.filename)
     if not ENABLED:
         return {"backup_id": backup_id, "stored": False, "mode": "mock"}
 
-    target = STORAGE_ROOT / backup_id
-    target.mkdir(parents=True, exist_ok=True)
-    out_path = target / (file.filename or "payload.bin")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = out_path.with_name(".%s.part" % out_path.name)
     sha = hashlib.sha256()
     size = 0
-    with out_path.open("wb") as fh:
-        while chunk := file.file.read(1024 * 1024):
-            fh.write(chunk)
-            sha.update(chunk)
-            size += len(chunk)
+    try:
+        with tmp_path.open("wb") as fh:
+            while chunk := file.file.read(1024 * 1024):
+                fh.write(chunk)
+                sha.update(chunk)
+                size += len(chunk)
+        os.replace(tmp_path, out_path)  # оборванная загрузка не оставляет «готовый» файл
+    finally:
+        if tmp_path.exists():
+            tmp_path.unlink()
     return {
         "backup_id": backup_id,
         "stored": True,

@@ -1,40 +1,56 @@
-# Habr Part 2 article plan (2026-09) / План статьи Habr — Часть 2
+# Habr Part 2 article plan (2026-09, ред. 2) / План статьи Habr — Часть 2 (редакция 2)
 
-> 🇬🇧 **Status:** writing plan (not a full draft yet).  
-> 🇷🇺 **Статус:** план к написанию (не черновик текста).  
+> 🇬🇧 **Status:** writing plan, restructured 2026-09-26 around a new spine (see §3).
+> 🇷🇺 **Статус:** план к написанию, переформирован 2026-09-26 вокруг новой оси (см. §3).
 >
-> 🇬🇧 Part 1 → https://habr.com/ru/articles/1062914/ (13K, +6, 9 comments, none after 2026-07-30).  
-> 🇷🇺 Часть 1 → тот же URL.  
+> 🇬🇧 Part 1 → https://habr.com/ru/articles/1062914/ (13K, +6, 9 comments, none after 2026-07-30).
+> 🇷🇺 Часть 1 → тот же URL.
 >
-> 🇬🇧 Fact canon: `DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`, ADR-0007/8/9.  
-> 🇷🇺 Канон фактов: тот же.  
+> 🇬🇧 Fact canon: `DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`, ADR-0007/8/9/12, checkpoints 09-19…09-22, `CLAUDE.md`.
+> 🇷🇺 Канон фактов: те же файлы.
 >
-> 🇬🇧 Do **not** center Part 2 on “ML on Vostro” — Vostro is **out** of NAS architecture.  
+> 🇬🇧 Do **not** center Part 2 on "ML on Vostro" — Vostro is **out** of NAS architecture.
 > 🇷🇺 **Не** делать сюжет «ML на Vostro» каноном.
+>
+> 🇬🇧 **What changed in this revision:** the previous version (§ below, kept for history in git blame)
+> was organised as a feature tour — gateway, two Gigas, backups, roadmap. This revision drops that
+> shape. The owner's instruction was explicit: the project's strong side is retracted diagnoses and
+> honest pitfalls, not a checklist of what got shipped. The new spine is one recurring defect, found
+> six separate times across three months, and what it cost each time.
+> 🇷🇺 **Что изменено в этой редакции:** прежняя версия была устроена как обзор фич — шлюз, два GigaChat,
+> бэкапы, roadmap. Эта редакция уходит от такой формы. Указание владельца было прямым: сильная сторона
+> проекта — отозванные диагнозы и честные грабли, а не список поставленного. Новая ось — один и тот же
+> повторяющийся дефект, найденный шесть раз за три месяца, и его цена каждый раз.
 
 ---
 
 ## 1. Зачем вторая часть
 
-Часть 1 = **как поднять** домашнее облако на старом Nano + USB-драма + CGNAT.  
+Часть 1 = **как поднять** домашнее облако на старом Nano + USB-драма + CGNAT.
 Часть 2 = **как жить дальше**, когда:
 
-- семья уже пользуется (Talk-бот, фото, VPN);
+- семья уже пользуется (Talk-бот, фото, Telegram-бот, качалка, VPN);
 - читатели спросили про ML / GPU / «зачем Jetson»;
 - пришлось **пересобрать модель узлов** (не 4 машины, а SoR + edge);
-- подключилась **РФ-экосистема Сбера** (GigaChat + Cloud.ru) без выноса фото в облако «как в Google».
+- подключилась **РФ-экосистема Сбера** (GigaChat + Cloud.ru) без выноса фото в облако «как в Google»;
+- за три месяца эксплуатации накопилось **шесть отдельных случаев**, когда «зелёная галочка» (healthy-контейнер,
+  «восстановлено», «заблокировано», формула в биллинге) оказывалась неправдой — и один и тот же механизм
+  ошибки повторялся снова и снова.
 
-**Обещание читателю:** честный post-mortem «что сломалось в голове архитектуры», а не список галочек «поставил ещё один сервис».
+**Обещание читателю:** это не отчёт «поставил ещё сервисы». Это разбор одного и того же способа
+обманываться — и того, что каждый раз оставалось после разбора: тест, правило или алерт, который
+ловит именно этот класс ошибки в следующий раз.
 
 ---
 
 ## 2. Рабочий заголовок (варианты)
 
-1. **«Домашнее облако на Jetson Nano, часть 2: GigaChat, Cloud.ru и почему станция с RTX больше не узел»**  
-2. «После Habr: как семья получила бота, а мы убрали Vostro из схемы и не открыли порты»  
-3. «SoR дома, мозги в РФ-облаке: LLM Gateway на 4 ГБ RAM»
+1. **«Домашнее облако на Jetson Nano, часть 2: почему "работает" — самое опасное слово в мониторинге»**
+2. «Три месяца после Habr: как я шесть раз объяснял симптом раньше, чем проверял входные данные»
+3. «Zdorovый контейнер, немой бот: что не показывает healthcheck»
 
-Рекомендация: **вариант 1** — конкретика + интрига + ответ комментаторам.
+Рекомендация: **вариант 1** — конкретен, не кричит «список фич», сразу задаёт угол читателю, который
+после части 1 ждёт продолжения, а не рекламы Сбера.
 
 Хабы: DIY, sys_admin, artificial_intelligence (осторожно), hardware / antikvariat.
 
@@ -42,31 +58,62 @@
 
 ## 3. Угол и тезис
 
-**Тезис:**  
-> На 4 ГБ Jetson нельзя «всё локально». Зато можно сделать **единственную дверь наружу** (redaction gateway), держать **фото дома**, а интеллект — в freemium GigaChat / Cloud.ru FM, не превращая gaming-ноут и чужой Vostro в production.
+**Тезис:**
+> За три месяца эксплуатации один и тот же дефект нашёлся шесть раз в шести разных системах:
+> **объяснение появлялось раньше, чем была проверена входная величина**, а «работает» на экране
+> (healthy-контейнер, «восстановлено из бэкапа», «сеть заблокирована», формула в биллинге) оказывалось
+> состоянием интерфейса, а не состоянием системы. Три месяца ушли не столько на новые сервисы, сколько
+> на то, чтобы перестать доверять зелёным галочкам и научиться проверять независимым, более дешёвым
+> сигналом — сначала на себе, а с 26 сентября и на новом инструменте (дешёвый LLM-исполнитель), который
+> тут же поймал ровно тот же класс ошибки.
 
-**Антитезис читателя (закрыть в тексте):**  
-«Просто поставь всё в Yandex/Sber Cloud» — нет: SoR, CGNAT, VPN семьи, Amnezia, персональные фото.
+**Почему эта ось, а не список фич (обоснование):** читатель части 1 уже видел, что Jetson поднимается
+и держит семью; вопрос части 2 — не «что ещё поставили», а «что ломалось, пока это работало, и как я
+об этом узнавал». Список поставленных сервисов (GigaChat, Cloud.ru, Telegram-бот, качалка) — это фон,
+на котором проявляется один и тот же механизм: цикл опроса умирает молча, а процесс жив; бэкап
+восстановлен, но не с той машины, которой это будет нужно; сеть заблокирована зеркально тому, как год
+назад; формула в биллинге умножает не то. Owner прямо просил не превращать статью в перечень галочек —
+и сквозная ось «одна и та же ошибка, шесть раз, каждый раз чуть дешевле её ловить» — единственная,
+которая держит весь материал вместе без пересказа changelog.
+
+**Антитезис читателя (закрыть в тексте):**
+«Просто поставь Zabbix / полноценный мониторинг» — не помогает: во всех шести случаях мониторинг
+показывал ровно то, что был должен показывать (контейнер жив, процесс не упал, порт слушает) —
+проблема была не в отсутствии метрики, а в том, что метрика измеряла не тот уровень.
 
 ---
 
-## 4. Структура статьи (≈12–18 мин чтения)
+## 4. Структура статьи (≈14–20 мин чтения)
 
-| § | Блок | Содержание | Доказательства |
+| § | Блок | Тезис раздела | Доказательства из журнала |
 |---|---|---|---|
-| 0 | Лид | 3 месяца после Part 1: 13K, комментарии, что обещали и что реально сделали | ссылка на Part 1, метрики 2026-09 |
-| 1 | Ответы Habr без воды | vvzvlad / tklim / dE1l / falcon4fun — таблица «замечание → что сделали / что честно не сделали» | POST_HABR_FEEDBACK + live |
-| 2 | Слом 4-узловой мечты | Станция кочует, Vostro чужой/sleep, Jetson SoR. ADR-0007 | схема «было / стало» |
-| 3 | LLM Gateway как продукт | Один redaction+budget door; DeepSeek → **Giga-first**; failover; 1 stream PERS | health JSON, без ключей |
-| 4 | Два Giga | PERS `api.giga.chat` vs Cloud.ru FM Bearer; 402→пополнение; модель 2-Max | урок биллинга |
-| 5 | Бэкапы без иллюзий | Пустые ночные dumps; T0 на Vostro emergency; Immich 13G→HDD; S3 blocked tenant | честный fail |
-| 6 | Git / GitVerse | Публичный GitHub + зеркало GitVerse; SSH | ссылки |
-| 7 | Что **не** сделали | Immich ML на Nano CUDA 10.2; GPU Nano; K8s; открытые порты | ответ «зачем Jetson» |
-| 8 | Уроки агентной разработки | AGENTS.md, quality gate, abort деплоя, dual remote | без хвастовки |
-| 9 | Roadmap Part 3 (коротко) | S3 L2, optional Immich ML offload, Part 3 если будет | |
-| 10 | CTA | GitHub, GitVerse, Part 1 | |
+| 0 | Лид | 3 месяца после части 1: что изменилось (семья пользуется, GigaChat/Cloud.ru подключены), и почему эта статья не про фичи | Part 1 метрики; таблица версий/этапов A–C из `CHECKPOINT_2026-09-19.md` — одной строкой, не разделом |
+| 1 | Слом 4-узловой мечты | Планировали 4 узла, осталось SoR (Jetson) + edge; GPU так и не пригодился — отвечает на «зачем Jetson»/GPU-вопросы части 1 мимоходом, не отдельным FAQ | ADR-0007; `docs/audit/2026-09-19_full_audit/`; баланс GigaChat из `CHECKPOINT_2026-09-19.md` |
+| 2 | Один дефект, шесть находок — витрина | Центральный раздел. Каждая находка — по формуле «что показывало зелёным → что оказалось на самом деле → чем поймано → что теперь стоит на этом месте» | см. таблицу §4.1 ниже |
+| 3 | Зеркальная блокировка (26.09) | Через месяц после того, как научились чинить блокировку IP VPS, тот же провайдер заблокировал уже новый IP — и старый снова стал рабочим; неделю не было ни доступа, ни алертов, ни отчёта, потому что канал, который должен был сообщить о проблеме, сам был частью проблемы | правило №17 CLAUDE.md; факт 2026-09-26 в `HABR_PART2_MATERIALS.md` |
+| 4 | Экономика агентов повзрослела | Второй исполнитель (DeepSeek) добавлен в конвейер — и в первом же пробном цикле его результат поймали на нарушении контракта тем же способом: не поверили на слово, проверили командой | ADR-0012; `docs/handoff/DEEPSEEK_WORKER.md`, пробный цикл 26.09 (≈$0.048) |
+| 5 | Что теперь стоит на месте каждой находки | Не сама находка ценна, а тест/правило/алерт, оставшийся после неё — quality gate №14, «тишина ≠ успех», супервизор циклов Telegram, восстановление проверяется с той машины, которая будет восстанавливать | `docs/32_QUALITY_GATE.md`; коммит `db458f7`; правило CLAUDE.md о независимой проверке |
+| 6 | Что по-прежнему сломано и я это знаю | Offsite S3 фото пуст (решение владельца), restic 400 с устройства не разгадан, `usefact` для Object Storage не проверен, EOL Ubuntu 18.04, coturn не развёрнут | `CHECKPOINT_2026-09-21.md`, `CHECKPOINT_2026-09-22.md` §restic S3 400 |
+| 7 | Коротко: что дальше (Part 3?) | S3 L2, голосовые сообщения (Vosk), возможный Part 3 | план §2.2, `docs/superpowers/specs/2026-09-20-voice-messages-design.md` |
+| 8 | CTA | GitHub, GitVerse, Part 1 | ссылки |
 
-Объём: **8–12k знаков** основного текста + 4–6 схем/скринов.
+Объём: **9–13k знаков** основного текста + 5–7 схем/скринов. Раздел §2 — самый длинный, ожидаемо
+40–50 % текста.
+
+### 4.1 Витрина находок (материал для §2, в порядке силы, не хронологии)
+
+| # | Что показывало «зелёным» | Что было на самом деле | Чем поймано | Что теперь на этом месте |
+|---|---|---|---|---|
+| a | Nextcloud отвечал 400 клиентам, выглядело как старый баг «бот 12 дней бил в стену» | Диагноз оказался собственной регрессией того же дня: сняли `overwritehost`, включив проверку доверенного домена, и сломали внутренний вызов по docker-имени | Базовая линия ДО правки: 13 626 опросов, все `304`, ноль `400`; все 7975 отказов легли в один час — час правки | Правило CLAUDE.md: «увидел аномалию — сначала посмотри тот же показатель ДО своей правки» |
+| b | Container `homecloud_nasa_api` healthy, бот в Telegram молчал 6 суток (20–26.09) | `socksio.ProtocolError` не наследует `httpx.HTTPError`, цикл опроса умирал молча; процесс и healthcheck жили дальше | Найдено при разборе тишины бота, не мониторингом | Супервизор циклов (`db458f7`): перезапуск упавшего/зависшего (нет пульса 300 с) цикла, статус вынесен в `/healthcheck` |
+| c | «Восстановление офсайт-копии фото проверено, 20/20 sha256» | Проверка шла не с той машины, которая столкнётся с реальным восстановлением: с Jetson тот же `restic` бьётся в `400 Bad Request`, при этом прямой S3 тем же ключом работает без единого отказа | Попытка снять репозиторий перед плановым удалением копии | Правило: восстановление проверять **с той машины, которая будет восстанавливать**, а не с той, где удобнее отлаживать |
+| d | Формула расходов Cloud.ru «починена» — попала в `main` | Деньги на счету умножили на ставку второй раз (`amount × cost`); верно — просто сумма `amount`. Ошибку нашёл сосед по площадке, через час отозвал и свою поправку тоже | Признак лежал перед глазами весь день: `amount / usefact` у токенов = ровно ставке — не был использован | 12 тестов, включая проверку самих данных (`amount == usefact × cost`), чтобы будущая выгрузка ломала тест, а не подгонялась под код |
+| e | Обратный туннель Jetson↔VPS «просто лёг» — выглядело как новая, непонятная поломка | Зеркало инцидента годичной давности: домашний провайдер заблокировал уже **новый** IP VPS, а старый (заблокированный тогда) снова пропускает трафик; тот же сервер — совпал ключ хоста | Сверка SSH host key старого и нового адреса | `VPS_HOST` переключён на старый адрес; правило №17 — прямой ssh из дома как путь восстановления, не зависящий ни от туннеля, ни от VPS |
+| f | Пять закачек в качалке «зависли», страж молчал | aria2 у торрента на паузе отдаёт `totalLength=0`, хотя длины файлов давно известны — код ждал размера, который не придёт | Найдено при разборе конкретной жалобы, не алертом | `total_size()` считает по сумме длин файлов, а не по полю ответа aria2 |
+
+Шесть строк — это витрина, не весь список: полный перечень отозванных диагнозов длиннее (см.
+раздел «Грабли» в `CLAUDE.md`), в статью идут самые показательные и разноплановые (мониторинг,
+бэкап, сеть, биллинг, встроенный сторож).
 
 ---
 
@@ -74,12 +121,12 @@
 
 | # | Кадр | Где снять | Статус |
 |---|---|---|---|
-| 1 | Схема узлов Part1 vs Part2 | draw.io / excalidraw | todo |
-| 2 | `curl /health` gigachat + providers | Jetson SSH | todo (редact) |
-| 3 | Talk @бобик ответ | телефон семьи | todo |
-| 4 | Immich size SSD = HDD backup | `du -sh` | todo |
-| 5 | restic snapshot list (Vostro) без путей с PII | Vostro | optional |
-| 6 | Cloud.ru FM chat 200 (без ключа в кадре) | workstation | optional |
+| 1 | Схема узлов Part1 vs Part2 (SoR + edge, без 4 машин) | draw.io / excalidraw | todo |
+| 2 | `docker ps` / healthy-контейнер рядом с журналом «бот молчал 6 суток» — контраст | Jetson SSH + текст рядом | todo (редact) |
+| 3 | `/healthcheck` с новым полем статуса Telegram-цикла (после `db458f7`) | Jetson SSH | todo |
+| 4 | Пример строки биллинга Cloud.ru с полями `usefact/cost/amount/amount_nds` (без ID организации) | скрин таблицы, без секретов | todo |
+| 5 | `ds-worker review` — вывод пробного цикла DeepSeek (без ключа) | workstation | easy |
+| 6 | Talk @бобик / Telegram @бобик ответ | телефон семьи, без имён/ID | todo |
 | 7 | GitHub + GitVerse twin | browser | easy |
 | 8 | Habr Part1 stats 13K | habr UI | easy |
 
@@ -87,25 +134,33 @@
 
 ## 6. Тон и табу
 
-**Тон:** как Part 1 — инженерный дневник, RU, без «enterprise».  
+**Тон:** как часть 1 — инженерный дневник, RU, без «enterprise». Витрина находок (§2) пишется в одном
+формате на каждую строку: симптом → неверная версия → чем опровергнута → что осталось. Не превращать
+в извинения — это разбор механизма ошибки, а не покаяние.
+
 **Табу:**
-
-- пароли, IP внутренних хостов без нужды, peer count Amnezia детально;
+- пароли, IP внутренних хостов без нужды, идентификаторы комнат Talk / чатов Telegram, peer count Amnezia
+  детально;
+- doxxing семьи — ни имён, ни логинов, ни ID;
 - обещание «Immich ML уже на Nano»;
-- реклама Сбера — только «как клиент физлица»;
-- doxxing семьи.
+- реклама Сбера / DeepSeek — только «как клиент, вот что получилось и что стоило»;
+- превращать шесть находок в список из десяти и больше — теряется цельность.
 
-**Можно:** названия сервисов, HTTP-коды, размеры 13G, ADR-номера, ссылки на public git.
+**Можно:** названия сервисов, HTTP-коды, размеры (13G и т.п.), ADR-номера, суммы в рублях/долларах
+(0.0263 ₽, $0.048 и $0.072 за две пробные задачи DeepSeek), ссылки на public git, IP домашней сети (уже в публичном репозитории).
 
 ---
 
-## 7. Ответы комментаторам (каркас абзацев)
+## 7. Ответы комментаторам части 1 (вплетаются в §1 и §6, отдельного FAQ-раздела нет)
 
-1. **GPU/JetPack** — GPU всё ещё не в prod ML; ценность Nano = low-power SoR + community JetPack stack, не «ChatGPT дома». Интеллект ушёл в gateway+cloud.  
-2. **4 GB** — mem_limit, monitoring pressure; не раздували локальную LLM.  
-3. **Immich ML** — CUDA 10.2 vs official 11/12; offload на RTX-ноут отвергли как prod-узел (кочует); Cloud.ru/очередь — другой путь.  
-4. **Порты** — Part1 уже VPN-only; Part2 подтверждает, что так и осталось.  
-5. **«Купи N150»** — не купили; дожали имеющееся + РФ API.
+1. **GPU/JetPack** — GPU по-прежнему не в проде; ценность Nano — low-power SoR, не «ChatGPT дома».
+   Интеллект ушёл в шлюз + freemium РФ-облако (§1).
+2. **4 GB** — mem_limit, zram, давление на память не снято; локальную LLM не раздували (§1).
+3. **Immich ML** — CUDA 10.2 против официальных 11/12; offload на кочующий ноут отвергнут как прод-узел;
+   Cloud.ru — только в пределах free tier (§1, §6).
+4. **Порты** — часть 1 уже VPN-only; часть 2 подтверждает, что так и осталось, и что зеркальная блокировка
+   IP (§3) — это про сеть провайдера, не про открытые порты.
+5. **«Купи мини-ПК»** — не купили; дожали имеющееся + РФ API + второй LLM-исполнитель для механики (§4).
 
 ---
 
@@ -113,26 +168,30 @@
 
 | Шаг | Владелец | Оценка |
 |---|---|---|
-| Утвердить заголовок + тезис | owner | 1 день |
+| Утвердить заголовок + тезис (эта редакция) | owner | 1 день |
 | Собрать скрины 1–8 | owner/agent | 1 вечер |
-| Черновик 60% | agent | 1–2 сессии |
-| Правка фактов (дата, размеры, SHA) | agent | 0.5 |
+| Черновик §0–2 (лид + архитектура + витрина находок) | agent | 1–2 сессии |
+| Черновик §3–8 | agent | 1 сессия |
+| Правка фактов (даты, суммы, коммиты) | agent | 0.5 |
 | Вычитка RU | owner | 1 вечер |
 | Публикация Habr | owner | — |
 | Анонс: GitHub README badge, Part1 cross-link | agent | 0.5 |
 
-Целевое окно: **октябрь 2026** (не горячить до S3, если не готов честный «S3 ещё нет»).
+Целевое окно: **октябрь–ноябрь 2026** (не горячить до того, как закрыт хотя бы один из §6-пунктов —
+иначе «что сломано» раздел выглядит статичным дольше одной точки).
 
 ---
 
 ## 9. Критерии «статья готова»
 
-- [ ] Все цифры сверены с live (health, 13G, snapshot id optional)  
-- [ ] Нет секретов на скринах  
-- [ ] ADR-0007/8/9 объяснены человеческим языком  
-- [ ] Комментарии Part1 закрыты по смыслу  
-- [ ] CTA на GitHub + Part1  
-- [ ] Part2 **не** врёт про Vostro-ML как текущий канон  
+- [ ] Все цифры сверены с журналом на дату публикации (health, суммы, коммиты)
+- [ ] Нет секретов, ID комнат/чатов, имён семьи на скринах и в тексте
+- [ ] Каждая строка витрины §4.1 — с датой и коммитом/файлом-доказательством
+- [ ] ADR-0007/8/9/12 объяснены человеческим языком, не пересказаны построчно
+- [ ] Комментарии части 1 закрыты по смыслу (§7), без отдельного FAQ-блока
+- [ ] Часть 2 **не** врёт про Vostro-ML как текущий канон
+- [ ] Статья не читается как список фич — проверка: если убрать §2 и §3, текст должен рассыпаться,
+      а не остаться связным обзором сервисов
 
 ---
 
@@ -144,11 +203,33 @@
 | Feedback | `docs/plans/POST_HABR_FEEDBACK_2026-08.md` |
 | Activity 2026-09 | `artifacts/reports/HABR_GITHUB_ACTIVITY_2026-09-08.md` |
 | Canon | `docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md` |
-| Drafts Part1 | `docs/articles/publication/habr_final.md` (не копипастить в Part2) |
+| Checkpoints с материалом для витрины находок | `docs/plans/CHECKPOINT_2026-09-19.md`, `CHECKPOINT_2026-09-21.md`, `CHECKPOINT_2026-09-22.md` |
+| ADR исполнителя DeepSeek | `docs/decisions/ADR-0012-deepseek-worker.md`, `docs/handoff/DEEPSEEK_WORKER.md` |
+| Журнал доказательств | `docs/articles/HABR_PART2_MATERIALS.md` |
+| Drafts Part1 | `docs/articles/habr_final_edited.md` (не копипастить в Part2) |
 | Этот план | `docs/articles/HABR_PART2_ARTICLE_PLAN_2026-09.md` |
 
 ---
 
-## 11. EN one-liner
+## 11. EN summary
 
-Part 2 Habr plan: after shipping a home NAS on Jetson, we re-architected around **Jetson as SoR**, dropped roaming GPU PC and corporate Vostro from prod, put **GigaChat-first** behind a redaction gateway, dual-homed RU cloud (PERS + Cloud.ru FM), and told the truth about backups (empty dumps, Immich→HDD, S3 still blocked). Answers Part 1 commenters without buying an N150.
+Part 2 was replanned on 2026-09-26 around a single spine instead of a feature tour. Over three months
+of running the home NAS, the same defect surfaced six separate times in six unrelated systems: **an
+explanation was accepted before the input value was actually checked**, and a green checkmark — a
+healthy container, a "verified restore," a "blocked" network, a billing formula — turned out to
+describe the interface, not the system. The showcase (§2 in the outline) walks through six concrete
+cases: a self-inflicted Nextcloud regression misdiagnosed as a 12-day-old bug; a Telegram bot silent
+for six days because `socksio.ProtocolError` doesn't inherit `httpx.HTTPError` and the poll loop died
+quietly while the container stayed healthy; an off-site photo restore that was verified on the wrong
+machine (the Jetson itself gets a 400 from the same repository that plain S3 opens fine); a Cloud.ru
+billing formula that shipped wrong twice in a row before VAT proved which field was already money;
+a mirror-image network block on 2026-09-26 — the home ISP blocked the VPS's *new* IP a month after
+blocking the *old* one, and the old one now works again, confirmed by matching the SSH host key; and
+aria2 hanging downloads forever because a paused torrent reports `totalLength=0`. A short section adds
+the newest actor to the pipeline, a cheap DeepSeek worker (ADR-0012) — whose very first trial run was
+caught on a contract violation the same way everything else was: by checking, not by trusting the
+report. The closing sections list what's still honestly broken (offsite S3 empty, the restic 400 still
+unexplained, Object Storage's `usefact` semantics unverified) and a short Part 3 teaser. Cut from the
+previous outline: a dedicated FAQ-style response section, a deep dive into gateway mechanics, and a
+"two Gigas" billing-mechanics section — all folded into the narrower spine or reduced to one paragraph,
+since duplicating them as standalone sections turned the piece back into a checklist.

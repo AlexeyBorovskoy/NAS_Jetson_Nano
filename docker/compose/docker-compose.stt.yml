@@ -1,0 +1,31 @@
+# E10 — распознавание голосовых сообщений семьи (Vosk small-ru). Спецификация:
+# docs/superpowers/specs/2026-09-20-voice-messages-design.md
+# Порт НЕ публикуется: доступ только из внутренней сети Docker (бот в homecloud_nasa_api).
+# Звук не покидает дом. Лимит памяти 320 МБ: Vosk в пике 245 МБ (замер на Jetson 2026-09-20);
+# отдельный контейнер — чтобы превышение памяти не утащило за собой бота и качалку.
+name: homecloud-stt
+services:
+  stt:
+    build:
+      context: ../../services/stt
+    container_name: homecloud_stt
+    restart: always
+    mem_limit: 320m
+    cpus: 1.5
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8790/health', timeout=3)"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - homecloud_internal
+
+networks:
+  homecloud_internal:
+    external: true

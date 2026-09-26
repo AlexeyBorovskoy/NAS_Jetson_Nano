@@ -11,10 +11,12 @@
 #          падал с кодом 127 и МОЛЧА ломал бэкапы 16 дней, а systemd рапортовал success.
 #   sh   → `sudo -S` вместе с heredoc: пароль уехал в файл вместо содержимого.
 #   sec  → секреты в коммите.
+#   img  → ${IMMICH_VERSION:-release}: `compose pull` молча поднял бы Immich через
+#          мажорную версию, а он мигрирует схему БД при старте (D6/DEP-2, 2026-09-26).
 #
 # Правило: ворота либо проходят целиком, либо выкат не делается.
 #
-# Usage:  bash scripts/quality/preflight.sh [--quick]
+# Usage:  bash scripts/quality/preflight.sh [--quick] [--images-only]
 set -uo pipefail
 
 cd "$(dirname "$0")/../.." || exit 2
@@ -22,7 +24,16 @@ cd "$(dirname "$0")/../.." || exit 2
 FAIL=0
 WARN=0
 QUICK=0
-[ "${1:-}" = "--quick" ] && QUICK=1
+# --images-only — прогнать ТОЛЬКО проверку тегов образов (раздел 7б) и выйти.
+# Нужен тесту tests/unit/test_immich_pinned_version.py: тот подкладывает дерево-фикстуру
+# и проверяет, что ворота различают плавающий тег Immich (bad) и :latest у прочих (warn).
+IMAGES_ONLY=0
+for arg in "$@"; do
+    case "$arg" in
+        --quick) QUICK=1 ;;
+        --images-only) IMAGES_ONLY=1 ;;
+    esac
+done
 
 ok()   { printf '  \033[32m✓\033[0m %s\n' "$1"; }
 bad()  { printf '  \033[31m✗\033[0m %s\n' "$1"; FAIL=$((FAIL+1)); }
@@ -30,6 +41,70 @@ warn() { printf '  \033[33m!\033[0m %s\n' "$1"; WARN=$((WARN+1)); }
 head_() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 
 have() { command -v "$1" >/dev/null 2>&1; }
+
+# ── Теги образов (раздел 7б) ───────────────────────────────────────────────────
+# Вынесено в функцию, потому что эту проверку гоняет ещё и тест
+# tests/unit/test_immich_pinned_version.py — на дереве-фикстуре (режим --images-only).
+# Пути берутся от текущего каталога, а скрипт сам делает `cd` в корень дерева,
+# поэтому фикстуре достаточно положить копию скрипта в <tmp>/scripts/quality/.
+#
+# bad/ok/warn — общие функции ворот: FAIL и WARN считаются по всему прогону.
+check_image_tags() {
+    local f line lineno
+    local immich_seen=0 immich_bad=0 other_latest=0
+    for f in docker/compose/*.yml; do
+        [ -f "$f" ] || continue
+        lineno=0
+        while IFS= read -r line; do
+            lineno=$((lineno + 1))
+            # Смотрим только строки образа, а не любое упоминание слова в комментарии.
+            case "$line" in
+                *[Ii]mage:*) ;;
+                *) continue ;;
+            esac
+            case "$line" in
+                *[Ii][Mm][Mm][Ii][Cc][Hh]*)
+                    immich_seen=$((immich_seen + 1))
+                    # `:-release}` — дефолт по умолчанию; `:release` — голый плавающий тег;
+                    # `:latest` — то же самое, но названное честно. Любой из них означает,
+                    # что pull уедет вперёд без нашего решения.
+                    case "$line" in
+                        *:-release*|*:release*|*:latest*)
+                            bad "плавающий тег у образа Immich: $f:$lineno"
+                            printf '      %s\n' "$(printf '%s' "$line" | sed 's/^[[:space:]]*//')"
+                            immich_bad=$((immich_bad + 1))
+                            ;;
+                    esac
+                    ;;
+                *:latest*)
+                    warn "не-Immich образ на :latest: $f:$lineno (DEP-2, ворота не блокирует)"
+                    other_latest=$((other_latest + 1))
+                    ;;
+            esac
+        done < "$f"
+    done
+    if [ "$immich_seen" -eq 0 ]; then
+        warn "образов Immich в docker/compose/*.yml не найдено — проверять нечего"
+    elif [ "$immich_bad" -eq 0 ]; then
+        ok "Immich закреплён по версии: образов Immich — $immich_seen, плавающих тегов нет"
+    fi
+    [ "$other_latest" -eq 0 ] || \
+        warn "прочих образов на :latest — $other_latest (netdata/portainer/samba: задача DEP-2)"
+}
+
+# Режим одной проверки: тесту нужен результат только 7б, без shellcheck, vermin
+# и прогона всех тестов (иначе тест, запускающий ворота, запустил бы и сам себя).
+if [ "$IMAGES_ONLY" = "1" ]; then
+    head_ "7б. Теги образов Immich / Immich image tags"
+    check_image_tags
+    printf '\n'
+    if [ "$FAIL" -eq 0 ]; then
+        printf '\033[32m✓ теги образов Immich закреплены\033[0m\n'
+        exit 0
+    fi
+    printf '\033[31m✗ плавающих тегов у Immich: %d\033[0m\n' "$FAIL"
+    exit 1
+fi
 
 # ── 1. Синтаксис shell ─────────────────────────────────────────────────────────
 head_ "1. Синтаксис bash / bash syntax"
@@ -173,6 +248,19 @@ elif have docker && docker info >/dev/null 2>&1; then
 else
     warn "docker недоступен — проверка compose пропущена (в CI она есть)"
 fi
+
+# ── 7б. 🔴 Теги образов Immich ─────────────────────────────────────────────────
+head_ "7б. Теги образов Immich / Immich image tags"
+#
+# История дефекта (2026-09-26, задача D6/DEP-2): устройство работало на Immich 2.7.5,
+# а образ брался по плавающему тегу — ${IMMICH_VERSION:-release}. Обычный
+# `docker compose pull` поднял бы мажорную версию МОЛЧА, а Immich мигрирует схему БД
+# при старте: откатить образ, не откатив дамп БД, нельзя. Версия закреплена на v2.7.5.
+#
+# Прочие образы на :latest (netdata, portainer, samba) пока НЕ блокируют ворота —
+# это отдельная задача DEP-2. Предупреждение видно, но ворота не краснеют на том,
+# что ещё не сделано: покрасневшие ворота начинают обходить.
+check_image_tags
 
 # ── 8. Регрессионные тесты ─────────────────────────────────────────────────────
 head_ "8. Регрессионные тесты / regression tests"

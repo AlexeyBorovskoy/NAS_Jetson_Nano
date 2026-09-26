@@ -77,7 +77,7 @@ services:
       - homecloud_internal
 
   immich-server:
-    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-v2.7.5}
     container_name: homecloud_immich_server
     restart: always
     depends_on:
@@ -104,7 +104,7 @@ services:
   # Disabled by default on Jetson (4GB no swap) — enable only if RAM budget allows.
   # To start: docker compose --profile microservices up -d
   immich-microservices:
-    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-v2.7.5}
     container_name: homecloud_immich_microservices
     command: ['start.sh', 'microservices']
     restart: always

@@ -7,8 +7,9 @@ FROM python:3.12-slim
 ARG MODEL_URL=https://huggingface.co/localstack/vosk-models/resolve/main/vosk-model-small-ru-0.22.zip
 ARG MODEL_SHA256=961d5ff98a17f4aa6de69864d0aa71fa5bac682301d2b5d17a3f24c5c99a46d4
 
+# libatomic1 нужен libvosk.so на arm64, в python:3.12-slim его нет (поймано пробной сборкой 2026-09-26).
 RUN apt-get update \
- && apt-get install -y --no-install-recommends opus-tools curl unzip ca-certificates \
+ && apt-get install -y --no-install-recommends opus-tools libatomic1 curl unzip ca-certificates \
  && curl -fsSL -o /tmp/model.zip "$MODEL_URL" \
  && echo "$MODEL_SHA256  /tmp/model.zip" | sha256sum -c - \
  && unzip -q /tmp/model.zip -d /opt \

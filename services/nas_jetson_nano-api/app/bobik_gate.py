@@ -85,16 +85,26 @@ _CLARIFY_PATTERNS = [
     r"^разберись$",
 ]
 
-# Local tool intents: (tool_name, patterns) — first match wins
-_TOOL_INTENTS: List[Tuple[str, List[str]]] = [
+# ── СИЛЬНЫЕ / СЛАБЫЕ шаблоны инструментов ────────────────────────────────────
+# Инцидент 2026-09-26: владелец голосом спросил «какая температура в Париже» —
+# бот ушёл в home.status, потому что «температур» искалось подстрокой где угодно
+# во фразе. Разбор дал два класса шаблонов:
+#   СИЛЬНЫЙ — однозначно про дом сам по себе (статус/бэкап/диск/фото-immich/
+#     whoami/help), срабатывает без всякого контекста;
+#   СЛАБЫЙ — бытовое слово («температура», «нагрузка», «контейнер», «альбом»,
+#     «команды», «помощь» в общем смысле, «жив ли», «как там») — само по себе
+#     ничего не доказывает («нагрузка на мышцы», «контейнерные перевозки»),
+#     нужен «домашний якорь» рядом (см. _HOME_ANCHOR_PATTERNS ниже).
+# Первое совпадение среди СИЛЬНЫХ побеждает сразу; СЛАБЫЕ — только с якорем,
+# без анти-якоря (погода/город) и в короткой фразе (см. match_tool_intent).
+_STRONG_TOOL_INTENTS: List[Tuple[str, List[str]]] = [
     (
         "home.help",
         [
             r"\bhelp\b",
-            r"помощ",
             r"что\s+умеешь",
-            r"команды",
             r"что\s+можешь",
+            r"помощь\s+по\s+командам",
         ],
     ),
     (
@@ -104,8 +114,6 @@ _TOOL_INTENTS: List[Tuple[str, List[str]]] = [
             r"бэкап",
             r"бекап",
             r"дамп",
-            r"копи[яи].{0,15}(свеж|стар|есть)",
-            r"когда.{0,20}бэкап",
         ],
     ),
     (
@@ -113,9 +121,7 @@ _TOOL_INTENTS: List[Tuple[str, List[str]]] = [
         [
             r"\bphotos?\b",
             r"\bimmich\b",
-            r"\bфото\b",
             r"сколько\s+фото",
-            r"альбом",
         ],
     ),
     (
@@ -138,12 +144,6 @@ _TOOL_INTENTS: List[Tuple[str, List[str]]] = [
             r"\bstat\b",
             r"статус",
             r"стат\b",
-            r"как\s+(там\s+)?(сервер|джетсон|jetson|дом)",
-            r"контейнер",
-            r"нагрузк",
-            r"температур",
-            r"\bram\b",
-            r"жив\s+ли",
         ],
     ),
     (
@@ -156,6 +156,108 @@ _TOOL_INTENTS: List[Tuple[str, List[str]]] = [
     ),
 ]
 
+# СЛАБЫЕ — срабатывают только вместе с домашним якорем (см. ниже) и вне
+# анти-якоря (погода/город), в фразе не длиннее 12 слов.
+_WEAK_TOOL_INTENTS: List[Tuple[str, List[str]]] = [
+    (
+        "home.help",
+        [
+            r"команды",
+            r"помощ",
+        ],
+    ),
+    (
+        "home.backup_age",
+        [
+            r"копи[яи].{0,15}(свеж|стар|есть)",
+        ],
+    ),
+    (
+        "home.photos",
+        [
+            r"\bфото\b",
+            r"альбом",
+        ],
+    ),
+    (
+        "home.status",
+        [
+            r"контейнер",
+            r"нагрузк",
+            r"температур",
+            r"\bram\b",
+            r"жив\s+ли",
+            r"как\s+там",
+        ],
+    ),
+]
+
+# Домашний якорь — без него СЛАБЫЙ шаблон не решает ничего («нагрузка на
+# мышцы», «температура в Париже» тоже содержат слабое слово). Список нарочно
+# короткий и легко пополняемый.
+_HOME_ANCHOR_PATTERNS = [
+    r"сервер",
+    r"джетсон",
+    r"jetson",
+    r"\bnas\b",
+    r"\bнас\b",
+    r"облак",
+    r"домашн",
+    r"процессор",
+    r"\bcpu\b",
+    r"\bgpu\b",
+    r"видеокарт",
+    r"immich",
+    r"фото",
+    r"бэкап",
+    r"диск",
+    r"бобик\s*,?\s*(как\s+ты|ты\s+как)",  # самочувствие самого бота
+]
+
+# Анти-якорь — погода/город. Если он есть, домашний инструмент не выбирается
+# НИКОГДА, даже по сильному шаблону, кроме явного «статус»/«бэкап»/«диск»/
+# «кто я» (см. _ANTI_ANCHOR_EXEMPT_TOOLS): «какая температура в Париже» не
+# должна становиться home.status только потому, что в фразе есть «температура».
+_ANTI_ANCHOR_PATTERNS = [
+    r"погод",
+    r"на\s+улице",
+    r"за\s+окном",
+    r"\bв\s+[А-ЯЁ][а-яё]+(е|и)\b",  # город в предложном падеже (текст с регистром)
+    # голос распознаётся строчными — те же города явным списком:
+    r"москв",
+    r"питер",
+    r"петербург",
+    r"париж",
+    r"сочи",
+    r"казан",
+    r"лондон",
+    r"берлин",
+]
+
+# Явные сигналы, которые анти-якорь не гасит (см. правило выше). Каждый —
+# отдельный список шаблонов, а не имя инструмента целиком: «сколько фото» или
+# «что умеешь» рядом с городом по-прежнему уходят в модель.
+_ANTI_ANCHOR_EXEMPT: Dict[str, List[str]] = {
+    "home.status": [r"\bstatus\b", r"\bstat\b", r"статус", r"стат\b"],
+    "home.backup_age": [r"\bbackup\b", r"бэкап", r"бекап", r"дамп"],
+    "home.disk": [
+        r"\bdisk\b",
+        r"\bstorage\b",
+        r"\bдиск\b",
+        r"хранилищ",
+        r"сколько\s+(места|свободно)",
+        r"свободн(ое|ого)\s+место",
+        r"\bhdd\b",
+        r"\bssd\b",
+    ],
+    "home.whoami": [r"whoami", r"кто\s+я", r"как\s+меня\s+зовут"],
+}
+
+# Длинная фраза без сильного шаблона уходит к модели, а не к инструменту —
+# развёрнутый вопрос «в две фразы» с бытовым словом внутри не должен внезапно
+# закончиться отчётом о диске.
+_MAX_WORDS_FOR_WEAK_MATCH = 12
+
 
 def _compile(patterns: List[str]) -> List[Any]:
     return [re.compile(p, re.IGNORECASE | re.UNICODE) for p in patterns]
@@ -163,15 +265,52 @@ def _compile(patterns: List[str]) -> List[Any]:
 
 _DENY_RE = _compile(_DENY_PATTERNS)
 _CLARIFY_RE = _compile(_CLARIFY_PATTERNS)
-_TOOL_RE = [(name, _compile(pats)) for name, pats in _TOOL_INTENTS]
+_STRONG_TOOL_RE = [(name, _compile(pats)) for name, pats in _STRONG_TOOL_INTENTS]
+_WEAK_TOOL_RE = [(name, _compile(pats)) for name, pats in _WEAK_TOOL_INTENTS]
+_HOME_ANCHOR_RE = _compile(_HOME_ANCHOR_PATTERNS)
+_ANTI_ANCHOR_RE = _compile(_ANTI_ANCHOR_PATTERNS)
+_ANTI_ANCHOR_EXEMPT_RE = {
+    name: _compile(pats) for name, pats in _ANTI_ANCHOR_EXEMPT.items()
+}
 
 
 def match_tool_intent(text: str) -> Optional[str]:
-    """Return allowlisted tool name if text clearly asks for a home tool."""
+    """Return allowlisted tool name if text clearly asks for a home tool.
+
+    Порядок (см. разбор инцидента 2026-09-26 выше):
+    1. Анти-якорь (погода/город) — разрешены только явные «статус»/«бэкап»/
+       «диск»/«кто я», всё остальное уходит к модели.
+    2. Иначе — СИЛЬНЫЙ шаблон побеждает сразу, независимо от якоря и длины.
+    3. Иначе — СЛАБЫЙ шаблон срабатывает только при наличии домашнего якоря
+       и фразе не длиннее _MAX_WORDS_FOR_WEAK_MATCH слов.
+    """
     t = (text or "").strip()
     if not t:
         return None
-    for name, regs in _TOOL_RE:
+
+    has_anti_anchor = any(rx.search(t) for rx in _ANTI_ANCHOR_RE)
+
+    if has_anti_anchor:
+        for name, regs in _ANTI_ANCHOR_EXEMPT_RE.items():
+            for rx in regs:
+                if rx.search(t):
+                    return name
+        return None
+
+    for name, regs in _STRONG_TOOL_RE:
+        for rx in regs:
+            if rx.search(t):
+                return name
+
+    word_count = len(t.split())
+    if word_count > _MAX_WORDS_FOR_WEAK_MATCH:
+        return None
+
+    has_home_anchor = any(rx.search(t) for rx in _HOME_ANCHOR_RE)
+    if not has_home_anchor:
+        return None
+
+    for name, regs in _WEAK_TOOL_RE:
         for rx in regs:
             if rx.search(t):
                 return name

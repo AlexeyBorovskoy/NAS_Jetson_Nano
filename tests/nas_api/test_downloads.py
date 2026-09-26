@@ -786,3 +786,123 @@ def test_cancel_by_number(tmp_path):
     assert asyncio.run(d.cancel(1)) == "🗑 Отменил: a.iso"
     assert ("forceRemove", ("g1",)) in aria.calls
     assert asyncio.run(d.cancel(5)).startswith("❌")
+
+
+# ── дубль в семейную группу (решение владельца 2026-09-26) ────────────────────
+# Закачки должны быть видны в группе, даже если ссылку прислали боту в личку.
+# family задаётся через settings.telegram_family_chat_id (строка вида "-100999");
+# по умолчанию "" — старое поведение (одно сообщение) проверяют все тесты выше.
+
+FAMILY = -100999
+
+
+def test_notify_duplicates_completion_message_from_private_chat(tmp_path, monkeypatch):
+    dl = load()
+    monkeypatch.setattr(dl.settings, "telegram_family_chat_id", str(FAMILY))
+    d, aria = make(dl, tmp_path, size=GB)
+    asyncio.run(d.add_link("https://example.org/a.iso", 99, "ivan"))
+    aria.status["g1"].update(status="complete", files=[{"path": HDD_INC + "/.u/ivan/a.iso"}])
+    msgs = asyncio.run(d.tick())
+    done = "✅ Готово: a.iso — " + DONE + "\\ivan"
+    assert (99, done) in msgs
+    assert (FAMILY, "👤 ivan: " + done) in msgs
+
+
+def test_notify_single_message_when_origin_is_family_group(tmp_path, monkeypatch):
+    # Ссылку прислали прямо в группу — group == family, дубль не нужен.
+    dl = load()
+    monkeypatch.setattr(dl.settings, "telegram_family_chat_id", str(FAMILY))
+    d, aria = make(dl, tmp_path, size=GB)
+    asyncio.run(d.add_link("https://example.org/a.iso", FAMILY, "ivan"))
+    aria.status["g1"].update(status="complete", files=[{"path": HDD_INC + "/.u/ivan/a.iso"}])
+    msgs = asyncio.run(d.tick())
+    assert msgs == [(FAMILY, "✅ Готово: a.iso — " + DONE + "\\ivan")]
+
+
+def test_notify_single_message_when_family_not_set(tmp_path):
+    # settings.telegram_family_chat_id по умолчанию "" — дублировать некуда.
+    dl = load()
+    d, aria = make(dl, tmp_path, size=GB)
+    asyncio.run(d.add_link("https://example.org/a.iso", 99, "ivan"))
+    aria.status["g1"].update(status="complete", files=[{"path": HDD_INC + "/.u/ivan/a.iso"}])
+    msgs = asyncio.run(d.tick())
+    assert msgs == [(99, "✅ Готово: a.iso — " + DONE + "\\ivan")]
+
+
+def test_notify_duplicates_error_message_from_private_chat(tmp_path, monkeypatch):
+    dl = load()
+    monkeypatch.setattr(dl.settings, "telegram_family_chat_id", str(FAMILY))
+    d, aria = make(dl, tmp_path, size=GB)
+    asyncio.run(d.add_link("https://example.org/a.iso", 99, "ivan"))
+    aria.status["g1"].update(status="error", errorMessage="404 Not Found")
+    msgs = asyncio.run(d.tick())
+    err = "❌ Не скачалось: a.iso — 404 Not Found"
+    assert (99, err) in msgs
+    assert (FAMILY, "👤 ivan: " + err) in msgs
+
+
+def test_accept_link_from_private_chat_notifies_group_in_outbox(tmp_path, monkeypatch):
+    dl = load()
+    monkeypatch.setattr(dl.settings, "telegram_family_chat_id", str(FAMILY))
+    d, aria = make(dl, tmp_path, size=GB)
+    reply = asyncio.run(d.add_link("https://example.org/a.iso", 42, "ivan"))
+    assert reply.startswith("⏬ Принял: a.iso")  # ответ в исходный чат не изменился
+    outbox = dl.Ledger(str(tmp_path / "ledger.json")).load()["_outbox"]
+    assert outbox == [{"chat_id": FAMILY, "text": "👤 ivan: ⏬ Принял к скачиванию: a.iso"}]
+
+
+def test_accept_magnet_from_private_chat_notifies_group_in_outbox(tmp_path, monkeypatch):
+    dl = load()
+    monkeypatch.setattr(dl.settings, "telegram_family_chat_id", str(FAMILY))
+    d, aria = make(dl, tmp_path)
+    reply = asyncio.run(d.add_link("magnet:?xt=urn:btih:ABC", 42, "olga"))
+    assert reply == "⏬ Принял, получаю описание торрента…"
+    outbox = dl.Ledger(str(tmp_path / "ledger.json")).load()["_outbox"]
+    assert outbox == [{"chat_id": FAMILY, "text": "👤 olga: ⏬ Принял к скачиванию: magnet"}]
+
+
+def test_accept_torrent_from_private_chat_notifies_group_in_outbox(tmp_path, monkeypatch):
+    dl = load()
+    monkeypatch.setattr(dl.settings, "telegram_family_chat_id", str(FAMILY))
+    d, aria = make(dl, tmp_path)
+    reply = asyncio.run(d.add_torrent(b"d8:announce...e", 42, "admin"))
+    assert reply == "⏬ Принял торрент, проверяю размер…"
+    outbox = dl.Ledger(str(tmp_path / "ledger.json")).load()["_outbox"]
+    assert outbox == [{"chat_id": FAMILY, "text": "👤 admin: ⏬ Принял к скачиванию: торрент"}]
+
+
+def test_accept_from_family_group_does_not_duplicate(tmp_path, monkeypatch):
+    # Ссылку кинули прямо в группу — уведомлять группу о самой себе не нужно.
+    dl = load()
+    monkeypatch.setattr(dl.settings, "telegram_family_chat_id", str(FAMILY))
+    d, aria = make(dl, tmp_path, size=GB)
+    asyncio.run(d.add_link("https://example.org/a.iso", FAMILY, "ivan"))
+    ledger = dl.Ledger(str(tmp_path / "ledger.json")).load()
+    assert not ledger.get("_outbox")
+
+
+def test_guard_pause_message_reaches_family_group_even_if_absent(tmp_path, monkeypatch):
+    # Страж и так шлёт ⏸/▶️ во все чаты с активными закачками — группа обязана
+    # получить то же самое, даже если её среди этих чатов ещё нет.
+    dl = load()
+    monkeypatch.setattr(dl.settings, "telegram_family_chat_id", str(FAMILY))
+    free = {"ssd": 150 * GB, "hdd": 400 * GB}
+    aria = FakeAria2()
+
+    async def head(url):
+        return GB
+
+    d = dl.Downloads(aria2=aria, ledger=dl.Ledger(str(tmp_path / "l.json")), head=head,
+                     disk_free=lambda: (free["ssd"], free["hdd"]), resolve=no_internal)
+    asyncio.run(d.add_link("https://example.org/a.iso", 3, "ivan"))
+    free["hdd"] = 45 * GB
+    msgs = asyncio.run(d.tick())
+    pause_text = "⏸ Пауза закачек — мало места (HDD: нужно ещё 5.0 ГБ)."
+    assert (3, pause_text) in msgs
+    assert (FAMILY, pause_text) in msgs
+    asyncio.run(d.ack(len(msgs)))
+    free["hdd"] = 400 * GB
+    msgs = asyncio.run(d.tick())
+    resume_text = "▶️ Место есть — продолжаю закачки."
+    assert (3, resume_text) in msgs
+    assert (FAMILY, resume_text) in msgs

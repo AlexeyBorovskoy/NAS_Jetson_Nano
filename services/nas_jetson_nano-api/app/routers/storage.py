@@ -4,6 +4,7 @@ Protected endpoint: requires valid JWT.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from pathlib import Path
@@ -12,6 +13,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
+from app import blocking
 from app.routers.auth import require_auth
 
 log = logging.getLogger("nas_jetson_nano_api.storage")
@@ -42,6 +44,21 @@ def _disk_info(path: Path) -> dict:
         }
     except OSError as exc:
         return {"path": str(path), "mounted": False, "error": str(exc)}
+
+
+async def disk_info(path: Path) -> dict:
+    """_disk_info из потока с таймаутом (API-1): зависший диск не останавливает цикл событий."""
+    try:
+        return await blocking.run_io("disk_info:%s" % path, _disk_info, path)
+    except asyncio.TimeoutError:
+        return {"path": str(path), "mounted": False, "error": "диск не отвечает (таймаут)"}
+
+
+async def backup_info() -> dict:
+    try:
+        return await blocking.run_io("backup_info", _backup_info)
+    except asyncio.TimeoutError:
+        return {"available": False, "reason": "каталог бэкапов не отвечает (таймаут)", "dumps": []}
 
 
 def _backup_info() -> dict:
@@ -77,8 +94,8 @@ def _backup_info() -> dict:
     ),
 )
 async def storage_status(username: Annotated[str, Depends(require_auth)]):
-    ssd = _disk_info(STORAGE_ROOT)
-    backups = _backup_info() if ssd.get("mounted") else {"available": False, "reason": "ssd not mounted"}
+    ssd = await disk_info(STORAGE_ROOT)
+    backups = await backup_info() if ssd.get("mounted") else {"available": False, "reason": "ssd not mounted"}
 
     healthy = ssd.get("mounted", False)
     log.info("storage queried by %s — mounted=%s", username, healthy)

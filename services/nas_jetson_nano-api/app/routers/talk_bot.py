@@ -171,8 +171,8 @@ async def _build_status() -> str:
     return "\n".join(lines)
 
 
-def _build_disk() -> str:
-    ssd = storage_mod._disk_info(storage_mod.STORAGE_ROOT)
+async def _build_disk() -> str:
+    ssd = await storage_mod.disk_info(storage_mod.STORAGE_ROOT)
     if not ssd.get("mounted"):
         return "💾 **Хранилище**\n- ⚠️ SSD `/mnt/storage` не смонтирован!"
 
@@ -181,7 +181,7 @@ def _build_disk() -> str:
         f"- Использовано: {ssd.get('used_gb', 0)}/{ssd.get('total_gb', 0)} GB ({ssd.get('used_pct', 0)}%)",
         f"- Свободно: {ssd.get('free_gb', 0)} GB",
     ]
-    backups = storage_mod._backup_info()
+    backups = await storage_mod.backup_info()
     if backups.get("available"):
         for d in backups.get("dumps", []):
             if d.get("file"):
@@ -309,13 +309,13 @@ async def _build_health() -> str:
     except Exception as exc:
         problems.append("не смог проверить контейнеры (%s)" % exc)
 
-    ssd = storage_mod._disk_info(storage_mod.STORAGE_ROOT)
+    ssd = await storage_mod.disk_info(storage_mod.STORAGE_ROOT)
     if not ssd.get("mounted"):
         problems.append("SSD /mnt/storage не смонтирован")
     else:
         if ssd.get("used_pct", 0) >= DISK_WARN_PCT:
             problems.append("SSD почти заполнен — %s%%" % ssd["used_pct"])
-        for d in storage_mod._backup_info().get("dumps", []):
+        for d in (await storage_mod.backup_info()).get("dumps", []):
             age = d.get("age_hours")
             if age is None:
                 problems.append("нет дампа %s" % d["db"])
@@ -344,7 +344,7 @@ async def _dispatch(handler: str) -> str:
     if handler == "status":
         return await _build_status()
     if handler == "disk":
-        return _build_disk()
+        return await _build_disk()
     if handler == "photos":
         return await _build_photos()
     return _build_help()
@@ -355,9 +355,9 @@ async def _dispatch_home_tool(tool: str, user: str = "") -> str:
     if tool == "home.status":
         return await _build_status()
     if tool == "home.disk":
-        return _build_disk()
+        return await _build_disk()
     if tool == "home.backup_age":
-        return _build_disk()
+        return await _build_disk()
     if tool == "home.photos":
         return await _build_photos()
     if tool == "home.whoami":

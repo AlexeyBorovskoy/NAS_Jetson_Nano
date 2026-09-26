@@ -21,6 +21,7 @@ import urllib.parse
 
 import httpx
 
+from app import blocking
 from app.config import settings
 
 log = logging.getLogger("nas_jetson_nano_api.downloads")
@@ -222,11 +223,13 @@ class Downloads:
         self.resolve = resolve or _resolves_internal
         self._lock = asyncio.Lock()
 
-    def _free(self) -> tuple:
+    async def _free(self) -> tuple:
+        # API-1 (аудит 2026-09-26): statvfs по ntfs-3g — только из потока с таймаутом;
+        # не ответил вовремя = диск недоступен, страж поставит закачки на паузу.
         try:
-            ssd, hdd = self.disk_free()
+            ssd, hdd = await blocking.run_io("dl_disk:%d" % id(self.disk_free), self.disk_free)
             return ssd, hdd, False
-        except OSError:
+        except (OSError, asyncio.TimeoutError):
             return 0, 0, True  # диск недоступен = места нет: страж остановит закачки
 
     def _record(self, gid: str, chat_id: int, user: str, name: str, state: str) -> None:
@@ -247,7 +250,7 @@ class Downloads:
         if await self.resolve(host):
             return "❌ ссылки во внутреннюю сеть запрещены"
         size = await self.head(link)
-        ssd, hdd, _ = self._free()
+        ssd, hdd, _ = await self._free()
         try:
             target = choose_target(size, ssd, hdd)
         except LinkError as exc:
@@ -297,7 +300,7 @@ class Downloads:
         entry["name"] = name
         if st.get("infoHash"):
             entry["info_hash"] = st["infoHash"]
-        ssd, hdd, _ = self._free()
+        ssd, hdd, _ = await self._free()
         try:
             target = choose_target(size, ssd, hdd)
         except LinkError as exc:
@@ -425,7 +428,7 @@ class Downloads:
             self.ledger.save(data)
 
     async def _guard(self, data: dict, meta: dict, msgs: list) -> None:
-        ssd, hdd, disk_down = self._free()
+        ssd, hdd, disk_down = await self._free()
         hdd_min = settings.dl_hdd_min_free_gb * GB
         chats = sorted({e["chat_id"] for e in data.values()
                         if e.get("state") in ("active", "metadata", "await_dir")})
@@ -474,7 +477,7 @@ class Downloads:
             left = fmt_size(total - done) if total else "?"
             lines.append("%d. %s — %d%% · %.1f МБ/с · осталось %s%s"
                          % (i, name, pct, speed, left, mark))
-        ssd, hdd, _ = self._free()
+        ssd, hdd, _ = await self._free()
         free = "Свободно на HDD: %s (с учётом запаса)" % fmt_size(
             max(hdd - settings.dl_hdd_min_free_gb * GB, 0))
         if not lines:

@@ -13,6 +13,7 @@ import httpx
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
+from app import blocking
 from app.config import settings
 
 log = logging.getLogger("nas_jetson_nano_api.system")
@@ -73,6 +74,14 @@ def _read_disk(path: str) -> dict:
         }
     except OSError:
         return {"path": path, "error": "unavailable"}
+
+
+async def _read_disk_async(path: str) -> dict:
+    """API-1: statvfs из потока с таймаутом — зависший HDD не останавливает цикл событий."""
+    try:
+        return await blocking.run_io("read_disk:%s" % path, _read_disk, path)
+    except asyncio.TimeoutError:
+        return {"path": path, "error": "timeout"}
 
 
 def _read_thermal() -> list[dict]:
@@ -179,7 +188,7 @@ async def metrics():
         "ram": _read_meminfo(),
         "load": _read_loadavg(),
         "uptime_seconds": _read_uptime_seconds(),
-        "disks": [_read_disk(p) for p in disk_paths],
+        "disks": [await _read_disk_async(p) for p in disk_paths],
         "thermal": _read_thermal(),
         "services_http": list(http_results),
     }

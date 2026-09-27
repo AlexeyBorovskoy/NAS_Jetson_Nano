@@ -9,7 +9,7 @@
 
 | # | Пункт | Кто | Слож. | Тесты / проверка |
 |---|---|---|---|---|
-| 1.1 | **API-1:** вынести `os.statvfs`/`exists` по HDD в `asyncio.to_thread` + таймаут в `downloads._disk_free`, `storage._disk_info`, `system._read_disk`; при таймауте — `disk_down` | К | S | тест: зависающий `disk_free` не держит цикл дольше таймаута; `/healthcheck` отвечает |
+| 1.1 | ✅ **API-1 (2026-09-27):** `os.statvfs`/`exists` по HDD вынесены через общий `blocking.run_io` в `asyncio.to_thread` с таймаутом; при таймауте — `disk_down` | К | S | `test_blocking_io.py`: зависший диск не держит цикл, `/healthcheck` отвечает, downloads/storage/system покрыты |
 | 1.2 | **OPS-2:** ежедневный отчёт и offsite-скрипт берут `VPS_HOST` из `/opt/nasa/config/.env`, а не зашитый адрес; переустановить `/usr/local/sbin/nasa-send-report-telegram.sh` | К + В (sudo) | S | прогон `--test`: сообщение пришло |
 | 1.3 | **OPS-1:** сторож контейнеров на хосте — systemd-таймер раз в 2 мин поднимает ожидаемые `homecloud_*`, если они `exited` не по плану, и перезапускает `unhealthy`; алерт в Telegram; не трогает контейнеры из списка ручного обслуживания | К + В (sudo) | M | живой тест: `docker kill` → контейнер `Up` ≤ 3 мин |
 | 1.4 | **CF-2:** ротация логов Docker — `log-opts` `max-size=10m`, `max-file=3` в `daemon.json` (+ дефолт в compose) | К + В (sudo, рестарт Docker в окно) | S | `docker inspect` показывает `max-size` |

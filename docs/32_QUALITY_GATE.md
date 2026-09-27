@@ -40,6 +40,19 @@ git config core.hooksPath .githooks
 pip install vermin          # главная проверка проекта
 ```
 
+Локальное окружение тестов NAS API не должно использовать случайную смесь глобальных
+Python-пакетов. На Windows оно создаётся один раз и остаётся вне git (`.venv/`):
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-test.txt
+$env:PATH = "C:\Program Files\Git\bin;$PWD\.venv\Scripts;$env:PATH"
+& "C:\Program Files\Git\bin\bash.exe" scripts/quality/preflight.sh
+```
+
+Git Bash ставится первым в `PATH`, потому что выключенный WSL также предоставляет
+`C:\Windows\System32\bash.exe`, но не может выполнить shell-тесты.
+
 Обход `--no-verify` допустим только осознанно и **объясняется в сообщении коммита**.
 
 ### 2.2. Перед выкатом на живую систему

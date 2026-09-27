@@ -146,9 +146,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r services/llm-gateway/requirements.txt
-          pip install pytest pydantic-settings
-          pip install -r services/nas_jetson_nano-api/requirements.txt
+          pip install -r requirements-test.txt
           # restic — для полного круга backup → restore drill (tests/unit/test_config_backup.py)
           sudo apt-get install -y restic
 
@@ -171,7 +169,6 @@ jobs:
       # BK-1 (аудит 2026-09-26): отдельным процессом — у сервисов одинаковое имя пакета app (QA-2).
       - name: Backup API tests
         run: |
-          pip install python-multipart==0.0.20
           python -m pytest -q tests/backup_api
 
       # E10: сервис распознавания речи (vosk подменяется в тестах — ставить не нужно).

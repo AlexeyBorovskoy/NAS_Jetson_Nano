@@ -1,0 +1,6 @@
+-r services/llm-gateway/requirements.txt
+-r services/nas_jetson_nano-api/requirements.txt
+-r services/backup-api/requirements.txt
+
+pytest>=8,<10
+pytest-asyncio>=0.23,<2

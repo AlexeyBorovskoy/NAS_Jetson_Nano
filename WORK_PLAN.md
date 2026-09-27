@@ -9,7 +9,7 @@
 
 | # | Item | Who | Complexity | Tests / verification |
 |---|---|---|---|---|
-| 1.1 | **API-1:** move `os.statvfs`/`exists` on the HDD into `asyncio.to_thread` + a timeout in `downloads._disk_free`, `storage._disk_info`, `system._read_disk`; on timeout — `disk_down` | C | S | test: a hanging `disk_free` does not hold the loop longer than the timeout; `/healthcheck` responds |
+| 1.1 | ✅ **API-1 (2026-09-27):** HDD `os.statvfs`/`exists` calls run through shared `blocking.run_io` in `asyncio.to_thread` with a timeout; timeout means `disk_down` | C | S | `test_blocking_io.py`: a hanging disk does not hold the loop, `/healthcheck` responds, downloads/storage/system covered |
 | 1.2 | **OPS-2:** the daily report and the offsite script take `VPS_HOST` from `/opt/nasa/config/.env` instead of a baked-in address; reinstall `/usr/local/sbin/nasa-send-report-telegram.sh` | C + O (sudo) | S | run `--test`: the message arrived |
 | 1.3 | **OPS-1:** container watchdog on the host — a systemd timer every 2 min brings the expected `homecloud_*` back up if they are `exited` unexpectedly, and restarts `unhealthy` ones; Telegram alert; does not touch containers on the manual-maintenance list | C + O (sudo) | M | live test: `docker kill` → container `Up` ≤ 3 min |
 | 1.4 | **CF-2:** Docker log rotation — `log-opts` `max-size=10m`, `max-file=3` in `daemon.json` (+ default in compose) | C + O (sudo, Docker restart in a maintenance window) | S | `docker inspect` shows `max-size` |

@@ -13,6 +13,7 @@
   3) таймаут = «диска нет»: `Downloads._free` отдаёт (0, 0, True), страж ставит паузу
      с сообщением «HDD недоступен»;
   4) `storage.disk_info` отдаёт mounted=False с «таймаут» в error.
+  5) `system._read_disk_async` отдаёт timeout, а HTTP `/healthcheck` продолжает отвечать.
 
 Освобождение зависших потоков — внутри того же цикла событий (`hang.release.set()`),
 иначе поток доигрывает уже на закрытом цикле и шумит в вывод; фикстура `hang_guard`
@@ -317,3 +318,56 @@ def test_storage_disk_info_passes_through_when_disk_answers(hang_guard, monkeypa
         return await storage.disk_info(Path("/mnt/storage"))
 
     assert asyncio.run(main())["mounted"] is True
+
+
+# ── 5. системные метрики и живой healthcheck ────────────────────────────────
+
+def test_system_disk_timeout_does_not_block_healthcheck(hang_guard, monkeypatch):
+    system = load("app.routers.system")
+    health = importlib.import_module("app.routers.health")
+    blocking = system.blocking
+    fast_timeout(monkeypatch, blocking)
+    hang = Hang(result={"path": "/mnt/storage", "free_gb": 1.0})
+    hang_guard(hang)
+    monkeypatch.setattr(system, "_read_disk", hang)
+
+    async def main():
+        from fastapi import FastAPI
+        import httpx
+
+        probe = FastAPI()
+        probe.include_router(health.router)
+        disk = asyncio.create_task(system._read_disk_async("/mnt/storage"))
+        try:
+            for _ in range(100):
+                if hang.calls:
+                    break
+                await asyncio.sleep(0.01)
+            assert hang.calls == 1
+
+            transport = httpx.ASGITransport(app=probe)
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                response = await asyncio.wait_for(client.get("/healthcheck"), timeout=SHORT)
+            disk_info = await disk
+        finally:
+            hang.release.set()
+            await asyncio.sleep(0.05)
+        return response, disk_info
+
+    response, disk_info = asyncio.run(main())
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+    assert disk_info == {"path": "/mnt/storage", "error": "timeout"}
+
+
+def test_system_disk_info_passes_through_when_disk_answers(hang_guard, monkeypatch):
+    system = load("app.routers.system")
+    blocking = system.blocking
+    fast_timeout(monkeypatch, blocking)
+    expected = {"path": "/mnt/storage", "total_gb": 2.0, "free_gb": 1.0}
+    hang = Hang(result=expected)
+    hang_guard(hang)
+    hang.release.set()
+    monkeypatch.setattr(system, "_read_disk", hang)
+
+    assert asyncio.run(system._read_disk_async("/mnt/storage")) == expected

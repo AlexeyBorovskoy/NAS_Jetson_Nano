@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import logging_setup
 from app.config import settings
-from app.routers import actions, auth, health, logs, photos, storage, system, talk, talk_bot, users
+from app.routers import actions, auth, download_files, health, logs, photos, storage, system, talk, talk_bot, users
 
 log = logging.getLogger("nas_jetson_nano_api")
 
@@ -213,6 +213,7 @@ _family = [Depends(auth.require_auth)]
 _owner = [Depends(auth.require_owner)]
 app.include_router(health.router)
 app.include_router(auth.router)
+app.include_router(download_files.router)
 app.include_router(system.router, dependencies=_family)
 app.include_router(storage.router, dependencies=_family)
 app.include_router(photos.router, dependencies=_family)

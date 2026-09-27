@@ -158,6 +158,9 @@ class Settings(BaseSettings):
     dl_hdd_min_free_gb: int = 50
     dl_ssd_max_gb: int = 20
     dl_ledger_file: str = "/var/log/nas_jetson_nano-monitor/downloads-ledger.json"
+    # Public address reachable only from the home LAN. Empty keeps the SMB-path fallback.
+    download_base_url: str = ""
+    download_link_ttl_seconds: int = 86400
 
     # E3: «что сломалось?» читает уже посчитанный снимок Phase E (talk-alert), а не
     # пересчитывает SMART/swap/off-site/баланс заново — из контейнера API это и не проверить.

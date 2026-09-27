@@ -22,6 +22,7 @@ import urllib.parse
 import httpx
 
 from app import blocking
+from app import download_links
 from app.config import settings
 
 log = logging.getLogger("nas_jetson_nano_api.downloads")
@@ -119,7 +120,8 @@ def user_dir(user) -> str:
 
 
 def done_hint(user) -> str:
-    return DONE_HINT + "\\" + user_folder(user)
+    folder = user_folder(user)
+    return download_links.user_url(folder) or DONE_HINT + "\\" + folder
 
 
 def _options(target: str, user="") -> dict:

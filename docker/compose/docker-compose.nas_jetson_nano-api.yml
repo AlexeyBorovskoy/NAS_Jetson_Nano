@@ -87,6 +87,9 @@ services:
       DL_SSD_MIN_FREE_GB: ${DL_SSD_MIN_FREE_GB:-40}
       DL_HDD_MIN_FREE_GB: ${DL_HDD_MIN_FREE_GB:-50}
       DL_SSD_MAX_GB: ${DL_SSD_MAX_GB:-20}
+      # Signed, expiring links sent by Telegram; keep the API reachable only on the home LAN.
+      DOWNLOAD_BASE_URL: ${DOWNLOAD_BASE_URL:-}
+      DOWNLOAD_LINK_TTL_SECONDS: ${DOWNLOAD_LINK_TTL_SECONDS:-86400}
       # E10: голосовые — распознавание в отдельном контейнере homecloud_stt (та же сеть)
       STT_URL: ${STT_URL:-http://homecloud_stt:8790/stt}
     healthcheck:

@@ -152,6 +152,8 @@ def test_route():
     mod = load()
     assert mod.route("скачай magnet:?xt=urn:btih:A") == ("download", "magnet:?xt=urn:btih:A")
     assert mod.route("Закачки") == ("list", None)
+    assert mod.route("мои файлы") == ("files", None)
+    assert mod.route("/files") == ("files", None)
     assert mod.route("отмени 2") == ("cancel", 2)
     assert mod.route("какая погода?") == ("ask", "какая погода?")
 
@@ -203,6 +205,17 @@ def test_list_and_cancel():
     asyncio.run(bot.handle_update(msg("@бобик отмени 3")))
     assert ("cancel", 3) in dl.calls
     assert [t for _, t in tg.texts()] == ["Закачек нет.", "🗑 Отменил: x"]
+
+
+def test_files_command_returns_personal_signed_link():
+    mod, bot, tg, dl, asked = make()
+    mod.settings.download_base_url = "http://192.168.0.50:8099"
+    mod.settings.download_link_ttl_seconds = 300
+    asyncio.run(bot.handle_update(msg("@бобик файлы")))
+    reply = tg.texts()[0]
+    assert reply[0] == FAMILY
+    assert reply[1].startswith("📁 Ваши готовые файлы: http://192.168.0.50:8099/downloads/ivan?")
+    assert "expires=" in reply[1] and "sig=" in reply[1]
 
 
 def test_torrent_document_with_caption():
@@ -363,7 +376,8 @@ def test_bobik_anywhere_any_form_is_addressed():
     mod = load()
     cs = ["@бобик", "бобик,"]
     g = {"chat": {"type": "supergroup"}}
-    at = lambda t: mod.addressed_text(dict(g, text=t), "bobik_borovskoy_bot", cs)
+    def at(text):
+        return mod.addressed_text(dict(g, text=text), "bobik_borovskoy_bot", cs)
     assert at("Бобик привет") == "привет"
     assert at("Бобик! я хочу есть, но меня не кормят") == "я хочу есть, но меня не кормят"
     assert at("Бобику скажи спасибо") == "скажи спасибо"

@@ -31,6 +31,7 @@ HELP = ("🐕 Я Бобик. Обращайтесь по имени — «боб
         "• скачай <magnet или ссылка> — скачаю домой, в \\\\192.168.0.50\\hdd2tb\\Downloads\n"
         "• .torrent-файл с подписью «@бобик скачай»\n"
         "• закачки — что качается и сколько места\n"
+        "• файлы — временная ссылка на мои готовые загрузки\n"
         "• отмени N — отменить закачку N\n"
         "• забудь — начать разговор заново\n"
         "• что сломалось — статус дома (только владельцу)\n"
@@ -144,6 +145,8 @@ def route(text: str):
         return "download", text.strip()[len("скачай"):].strip()
     if low.startswith("закачки"):
         return "list", None
+    if low in ("файлы", "мои файлы", "/files"):
+        return "files", None
     m = re.match(r"отмени\s+(\d+)", low)
     if m:
         return "cancel", int(m.group(1))
@@ -304,6 +307,8 @@ class TelegramBot:
             await reply(await self.downloads.add_link(link, chat_id, login))
         elif kind == "list":
             await reply(await self.downloads.list_text())
+        elif kind == "files":
+            await reply("📁 Ваши готовые файлы: %s" % downloads_mod.done_hint(login))
         elif kind == "cancel":
             await reply(await self.downloads.cancel(arg))
         elif kind == "forget":

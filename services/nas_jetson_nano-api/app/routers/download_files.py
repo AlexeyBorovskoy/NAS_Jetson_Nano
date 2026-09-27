@@ -18,7 +18,7 @@ def _target(user: str, relative: str) -> tuple[Path, Path]:
     if not user or any(ch not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-" for ch in user):
         raise HTTPException(status_code=404, detail="Not found")
     base = Path(settings.dl_hdd_stat_path).resolve()
-    raw_root = base / user
+    raw_root = base if user == "_all" else base / user
     root = raw_root.resolve()
     try:
         root.relative_to(base)

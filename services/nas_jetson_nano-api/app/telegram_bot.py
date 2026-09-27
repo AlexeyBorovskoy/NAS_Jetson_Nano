@@ -18,6 +18,7 @@ import time
 import httpx
 
 from app import downloads as downloads_mod
+from app import download_links
 from app import stt as stt_mod
 from app.config import settings
 
@@ -308,7 +309,9 @@ class TelegramBot:
         elif kind == "list":
             await reply(await self.downloads.list_text())
         elif kind == "files":
-            await reply("📁 Ваши готовые файлы: %s" % downloads_mod.done_hint(login))
+            link = (download_links.owner_url() if login == settings.telegram_owner_login
+                    else downloads_mod.done_hint(login))
+            await reply("📁 Ваши готовые файлы: %s" % link)
         elif kind == "cancel":
             await reply(await self.downloads.cancel(arg))
         elif kind == "forget":

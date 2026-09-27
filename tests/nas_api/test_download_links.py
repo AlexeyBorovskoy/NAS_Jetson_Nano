@@ -54,6 +54,17 @@ def test_signed_link_lists_and_downloads_personal_files(tmp_path, monkeypatch):
     assert "attachment" in downloaded.headers["content-disposition"]
 
 
+def test_owner_link_lists_family_folders_but_hides_incomplete(tmp_path, monkeypatch):
+    (tmp_path / "ivan").mkdir()
+    (tmp_path / ".incomplete").mkdir()
+    links, client = load(tmp_path, monkeypatch)
+
+    response = client.get(links.owner_url())
+    assert response.status_code == 200
+    assert "ivan/" in response.text
+    assert ".incomplete" not in response.text
+
+
 def test_invalid_expired_and_cross_user_links_are_denied(tmp_path, monkeypatch):
     (tmp_path / "ivan").mkdir()
     (tmp_path / "olga").mkdir()

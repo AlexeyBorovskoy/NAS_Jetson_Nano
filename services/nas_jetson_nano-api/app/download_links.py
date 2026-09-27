@@ -21,12 +21,21 @@ def valid_signature(user: str, expires: int, signature: str, now: int | None = N
     return hmac.compare_digest(_signature(user, expires), signature)
 
 
-def user_url(user: str, now: int | None = None) -> str:
-    """Return a signed URL to a user's completed-download directory, or ``""``."""
+def _scope_url(scope: str, now: int | None = None) -> str:
     base = settings.download_base_url.strip().rstrip("/")
     if not base:
         return ""
     current = int(time.time()) if now is None else now
     expires = current + settings.download_link_ttl_seconds
-    quoted = urllib.parse.quote(user, safe="")
-    return f"{base}/downloads/{quoted}?expires={expires}&sig={_signature(user, expires)}"
+    quoted = urllib.parse.quote(scope, safe="")
+    return f"{base}/downloads/{quoted}?expires={expires}&sig={_signature(scope, expires)}"
+
+
+def user_url(user: str, now: int | None = None) -> str:
+    """Return a signed URL to a user's completed-download directory, or ``""``."""
+    return _scope_url(user, now)
+
+
+def owner_url(now: int | None = None) -> str:
+    """Return an owner-only link to every completed family download."""
+    return _scope_url("_all", now)

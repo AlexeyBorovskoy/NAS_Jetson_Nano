@@ -218,6 +218,16 @@ def test_files_command_returns_personal_signed_link():
     assert "expires=" in reply[1] and "sig=" in reply[1]
 
 
+def test_files_command_returns_family_view_to_owner():
+    mod, bot, tg, dl, asked = make()
+    mod.settings.download_base_url = "http://192.168.0.50:8099"
+    mod.settings.download_link_ttl_seconds = 300
+    asyncio.run(bot.handle_update(msg("бобик, файлы", chat=OWNER, chat_type="private", uid=OWNER)))
+    assert tg.texts()[0][1].startswith(
+        "📁 Ваши готовые файлы: http://192.168.0.50:8099/downloads/_all?"
+    )
+
+
 def test_torrent_document_with_caption():
     mod, bot, tg, dl, asked = make()
     upd = msg(None, caption="@бобик скачай",

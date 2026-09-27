@@ -9,10 +9,23 @@ _nas_lay="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/layout.sh"
 # shellcheck source=../lib/layout.sh
 source "$_nas_lay"
 # OPS-2 (аудит 2026-09-26): адрес VPS — из того же .env, что у туннеля, а не зашитый.
-# Зашитый 95.163.176.103 заблокировал домашний провайдер 18.09 — отчёт молча падал с 23.09.
 _nas_vps_env="${NAS_TUNNEL_ENV:-/opt/${NAS_PREFIX:-nasa}/config/.env}"
-_nas_vps_host="$(sed -n 's/^VPS_HOST=//p' "$_nas_vps_env" 2>/dev/null | tr -d '"' | tail -1)"
-SERVER_IP="${SERVER_IP:-${_nas_vps_host:-95.163.176.103}}"
+if [ -z "${VPS_HOST:-}" ]; then
+    if [ ! -r "$_nas_vps_env" ]; then
+        echo "ERROR: VPS config is not readable: $_nas_vps_env" >&2
+        exit 1
+    fi
+    VPS_HOST="$(sed -n 's/^[[:space:]]*VPS_HOST[[:space:]]*=[[:space:]]*//p' \
+        "$_nas_vps_env" | tail -1 | tr -d '\r')"
+    VPS_HOST="${VPS_HOST#\"}"
+    VPS_HOST="${VPS_HOST%\"}"
+fi
+case "$VPS_HOST" in
+    ""|*[!A-Za-z0-9._:-]*)
+        echo "ERROR: VPS_HOST is missing or invalid in $_nas_vps_env" >&2
+        exit 1
+        ;;
+esac
 CONF="$NAS_CONF_DIR/${NAS_PREFIX}-monitor.env"
 [ -f "$CONF" ] && . "$CONF"
 
@@ -116,7 +129,7 @@ if [ -f "$VPS_KEY" ]; then
         -o StrictHostKeyChecking=no \
         -o ConnectTimeout=10 \
         -o BatchMode=yes \
-        "${VPS_USER}@${SERVER_IP:-95.163.176.103}" \
+        "${VPS_USER}@${VPS_HOST}" \
         "python3 $BESZEL_SCRIPT 2>/tmp/beszel_warn_\$\$.txt; cat /tmp/beszel_warn_\$\$.txt >&2; rm -f /tmp/beszel_warn_\$\$.txt" \
         2>"$_BESZEL_WARN_LOCAL" || true)"
     BESZEL_REPORT="$BESZEL_RAW"
@@ -148,7 +161,7 @@ fi
 # The one check still pointed outward is inverted on purpose: a service port
 # that answers from the public internet is now the alarm.
 EXTERNAL_REPORT=""
-VPS="${SERVER_IP:-95.163.176.103}"
+VPS="$VPS_HOST"
 
 if [ -f "$VPS_KEY" ]; then
     CHAIN_RAW="$(ssh -i "$VPS_KEY" \

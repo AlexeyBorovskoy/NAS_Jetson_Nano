@@ -385,7 +385,36 @@ curl -X POST http://localhost:8099/v1/report/now
 > Логи, Talk и действия — только владельцу (`admin` и `API_OWNERS`).
 > 🇬🇧 Since stage C every route except `/healthcheck` needs a JWT.
 
-## 16. Квота GigaChat и внешний сторож / GigaChat quota and the outside watchdog
+## 16. Сторож контейнеров / Container watchdog
+
+`nas_jetson_nano-container-watchdog.timer` раз в две минуты проверяет только
+`homecloud_*` с restart policy `always`. Остановленные контейнеры запускаются,
+а `unhealthy` перезапускаются с cooldown и ограничением числа попыток. Каждое
+действие или отказ от дальнейших попыток отправляется владельцу в Telegram.
+
+```bash
+# Установка и включение
+bash scripts/monitoring/install_container_watchdog.sh
+
+# Обслуживание всего стека
+sudo touch /etc/nas-watchdog.pause
+sudo rm /etc/nas-watchdog.pause                 # возобновить
+
+# Обслуживание одного контейнера
+sudo touch /etc/nas-watchdog.pause.d/homecloud_immich_server
+sudo rm /etc/nas-watchdog.pause.d/homecloud_immich_server
+
+# Проверка
+systemctl status nas_jetson_nano-container-watchdog.timer
+journalctl -u nas_jetson_nano-container-watchdog.service -n 50 --no-pager
+```
+
+Альтернатива маркеру для контейнера — label
+`nas.watchdog.maintenance=true`; он начинает действовать после пересоздания
+контейнера. Удаление timer не удаляет контейнеры или данные: для rollback
+достаточно `sudo systemctl disable --now nas_jetson_nano-container-watchdog.timer`.
+
+## 17. Квота GigaChat и внешний сторож / GigaChat quota and the outside watchdog
 
 🇷🇺
 - **Квота GigaChat (E2).** Ежедневный опрос `nas_jetson_nano-giga-balance.timer` сохраняет ответ в
@@ -401,7 +430,7 @@ curl -X POST http://localhost:8099/v1/report/now
 threshold or the poll is older than 50 h. The Cloud.ru watchdog asks the VPS every 10 minutes whether the NAS
 is alive and alerts the owner in Telegram; debug it as root on the VPS with a throwaway state file.
 
-## 17. Расходы Cloud.ru / Cloud.ru spend alert (E5)
+## 18. Расходы Cloud.ru / Cloud.ru spend alert (E5)
 
 🇷🇺
 - **Зачем.** D3 (внешний сторож) и Object Storage (вторая копия фото) рассчитаны на бесплатный тариф

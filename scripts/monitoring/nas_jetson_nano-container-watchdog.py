@@ -12,9 +12,9 @@
 в час — дальше только алерт: бесконечный цикл рестартов хуже честной тревоги.
 Контейнеры с другой политикой не трогает — их остановили намеренно.
 
-РУЧНОЕ ОБСЛУЖИВАНИЕ. Файл `/etc/nas-watchdog.pause` — сторож молчит и ничего
-не трогает (например, на время миграции или починки ntfs-3g, где контейнеры
-намеренно остановлены — см. «Грабли» в CLAUDE.md).
+РУЧНОЕ ОБСЛУЖИВАНИЕ. Файл `/etc/nas-watchdog.pause` ставит на паузу весь сторож.
+Файл `/etc/nas-watchdog.pause.d/<container>` или Docker label
+`nas.watchdog.maintenance=true` исключает только указанный контейнер.
 
 Алерт владельцу — тем же каналом, что D2 (boot-alert): Telegram через SOCKS.
 Не доставился — не страшно: действие уже выполнено и записано в journal.
@@ -30,6 +30,7 @@ import time
 HERE = os.path.dirname(os.path.realpath(__file__))
 PREFIX = "homecloud_"
 PAUSE_FILE = "/etc/nas-watchdog.pause"
+PAUSE_DIR = "/etc/nas-watchdog.pause.d"
 START_COOLDOWN = 120
 UNHEALTHY_COOLDOWN = 900
 MAX_ACTIONS_PER_HOUR = 6
@@ -56,11 +57,19 @@ def list_containers():
     out = []
     for c in json.loads(raw or "[]"):
         health = ((c.get("State") or {}).get("Health") or {}).get("Status", "")
+        labels = (c.get("Config") or {}).get("Labels") or {}
         out.append({"name": c["Name"].lstrip("/"),
                     "status": (c.get("State") or {}).get("Status", ""),
                     "health": health,
-                    "policy": ((c.get("HostConfig") or {}).get("RestartPolicy") or {}).get("Name", "")})
+                    "policy": ((c.get("HostConfig") or {}).get("RestartPolicy") or {}).get("Name", ""),
+                    "maintenance": str(labels.get("nas.watchdog.maintenance", "")).lower()
+                    in ("1", "true", "yes", "on")})
     return out
+
+
+def is_paused(c):
+    """True when this container is explicitly in manual maintenance."""
+    return c.get("maintenance", False) or os.path.exists(os.path.join(PAUSE_DIR, c["name"]))
 
 
 def decide(c, history, now):
@@ -108,6 +117,9 @@ def main():
     now = int(time.time())
     notes = []
     for c in list_containers():
+        if is_paused(c):
+            print("watchdog: обслуживание %s — пропускаю" % c["name"])
+            continue
         hist = [t for t in state.get(c["name"], []) if now - t < 86400]
         action = decide(c, hist, now)
         if action is None:

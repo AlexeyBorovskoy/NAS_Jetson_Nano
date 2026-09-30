@@ -255,19 +255,30 @@ endpoints и `jetson-nas-health.timer` восстановились автома
 ## 9. Telegram ежедневный отчёт / Telegram Daily Report
 
 ```bash
+# Установка/обновление с учётом layout старого (`nasa`) или нового хоста:
+bash scripts/monitoring/install_daily_report.sh
+
+# Загрузить фактические пути и имена unit этого хоста:
+source /usr/local/lib/nas_jetson_nano/layout.sh
+
 # Статус таймера:
-systemctl status nas_jetson_nano-daily-report-telegram.timer
+systemctl status "${NAS_UNIT_PREFIX}-daily-report-telegram.timer"
 
 # Отправить немедленно (тест):
-sudo /usr/local/sbin/nas_jetson_nano-send-report-telegram.sh
+sudo "${NAS_SBIN_PREFIX}-send-report-telegram.sh"
 
 # Логи последней отправки:
-cat /var/log/nas_jetson_nano-monitor/last-report.txt
-cat /var/log/nas_jetson_nano-monitor/last-telegram-send.json
+cat "${NAS_LOG_DIR}/last-report.txt"
+cat "${NAS_LOG_DIR}/last-telegram-send.json"
 
 # Следующий запуск:
-systemctl list-timers nas_jetson_nano-daily-report-telegram.timer
+systemctl list-timers "${NAS_UNIT_PREFIX}-daily-report-telegram.timer"
 ```
+
+`VPS_HOST` не задаётся в этих скриптах: Jetson и Vostro читают его из
+root-owned `/opt/nasa/config/.env` (или из явно переданного окружения) и
+fail-closed при отсутствии/некорректном значении. Развёртывание проверено
+2026-09-30: [`plans/OPS2_VPS_CONFIG_DEPLOY_2026-09-30.md`](plans/OPS2_VPS_CONFIG_DEPLOY_2026-09-30.md).
 
 ## 10. Что смотреть в Netdata / What to watch in Netdata
 

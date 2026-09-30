@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — 2026-09-30 · OPS-1 container watchdog
+
+### Changed / Изменено
+- Installed and enabled the two-minute `homecloud_*` container watchdog on the Jetson.
+- Verified the per-container maintenance marker, 123-second timer recovery, and Telegram alert delivery on disposable probe containers.
+- Made failed and successful Telegram delivery explicit in the watchdog journal.
+
+### Device (not only git) / На устройстве
+- Jetson repository advanced to `cea5a1b`; the watchdog timer is `enabled/active`.
+- Live evidence: `docs/plans/OPS1_WATCHDOG_DEPLOY_2026-09-30.md`.
+
 ## [Unreleased] — 2026-09-19 · Full audit, stages A–C on device, E2, D3 in git
 
 ### Added / Добавлено

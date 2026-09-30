@@ -414,6 +414,12 @@ journalctl -u nas_jetson_nano-container-watchdog.service -n 50 --no-pager
 контейнера. Удаление timer не удаляет контейнеры или данные: для rollback
 достаточно `sudo systemctl disable --now nas_jetson_nano-container-watchdog.timer`.
 
+Развёртывание OPS-1 подтверждено на Jetson 2026-09-30: timer был
+`enabled/active`, контейнер с maintenance-маркером был пропущен, а после снятия
+маркера штатный тик поднял тестовый контейнер за 123 секунды. Отдельный action
+smoke подтвердил отправку алерта в Telegram. Полная запись:
+[`plans/OPS1_WATCHDOG_DEPLOY_2026-09-30.md`](plans/OPS1_WATCHDOG_DEPLOY_2026-09-30.md).
+
 ## 17. Квота GigaChat и внешний сторож / GigaChat quota and the outside watchdog
 
 🇷🇺

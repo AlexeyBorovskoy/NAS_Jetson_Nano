@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import asyncio
 import importlib
-import json
 import os
 import sys
 import tempfile
@@ -105,6 +104,62 @@ def test_parse_link_rejects_internal_and_junk(bad):
 def test_parse_link_keeps_hex_looking_domains():
     dl = load()
     assert dl.parse_link("http://cafe.be/x") == "http://cafe.be/x"
+
+
+def test_head_size_does_not_follow_redirect_to_internal_address(monkeypatch):
+    dl = load()
+    calls = []
+
+    class Client:
+        def __init__(self, **kwargs):
+            assert kwargs["follow_redirects"] is False
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def head(self, url):
+            calls.append(url)
+            return dl.httpx.Response(302, headers={"location": "http://192.168.0.1/private"})
+
+    async def public_dns(_host):
+        return False
+
+    monkeypatch.setattr(dl.httpx, "AsyncClient", Client)
+    monkeypatch.setattr(dl, "_resolves_internal", public_dns)
+    assert asyncio.run(dl._head_size("https://example.org/file")) is None
+    assert calls == ["https://example.org/file"]
+
+
+def test_head_size_follows_only_checked_public_redirects(monkeypatch):
+    dl = load()
+    calls = []
+
+    class Client:
+        def __init__(self, **kwargs):
+            assert kwargs["follow_redirects"] is False
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def head(self, url):
+            calls.append(url)
+            if len(calls) == 1:
+                return dl.httpx.Response(302, headers={"location": "https://cdn.example.org/file"})
+            return dl.httpx.Response(200, headers={"content-length": "1234"})
+
+    async def public_dns(_host):
+        return False
+
+    monkeypatch.setattr(dl.httpx, "AsyncClient", Client)
+    monkeypatch.setattr(dl, "_resolves_internal", public_dns)
+    assert asyncio.run(dl._head_size("https://example.org/file")) == 1234
+    assert calls == ["https://example.org/file", "https://cdn.example.org/file"]
 
 
 # ── выбор диска ───────────────────────────────────────────────────────────────
@@ -647,7 +702,7 @@ def test_guard_resume_never_unpauses_unrouted_torrent(tmp_path):
     asyncio.run(d.add_torrent(b"d8:announce...e", 1, "ivan"))
     aria.status["g1"].update(status="paused", totalLength="0")  # размер ещё неизвестен
     free["hdd"] = 45 * GB
-    msgs = asyncio.run(d.tick())
+    asyncio.run(d.tick())
     assert dl.Ledger(str(tmp_path / "l.json")).load()["_meta"]["paused"] is True
     # hdd становится свободным, страж хочет снять паузу
     free["hdd"] = 400 * GB

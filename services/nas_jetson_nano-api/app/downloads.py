@@ -36,6 +36,8 @@ _LINK_RE = re.compile(r"(magnet:\?\S+|https?://\S+)", re.IGNORECASE)
 _BAD_SUFFIXES = (".local", ".lan", ".internal", ".localdomain")
 # 2130706433, 0x7f.1, 017700000001, 127.1 — такие формы понимают резолверы и HTTP-клиенты
 _NUMERIC_HOST = re.compile(r"^((0x[0-9a-f]*|[0-9]+)\.){0,3}(0x[0-9a-f]*|[0-9]+)$")
+_HEAD_REDIRECTS = frozenset((301, 302, 303, 307, 308))
+_MAX_HEAD_REDIRECTS = 3
 _KEYS = ["gid", "status", "totalLength", "completedLength", "downloadSpeed",
          "files", "bittorrent", "followedBy", "errorMessage", "infoHash"]
 # Рестарт aria2 (пересоздание контейнера, сбой) поднимает торрент из сессии с НОВЫМ GID:
@@ -149,10 +151,22 @@ def _disk_free() -> tuple:
 
 async def _head_size(url: str):
     try:
-        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as c:
-            r = await c.head(url)
-        n = int(r.headers.get("content-length", "0"))
-        return n or None
+        current = url
+        async with httpx.AsyncClient(timeout=15, follow_redirects=False) as c:
+            for _hop in range(_MAX_HEAD_REDIRECTS + 1):
+                checked = parse_link(current)
+                host = (urllib.parse.urlsplit(checked).hostname or "").lower()
+                if await _resolves_internal(host):
+                    return None
+                r = await c.head(checked)
+                if r.status_code not in _HEAD_REDIRECTS:
+                    n = int(r.headers.get("content-length", "0"))
+                    return n or None
+                location = r.headers.get("location")
+                if not location:
+                    return None
+                current = urllib.parse.urljoin(checked, location)
+        return None
     except Exception:
         return None
 

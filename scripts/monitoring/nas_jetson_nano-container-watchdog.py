@@ -158,6 +158,8 @@ def main():
                 if not delivered:
                     sys.stderr.write("watchdog: алерт не доставлен: %s\n"
                                      % (error or "unknown error"))
+                else:
+                    print("watchdog: алерт доставлен")
             except Exception as exc:  # доставка — не главное, действие уже сделано
                 sys.stderr.write("watchdog: алерт не доставлен: %s\n" % type(exc).__name__)
     return 0

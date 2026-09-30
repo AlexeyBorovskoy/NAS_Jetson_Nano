@@ -109,3 +109,22 @@ def test_failed_telegram_delivery_is_reported(tmp_path, capsys):
             mock.patch.object(mod, "docker", return_value=action):
         assert mod.main() == 0
     assert "network timeout" in capsys.readouterr().err
+
+
+def test_successful_telegram_delivery_is_reported(tmp_path, capsys):
+    mod = load()
+    mod.PAUSE_FILE = str(tmp_path / "not-paused")
+    alert = SimpleNamespace(
+        LAYOUT={"NAS_STATE_DIR": str(tmp_path)},
+        ENV_FILE=str(tmp_path / "env"),
+        read_env=mock.Mock(return_value="configured"),
+        resolve_owner_chat_id=mock.Mock(return_value="123"),
+        send_with_retries=mock.Mock(return_value=(True, None)),
+    )
+    action = mock.Mock(returncode=0, stderr="")
+    with mock.patch.object(mod, "_load_boot_alert", return_value=alert), \
+            mock.patch.object(mod, "list_containers",
+                              return_value=[container(status="exited", health="")]), \
+            mock.patch.object(mod, "docker", return_value=action):
+        assert mod.main() == 0
+    assert "алерт доставлен" in capsys.readouterr().out

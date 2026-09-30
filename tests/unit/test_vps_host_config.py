@@ -3,7 +3,6 @@
 
 import io
 import os
-import re
 import sys
 import unittest
 
@@ -47,6 +46,13 @@ class VpsHostConfigTest(unittest.TestCase):
         text = read("scripts/setup/nas-offsite-backup.sh")
         self.assertIn("${VPS_USER}@${VPS_HOST}", text)
         self.assertIn('OFFSITE_SSH_KEY="${OFFSITE_SSH_KEY:-', text)
+
+    def test_daily_report_installer_uses_host_layout(self):
+        text = read("scripts/monitoring/install_daily_report.sh")
+        self.assertIn('source "${ROOT}/scripts/lib/layout.sh"', text)
+        self.assertIn('${NAS_SBIN_PREFIX}-send-report-telegram.sh', text)
+        self.assertIn('${NAS_UNIT_PREFIX}-daily-report-telegram', text)
+        self.assertIn('enable --now "${unit}.timer"', text)
 
 
 if __name__ == "__main__":

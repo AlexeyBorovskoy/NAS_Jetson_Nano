@@ -20,7 +20,7 @@
 | # | Item | Who | Complexity | Tests / verification |
 |---|---|---|---|---|
 | 2.1 | **GW-3:** Russian secret triggers in `TOKEN_RE` (пароль, ключ, код, пин, секрет), separator — `:`/`=`/space | C | S | a set of Russian phrases with a password/code is redacted |
-| 2.2 | **API-2/3:** network barrier — forbid the aria2 container and outbound API requests from reaching `192.168.0.0/16`, `10/8`, `172.16/12`, `127/8`, `169.254/16` (iptables `DOCKER-USER` on the Jetson); in code — `follow_redirects=False` + `Location` check | C + O | M | mock redirect to an internal address → refusal; from the device, `curl` from the container to `192.168.0.1` does not get through |
+| 2.2 | ✅ **API-2/3 (2026-09-30):** API HEAD requests use checked manual redirects; the Jetson `NAS-DL-EGRESS` barrier rejects aria2 IPv4 traffic to `10/8`, `172.16/12`, `192.168/16`, `127/8` and `169.254/16` and is refreshed every 2 min | C | M | [live evidence](docs/plans/API23_EGRESS_DEPLOY_2026-09-30.md): private redirect not followed; container→`192.168.0.1` rejected with counter hit; public control passed |
 | 2.3 | **SH-1:** `cloudru_iam_token_example.sh` — response via stdin, not via heredoc | D | S | a fake response with `'''` does not execute code |
 | 2.4 | **CI-1 / SEC-1:** trivy on tag+SHA; gitleaks without `--no-git` (history) | C | S | the job fails on a test secret in the branch history |
 | 2.5 | **DP-2:** NAS API not as root; `docker.sock` via socket-proxy with `GET /containers/json` only | C | M | `test_api_access` + manual `/v1/containers` |

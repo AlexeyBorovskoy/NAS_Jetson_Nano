@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — 2026-09-30 · OPS-1/OPS-2 host operations
+## [Unreleased] — 2026-09-30 · OPS-1/OPS-2 and API-2/3
 
 ### Changed / Изменено
 - Installed and enabled the two-minute `homecloud_*` container watchdog on the Jetson.
@@ -14,11 +14,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Made failed and successful Telegram delivery explicit in the watchdog journal.
 - Added a layout-aware daily-report installer and deployed configured-host
   versions of the Jetson report and Vostro offsite scripts.
+- Changed download URL sizing to manual, validated redirects and deployed the
+  aria2 private-IPv4 egress barrier on the Jetson.
+- Fixed first-install idempotency of the firewall guard when no stale jump exists.
 
 ### Device (not only git) / На устройстве
 - Jetson repository advanced to `cea5a1b`; the watchdog timer is `enabled/active`.
 - Live evidence: `docs/plans/OPS1_WATCHDOG_DEPLOY_2026-09-30.md`.
 - OPS-2 live evidence: `docs/plans/OPS2_VPS_CONFIG_DEPLOY_2026-09-30.md`.
+- API-2/3 live evidence: `docs/plans/API23_EGRESS_DEPLOY_2026-09-30.md`.
 
 ## [Unreleased] — 2026-09-19 · Full audit, stages A–C on device, E2, D3 in git
 

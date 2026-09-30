@@ -431,6 +431,33 @@ journalctl -u nas_jetson_nano-container-watchdog.service -n 50 --no-pager
 smoke подтвердил отправку алерта в Telegram. Полная запись:
 [`plans/OPS1_WATCHDOG_DEPLOY_2026-09-30.md`](plans/OPS1_WATCHDOG_DEPLOY_2026-09-30.md).
 
+### API-2/3: сетевой барьер качалки / downloader egress barrier
+
+Тот же двухминутный service перед watchdog запускает
+`scripts/network/dl_egress_guard.sh`. Скрипт определяет текущую подсеть Docker
+`homecloud-downloads_default`, создаёт цепочку `NAS-DL-EGRESS` и подключает её к
+`DOCKER-USER` и `INPUT`. Новые IPv4-соединения из качалки в `10/8`, `172.16/12`,
+`192.168/16`, `169.254/16` и `127/8` получают `REJECT`; ответы уже установленных
+соединений пропускаются.
+
+```bash
+# Применить вручную и проверить правила:
+sudo bash scripts/network/dl_egress_guard.sh
+sudo iptables -S NAS-DL-EGRESS
+sudo iptables -S DOCKER-USER | grep NAS-DL-EGRESS
+sudo iptables -S INPUT | grep NAS-DL-EGRESS
+
+# Проверить периодическое восстановление правил:
+sudo systemctl start nas_jetson_nano-container-watchdog.service
+journalctl -u nas_jetson_nano-container-watchdog.service -n 30 --no-pager
+```
+
+Если сеть downloads отсутствует, guard сообщает о пропуске и не создаёт ложного
+барьера. Ошибки применения нужно искать по строке `dl-egress` в journal: общий
+service продолжает запуск watchdog, поэтому одного `Result=success` недостаточно.
+IPv6 на проверенной сети выключен; перед включением IPv6 нужно добавить отдельный
+барьер. Live evidence: [`plans/API23_EGRESS_DEPLOY_2026-09-30.md`](plans/API23_EGRESS_DEPLOY_2026-09-30.md).
+
 ## 17. Квота GigaChat и внешний сторож / GigaChat quota and the outside watchdog
 
 🇷🇺

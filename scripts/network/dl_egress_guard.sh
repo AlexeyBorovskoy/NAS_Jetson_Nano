@@ -33,11 +33,16 @@ done
 iptables -A "$CHAIN" -j RETURN
 
 for parent in DOCKER-USER INPUT; do
-  iptables -S "$parent" 2>/dev/null | grep -- "-j $CHAIN" | grep -v -- "-s $subnet " \
-    | sed 's/^-A /-D /' | while read -r rule; do
-      # shellcheck disable=SC2086  # правило — список аргументов iptables
-      iptables $rule
-    done
+  while read -r -a rule; do
+    (( ${#rule[@]} )) || continue
+    iptables "${rule[@]}"
+  done < <(
+    iptables -S "$parent" 2>/dev/null \
+      | grep -- "-j $CHAIN" \
+      | grep -v -- "-s $subnet " \
+      | sed 's/^-A /-D /' \
+      || true
+  )
   iptables -C "$parent" -s "$subnet" -j "$CHAIN" 2>/dev/null \
     || iptables -I "$parent" 1 -s "$subnet" -j "$CHAIN"
 done

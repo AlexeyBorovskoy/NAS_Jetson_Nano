@@ -18,6 +18,8 @@ def test_guard_blocks_private_ranges_and_is_attached_to_docker_paths():
     assert "ESTABLISHED,RELATED" in guard
     assert "for parent in DOCKER-USER INPUT" in guard
     assert 'docker network inspect' in guard
+    assert "while read -r -a rule" in guard
+    assert "|| true" in guard  # no stale jump is the normal first-install case
 
 
 def test_watchdog_service_refreshes_guard_before_container_recovery():

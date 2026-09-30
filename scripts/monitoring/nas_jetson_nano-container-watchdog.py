@@ -150,9 +150,14 @@ def main():
                                            ba.read_env(ba.ENV_FILE, "TELEGRAM_OWNER_LOGIN", "admin"))
         if token and chat_id:
             try:
-                ba.send_with_retries(token, chat_id, "🐕 Сторож контейнеров Jetson:\n" + "\n".join(notes),
-                                     proxy=ba.read_env(ba.ENV_FILE, "TELEGRAM_PROXY") or None,
-                                     attempts=2, delay_sec=5)
+                delivered, error = ba.send_with_retries(
+                    token, chat_id,
+                    "🐕 Сторож контейнеров Jetson:\n" + "\n".join(notes),
+                    proxy=ba.read_env(ba.ENV_FILE, "TELEGRAM_PROXY") or None,
+                    attempts=2, delay_sec=5)
+                if not delivered:
+                    sys.stderr.write("watchdog: алерт не доставлен: %s\n"
+                                     % (error or "unknown error"))
             except Exception as exc:  # доставка — не главное, действие уже сделано
                 sys.stderr.write("watchdog: алерт не доставлен: %s\n" % type(exc).__name__)
     return 0

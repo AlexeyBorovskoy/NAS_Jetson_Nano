@@ -109,16 +109,32 @@ jobs:
             --source . \
             --config .gitleaks.toml \
             --redact \
-            --no-git \
-            --exit-code 1 \
-            || gitleaks detect \
-              --source . \
-              --redact \
-              --no-git \
-              --exit-code 1
+            --exit-code 1
+
+      - name: Verify Gitleaks scans deleted history
+        run: |
+          probe_repo="$(mktemp -d)"
+          trap 'rm -rf "$probe_repo"' EXIT
+          git -C "$probe_repo" init --quiet
+          git -C "$probe_repo" config user.name "CI security probe"
+          git -C "$probe_repo" config user.email "ci-probe@example.invalid"
+          printf 'GITHUB_TOKEN=%s%s\n' 'ghp_' '0123456789abcdefghijklmnopqrstuvwxyz' \
+            > "$probe_repo/leaked.env"
+          git -C "$probe_repo" add leaked.env
+          git -C "$probe_repo" commit --quiet -m "temporary leak"
+          git -C "$probe_repo" rm --quiet leaked.env
+          git -C "$probe_repo" commit --quiet -m "remove leak from worktree"
+          set +e
+          gitleaks detect --source "$probe_repo" --redact --no-banner --exit-code 1
+          probe_rc=$?
+          set -e
+          if [ "$probe_rc" -ne 1 ]; then
+            echo "gitleaks did not detect the deleted secret in Git history (rc=$probe_rc)" >&2
+            exit 1
+          fi
 
       - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
           scan-type: fs
           scan-ref: .

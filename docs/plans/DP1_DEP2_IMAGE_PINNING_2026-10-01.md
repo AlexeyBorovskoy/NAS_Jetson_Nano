@@ -72,6 +72,23 @@ run `pull`, `up`, `restart`, or recreate a container.  Current running content
 already matches the selected digests.  The next planned maintenance operation
 will therefore resolve the same content instead of following a moving tag.
 
+Deployment evidence (2026-10-01):
+
+- implementation commit `b6231ae` was pushed to GitHub `main` and GitVerse
+  `main`;
+- Jetson `/home/admin/nasa` fast-forwarded from `b312e2a` to `b6231ae`; the
+  monitoring, Nextcloud, Immich, and Samba Compose files rendered successfully
+  with the device environment, and the on-device image-only gate reported
+  22/22 digest-pinned references;
+- VPS `/opt/nasa/docker-compose.yml` was validated before and after install;
+  the prior file is recoverable as
+  `/opt/nasa/docker-compose.yml.bak.dp1-dep2-20261001`;
+- VPS Nginx and Beszel remained `running`; their live RepoDigests equal the new
+  pins (`203165...a6b5c` and `a849ad...d477` respectively);
+- no container was pulled, recreated, or restarted.  Amnezia/VPN services and
+  configuration were not read beyond the earlier container-name inventory and
+  were not changed.
+
 Rollback is `git revert <DP-1/DEP-2 commit>`.  Do not roll an application image
 back after a future stateful upgrade unless its database/volume backup from the
 same point in time is also restored.

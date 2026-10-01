@@ -5,6 +5,9 @@
 > Assignee per rule #16: **D** — DeepSeek (mechanical work by card), **C** — Claude (lead),
 > **O** — owner (sudo on the device, decisions). Complexity: S / M / L.
 
+> Reconciled with code, tests, deployment evidence, and the 2026-09-26 checkpoint on
+> **2026-10-01**. ✅ means implemented and evidenced; historical audit reports remain unchanged.
+
 ## Wave 1 — live system, now
 
 | # | Item | Who | Complexity | Tests / verification |
@@ -13,7 +16,7 @@
 | 1.2 | ✅ **OPS-2 (2026-09-30):** the Jetson daily report and Vostro offsite backup load `VPS_HOST` from root-owned `/opt/nasa/config/.env`; deployed scripts contain no literal VPS address | C | S | [live evidence](docs/plans/OPS2_VPS_CONFIG_DEPLOY_2026-09-30.md): systemd report sent Telegram message 349; offsite backup completed successfully |
 | 1.3 | ✅ **OPS-1 (2026-09-30):** the host watchdog is installed and enabled; every 2 min it starts eligible `homecloud_*` containers with restart policy `always`, restarts `unhealthy` ones, honours global/per-container pause markers and the maintenance label, and alerts the owner in Telegram | C | M | [live evidence](docs/plans/OPS1_WATCHDOG_DEPLOY_2026-09-30.md): maintenance skip observed; timer recovery in 123 s; Telegram delivery accepted |
 | 1.4 | **CF-2:** Docker log rotation — `log-opts` `max-size=10m`, `max-file=3` in `daemon.json` (+ default in compose) | C + O (sudo, Docker restart in a maintenance window) | S | `docker inspect` shows `max-size` |
-| 1.5 | **HK-1:** atomic move in `on_complete.sh` (`mv -n` + retry with the next suffix or `flock` on the directory) | D (test) + C | S | concurrent test of two hooks with the same name: both files intact |
+| 1.5 | ✅ **HK-1 (2026-09-26):** `on_complete.sh` stages downloads in `.incoming`, uses `mv -n`, and retries with the next suffix on a collision | D (test) + C | S | concurrent file and directory tests preserve both downloads; [live checkpoint](docs/plans/CHECKPOINT_2026-09-26.ru.md#2-сделано-и-в-бою-проверено-по-делу-не-по-файлам) confirms two same-name MathCAD downloads |
 
 ## Wave 2 — security
 
@@ -24,7 +27,7 @@
 | 2.3 | **SH-1:** `cloudru_iam_token_example.sh` — response via stdin, not via heredoc | D | S | a fake response with `'''` does not execute code |
 | 2.4 | **CI-1 / SEC-1:** trivy on tag+SHA; gitleaks without `--no-git` (history) | C | S | the job fails on a test secret in the branch history |
 | 2.5 | **DP-2:** NAS API not as root; `docker.sock` via socket-proxy with `GET /containers/json` only | C | M | `test_api_access` + manual `/v1/containers` |
-| 2.6 | **DP-1 / DEP-2:** pin image versions (netdata, portainer, samba, beszel, nextcloud, immich); gate check "no `:latest`" | D (inventory) + C | S | gate-grep |
+| 2.6 | **DP-1 / DEP-2 (partial):** Immich is pinned to `v2.7.5`; pin netdata, portainer, samba, beszel, and Nextcloud, then make the "no `:latest`" gate blocking | D (inventory) + C | S | blocking gate-grep; compose config remains valid |
 | 2.7 | **DEP-1:** pin NAS API dependencies (`==` + lock with hashes); evaluate replacing `python-jose`/`passlib` | C | S/M | `service-tests` green after pinning |
 | 2.8 | **SH-2 / HK-2:** a shared `tg_send()` in `scripts/lib/` — token not in argv; temp file on the VPS via `mktemp` | D + C | M | grep check: no `bot${TELEGRAM_BOT_TOKEN}` in argv |
 | 2.9 | **SEC-2:** `check_no_secrets.sh` scans `*.md` with a narrow allowlist | D | S | a test secret in a `.md` is caught |
@@ -40,10 +43,8 @@
 | 3.5 | **QA-1/2/3:** vermin in CI; rename the `app` packages or isolate the run; `tests/unit` collected via pytest | D | S/M | CI green, a combined run without false failures |
 | 3.6 | **API-4/5:** close the Telegram client; caps on state lists and the outbox | D | S | close test, eviction test |
 | 3.7 | rotate `jms583-health.log`, delete `nasa-api.jsonl.*` after the migration | C + O | S | — |
-| 3.8 | **BK-1:** if backup-api is going to be enabled — sanitize the file name + `USER`; otherwise remove the "production" code until the RFC | C | S | traversal tests |
+| 3.8 | ✅ **BK-1 / BK-2 (2026-09-26):** backup-api validates `backup_id`, constrains the target to the backup root, rejects unsafe/dotted names and symlinks, and runs as UID 10001; the service remains intentionally undeployed | C | S | backup-api suite: 24 passed, 1 skipped; traversal, unsafe-name, symlink, and non-root checks |
 
 ## Owner decisions
 
-- 2.2: the network barrier changes iptables on the Jetson — a window and consent are needed.
 - 1.4: Docker restart — a maintenance window (all services for ~1 min).
-- 3.8: backup-api — fix it or remove it.

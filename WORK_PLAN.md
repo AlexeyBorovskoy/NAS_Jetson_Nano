@@ -45,6 +45,16 @@
 | 3.7 | rotate `jms583-health.log`, delete `nasa-api.jsonl.*` after the migration | C + O | S | — |
 | 3.8 | ✅ **BK-1 / BK-2 (2026-09-26):** backup-api validates `backup_id`, constrains the target to the backup root, rejects unsafe/dotted names and symlinks, and runs as UID 10001; the service remains intentionally undeployed | C | S | backup-api suite: 24 passed, 1 skipped; traversal, unsafe-name, symlink, and non-root checks |
 
+## Wave 4 — articles and publication
+
+Publication work starts with evidence collection during Waves 2–3; final drafts follow the
+technical fact freeze. Publishing to an external platform remains an owner action.
+
+| # | Item | Who | Complexity | Tests / verification |
+|---|---|---|---|---|
+| 4.1 | **ART-HABR-2:** write Habr Part 2 from the approved narrative plan and the continuously maintained evidence log; verify every date, metric, incident, commit, and architecture statement against current evidence; prepare only redacted screenshots | C + O (final edit and publish) | M | [`HABR_PART2_ARTICLE_PLAN_2026-09.md`](docs/articles/HABR_PART2_ARTICLE_PLAN_2026-09.md) DoD is complete; facts trace to [`HABR_PART2_MATERIALS.md`](docs/articles/HABR_PART2_MATERIALS.md); secret/identifier scan and image-redaction checklist pass |
+| 4.2 | **ART-DEV-1:** create a dedicated English DEV.to adaptation after the Habr fact freeze, using `PROJECT_FACTS_EN.md`, `MEASUREMENTS_EN.md`, and the existing Hackaday draft as source material; do not publish the Hackaday text unchanged or imply that it is already a DEV.to draft | C + O (final edit and publish) | M | dedicated DEV.to source exists; technical facts match the Habr canon/current repository; links and images render; `publication_status.md` records the actual URL only after owner publication |
+
 ## Owner decisions
 
 - 1.4: Docker restart — a maintenance window (all services for ~1 min).

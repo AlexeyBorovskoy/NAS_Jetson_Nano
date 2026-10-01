@@ -34,7 +34,7 @@ services:
   # Доступ: http://<jetson-ip>:19999
   # ---------------------------------------------------------------------------
   netdata:
-    image: netdata/netdata:latest
+    image: netdata/netdata:latest@sha256:0c2d00b4ceb8d247251986ae05d08c92c65abff18bf081929f853de310aa5918
     container_name: homecloud_netdata
     hostname: jetson-nano
     restart: always
@@ -91,7 +91,7 @@ services:
   # Доступ: http://<jetson-ip>:3001
   # ---------------------------------------------------------------------------
   uptime-kuma:
-    image: louislam/uptime-kuma:1
+    image: louislam/uptime-kuma:1@sha256:3d632903e6af34139a37f18055c4f1bfd9b7205ae1138f1e5e8940ddc1d176f9
     container_name: homecloud_uptime_kuma
     restart: always
     mem_limit: 192m
@@ -129,7 +129,7 @@ services:
   # Доступ: ssh -L 9443:127.0.0.1:9443 admin@192.168.0.50 → https://127.0.0.1:9443
   # ---------------------------------------------------------------------------
   portainer:
-    image: portainer/portainer-ce:latest
+    image: portainer/portainer-ce:latest@sha256:d27f76194b719bfe2a34779d51798a7adf02510cfba69ebcb538267f75aa4f47
     container_name: homecloud_portainer
     restart: always
     mem_limit: 128m

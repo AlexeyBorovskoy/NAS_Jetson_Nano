@@ -50,59 +50,47 @@ have() { command -v "$1" >/dev/null 2>&1; }
 #
 # bad/ok/warn — общие функции ворот: FAIL и WARN считаются по всему прогону.
 check_image_tags() {
-    local f line lineno
-    local immich_seen=0 immich_bad=0 other_latest=0
-    for f in docker/compose/*.yml; do
+    local f line trimmed ref digest lineno
+    local image_seen=0 image_bad=0
+    for f in docker/compose/*.yml docker/vps/*.yml; do
         [ -f "$f" ] || continue
         lineno=0
         while IFS= read -r line; do
             lineno=$((lineno + 1))
-            # Смотрим только строки образа, а не любое упоминание слова в комментарии.
-            case "$line" in
-                *[Ii]mage:*) ;;
+            trimmed=${line#"${line%%[![:space:]]*}"}
+            # Only YAML image keys count; comments and prose must not affect the gate.
+            case "$trimmed" in
+                image:*) ;;
                 *) continue ;;
             esac
-            case "$line" in
-                *[Ii][Mm][Mm][Ii][Cc][Hh]*)
-                    immich_seen=$((immich_seen + 1))
-                    # `:-release}` — дефолт по умолчанию; `:release` — голый плавающий тег;
-                    # `:latest` — то же самое, но названное честно. Любой из них означает,
-                    # что pull уедет вперёд без нашего решения.
-                    case "$line" in
-                        *:-release*|*:release*|*:latest*)
-                            bad "плавающий тег у образа Immich: $f:$lineno"
-                            printf '      %s\n' "$(printf '%s' "$line" | sed 's/^[[:space:]]*//')"
-                            immich_bad=$((immich_bad + 1))
-                            ;;
-                    esac
-                    ;;
-                *:latest*)
-                    warn "не-Immich образ на :latest: $f:$lineno (DEP-2, ворота не блокирует)"
-                    other_latest=$((other_latest + 1))
-                    ;;
-            esac
+            image_seen=$((image_seen + 1))
+            ref=${trimmed#image:}
+            digest=$(printf '%s\n' "$ref" | sed -n 's/.*@sha256:\([0-9a-f]\{64\}\)[[:space:]]*$/\1/p')
+            if [ "${#digest}" -ne 64 ]; then
+                bad "external image is not pinned by sha256 digest: $f:$lineno"
+                printf '      %s\n' "$trimmed"
+                image_bad=$((image_bad + 1))
+            fi
         done < "$f"
     done
-    if [ "$immich_seen" -eq 0 ]; then
-        warn "образов Immich в docker/compose/*.yml не найдено — проверять нечего"
-    elif [ "$immich_bad" -eq 0 ]; then
-        ok "Immich закреплён по версии: образов Immich — $immich_seen, плавающих тегов нет"
+    if [ "$image_seen" -eq 0 ]; then
+        warn "image keys in docker/compose/*.yml and docker/vps/*.yml were not found"
+    elif [ "$image_bad" -eq 0 ]; then
+        ok "external Compose images are immutable: $image_seen image references have sha256 digests"
     fi
-    [ "$other_latest" -eq 0 ] || \
-        warn "прочих образов на :latest — $other_latest (netdata/portainer/samba: задача DEP-2)"
 }
 
 # Режим одной проверки: тесту нужен результат только 7б, без shellcheck, vermin
 # и прогона всех тестов (иначе тест, запускающий ворота, запустил бы и сам себя).
 if [ "$IMAGES_ONLY" = "1" ]; then
-    head_ "7б. Теги образов Immich / Immich image tags"
+    head_ "7б. Immutable Compose images / sha256 image pins"
     check_image_tags
     printf '\n'
     if [ "$FAIL" -eq 0 ]; then
-        printf '\033[32m✓ теги образов Immich закреплены\033[0m\n'
+        printf '\033[32m✓ all external Compose images are pinned by digest\033[0m\n'
         exit 0
     fi
-    printf '\033[31m✗ плавающих тегов у Immich: %d\033[0m\n' "$FAIL"
+    printf '\033[31m✗ unpinned external Compose images: %d\033[0m\n' "$FAIL"
     exit 1
 fi
 
@@ -238,10 +226,11 @@ if [ "$QUICK" = "1" ]; then
     warn "пропущено (--quick)"
 elif have docker && docker info >/dev/null 2>&1; then
     n=0; bad_n=0
-    for f in docker/compose/*.yml; do
+    for f in docker/compose/*.yml docker/vps/*.yml; do
         [ -f "$f" ] || continue
         n=$((n+1))
-        docker compose -f "$f" --env-file config/.env.example config --quiet >/dev/null 2>&1 \
+        ARIA2_RPC_SECRET=example_only_not_a_secret \
+            docker compose -f "$f" --env-file config/.env.example config --quiet >/dev/null 2>&1 \
             || { bad "compose не валиден: $f"; bad_n=$((bad_n+1)); }
     done
     [ "$bad_n" -eq 0 ] && ok "проверено файлов: $n"
@@ -249,17 +238,17 @@ else
     warn "docker недоступен — проверка compose пропущена (в CI она есть)"
 fi
 
-# ── 7б. 🔴 Теги образов Immich ─────────────────────────────────────────────────
-head_ "7б. Теги образов Immich / Immich image tags"
+# ── 7б. 🔴 Immutable external Compose images ───────────────────────────────────
+head_ "7б. Immutable Compose images / sha256 image pins"
 #
 # История дефекта (2026-09-26, задача D6/DEP-2): устройство работало на Immich 2.7.5,
 # а образ брался по плавающему тегу — ${IMMICH_VERSION:-release}. Обычный
 # `docker compose pull` поднял бы мажорную версию МОЛЧА, а Immich мигрирует схему БД
 # при старте: откатить образ, не откатив дамп БД, нельзя. Версия закреплена на v2.7.5.
 #
-# Прочие образы на :latest (netdata, portainer, samba) пока НЕ блокируют ворота —
-# это отдельная задача DEP-2. Предупреждение видно, но ворота не краснеют на том,
-# что ещё не сделано: покрасневшие ворота начинают обходить.
+# DP-1/DEP-2 (2026-10-01): every external image is pinned by registry digest.
+# Human-readable tags remain for operator context, but only sha256 determines
+# the pulled content. The gate is blocking for Jetson and VPS Compose files.
 check_image_tags
 
 # ── 8. Регрессионные тесты ─────────────────────────────────────────────────────

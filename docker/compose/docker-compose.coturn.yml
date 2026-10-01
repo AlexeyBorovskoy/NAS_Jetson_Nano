@@ -14,7 +14,7 @@ name: homecloud-coturn
 
 services:
   coturn:
-    image: coturn/coturn:alpine
+    image: coturn/coturn:alpine@sha256:c29135c08565810d37053f384584392b7c24b69570fc81a721b878d6fe63e04e
     container_name: homecloud_coturn
     restart: always
     mem_limit: 128m

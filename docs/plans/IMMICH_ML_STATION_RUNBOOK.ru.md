@@ -20,7 +20,7 @@ Immich на Jetson никогда не запускал `immich-machine-learning
 | Файл | Роль |
 |---|---|
 | `docker/compose/docker-compose.immich-ml-rog.yml` | ML-воркер на станции, порт на `127.0.0.1`, GPU через `deploy.resources.reservations.devices` |
-| `config/immich-ml-rog.env.example` → `config/immich-ml-rog.env` (вне git) | версия закреплена на `v2.7.5` (как на Jetson) |
+| `config/immich-ml-rog.env.example` → `config/immich-ml-rog.env` (вне git) | несекретные runtime-настройки; образ закреплён в Compose |
 | `scripts/workstation/immich_ml_station.ps1` | `start` / `stop` / `status` на станции |
 | `scripts/immich/set_ml_url.sh` | `set` / `restore` / `show` — правит `machineLearning` в Immich через API |
 
@@ -43,7 +43,8 @@ Immich на Jetson никогда не запускал `immich-machine-learning
 4. **Питание от сети, сон выключен** на время прогона — обрыв Wi-Fi/спящий режим
    роняет и туннель, и Docker посреди индексации (риск из `IMMICH_ML_ROG_FREE_PILOT.md`).
 5. **`config/immich-ml-rog.env`** создан на станции (копия `.example`, вне git).
-   `IMMICH_VERSION` в нём обязан совпадать с версией на Jetson — сверить:
+   Перед согласованным обновлением образа сверить Compose-пины с реально
+   запущенным образом Jetson:
    ```bash
    ssh admin@192.168.0.50 "docker inspect homecloud_immich_server --format '{{.Config.Image}}'"
    ```

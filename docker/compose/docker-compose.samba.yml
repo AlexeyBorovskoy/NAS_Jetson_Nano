@@ -14,7 +14,7 @@
 
 services:
   samba:
-    image: crazymax/samba:latest
+    image: crazymax/samba:latest@sha256:40591f9a30df6b0106948d81d89204c632894387639914ec2808b536e307074b
     container_name: homecloud_samba
     # network_mode: host for proper SMB autodiscovery and broadcast
     network_mode: host

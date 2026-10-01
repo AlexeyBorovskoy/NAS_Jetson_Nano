@@ -15,7 +15,7 @@ services:
     # Образ закреплён по версии сервера на Jetson (IMMICH_VERSION=v2.7.5, D6/DEP-2,
     # 2026-09-26) — тот же дефект, что уронил бы ML-версию вперёд молча: ML-воркер
     # и сервер обязаны быть одной версии Immich. НЕ менять на ...:release-cuda.
-    image: ${IMMICH_ML_IMAGE:-ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-v2.7.5}-cuda}
+    image: ghcr.io/immich-app/immich-machine-learning:v2.7.5-cuda@sha256:304142175e345f0155d7642f637cfdceae60e89075ff03938cb2886d52c65a62
     restart: unless-stopped
     ports:
       # 🔴 По умолчанию 127.0.0.1, не 0.0.0.0 — родня аудиту CF-4 (порты "*"/наружу).

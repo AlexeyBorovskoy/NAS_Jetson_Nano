@@ -3,7 +3,7 @@
 name: homecloud-nextcloud
 services:
   nextcloud-db:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229
     container_name: homecloud_nextcloud_db
     restart: always
     mem_limit: 256m
@@ -23,7 +23,7 @@ services:
       - homecloud_internal
 
   nextcloud-redis:
-    image: redis:7-alpine
+    image: redis:7-alpine@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99
     container_name: homecloud_nextcloud_redis
     restart: always
     mem_limit: 64m
@@ -40,7 +40,7 @@ services:
       - homecloud_internal
 
   nextcloud:
-    image: nextcloud:apache
+    image: nextcloud:33.0.4-apache@sha256:caa40b8beaf0057ac213d8dfc515c36ce64f7a8f0825b6a287e6f7cf2f4a095d
     container_name: homecloud_nextcloud
     restart: always
     mem_limit: 512m

@@ -22,7 +22,7 @@ Kit files:
 | File | Role |
 |---|---|
 | `docker/compose/docker-compose.immich-ml-rog.yml` | ML worker on the workstation, port bound to `127.0.0.1`, GPU via `deploy.resources.reservations.devices` |
-| `config/immich-ml-rog.env.example` → `config/immich-ml-rog.env` (outside git) | version pinned to `v2.7.5` (matching the Jetson) |
+| `config/immich-ml-rog.env.example` → `config/immich-ml-rog.env` (outside git) | non-secret runtime settings; the image is pinned in Compose |
 | `scripts/workstation/immich_ml_station.ps1` | `start` / `stop` / `status` on the workstation |
 | `scripts/immich/set_ml_url.sh` | `set` / `restore` / `show` — edits Immich `machineLearning` via the API |
 
@@ -47,8 +47,8 @@ Nothing in this runbook runs until every item below is closed:
    both the tunnel and Docker mid-indexing (risk noted in
    `IMMICH_ML_ROG_FREE_PILOT.md`).
 5. **`config/immich-ml-rog.env` created on the workstation** (copy of
-   `.example`, outside git). Its `IMMICH_VERSION` must match the Jetson's —
-   verify with:
+   `.example`, outside git). Before a reviewed image upgrade, compare the
+   Compose pins with the Jetson's running image:
    ```bash
    ssh admin@192.168.0.50 "docker inspect homecloud_immich_server --format '{{.Config.Image}}'"
    ```

@@ -66,6 +66,38 @@ class GatewayCase(unittest.TestCase):
         return TestClient(m.app, raise_server_exceptions=False)
 
 
+class RedactionEndpoint(GatewayCase):
+    def redact(self, text):
+        m = self.load()
+        response = self.client(m).post("/v1/redact", json={"prompt": text})
+        self.assertEqual(response.status_code, 200, response.text)
+        redacted = response.json()["redacted_text"]
+        self.assertTrue(redacted.endswith("\n"))
+        return redacted[:-1]
+
+    def test_russian_secret_labels_and_separators_are_redacted(self):
+        source = (
+            "пароль:alpha КЛЮЧ=bravo код 1234 "
+            "пин : 5678 секрет = charlie"
+        )
+        self.assertEqual(
+            self.redact(source),
+            "пароль=[REDACTED] КЛЮЧ=[REDACTED] код=[REDACTED] "
+            "пин=[REDACTED] секрет=[REDACTED]",
+        )
+
+    def test_existing_english_labels_still_work(self):
+        source = "password:alpha api_key=bravo Bearer charlie"
+        self.assertEqual(
+            self.redact(source),
+            "password=[REDACTED] api_key=[REDACTED] Bearer=[REDACTED]",
+        )
+
+    def test_secret_label_must_be_a_whole_word(self):
+        source = "кодировка utf-8 ключница закрыта парольный менеджер"
+        self.assertEqual(self.redact(source), source)
+
+
 class ChatEndpoint(GatewayCase):
     def test_gigachat_chat_returns_200(self):
         m = self.load()

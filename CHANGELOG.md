@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — 2026-10-01 · SH-1
+## [Unreleased] — 2026-10-01 · SH-1 and GW-3
 
 ### Security / Безопасность
 - Stopped interpolating the Cloud.ru IAM HTTP response into generated Python
@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added a regression payload containing `'''` and a file-write expression to
   prove that a server response cannot execute Python code.
 - Invalid JSON diagnostics no longer echo any part of the HTTP response.
+- The LLM gateway now redacts Russian secret labels (`пароль`, `ключ`, `код`,
+  `пин`, `секрет`) with colon, equals, or whitespace separators.
 
 ## [Unreleased] — 2026-09-30 · OPS-1/OPS-2 and API-2/3
 

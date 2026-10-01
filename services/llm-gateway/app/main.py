@@ -79,7 +79,10 @@ def _require_service_token(request: Request) -> None:
 
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 PHONE_RE = re.compile(r"(?<!\d)(?:\+?\d[\d\s().-]{7,}\d)(?!\d)")
-TOKEN_RE = re.compile(r"(?i)(api[_-]?key|token|secret|password|bearer)\s*[:=]\s*[^\s]+")
+TOKEN_RE = re.compile(
+    r"(?i)\b(api[_-]?key|token|secret|password|bearer|пароль|ключ|код|пин|секрет)\b"
+    r"(?:\s*[:=]\s*|\s+)[^\s]+"
+)
 PRIVATE_KEY_RE = re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----", re.S)
 # Talk / chat mentions: @username, @"Display Name"
 MENTION_RE = re.compile(r"@\"[^\"]+\"|@[\w./-]+")

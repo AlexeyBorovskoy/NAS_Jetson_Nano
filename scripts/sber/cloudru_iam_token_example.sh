@@ -21,13 +21,13 @@ resp=$(curl -sS -X POST \
 
 # Print only metadata + token length (avoid accidental board paste of full token)
 PY_BIN="$(command -v python3 || command -v python)"
-"$PY_BIN" - <<PY
+printf '%s' "$resp" | "$PY_BIN" -c '
 import json, os, sys
-raw = '''$resp'''
+raw = sys.stdin.read()
 try:
     d = json.loads(raw)
 except Exception as e:
-    print("non-json response", raw[:200])
+    print("non-json response:", type(e).__name__)
     sys.exit(1)
 tok = d.get("access_token") or d.get("accessToken") or ""
 print("keys:", sorted(d.keys()))
@@ -37,4 +37,4 @@ if os.environ.get("PRINT_TOKEN") == "1":
     print(tok)
 else:
     print("(set PRINT_TOKEN=1 to print token once)")
-PY
+'

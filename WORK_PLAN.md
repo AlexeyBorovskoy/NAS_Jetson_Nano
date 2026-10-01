@@ -24,7 +24,7 @@
 |---|---|---|---|---|
 | 2.1 | **GW-3:** Russian secret triggers in `TOKEN_RE` (пароль, ключ, код, пин, секрет), separator — `:`/`=`/space | C | S | a set of Russian phrases with a password/code is redacted |
 | 2.2 | ✅ **API-2/3 (2026-09-30):** API HEAD requests use checked manual redirects; the Jetson `NAS-DL-EGRESS` barrier rejects aria2 IPv4 traffic to `10/8`, `172.16/12`, `192.168/16`, `127/8` and `169.254/16` and is refreshed every 2 min | C | M | [live evidence](docs/plans/API23_EGRESS_DEPLOY_2026-09-30.md): private redirect not followed; container→`192.168.0.1` rejected with counter hit; public control passed |
-| 2.3 | **SH-1:** `cloudru_iam_token_example.sh` — response via stdin, not via heredoc | D | S | a fake response with `'''` does not execute code |
+| 2.3 | ✅ **SH-1 (2026-10-01):** `cloudru_iam_token_example.sh` passes the HTTP response to fixed Python code through stdin instead of interpolating it into a heredoc | D | S | a fake response containing `'''` and a file-write expression remains JSON data and cannot execute code |
 | 2.4 | **CI-1 / SEC-1:** trivy on tag+SHA; gitleaks without `--no-git` (history) | C | S | the job fails on a test secret in the branch history |
 | 2.5 | **DP-2:** NAS API not as root; `docker.sock` via socket-proxy with `GET /containers/json` only | C | M | `test_api_access` + manual `/v1/containers` |
 | 2.6 | **DP-1 / DEP-2 (partial):** Immich is pinned to `v2.7.5`; pin netdata, portainer, samba, beszel, and Nextcloud, then make the "no `:latest`" gate blocking | D (inventory) + C | S | blocking gate-grep; compose config remains valid |

@@ -173,6 +173,17 @@ jobs:
         run: |
           for t in tests/unit/test_*.py; do python "$t"; done
 
+      # Stage 8 (code audit 2026-10-02, docs/audit/2026-10-02_code_audit/PLAN.ru.md
+      # "Храповик"): a structural refactor fixed by a PR is free to drift back the
+      # moment nobody is watching — this is the standing gate, not a one-off report.
+      # actions/checkout@v4 above is a shallow clone (depth=1): commits/churn/
+      # hotspot are never compared by --check, and code_metrics.py's churn()
+      # tolerates a `git log` failure, so the shallow history cannot fail this step.
+      - name: Code metrics ratchet
+        run: |
+          python scripts/quality/code_metrics.py \
+            --check docs/audit/2026-10-02_code_audit/baseline.json
+
       - name: LLM Gateway tests
         run: python -m pytest -q tests/llm_gateway
         env:

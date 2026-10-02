@@ -77,8 +77,11 @@ jobs:
       - name: Validate monitoring
         run: docker compose -f docker/compose/docker-compose.monitoring.yml --env-file config/.env config --quiet
 
+      # Blocking since 2026-10-02 (CQ-11): the step passed with `|| true`, so a
+      # broken NAS API compose file would have gone green. Run 36829956028
+      # showed it validates cleanly (only an IMMICH_API_KEY blank warning).
       - name: Validate nas_jetson_nano-api
-        run: docker compose -f docker/compose/docker-compose.nas_jetson_nano-api.yml --env-file config/.env config --quiet || true
+        run: docker compose -f docker/compose/docker-compose.nas_jetson_nano-api.yml --env-file config/.env config --quiet
 
       - name: Validate VPS compose
         run: docker compose -f docker/vps/docker-compose.yml --env-file config/.env config --quiet

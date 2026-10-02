@@ -1,8 +1,8 @@
 {
  "schema": 1,
  "repo": "NAS_Jetson_Nano",
- "commit": "c3c6623dd2c36480788e9f4c54784581f3ecfdbf",
- "generated_at": "2026-10-02T11:25:51+00:00",
+ "commit": "210d0d43e25343e82d4a92460eb824c7608a2d6a",
+ "generated_at": "2026-10-02T11:41:56+00:00",
  "stack": [
   "python",
   "bash",
@@ -180,7 +180,7 @@
    ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0177
+   "hotspot_score": 0.0159
   },
   "scripts/backup/config_backup.sh": {
    "lang": "sh",
@@ -233,7 +233,7 @@
    ],
    "strict_mode": false,
    "level": "ok",
-   "hotspot_score": 0.002
+   "hotspot_score": 0.0018
   },
   "scripts/backup/immich_hdd_second_copy.sh": {
    "lang": "sh",
@@ -271,7 +271,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0006
+   "hotspot_score": 0.0005
   },
   "scripts/backup/install_backup_timer.sh": {
    "lang": "sh",
@@ -309,7 +309,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0009
+   "hotspot_score": 0.0008
   },
   "scripts/backup/install_restic.sh": {
    "lang": "sh",
@@ -347,7 +347,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0006
+   "hotspot_score": 0.0005
   },
   "scripts/backup/restic_backup_example.sh": {
    "lang": "sh",
@@ -385,7 +385,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0042
+   "hotspot_score": 0.0037
   },
   "scripts/backup/restic_s3_cloudru_example.sh": {
    "lang": "sh",
@@ -423,7 +423,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0012
+   "hotspot_score": 0.0011
   },
   "scripts/backup/restic_s3_cloudru_probe.sh": {
    "lang": "sh",
@@ -476,7 +476,7 @@
    ],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.001
+   "hotspot_score": 0.0009
   },
   "scripts/backup/restore_drill.sh": {
    "lang": "sh",
@@ -514,7 +514,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0014
+   "hotspot_score": 0.0012
   },
   "scripts/backup/setup_config_backup.sh": {
    "lang": "sh",
@@ -552,7 +552,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0007
+   "hotspot_score": 0.0006
   },
   "scripts/diagnostics/docker_health.sh": {
    "lang": "sh",
@@ -605,7 +605,7 @@
    ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.004
+   "hotspot_score": 0.0036
   },
   "scripts/diagnostics/hardware_audit.sh": {
    "lang": "sh",
@@ -643,7 +643,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0027
+   "hotspot_score": 0.0025
   },
   "scripts/diagnostics/sd_wear_check.sh": {
    "lang": "sh",
@@ -709,7 +709,7 @@
    ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0062
+   "hotspot_score": 0.0055
   },
   "scripts/diagnostics/smart_check.sh": {
    "lang": "sh",
@@ -762,7 +762,7 @@
    ],
    "strict_mode": false,
    "level": "ok",
-   "hotspot_score": 0.0047
+   "hotspot_score": 0.0043
   },
   "scripts/diagnostics/storage_health.sh": {
    "lang": "sh",
@@ -815,7 +815,7 @@
    ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.015
+   "hotspot_score": 0.0135
   },
   "scripts/docs/correct_publication_claims_docx.py": {
    "lang": "py",
@@ -893,7 +893,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0023
+   "hotspot_score": 0.0021
   },
   "scripts/downloads/aria2_speed.sh": {
    "lang": "sh",
@@ -931,7 +931,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0008
+   "hotspot_score": 0.0007
   },
   "scripts/fetch_external_docs.sh": {
    "lang": "sh",
@@ -984,7 +984,7 @@
    ],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0146
+   "hotspot_score": 0.0131
   },
   "scripts/immich/set_ml_url.sh": {
    "lang": "sh",
@@ -1050,7 +1050,7 @@
    ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.002
+   "hotspot_score": 0.0018
   },
   "scripts/lib/install_layout.sh": {
    "lang": "sh",
@@ -1088,7 +1088,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0005
+   "hotspot_score": 0.0004
   },
   "scripts/lib/layout.sh": {
    "lang": "sh",
@@ -1126,7 +1126,7 @@
    "funcs": [],
    "strict_mode": false,
    "level": "ok",
-   "hotspot_score": 0.0007
+   "hotspot_score": 0.0006
   },
   "scripts/lib/nas_layout.py": {
    "lang": "py",
@@ -1204,7 +1204,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0037
+   "hotspot_score": 0.0034
   },
   "scripts/maintenance/docker_update_plan.sh": {
    "lang": "sh",
@@ -1242,7 +1242,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0029
+   "hotspot_score": 0.0026
   },
   "scripts/monitoring/install_beszel_agent.sh": {
    "lang": "sh",
@@ -1280,7 +1280,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0046
+   "hotspot_score": 0.0041
   },
   "scripts/monitoring/install_beszel_agent_vps.sh": {
    "lang": "sh",
@@ -1318,7 +1318,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0027
+   "hotspot_score": 0.0024
   },
   "scripts/monitoring/install_container_watchdog.sh": {
    "lang": "sh",
@@ -1356,7 +1356,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0003
+   "hotspot_score": 0.0002
   },
   "scripts/monitoring/install_daily_report.sh": {
    "lang": "sh",
@@ -1475,7 +1475,7 @@
    ],
    "strict_mode": false,
    "level": "fail",
-   "hotspot_score": 0.0165
+   "hotspot_score": 0.0148
   },
   "scripts/monitoring/nas_jetson_nano-beszel-report.py": {
    "lang": "py",
@@ -1742,7 +1742,7 @@
     ]
    ],
    "level": "fail",
-   "hotspot_score": 0.0179
+   "hotspot_score": 0.0161
   },
   "scripts/monitoring/nas_jetson_nano-container-watchdog.py": {
    "lang": "py",
@@ -1861,7 +1861,7 @@
     ]
    ],
    "level": "warn",
-   "hotspot_score": 0.0391
+   "hotspot_score": 0.0352
   },
   "scripts/monitoring/nas_jetson_nano-daily-report.sh": {
    "lang": "sh",
@@ -1914,7 +1914,7 @@
    ],
    "strict_mode": false,
    "level": "fail",
-   "hotspot_score": 0.0226
+   "hotspot_score": 0.0203
   },
   "scripts/monitoring/nas_jetson_nano-send-report-telegram.sh": {
    "lang": "sh",
@@ -1944,15 +1944,15 @@
    "fan_out": 0,
    "fan_in": 0,
    "dup_lines": 20,
-   "commits": 4,
-   "churn_lines": 39,
-   "bug_commits": 2,
+   "commits": 5,
+   "churn_lines": 41,
+   "bug_commits": 3,
    "complexity": 6.6,
    "worst_functions": [],
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0055
+   "hotspot_score": 0.0062
   },
   "scripts/monitoring/nas_jetson_nano-talk-alert.py": {
    "lang": "py",
@@ -2111,7 +2111,7 @@
     ]
    ],
    "level": "warn",
-   "hotspot_score": 0.1648
+   "hotspot_score": 0.1483
   },
   "scripts/monitoring/setup_portainer.sh": {
    "lang": "sh",
@@ -2164,7 +2164,7 @@
    ],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0017
+   "hotspot_score": 0.0016
   },
   "scripts/monitoring/setup_uptime_kuma.py": {
    "lang": "py",
@@ -2216,7 +2216,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0012
+   "hotspot_score": 0.0011
   },
   "scripts/monitoring/usb_error_monitor.sh": {
    "lang": "sh",
@@ -2282,7 +2282,7 @@
    ],
    "strict_mode": false,
    "level": "warn",
-   "hotspot_score": 0.0072
+   "hotspot_score": 0.0065
   },
   "scripts/monitoring/vps_amnezia_monitor.sh": {
    "lang": "sh",
@@ -2312,9 +2312,9 @@
    "fan_out": 0,
    "fan_in": 0,
    "dup_lines": 0,
-   "commits": 3,
-   "churn_lines": 90,
-   "bug_commits": 0,
+   "commits": 4,
+   "churn_lines": 92,
+   "bug_commits": 1,
    "complexity": 5.9,
    "worst_functions": [
     {
@@ -2335,7 +2335,7 @@
    ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0037
+   "hotspot_score": 0.0044
   },
   "scripts/network/ddns_duckdns.sh": {
    "lang": "sh",
@@ -2365,9 +2365,9 @@
    "fan_out": 0,
    "fan_in": 0,
    "dup_lines": 0,
-   "commits": 2,
-   "churn_lines": 90,
-   "bug_commits": 0,
+   "commits": 3,
+   "churn_lines": 92,
+   "bug_commits": 1,
    "complexity": 4.3,
    "worst_functions": [
     {
@@ -2388,7 +2388,7 @@
    ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0018
+   "hotspot_score": 0.0024
   },
   "scripts/network/dl_egress_guard.sh": {
    "lang": "sh",
@@ -2426,7 +2426,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0012
+   "hotspot_score": 0.0011
   },
   "scripts/network/network_health.sh": {
    "lang": "sh",
@@ -2464,7 +2464,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0028
+   "hotspot_score": 0.0025
   },
   "scripts/network/setup_vps_tunnel.sh": {
    "lang": "sh",
@@ -2502,7 +2502,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0037
+   "hotspot_score": 0.0034
   },
   "scripts/network/test_vostro_bastion_from_jetson.sh": {
    "lang": "sh",
@@ -2618,7 +2618,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0056
+   "hotspot_score": 0.0051
   },
   "scripts/quality/check_ps1_bom.py": {
    "lang": "py",
@@ -2696,7 +2696,7 @@
     ]
    ],
    "level": "warn",
-   "hotspot_score": 0.004
+   "hotspot_score": 0.0036
   },
   "scripts/quality/code_metrics.py": {
    "lang": "py",
@@ -2726,8 +2726,8 @@
    "fan_out": 0,
    "fan_in": 0,
    "dup_lines": 0,
-   "commits": 1,
-   "churn_lines": 540,
+   "commits": 2,
+   "churn_lines": 808,
    "bug_commits": 0,
    "complexity": 267,
    "worst_functions": [
@@ -2920,18 +2920,18 @@
     ]
    ],
    "level": "fail",
-   "hotspot_score": 0.0556
+   "hotspot_score": 0.1
   },
   "scripts/quality/preflight.sh": {
    "lang": "sh",
    "test": false,
-   "loc": 247,
-   "functions": 1,
+   "loc": 275,
+   "functions": 2,
    "func_loc_max": 29,
    "func_loc_p90": 29,
    "func_over_warn": 0,
-   "cc_max": 9,
-   "cc_sum": 9,
+   "cc_max": 10,
+   "cc_sum": 19,
    "cc_over_warn": 0,
    "nest_max": 3,
    "params_max": 0,
@@ -2939,9 +2939,9 @@
    "class_methods_max": 0,
    "ctor_params_max": 0,
    "ctor_state_max": 0,
-   "broad_catch": 0,
+   "broad_catch": 1,
    "silent_catch": 4,
-   "dated_comments": 7,
+   "dated_comments": 8,
    "todo": 0,
    "dynamic": 0,
    "stringly_typed": 0,
@@ -2950,11 +2950,19 @@
    "fan_out": 0,
    "fan_in": 0,
    "dup_lines": 0,
-   "commits": 9,
-   "churn_lines": 414,
-   "bug_commits": 5,
-   "complexity": 24.7,
+   "commits": 11,
+   "churn_lines": 537,
+   "bug_commits": 6,
+   "complexity": 27.5,
    "worst_functions": [
+    {
+     "name": "check_tg_curl_timeout",
+     "line": 268,
+     "loc": 26,
+     "cc": 10,
+     "nest": 2,
+     "params": 0
+    },
     {
      "name": "check_image_tags",
      "line": 52,
@@ -2969,11 +2977,16 @@
      "check_image_tags",
      9,
      29
+    ],
+    [
+     "check_tg_curl_timeout",
+     10,
+     26
     ]
    ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0463
+   "hotspot_score": 0.0566
   },
   "scripts/sber/check_cloudru_consumption.py": {
    "lang": "py",
@@ -3102,7 +3115,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0231
+   "hotspot_score": 0.0208
   },
   "scripts/sber/check_gigachat_balance.sh": {
    "lang": "sh",
@@ -3140,7 +3153,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0013
+   "hotspot_score": 0.0012
   },
   "scripts/sber/cloudru_iam_token_example.sh": {
    "lang": "sh",
@@ -3178,7 +3191,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0016
+   "hotspot_score": 0.0015
   },
   "scripts/sber/gitverse_mirror_push.sh": {
    "lang": "sh",
@@ -3254,7 +3267,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0005
+   "hotspot_score": 0.0004
   },
   "scripts/sber/merge_sber_snippet.sh": {
    "lang": "sh",
@@ -3307,7 +3320,7 @@
    ],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0014
+   "hotspot_score": 0.0012
   },
   "scripts/sber/preflight_sber_pack.sh": {
    "lang": "sh",
@@ -3360,7 +3373,7 @@
    ],
    "strict_mode": false,
    "level": "ok",
-   "hotspot_score": 0.0014
+   "hotspot_score": 0.0013
   },
   "scripts/sber/smoke_cloudru_fm.sh": {
    "lang": "sh",
@@ -3436,7 +3449,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0015
+   "hotspot_score": 0.0014
   },
   "scripts/security/check_no_secrets.sh": {
    "lang": "sh",
@@ -3474,7 +3487,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0047
+   "hotspot_score": 0.0042
   },
   "scripts/setup/install_nextcloud_talk.sh": {
    "lang": "sh",
@@ -3512,7 +3525,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0048
+   "hotspot_score": 0.0043
   },
   "scripts/setup/install_nginx_vps.sh": {
    "lang": "sh",
@@ -3550,7 +3563,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0096
+   "hotspot_score": 0.0086
   },
   "scripts/setup/nas-offsite-backup.sh": {
    "lang": "sh",
@@ -3588,7 +3601,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0013
+   "hotspot_score": 0.0012
   },
   "scripts/setup/nasa-offsite-export.sh": {
    "lang": "sh",
@@ -3626,7 +3639,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0002
+   "hotspot_score": 0.0001
   },
   "scripts/storage/benchmark_io.sh": {
    "lang": "sh",
@@ -3664,7 +3677,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0012
+   "hotspot_score": 0.0011
   },
   "scripts/storage/deploy_usb_fix.sh": {
    "lang": "sh",
@@ -3717,7 +3730,7 @@
    ],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0015
+   "hotspot_score": 0.0013
   },
   "scripts/storage/install_docker_storage_guard.sh": {
    "lang": "sh",
@@ -3755,7 +3768,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0014
+   "hotspot_score": 0.0013
   },
   "scripts/storage/install_mount_service.sh": {
    "lang": "sh",
@@ -3793,7 +3806,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0012
+   "hotspot_score": 0.001
   },
   "scripts/storage/install_usb_watchdog.sh": {
    "lang": "sh",
@@ -3823,15 +3836,15 @@
    "fan_out": 0,
    "fan_in": 0,
    "dup_lines": 7,
-   "commits": 5,
-   "churn_lines": 235,
-   "bug_commits": 2,
+   "commits": 6,
+   "churn_lines": 237,
+   "bug_commits": 3,
    "complexity": 12.9,
    "worst_functions": [],
    "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0134
+   "hotspot_score": 0.0145
   },
   "scripts/storage/setup_disk.sh": {
    "lang": "sh",
@@ -3869,7 +3882,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.002
+   "hotspot_score": 0.0018
   },
   "scripts/storage/ssd_hotplug_recovery.sh": {
    "lang": "sh",
@@ -3907,7 +3920,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.009
+   "hotspot_score": 0.0081
   },
   "scripts/storage/storage_preflight.sh": {
    "lang": "sh",
@@ -3999,7 +4012,7 @@
    ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0068
+   "hotspot_score": 0.0061
   },
   "scripts/storage/usb_preboot_cycle.sh": {
    "lang": "sh",
@@ -4037,7 +4050,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0025
+   "hotspot_score": 0.0022
   },
   "scripts/storage/usb_recovery_watchdog.sh": {
    "lang": "sh",
@@ -4116,7 +4129,7 @@
    ],
    "strict_mode": true,
    "level": "fail",
-   "hotspot_score": 0.0138
+   "hotspot_score": 0.0124
   },
   "services/backup-api/app/__init__.py": {
    "lang": "py",
@@ -4272,7 +4285,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0133
+   "hotspot_score": 0.012
   },
   "services/downloads/entrypoint.sh": {
    "lang": "sh",
@@ -4310,7 +4323,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0007
+   "hotspot_score": 0.0006
   },
   "services/downloads/on_complete.sh": {
    "lang": "sh",
@@ -4363,7 +4376,7 @@
    ],
    "strict_mode": false,
    "level": "ok",
-   "hotspot_score": 0.0062
+   "hotspot_score": 0.0056
   },
   "services/downloads/on_stop.sh": {
    "lang": "sh",
@@ -4401,18 +4414,18 @@
    "funcs": [],
    "strict_mode": false,
    "level": "ok",
-   "hotspot_score": 0.0021
+   "hotspot_score": 0.0019
   },
   "services/llm-gateway/app/main.py": {
    "lang": "py",
    "test": false,
-   "loc": 900,
+   "loc": 917,
    "functions": 46,
    "func_loc_max": 83,
    "func_loc_p90": 35,
    "func_over_warn": 1,
    "cc_max": 26,
-   "cc_sum": 200,
+   "cc_sum": 204,
    "cc_over_warn": 1,
    "nest_max": 4,
    "params_max": 5,
@@ -4421,8 +4434,8 @@
    "ctor_params_max": 0,
    "ctor_state_max": 0,
    "broad_catch": 13,
-   "silent_catch": 3,
-   "dated_comments": 11,
+   "silent_catch": 2,
+   "dated_comments": 12,
    "todo": 0,
    "dynamic": 2,
    "stringly_typed": 84,
@@ -4431,14 +4444,14 @@
    "fan_out": 0,
    "fan_in": 0,
    "dup_lines": 12,
-   "commits": 14,
-   "churn_lines": 1571,
-   "bug_commits": 5,
-   "complexity": 200,
+   "commits": 15,
+   "churn_lines": 1598,
+   "bug_commits": 6,
+   "complexity": 204,
    "worst_functions": [
     {
      "name": "chat",
-     "line": 1028,
+     "line": 1051,
      "loc": 83,
      "cc": 26,
      "nest": 4,
@@ -4454,7 +4467,7 @@
     },
     {
      "name": "image_edit",
-     "line": 1277,
+     "line": 1300,
      "loc": 44,
      "cc": 10,
      "nest": 2,
@@ -4470,7 +4483,7 @@
     },
     {
      "name": "usage",
-     "line": 974,
+     "line": 997,
      "loc": 34,
      "cc": 9,
      "nest": 1,
@@ -4645,8 +4658,8 @@
     ],
     [
      "_local_available",
-     3,
-     8
+     7,
+     23
     ],
     [
      "_call_ollama",
@@ -4656,7 +4669,7 @@
     [
      "health",
      1,
-     22
+     23
     ],
     [
      "gigachat_balance",
@@ -4710,7 +4723,7 @@
     ]
    ],
    "level": "fail",
-   "hotspot_score": 0.5826
+   "hotspot_score": 0.573
   },
   "services/nas_jetson_nano-api/app/__init__.py": {
    "lang": "py",
@@ -4775,7 +4788,7 @@
    "magic_numbers": 0,
    "private_imports": [],
    "fan_out": 0,
-   "fan_in": 3,
+   "fan_in": 4,
    "dup_lines": 0,
    "commits": 1,
    "churn_lines": 33,
@@ -4812,7 +4825,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.001
+   "hotspot_score": 0.0009
   },
   "services/nas_jetson_nano-api/app/bobik_gate.py": {
    "lang": "py",
@@ -4903,7 +4916,7 @@
     ]
    ],
    "level": "warn",
-   "hotspot_score": 0.0133
+   "hotspot_score": 0.012
   },
   "services/nas_jetson_nano-api/app/config.py": {
    "lang": "py",
@@ -4955,7 +4968,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0087
+   "hotspot_score": 0.0079
   },
   "services/nas_jetson_nano-api/app/dialog.py": {
    "lang": "py",
@@ -5059,7 +5072,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0062
+   "hotspot_score": 0.0056
   },
   "services/nas_jetson_nano-api/app/download_links.py": {
    "lang": "py",
@@ -5163,18 +5176,18 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0042
+   "hotspot_score": 0.0037
   },
   "services/nas_jetson_nano-api/app/downloads.py": {
    "lang": "py",
    "test": false,
-   "loc": 447,
+   "loc": 454,
    "functions": 36,
    "func_loc_max": 36,
    "func_loc_p90": 32,
    "func_over_warn": 0,
    "cc_max": 18,
-   "cc_sum": 175,
+   "cc_sum": 176,
    "cc_over_warn": 3,
    "nest_max": 4,
    "params_max": 6,
@@ -5183,7 +5196,7 @@
    "ctor_params_max": 6,
    "ctor_state_max": 7,
    "broad_catch": 1,
-   "silent_catch": 5,
+   "silent_catch": 6,
    "dated_comments": 10,
    "todo": 0,
    "dynamic": 0,
@@ -5193,14 +5206,14 @@
    "fan_out": 4,
    "fan_in": 1,
    "dup_lines": 0,
-   "commits": 10,
-   "churn_lines": 823,
-   "bug_commits": 7,
-   "complexity": 175,
+   "commits": 11,
+   "churn_lines": 833,
+   "bug_commits": 8,
+   "complexity": 176,
    "worst_functions": [
     {
      "name": "_reconcile",
-     "line": 389,
+     "line": 399,
      "loc": 32,
      "cc": 18,
      "nest": 2,
@@ -5216,7 +5229,7 @@
     },
     {
      "name": "_guard",
-     "line": 480,
+     "line": 490,
      "loc": 32,
      "cc": 13,
      "nest": 4,
@@ -5224,7 +5237,7 @@
     },
     {
      "name": "_tick_one",
-     "line": 424,
+     "line": 434,
      "loc": 27,
      "cc": 11,
      "nest": 3,
@@ -5232,7 +5245,7 @@
     },
     {
      "name": "add_link",
-     "line": 287,
+     "line": 297,
      "loc": 36,
      "cc": 9,
      "nest": 2,
@@ -5297,8 +5310,8 @@
     ],
     [
      "_head_size",
-     8,
-     20
+     9,
+     27
     ],
     [
      "_resolves_internal",
@@ -5422,7 +5435,7 @@
     ]
    ],
    "level": "warn",
-   "hotspot_score": 0.3641
+   "hotspot_score": 0.3625
   },
   "services/nas_jetson_nano-api/app/logging_setup.py": {
    "lang": "py",
@@ -5539,7 +5552,7 @@
     ]
    ],
    "level": "warn",
-   "hotspot_score": 0.0104
+   "hotspot_score": 0.0094
   },
   "services/nas_jetson_nano-api/app/routers/__init__.py": {
    "lang": "py",
@@ -5690,7 +5703,7 @@
     ]
    ],
    "level": "warn",
-   "hotspot_score": 0.0125
+   "hotspot_score": 0.0112
   },
   "services/nas_jetson_nano-api/app/routers/auth.py": {
    "lang": "py",
@@ -5809,7 +5822,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0037
+   "hotspot_score": 0.0034
   },
   "services/nas_jetson_nano-api/app/routers/download_files.py": {
    "lang": "py",
@@ -5900,7 +5913,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0096
+   "hotspot_score": 0.0086
   },
   "services/nas_jetson_nano-api/app/routers/health.py": {
    "lang": "py",
@@ -5965,7 +5978,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0025
+   "hotspot_score": 0.0022
   },
   "services/nas_jetson_nano-api/app/routers/logs.py": {
    "lang": "py",
@@ -6121,7 +6134,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0029
+   "hotspot_score": 0.0026
   },
   "services/nas_jetson_nano-api/app/routers/storage.py": {
    "lang": "py",
@@ -6225,7 +6238,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0031
+   "hotspot_score": 0.0028
   },
   "services/nas_jetson_nano-api/app/routers/system.py": {
    "lang": "py",
@@ -6354,7 +6367,7 @@
     ]
    ],
    "level": "warn",
-   "hotspot_score": 0.0081
+   "hotspot_score": 0.0073
   },
   "services/nas_jetson_nano-api/app/routers/talk.py": {
    "lang": "py",
@@ -6468,12 +6481,12 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0062
+   "hotspot_score": 0.0056
   },
   "services/nas_jetson_nano-api/app/routers/talk_bot.py": {
    "lang": "py",
    "test": false,
-   "loc": 685,
+   "loc": 687,
    "functions": 36,
    "func_loc_max": 78,
    "func_loc_p90": 37,
@@ -6489,39 +6502,39 @@
    "ctor_state_max": 0,
    "broad_catch": 14,
    "silent_catch": 5,
-   "dated_comments": 3,
+   "dated_comments": 6,
    "todo": 0,
    "dynamic": 3,
    "stringly_typed": 115,
    "magic_numbers": 10,
    "private_imports": [
     {
-     "line": 63,
+     "line": 64,
      "from": "app.routers.talk",
      "name": "_OCS_HEADERS"
     },
     {
-     "line": 63,
+     "line": 64,
      "from": "app.routers.talk",
      "name": "_admin_auth"
     },
     {
-     "line": 63,
+     "line": 64,
      "from": "app.routers.talk",
      "name": "_ocs_post"
     }
    ],
-   "fan_out": 9,
+   "fan_out": 10,
    "fan_in": 2,
    "dup_lines": 0,
-   "commits": 18,
-   "churn_lines": 1324,
-   "bug_commits": 8,
+   "commits": 20,
+   "churn_lines": 1348,
+   "bug_commits": 10,
    "complexity": 186,
    "worst_functions": [
     {
      "name": "_handle_image_request",
-     "line": 749,
+     "line": 761,
      "loc": 78,
      "cc": 16,
      "nest": 2,
@@ -6529,7 +6542,7 @@
     },
     {
      "name": "_build_health",
-     "line": 297,
+     "line": 306,
      "loc": 34,
      "cc": 13,
      "nest": 4,
@@ -6537,7 +6550,7 @@
     },
     {
      "name": "_ask_llm",
-     "line": 450,
+     "line": 459,
      "loc": 38,
      "cc": 12,
      "nest": 2,
@@ -6545,7 +6558,7 @@
     },
     {
      "name": "gate_reply",
-     "line": 505,
+     "line": 514,
      "loc": 39,
      "cc": 11,
      "nest": 2,
@@ -6553,7 +6566,7 @@
     },
     {
      "name": "_handle_messages",
-     "line": 643,
+     "line": 655,
      "loc": 37,
      "cc": 10,
      "nest": 3,
@@ -6584,7 +6597,7 @@
     [
      "_build_photos",
      4,
-     23
+     24
     ],
     [
      "_hdd_mount_probe",
@@ -6935,7 +6948,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0027
+   "hotspot_score": 0.0024
   },
   "services/nas_jetson_nano-api/app/telegram_bot.py": {
    "lang": "py",
@@ -7159,7 +7172,7 @@
     ]
    ],
    "level": "fail",
-   "hotspot_score": 0.3593
+   "hotspot_score": 0.3234
   },
   "services/stt/stt_server.py": {
    "lang": "py",
@@ -7278,7 +7291,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0048
+   "hotspot_score": 0.0043
   },
   "services/watchdog/job/watchdog_job.py": {
    "lang": "py",
@@ -7392,7 +7405,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0092
+   "hotspot_score": 0.0082
   },
   "services/watchdog/vps/install_vps.sh": {
    "lang": "sh",
@@ -7430,7 +7443,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0017
+   "hotspot_score": 0.0016
   },
   "services/watchdog/vps/nas_liveness.py": {
    "lang": "py",
@@ -7564,7 +7577,7 @@
     ]
    ],
    "level": "warn",
-   "hotspot_score": 0.035
+   "hotspot_score": 0.0315
   },
   "tests/android/adb_readonly_check.sh": {
    "lang": "sh",
@@ -7944,7 +7957,7 @@
    "private_imports": [],
    "fan_out": 0,
    "fan_in": 0,
-   "dup_lines": 31,
+   "dup_lines": 32,
    "commits": 1,
    "churn_lines": 126,
    "bug_commits": 1,
@@ -8077,7 +8090,7 @@
    "private_imports": [],
    "fan_out": 0,
    "fan_in": 0,
-   "dup_lines": 34,
+   "dup_lines": 37,
    "commits": 2,
    "churn_lines": 169,
    "bug_commits": 2,
@@ -8199,6 +8212,124 @@
      "EventLoopNotBlocked.test_health_answers_while_llm_call_is_slow.scenario",
      1,
      11
+    ]
+   ],
+   "level": "ok"
+  },
+  "tests/llm_gateway/test_local_model_health.py": {
+   "lang": "py",
+   "test": true,
+   "loc": 77,
+   "functions": 8,
+   "func_loc_max": 20,
+   "func_loc_p90": 20,
+   "func_over_warn": 0,
+   "cc_max": 5,
+   "cc_sum": 18,
+   "cc_over_warn": 0,
+   "nest_max": 2,
+   "params_max": 0,
+   "bool_params": 0,
+   "class_methods_max": 4,
+   "ctor_params_max": 0,
+   "ctor_state_max": 0,
+   "broad_catch": 0,
+   "silent_catch": 0,
+   "dated_comments": 1,
+   "todo": 0,
+   "dynamic": 0,
+   "stringly_typed": 4,
+   "magic_numbers": 0,
+   "private_imports": [],
+   "fan_out": 0,
+   "fan_in": 0,
+   "dup_lines": 27,
+   "commits": 1,
+   "churn_lines": 110,
+   "bug_commits": 1,
+   "complexity": 18,
+   "worst_functions": [
+    {
+     "name": "load",
+     "line": 39,
+     "loc": 20,
+     "cc": 5,
+     "nest": 2,
+     "params": 0
+    },
+    {
+     "name": "tearDown",
+     "line": 32,
+     "loc": 6,
+     "cc": 4,
+     "nest": 2,
+     "params": 0
+    },
+    {
+     "name": "setUp",
+     "line": 27,
+     "loc": 4,
+     "cc": 3,
+     "nest": 1,
+     "params": 0
+    },
+    {
+     "name": "test_same_error_twice_logs_warning_once",
+     "line": 99,
+     "loc": 8,
+     "cc": 2,
+     "nest": 2,
+     "params": 0
+    },
+    {
+     "name": "test_successful_check_clears_last_error",
+     "line": 73,
+     "loc": 9,
+     "cc": 1,
+     "nest": 1,
+     "params": 0
+    }
+   ],
+   "funcs": [
+    [
+     "LocalModelHealthCase.setUp",
+     3,
+     4
+    ],
+    [
+     "LocalModelHealthCase.tearDown",
+     4,
+     6
+    ],
+    [
+     "LocalModelHealthCase.load",
+     5,
+     20
+    ],
+    [
+     "HealthReportsLastError.test_exception_is_visible_in_health",
+     1,
+     6
+    ],
+    [
+     "HealthReportsLastError.test_successful_check_clears_last_error",
+     1,
+     9
+    ],
+    [
+     "HealthReportsLastError.test_non_200_is_recorded_as_http_status",
+     1,
+     6
+    ],
+    [
+     "HealthReportsLastError.test_no_error_before_any_check",
+     1,
+     3
+    ],
+    [
+     "RepeatedFailureDoesNotSpamLog.test_same_error_twice_logs_warning_once",
+     2,
+     8
     ]
    ],
    "level": "ok"
@@ -8759,7 +8890,7 @@
    "private_imports": [],
    "fan_out": 0,
    "fan_in": 0,
-   "dup_lines": 15,
+   "dup_lines": 18,
    "commits": 2,
    "churn_lines": 373,
    "bug_commits": 0,
@@ -8953,13 +9084,13 @@
   "tests/nas_api/test_bobik_answer.py": {
    "lang": "py",
    "test": true,
-   "loc": 181,
-   "functions": 33,
+   "loc": 191,
+   "functions": 35,
    "func_loc_max": 34,
    "func_loc_p90": 16,
    "func_over_warn": 0,
    "cc_max": 5,
-   "cc_sum": 64,
+   "cc_sum": 68,
    "cc_over_warn": 0,
    "nest_max": 2,
    "params_max": 3,
@@ -8969,7 +9100,7 @@
    "ctor_state_max": 1,
    "broad_catch": 0,
    "silent_catch": 0,
-   "dated_comments": 1,
+   "dated_comments": 2,
    "todo": 0,
    "dynamic": 0,
    "stringly_typed": 10,
@@ -8978,14 +9109,14 @@
    "fan_out": 0,
    "fan_in": 0,
    "dup_lines": 50,
-   "commits": 5,
-   "churn_lines": 288,
-   "bug_commits": 1,
-   "complexity": 64,
+   "commits": 6,
+   "churn_lines": 306,
+   "bug_commits": 2,
+   "complexity": 68,
    "worst_functions": [
     {
      "name": "test_history_is_sent_as_context_and_turns_are_remembered",
-     "line": 118,
+     "line": 136,
      "loc": 16,
      "cc": 5,
      "nest": 0,
@@ -9009,7 +9140,7 @@
     },
     {
      "name": "test_soft_gateway_failures_are_not_remembered",
-     "line": 211,
+     "line": 229,
      "loc": 34,
      "cc": 4,
      "nest": 1,
@@ -9017,7 +9148,7 @@
     },
     {
      "name": "test_context_is_passed_to_gateway_payload",
-     "line": 179,
+     "line": 197,
      "loc": 22,
      "cc": 4,
      "nest": 0,
@@ -9049,6 +9180,11 @@
      "test_daily_reply_limit_is_per_user",
      5,
      11
+    ],
+    [
+     "test_home_tool_failure_does_not_leak_exception_text",
+     3,
+     10
     ],
     [
      "test_home_tool_answers_locally",
@@ -9102,6 +9238,11 @@
     ],
     [
      "test_daily_reply_limit_is_per_user.fake_llm",
+     1,
+     2
+    ],
+    [
+     "test_home_tool_failure_does_not_leak_exception_text.boom",
      1,
      2
     ],
@@ -9196,47 +9337,55 @@
   "tests/nas_api/test_bobik_health.py": {
    "lang": "py",
    "test": true,
-   "loc": 134,
-   "functions": 15,
+   "loc": 166,
+   "functions": 20,
    "func_loc_max": 20,
-   "func_loc_p90": 15,
+   "func_loc_p90": 20,
    "func_over_warn": 0,
    "cc_max": 9,
-   "cc_sum": 40,
+   "cc_sum": 54,
    "cc_over_warn": 0,
    "nest_max": 2,
-   "params_max": 1,
+   "params_max": 2,
    "bool_params": 0,
    "class_methods_max": 0,
    "ctor_params_max": 0,
    "ctor_state_max": 0,
    "broad_catch": 0,
    "silent_catch": 0,
-   "dated_comments": 1,
+   "dated_comments": 3,
    "todo": 0,
    "dynamic": 0,
-   "stringly_typed": 0,
-   "magic_numbers": 0,
+   "stringly_typed": 3,
+   "magic_numbers": 1,
    "private_imports": [],
    "fan_out": 0,
    "fan_in": 0,
-   "dup_lines": 25,
-   "commits": 1,
-   "churn_lines": 187,
-   "bug_commits": 0,
-   "complexity": 40,
+   "dup_lines": 26,
+   "commits": 3,
+   "churn_lines": 243,
+   "bug_commits": 2,
+   "complexity": 54,
    "worst_functions": [
     {
      "name": "test_build_health_lists_every_kind_of_problem_once",
-     "line": 152,
+     "line": 188,
      "loc": 20,
      "cc": 9,
      "nest": 0,
      "params": 1
     },
     {
+     "name": "test_hdd_check_shares_blocking_key_on_repeated_calls",
+     "line": 72,
+     "loc": 20,
+     "cc": 6,
+     "nest": 0,
+     "params": 1
+    },
+    {
      "name": "load_bot",
-     "line": 24,
+     "line": 26,
      "loc": 12,
      "cc": 5,
      "nest": 2,
@@ -9244,27 +9393,19 @@
     },
     {
      "name": "test_hdd_check_times_out_instead_of_hanging",
-     "line": 46,
+     "line": 48,
      "loc": 15,
      "cc": 4,
      "nest": 1,
      "params": 1
     },
     {
-     "name": "test_build_health_ssd_not_mounted_skips_backup_check",
-     "line": 175,
-     "loc": 12,
-     "cc": 3,
-     "nest": 0,
-     "params": 1
-    },
-    {
-     "name": "test_hdd_check_reports_not_mounted",
-     "line": 70,
-     "loc": 9,
-     "cc": 3,
+     "name": "test_build_photos_logs_failure_type_without_changing_the_reply",
+     "line": 228,
+     "loc": 10,
+     "cc": 4,
      "nest": 1,
-     "params": 0
+     "params": 2
     }
    ],
    "funcs": [
@@ -9282,6 +9423,11 @@
      "test_hdd_check_times_out_instead_of_hanging",
      4,
      15
+    ],
+    [
+     "test_hdd_check_shares_blocking_key_on_repeated_calls",
+     6,
+     20
     ],
     [
      "test_hdd_check_reports_not_mounted",
@@ -9329,6 +9475,11 @@
      12
     ],
     [
+     "test_build_photos_logs_failure_type_without_changing_the_reply",
+     4,
+     10
+    ],
+    [
      "_async.f",
      1,
      2
@@ -9339,7 +9490,22 @@
      3
     ],
     [
+     "test_hdd_check_shares_blocking_key_on_repeated_calls.hang",
+     1,
+     4
+    ],
+    [
+     "test_hdd_check_shares_blocking_key_on_repeated_calls.main",
+     2,
+     7
+    ],
+    [
      "test_failed_units_check_survives_missing_binary.boom",
+     1,
+     2
+    ],
+    [
+     "test_build_photos_logs_failure_type_without_changing_the_reply.boom",
      1,
      2
     ]
@@ -9901,13 +10067,13 @@
   "tests/nas_api/test_downloads.py": {
    "lang": "py",
    "test": true,
-   "loc": 695,
-   "functions": 95,
+   "loc": 760,
+   "functions": 113,
    "func_loc_max": 24,
-   "func_loc_p90": 17,
+   "func_loc_p90": 18,
    "func_over_warn": 0,
    "cc_max": 9,
-   "cc_sum": 277,
+   "cc_sum": 309,
    "cc_over_warn": 0,
    "nest_max": 2,
    "params_max": 5,
@@ -9925,15 +10091,15 @@
    "private_imports": [],
    "fan_out": 0,
    "fan_in": 0,
-   "dup_lines": 71,
-   "commits": 8,
-   "churn_lines": 1053,
-   "bug_commits": 4,
-   "complexity": 277,
+   "dup_lines": 109,
+   "commits": 9,
+   "churn_lines": 1148,
+   "bug_commits": 5,
+   "complexity": 309,
    "worst_functions": [
     {
      "name": "test_http_link_added_during_guard_pause_waits",
-     "line": 781,
+     "line": 876,
      "loc": 24,
      "cc": 9,
      "nest": 0,
@@ -9941,7 +10107,7 @@
     },
     {
      "name": "test_guard_pauses_own_downloads_once_and_resumes",
-     "line": 608,
+     "line": 703,
      "loc": 21,
      "cc": 9,
      "nest": 0,
@@ -9949,7 +10115,7 @@
     },
     {
      "name": "test_reconcile_adopts_restarted_download_by_info_hash",
-     "line": 490,
+     "line": 585,
      "loc": 20,
      "cc": 9,
      "nest": 0,
@@ -9957,19 +10123,19 @@
     },
     {
      "name": "test_http_link_sized_and_routed",
-     "line": 238,
+     "line": 333,
      "loc": 11,
      "cc": 9,
      "nest": 0,
      "params": 1
     },
     {
-     "name": "call",
-     "line": 53,
-     "loc": 18,
+     "name": "test_head_size_logs_warning_on_network_error",
+     "line": 165,
+     "loc": 24,
      "cc": 8,
      "nest": 1,
-     "params": 1
+     "params": 2
     }
    ],
    "funcs": [
@@ -10012,6 +10178,21 @@
      "test_head_size_follows_only_checked_public_redirects",
      5,
      21
+    ],
+    [
+     "test_head_size_logs_warning_on_network_error",
+     8,
+     24
+    ],
+    [
+     "test_head_size_without_content_length_is_silent",
+     3,
+     19
+    ],
+    [
+     "test_head_size_logs_exception_on_unexpected_error",
+     6,
+     22
     ],
     [
      "test_choose_target_small_goes_to_hdd",
@@ -10319,6 +10500,21 @@
      2
     ],
     [
+     "test_head_size_logs_warning_on_network_error.public_dns",
+     1,
+     2
+    ],
+    [
+     "test_head_size_without_content_length_is_silent.public_dns",
+     1,
+     2
+    ],
+    [
+     "test_head_size_logs_exception_on_unexpected_error.public_dns",
+     1,
+     2
+    ],
+    [
      "test_http_link_resolving_inside_is_refused.resolves_inside",
      1,
      2
@@ -10427,6 +10623,66 @@
      "test_head_size_follows_only_checked_public_redirects.Client.head",
      2,
      5
+    ],
+    [
+     "test_head_size_logs_warning_on_network_error.Client.__init__",
+     1,
+     2
+    ],
+    [
+     "test_head_size_logs_warning_on_network_error.Client.__aenter__",
+     1,
+     2
+    ],
+    [
+     "test_head_size_logs_warning_on_network_error.Client.__aexit__",
+     1,
+     2
+    ],
+    [
+     "test_head_size_logs_warning_on_network_error.Client.head",
+     1,
+     2
+    ],
+    [
+     "test_head_size_without_content_length_is_silent.Client.__init__",
+     1,
+     2
+    ],
+    [
+     "test_head_size_without_content_length_is_silent.Client.__aenter__",
+     1,
+     2
+    ],
+    [
+     "test_head_size_without_content_length_is_silent.Client.__aexit__",
+     1,
+     2
+    ],
+    [
+     "test_head_size_without_content_length_is_silent.Client.head",
+     1,
+     2
+    ],
+    [
+     "test_head_size_logs_exception_on_unexpected_error.Client.__init__",
+     1,
+     2
+    ],
+    [
+     "test_head_size_logs_exception_on_unexpected_error.Client.__aenter__",
+     1,
+     2
+    ],
+    [
+     "test_head_size_logs_exception_on_unexpected_error.Client.__aexit__",
+     1,
+     2
+    ],
+    [
+     "test_head_size_logs_exception_on_unexpected_error.Client.head",
+     1,
+     2
     ],
     [
      "test_tick_continues_past_gid_that_raises.FlakyAria2.call",
@@ -10696,7 +10952,7 @@
    "private_imports": [],
    "fan_out": 0,
    "fan_in": 0,
-   "dup_lines": 18,
+   "dup_lines": 13,
    "commits": 11,
    "churn_lines": 689,
    "bug_commits": 4,
@@ -13388,6 +13644,199 @@
    ],
    "level": "ok"
   },
+  "tests/unit/test_code_metrics_ratchet.py": {
+   "lang": "py",
+   "test": true,
+   "loc": 167,
+   "functions": 23,
+   "func_loc_max": 17,
+   "func_loc_p90": 10,
+   "func_over_warn": 0,
+   "cc_max": 7,
+   "cc_sum": 75,
+   "cc_over_warn": 0,
+   "nest_max": 2,
+   "params_max": 11,
+   "bool_params": 0,
+   "class_methods_max": 0,
+   "ctor_params_max": 0,
+   "ctor_state_max": 0,
+   "broad_catch": 1,
+   "silent_catch": 0,
+   "dated_comments": 1,
+   "todo": 0,
+   "dynamic": 0,
+   "stringly_typed": 23,
+   "magic_numbers": 5,
+   "private_imports": [],
+   "fan_out": 0,
+   "fan_in": 0,
+   "dup_lines": 0,
+   "commits": 1,
+   "churn_lines": 266,
+   "bug_commits": 0,
+   "complexity": 75,
+   "worst_functions": [
+    {
+     "name": "main",
+     "line": 246,
+     "loc": 17,
+     "cc": 7,
+     "nest": 2,
+     "params": 0
+    },
+    {
+     "name": "test_r4_allow_regression_is_per_file_not_global",
+     "line": 219,
+     "loc": 14,
+     "cc": 7,
+     "nest": 0,
+     "params": 0
+    },
+    {
+     "name": "test_r1_growing_fail_count_is_a_violation",
+     "line": 71,
+     "loc": 9,
+     "cc": 6,
+     "nest": 0,
+     "params": 0
+    },
+    {
+     "name": "test_r4_allow_regression_suppresses_and_prints_reason",
+     "line": 207,
+     "loc": 10,
+     "cc": 5,
+     "nest": 0,
+     "params": 0
+    },
+    {
+     "name": "test_r2_loc_allows_ten_percent_growth",
+     "line": 130,
+     "loc": 7,
+     "cc": 5,
+     "nest": 0,
+     "params": 0
+    }
+   ],
+   "funcs": [
+    [
+     "load_module",
+     1,
+     5
+    ],
+    [
+     "prod_module",
+     2,
+     9
+    ],
+    [
+     "only",
+     2,
+     2
+    ],
+    [
+     "test_r1_growing_fail_count_is_a_violation",
+     6,
+     9
+    ],
+    [
+     "test_r1_stable_fail_count_is_not_a_violation",
+     2,
+     4
+    ],
+    [
+     "test_r1_brand_new_failing_file_counts_as_growth",
+     3,
+     6
+    ],
+    [
+     "test_r2_legacy_module_worsened_cc_max_is_a_violation",
+     4,
+     6
+    ],
+    [
+     "test_r2_legacy_module_improved_is_ok",
+     2,
+     4
+    ],
+    [
+     "test_r2_healthy_module_getting_worse_is_not_r2",
+     2,
+     4
+    ],
+    [
+     "test_r2_catches_sum_regression",
+     4,
+     7
+    ],
+    [
+     "test_r2_loc_allows_ten_percent_growth",
+     5,
+     7
+    ],
+    [
+     "test_r2_commits_and_churn_changes_are_never_violations",
+     2,
+     8
+    ],
+    [
+     "test_r3_new_function_cc_11_is_a_violation",
+     3,
+     7
+    ],
+    [
+     "test_r3_new_function_cc_10_is_ok",
+     2,
+     5
+    ],
+    [
+     "test_r3_new_function_41_lines_is_a_violation",
+     3,
+     5
+    ],
+    [
+     "test_r3_new_function_40_lines_is_ok",
+     2,
+     4
+    ],
+    [
+     "test_r3_renamed_function_is_not_new_if_qualname_unchanged",
+     2,
+     4
+    ],
+    [
+     "test_r3_brand_new_file_checks_every_function",
+     3,
+     6
+    ],
+    [
+     "test_r3_ignores_test_files",
+     2,
+     8
+    ],
+    [
+     "test_r4_allow_regression_suppresses_and_prints_reason",
+     5,
+     10
+    ],
+    [
+     "test_r4_allow_regression_is_per_file_not_global",
+     7,
+     14
+    ],
+    [
+     "test_r4_allow_regression_on_r3_new_function_matches_by_file_not_label",
+     4,
+     7
+    ],
+    [
+     "main",
+     7,
+     17
+    ]
+   ],
+   "level": "fail"
+  },
   "tests/unit/test_config_backup.py": {
    "lang": "py",
    "test": true,
@@ -15324,15 +15773,15 @@
   }
  },
  "totals": {
-  "files": 162,
+  "files": 164,
   "prod_files": 104,
-  "prod_loc": 10750,
-  "test_loc": 7365,
-  "prod_loc_py": 6890,
-  "prod_loc_sh": 3860,
+  "prod_loc": 10804,
+  "test_loc": 7716,
+  "prod_loc_py": 6916,
+  "prod_loc_sh": 3888,
   "warn": 27,
   "fail": 8,
-  "dup_pct_all": 6.08,
+  "dup_pct_all": 6.3,
   "import_cycles": [],
   "top_dup_pairs": [
    {
@@ -15354,11 +15803,6 @@
     "windows": 8,
     "a": "tests/unit/test_config_backup.py",
     "b": "tests/unit/test_layout.py"
-   },
-   {
-    "windows": 8,
-    "a": "tests/nas_api/test_bobik_health.py",
-    "b": "tests/nas_api/test_telegram_bot.py"
    },
    {
     "windows": 8,
@@ -15394,6 +15838,16 @@
     "windows": 6,
     "a": "tests/nas_api/test_bobik_answer.py",
     "b": "tests/nas_api/test_bot_image_path.py"
+   },
+   {
+    "windows": 6,
+    "a": "tests/llm_gateway/test_local_model_health.py",
+    "b": "tests/llm_gateway/test_sber_routing.py"
+   },
+   {
+    "windows": 6,
+    "a": "tests/llm_gateway/test_gateway_contract.py",
+    "b": "tests/llm_gateway/test_local_model_health.py"
    },
    {
     "windows": 6,
@@ -15454,13 +15908,8 @@
     "windows": 5,
     "a": "tests/nas_api/test_blocking_io.py",
     "b": "tests/nas_api/test_bot_image_path.py"
-   },
-   {
-    "windows": 5,
-    "a": "tests/nas_api/test_blocking_io.py",
-    "b": "tests/nas_api/test_bobik_answer.py"
    }
   ],
-  "top10_loc_share_pct": 41.2
+  "top10_loc_share_pct": 41.5
  }
 }

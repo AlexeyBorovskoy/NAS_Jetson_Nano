@@ -270,39 +270,7 @@ check_tg_curl_timeout() {
     local tg_calls=0 tg_files=0 tg_bad=0
     while IFS= read -r tg_file; do
         [ -f "$tg_file" ] || continue
-        tg_report=$(awk '
-            BEGIN { CR = sprintf("%c", 13) }
-            function emit() {
-                if (buf ~ /^[[:space:]]*#/) { buf = ""; ln = 0; return }
-                if (buf ~ /curl/ &&
-                    buf ~ /sendMessage/) {
-                    calls++
-                    if (index(buf, "--max-time") == 0 &&
-                        buf !~ /[[:space:]]-m([[:space:]]|[0-9])/) {
-                        printf "BAD %s:%d\n", FILENAME, ln
-                    }
-                }
-                buf = ""
-                ln = 0
-            }
-            {
-                line = $0
-                if (length(line) > 0 && substr(line, length(line)) == CR)
-                    line = substr(line, 1, length(line) - 1)
-                if (buf == "") ln = NR
-                if (line ~ /\\$/) {
-                    sub(/\\$/, "", line)
-                    buf = buf " " line
-                    next
-                }
-                buf = buf " " line
-                emit()
-            }
-            END {
-                if (buf != "") emit()
-                printf "COUNT %d\n", calls
-            }
-        ' "$tg_file")
+        tg_report=$(awk -f scripts/quality/tg_curl_timeout.awk "$tg_file")
         tg_n="${tg_report##*COUNT }"
         case "$tg_n" in
             ''|*[!0-9]*) tg_n=0 ;;

@@ -80,7 +80,16 @@ def test_logic_matches_source():
     Без этой проверки тест мог бы зеленеть на копии логики, пока боевой код
     разошёлся с ней. Ровно такой разрыв — «тесты звали функцию напрямую, минуя
     проводку» — уже стоил соседнему проекту дефекта в бою.
+
+    Падает через assert, а не возвращает список: под pytest возвращённый список
+    засчитывается как успех, и проверка молча перестала бы проверять (CQ-15).
     """
+    problems = source_problems()
+    assert not problems, problems
+
+
+def source_problems():
+    """Список расхождений боевого кода с защитой; пустой — всё на месте."""
     with io.open(ALERT, encoding="utf-8") as fh:
         src = fh.read()
     problems = []
@@ -103,7 +112,7 @@ def main():
                   % (name, expected, got))
             failures += 1
 
-    for problem in test_logic_matches_source():
+    for problem in source_problems():
         print("  [FAIL] синхронность с боевым кодом: %s" % problem)
         failures += 1
     if not failures:

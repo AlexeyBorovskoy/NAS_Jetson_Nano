@@ -150,6 +150,10 @@ def _disk_free() -> tuple:
 
 
 async def _head_size(url: str):
+    # CQ-03: причина «размер неизвестен» не должна теряться — ожидаемые сетевые
+    # сбои (таймаут, обрыв TLS, нечисловой content-length) идут в warning с хостом
+    # (без пути — там могут быть токены), а программная ошибка — в exception с трассой.
+    host = ""
     try:
         current = url
         async with httpx.AsyncClient(timeout=15, follow_redirects=False) as c:
@@ -167,7 +171,13 @@ async def _head_size(url: str):
                     return None
                 current = urllib.parse.urljoin(checked, location)
         return None
+    except (httpx.HTTPError, LinkError, ValueError) as exc:
+        log.warning("HEAD failed, size unknown: %s", type(exc).__name__,
+                    extra={"fields": {"host": host}})
+        return None
     except Exception:
+        log.exception("HEAD failed unexpectedly, size unknown",
+                      extra={"fields": {"host": host}})
         return None
 
 

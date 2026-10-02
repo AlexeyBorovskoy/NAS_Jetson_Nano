@@ -162,6 +162,101 @@ def test_head_size_follows_only_checked_public_redirects(monkeypatch):
     assert calls == ["https://example.org/file", "https://cdn.example.org/file"]
 
 
+def test_head_size_logs_warning_on_network_error(monkeypatch, caplog):
+    # CQ-03: сетевой сбой — ожидаемая причина, идёт в warning с хостом,
+    # но без пути/токена из URL (там могут быть секреты).
+    dl = load()
+
+    class Client:
+        def __init__(self, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def head(self, url):
+            raise dl.httpx.ConnectTimeout("timed out")
+
+    async def public_dns(_host):
+        return False
+
+    monkeypatch.setattr(dl.httpx, "AsyncClient", Client)
+    monkeypatch.setattr(dl, "_resolves_internal", public_dns)
+    with caplog.at_level("WARNING"):
+        result = asyncio.run(dl._head_size("https://example.org/secret-path?token=abc"))
+    assert result is None
+    warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+    assert warnings, "сетевой сбой обязан попасть в журнал"
+    assert "ConnectTimeout" in warnings[0].getMessage()
+    assert warnings[0].fields == {"host": "example.org"}
+    assert "secret-path" not in caplog.text
+    assert "token=abc" not in caplog.text
+
+
+def test_head_size_without_content_length_is_silent(monkeypatch, caplog):
+    # Отсутствие Content-Length — штатный случай (сервер просто не отдал размер),
+    # не сбой: журнал молчит, как и раньше.
+    dl = load()
+
+    class Client:
+        def __init__(self, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def head(self, url):
+            return dl.httpx.Response(200)
+
+    async def public_dns(_host):
+        return False
+
+    monkeypatch.setattr(dl.httpx, "AsyncClient", Client)
+    monkeypatch.setattr(dl, "_resolves_internal", public_dns)
+    with caplog.at_level("WARNING"):
+        result = asyncio.run(dl._head_size("https://example.org/file"))
+    assert result is None
+    assert caplog.text == ""
+
+
+def test_head_size_logs_exception_on_unexpected_error(monkeypatch, caplog):
+    # Программная ошибка (не сетевая, не LinkError/ValueError) — не глотать молча,
+    # уровень ERROR с трассой, чтобы было видно дефект, а не списывать на «сеть».
+    dl = load()
+
+    class Client:
+        def __init__(self, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def head(self, url):
+            raise RuntimeError("boom")
+
+    async def public_dns(_host):
+        return False
+
+    monkeypatch.setattr(dl.httpx, "AsyncClient", Client)
+    monkeypatch.setattr(dl, "_resolves_internal", public_dns)
+    with caplog.at_level("WARNING"):
+        result = asyncio.run(dl._head_size("https://example.org/file"))
+    assert result is None
+    errors = [r for r in caplog.records if r.levelname == "ERROR"]
+    assert errors, "неожиданная ошибка обязана попасть в журнал уровнем ERROR"
+    assert errors[0].exc_info is not None
+    assert "RuntimeError" in caplog.text
+
+
 # ── выбор диска ───────────────────────────────────────────────────────────────
 
 def test_choose_target_small_goes_to_hdd():

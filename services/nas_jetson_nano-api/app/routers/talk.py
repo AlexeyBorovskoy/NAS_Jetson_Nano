@@ -22,12 +22,16 @@ from pydantic import BaseModel, Field
 
 from app.config import settings
 from app.routers.auth import require_auth
+from app.services import talk_ocs
 
 log = logging.getLogger("nas_jetson_nano_api.talk")
 router = APIRouter(prefix="/v1/talk", tags=["Talk — Чат"])
 
 _TALK_BASE = "{nc}/ocs/v2.php/apps/spreed/api/v4"
-_OCS_HEADERS = {"OCS-APIRequest": "true", "Accept": "application/json"}
+
+# OCS_HEADERS/admin_auth/ocs_post перенесены в app/services/talk_ocs.py (CQ-02, аудит
+# 2026-10-02): их звал как приватные чужой роутер (talk_bot.py). `_talk_url`/`_ocs_get`
+# остаются здесь — ими пользуется только список/детали комнаты в этом файле.
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -43,39 +47,12 @@ def _talk_url(path: str, version: str = "v4") -> str:
     return f"{base}/{path.lstrip('/')}"
 
 
-def _admin_auth() -> tuple[str, str]:
-    if not settings.nextcloud_admin_password:
-        raise HTTPException(
-            status_code=503,
-            detail="NEXTCLOUD_ADMIN_PASSWORD not configured. Set it in .env.",
-        )
-    return (settings.nextcloud_admin_user, settings.nextcloud_admin_password)
-
-
 async def _ocs_get(path: str) -> dict:
-    auth = _admin_auth()
+    auth = talk_ocs.admin_auth()
     async with httpx.AsyncClient(timeout=10.0) as client:
-        r = await client.get(_talk_url(path), auth=auth, headers=_OCS_HEADERS)
+        r = await client.get(_talk_url(path), auth=auth, headers=talk_ocs.OCS_HEADERS)
     if r.status_code not in (200, 201):
         log.warning("Talk OCS GET %s → %d", path, r.status_code)
-        raise HTTPException(status_code=502, detail=f"Nextcloud Talk API error: HTTP {r.status_code}")
-    return r.json()
-
-
-async def _ocs_post(path: str, body: dict, version: str = "v4") -> dict:
-    """POST to the OCS API.
-
-    ⚠️ Sends FORM data, not JSON. Nextcloud OCS rejects a JSON body with
-    HTTP 404 / statuscode 998 "Invalid query". This helper used `json=` and so
-    every POST through it silently failed: the Talk bot never delivered a single
-    reply, and `POST /v1/talk/notify` — the documented way to raise system alerts
-    into the family chat — never worked either. Verified against the live server.
-    """
-    auth = _admin_auth()
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        r = await client.post(_talk_url(path, version), auth=auth, headers=_OCS_HEADERS, data=body)
-    if r.status_code not in (200, 201):
-        log.warning("Talk OCS POST %s → %d: %s", path, r.status_code, r.text[:200])
         raise HTTPException(status_code=502, detail=f"Nextcloud Talk API error: HTTP {r.status_code}")
     return r.json()
 
@@ -234,7 +211,7 @@ async def notify(
 
     # Send message via Talk chat API
     # chat lives under v1 only — see _talk_url()
-    result = await _ocs_post(
+    result = await talk_ocs.ocs_post(
         f"chat/{room_token}",
         {"message": body.message, "actorDisplayName": "NAS_Jetson_Nano API"},
         version="v1",

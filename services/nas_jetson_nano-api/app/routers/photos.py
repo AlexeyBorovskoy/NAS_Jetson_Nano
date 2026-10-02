@@ -13,42 +13,17 @@ from __future__ import annotations
 import logging
 from typing import Annotated
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from app.config import settings
 from app.routers.auth import require_auth, require_owner
+from app.services import immich
 
 log = logging.getLogger("nas_jetson_nano_api.photos")
 router = APIRouter(prefix="/v1/photos", tags=["Фото — Immich"])
 
-
-# ── Helpers ────────────────────────────────────────────────────────────────────
-
-def _immich_headers() -> dict:
-    if not settings.immich_api_key:
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                "IMMICH_API_KEY not configured. "
-                "Generate it in Immich → Account Settings → API Keys, "
-                "then set IMMICH_API_KEY in .env."
-            ),
-        )
-    return {"x-api-key": settings.immich_api_key, "Accept": "application/json"}
-
-
-async def _immich_get(path: str) -> dict | list:
-    headers = _immich_headers()
-    url = f"{settings.immich_internal_url}/{path.lstrip('/')}"
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        r = await client.get(url, headers=headers)
-    if r.status_code == 401:
-        raise HTTPException(status_code=401, detail="Immich API key invalid or expired")
-    if r.status_code != 200:
-        raise HTTPException(status_code=502, detail=f"Immich API error: HTTP {r.status_code}")
-    return r.json()
+# _immich_headers/_immich_get перенесены в app/services/immich.py (CQ-02, аудит
+# 2026-10-02): их звал как приватные чужой роутер (talk_bot.py).
 
 
 # ── Pydantic models ────────────────────────────────────────────────────────────
@@ -102,21 +77,21 @@ class UsersPhotoStats(BaseModel):
 )
 async def photo_stats(_: Annotated[str, Depends(require_auth)]):
     # Server statistics
-    stats = await _immich_get("api/server/statistics")
+    stats = await immich.immich_get("api/server/statistics")
     photos_count = stats.get("photos", 0)
     videos_count = stats.get("videos", 0)
     storage_bytes = stats.get("usage", 0)
 
     # Server info for version
     try:
-        info = await _immich_get("api/server/version")
+        info = await immich.immich_get("api/server/version")
         version = f"{info.get('major', 0)}.{info.get('minor', 0)}.{info.get('patch', 0)}"
     except HTTPException:
         version = "unknown"
 
     # Album count
     try:
-        albums = await _immich_get("api/albums")
+        albums = await immich.immich_get("api/albums")
         total_albums = len(albums) if isinstance(albums, list) else 0
     except HTTPException:
         total_albums = 0
@@ -152,7 +127,7 @@ async def photo_stats(_: Annotated[str, Depends(require_auth)]):
     ),
 )
 async def photo_users_stats(_: Annotated[str, Depends(require_owner)]):
-    users_raw = await _immich_get("api/users")
+    users_raw = await immich.immich_get("api/users")
     if not isinstance(users_raw, list):
         raise HTTPException(status_code=502, detail="Unexpected Immich API response for /api/users")
 

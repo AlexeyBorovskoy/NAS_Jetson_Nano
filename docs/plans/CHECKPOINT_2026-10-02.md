@@ -1,6 +1,6 @@
 # Project checkpoint 2026-10-02 — code audit and plan execution
 
-> Branch `quality/code-audit-2026-10`, **not pushed**. The device and the VPS were not touched, there was no rollout.
+> **Updated in the evening:** branch `quality/code-audit-2026-10` was fast-forwarded into `main` and published to GitHub and GitVerse (`main` = `master`). The device and the VPS were not touched; there was no rollout.
 > Russian version — `CHECKPOINT_2026-10-02.ru.md`.
 
 ## 1. Done (all in the branch, the gates with the ratchet passed)
@@ -40,6 +40,7 @@ mandatory behaviour passes, evidence levels).
 
 ## 3. Next
 
+0. ✅ Done: branch pushed, merged into `main` (`3e56d3f`), CI green on `3e56d3f` (both new blocking checks — NAS API compose validation and the metrics ratchet — passed in CI for the first time). ✅ **GitHub Pages is built by our own workflow** `.github/workflows/pages.yml` (`90bdc41`): the built-in build had failed since 2026-10-01 because it could not clone the private submodule `tools/deepseek-worker`; the Pages source was switched to "GitHub Actions", build and deploy are green, the site returns 200.
 1. Push the branch and merge into `main` — on the owner's word (rule no. 15 requires publishing).
 2. Rollout of stages 1–4, 11 to the Jetson — only on "деплой" ("deploy"), per the runbook (live checks: "что сломалось",
    the gateway `/health`, a download). After the rollout an announcement to the group is not needed (nothing visible to the family),

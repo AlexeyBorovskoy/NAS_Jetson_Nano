@@ -1,8 +1,8 @@
 {
  "schema": 1,
  "repo": "NAS_Jetson_Nano",
- "commit": "7637f416b8d5f5fc26b8be33b251d94f46091987",
- "generated_at": "2026-10-02T10:33:49+00:00",
+ "commit": "c3c6623dd2c36480788e9f4c54784581f3ecfdbf",
+ "generated_at": "2026-10-02T11:25:51+00:00",
  "stack": [
   "python",
   "bash",
@@ -141,9 +141,46 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "container_running",
+     1,
+     4
+    ],
+    [
+     "storage_ready",
+     8,
+     25
+    ],
+    [
+     "wait_pg_ready",
+     4,
+     15
+    ],
+    [
+     "validate_dump_gz",
+     5,
+     18
+    ],
+    [
+     "dump_postgres",
+     5,
+     25
+    ],
+    [
+     "rotate_old_dumps",
+     4,
+     16
+    ],
+    [
+     "run_backup",
+     6,
+     40
+    ]
+   ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0236
+   "hotspot_score": 0.0177
   },
   "scripts/backup/config_backup.sh": {
    "lang": "sh",
@@ -187,9 +224,16 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "plan",
+     1,
+     13
+    ]
+   ],
    "strict_mode": false,
    "level": "ok",
-   "hotspot_score": 0.0026
+   "hotspot_score": 0.002
   },
   "scripts/backup/immich_hdd_second_copy.sh": {
    "lang": "sh",
@@ -224,9 +268,10 @@
    "bug_commits": 0,
    "complexity": 2.9,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0008
+   "hotspot_score": 0.0006
   },
   "scripts/backup/install_backup_timer.sh": {
    "lang": "sh",
@@ -261,9 +306,10 @@
    "bug_commits": 0,
    "complexity": 2.1,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0012
+   "hotspot_score": 0.0009
   },
   "scripts/backup/install_restic.sh": {
    "lang": "sh",
@@ -298,9 +344,10 @@
    "bug_commits": 0,
    "complexity": 2.8,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0008
+   "hotspot_score": 0.0006
   },
   "scripts/backup/restic_backup_example.sh": {
    "lang": "sh",
@@ -335,9 +382,10 @@
    "bug_commits": 1,
    "complexity": 5.0,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0056
+   "hotspot_score": 0.0042
   },
   "scripts/backup/restic_s3_cloudru_example.sh": {
    "lang": "sh",
@@ -372,9 +420,10 @@
    "bug_commits": 1,
    "complexity": 3.0,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0017
+   "hotspot_score": 0.0012
   },
   "scripts/backup/restic_s3_cloudru_probe.sh": {
    "lang": "sh",
@@ -418,9 +467,16 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "try",
+     1,
+     10
+    ]
+   ],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0013
+   "hotspot_score": 0.001
   },
   "scripts/backup/restore_drill.sh": {
    "lang": "sh",
@@ -455,9 +511,10 @@
    "bug_commits": 0,
    "complexity": 6.5,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0018
+   "hotspot_score": 0.0014
   },
   "scripts/backup/setup_config_backup.sh": {
    "lang": "sh",
@@ -492,9 +549,10 @@
    "bug_commits": 0,
    "complexity": 3.4,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0009
+   "hotspot_score": 0.0007
   },
   "scripts/diagnostics/docker_health.sh": {
    "lang": "sh",
@@ -538,9 +596,16 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "check_container",
+     12,
+     33
+    ]
+   ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0053
+   "hotspot_score": 0.004
   },
   "scripts/diagnostics/hardware_audit.sh": {
    "lang": "sh",
@@ -575,9 +640,10 @@
    "bug_commits": 1,
    "complexity": 4.4,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0037
+   "hotspot_score": 0.0027
   },
   "scripts/diagnostics/sd_wear_check.sh": {
    "lang": "sh",
@@ -629,9 +695,21 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "life_to_pct",
+     14,
+     19
+    ],
+    [
+     "hex_to_int",
+     2,
+     3
+    ]
+   ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0082
+   "hotspot_score": 0.0062
   },
   "scripts/diagnostics/smart_check.sh": {
    "lang": "sh",
@@ -675,9 +753,16 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "tg_send",
+     4,
+     9
+    ]
+   ],
    "strict_mode": false,
    "level": "ok",
-   "hotspot_score": 0.0063
+   "hotspot_score": 0.0047
   },
   "scripts/diagnostics/storage_health.sh": {
    "lang": "sh",
@@ -721,9 +806,16 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "check_dir_usage",
+     3,
+     18
+    ]
+   ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.02
+   "hotspot_score": 0.015
   },
   "scripts/docs/correct_publication_claims_docx.py": {
    "lang": "py",
@@ -783,8 +875,25 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "replace_in_paragraph",
+     5,
+     14
+    ],
+    [
+     "iter_paragraphs",
+     4,
+     6
+    ],
+    [
+     "main",
+     2,
+     7
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.0031
+   "hotspot_score": 0.0023
   },
   "scripts/downloads/aria2_speed.sh": {
    "lang": "sh",
@@ -819,9 +928,10 @@
    "bug_commits": 1,
    "complexity": 1.9,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0011
+   "hotspot_score": 0.0008
   },
   "scripts/fetch_external_docs.sh": {
    "lang": "sh",
@@ -865,9 +975,16 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "fetch",
+     2,
+     13
+    ]
+   ],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0194
+   "hotspot_score": 0.0146
   },
   "scripts/immich/set_ml_url.sh": {
    "lang": "sh",
@@ -919,9 +1036,21 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "fetch_current",
+     3,
+     12
+    ],
+    [
+     "put_config",
+     3,
+     26
+    ]
+   ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0027
+   "hotspot_score": 0.002
   },
   "scripts/lib/install_layout.sh": {
    "lang": "sh",
@@ -956,9 +1085,10 @@
    "bug_commits": 1,
    "complexity": 2.4,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0007
+   "hotspot_score": 0.0005
   },
   "scripts/lib/layout.sh": {
    "lang": "sh",
@@ -993,9 +1123,10 @@
    "bug_commits": 1,
    "complexity": 3.2,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": false,
    "level": "ok",
-   "hotspot_score": 0.0009
+   "hotspot_score": 0.0007
   },
   "scripts/lib/nas_layout.py": {
    "lang": "py",
@@ -1055,8 +1186,25 @@
      "params": 1
     }
    ],
+   "funcs": [
+    [
+     "_read_layout_file",
+     7,
+     16
+    ],
+    [
+     "resolve",
+     10,
+     24
+    ],
+    [
+     "resolve.isdir",
+     1,
+     2
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.005
+   "hotspot_score": 0.0037
   },
   "scripts/maintenance/docker_update_plan.sh": {
    "lang": "sh",
@@ -1091,9 +1239,10 @@
    "bug_commits": 1,
    "complexity": 4.6,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0038
+   "hotspot_score": 0.0029
   },
   "scripts/monitoring/install_beszel_agent.sh": {
    "lang": "sh",
@@ -1128,9 +1277,10 @@
    "bug_commits": 0,
    "complexity": 7.3,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0061
+   "hotspot_score": 0.0046
   },
   "scripts/monitoring/install_beszel_agent_vps.sh": {
    "lang": "sh",
@@ -1165,9 +1315,10 @@
    "bug_commits": 0,
    "complexity": 6.5,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0036
+   "hotspot_score": 0.0027
   },
   "scripts/monitoring/install_container_watchdog.sh": {
    "lang": "sh",
@@ -1202,9 +1353,10 @@
    "bug_commits": 0,
    "complexity": 1.3,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0004
+   "hotspot_score": 0.0003
   },
   "scripts/monitoring/install_daily_report.sh": {
    "lang": "sh",
@@ -1248,9 +1400,16 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "as_root",
+     2,
+     7
+    ]
+   ],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.001
+   "hotspot_score": 0.0007
   },
   "scripts/monitoring/jms583_health.sh": {
    "lang": "sh",
@@ -1302,9 +1461,21 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "log",
+     2,
+     7
+    ],
+    [
+     "tg_send",
+     4,
+     9
+    ]
+   ],
    "strict_mode": false,
    "level": "fail",
-   "hotspot_score": 0.022
+   "hotspot_score": 0.0165
   },
   "scripts/monitoring/nas_jetson_nano-beszel-report.py": {
    "lang": "py",
@@ -1363,6 +1534,23 @@
      "nest": 1,
      "params": 1
     }
+   ],
+   "funcs": [
+    [
+     "api",
+     5,
+     14
+    ],
+    [
+     "fmt_bytes",
+     3,
+     6
+    ],
+    [
+     "fmt_uptime",
+     2,
+     8
+    ]
    ],
    "level": "ok",
    "hotspot_score": 0.0
@@ -1441,8 +1629,120 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "read_env",
+     4,
+     9
+    ],
+    [
+     "classify_shutdown",
+     7,
+     11
+    ],
+    [
+     "classify_ramoops",
+     4,
+     8
+    ],
+    [
+     "parse_pmc_reset_source",
+     3,
+     6
+    ],
+    [
+     "build_alert_text",
+     3,
+     26
+    ],
+    [
+     "parse_telegram_users",
+     6,
+     7
+    ],
+    [
+     "resolve_owner_chat_id",
+     1,
+     2
+    ],
+    [
+     "send_telegram",
+     9,
+     24
+    ],
+    [
+     "send_with_retries",
+     4,
+     13
+    ],
+    [
+     "_atomic_write_json",
+     3,
+     11
+    ],
+    [
+     "load_state",
+     3,
+     7
+    ],
+    [
+     "save_state",
+     1,
+     2
+    ],
+    [
+     "mark_resolved",
+     1,
+     2
+    ],
+    [
+     "already_handled",
+     3,
+     2
+    ],
+    [
+     "write_pending",
+     1,
+     2
+    ],
+    [
+     "get_boot_time_str",
+     4,
+     10
+    ],
+    [
+     "get_boot_id",
+     3,
+     6
+    ],
+    [
+     "_read_last_x",
+     3,
+     7
+    ],
+    [
+     "_read_ramoops",
+     5,
+     14
+    ],
+    [
+     "_read_dmesg",
+     3,
+     7
+    ],
+    [
+     "gather_signals",
+     2,
+     19
+    ],
+    [
+     "main",
+     13,
+     50
+    ]
+   ],
    "level": "fail",
-   "hotspot_score": 0.0239
+   "hotspot_score": 0.0179
   },
   "scripts/monitoring/nas_jetson_nano-container-watchdog.py": {
    "lang": "py",
@@ -1518,8 +1818,50 @@
      "params": 1
     }
    ],
+   "funcs": [
+    [
+     "_load_boot_alert",
+     1,
+     6
+    ],
+    [
+     "docker",
+     1,
+     3
+    ],
+    [
+     "list_containers",
+     11,
+     16
+    ],
+    [
+     "is_paused",
+     2,
+     2
+    ],
+    [
+     "decide",
+     9,
+     16
+    ],
+    [
+     "load_state",
+     3,
+     7
+    ],
+    [
+     "save_state",
+     1,
+     5
+    ],
+    [
+     "main",
+     19,
+     56
+    ]
+   ],
    "level": "warn",
-   "hotspot_score": 0.0522
+   "hotspot_score": 0.0391
   },
   "scripts/monitoring/nas_jetson_nano-daily-report.sh": {
    "lang": "sh",
@@ -1563,9 +1905,16 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "http_check",
+     5,
+     11
+    ]
+   ],
    "strict_mode": false,
    "level": "fail",
-   "hotspot_score": 0.0301
+   "hotspot_score": 0.0226
   },
   "scripts/monitoring/nas_jetson_nano-send-report-telegram.sh": {
    "lang": "sh",
@@ -1600,9 +1949,10 @@
    "bug_commits": 2,
    "complexity": 6.6,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0073
+   "hotspot_score": 0.0055
   },
   "scripts/monitoring/nas_jetson_nano-talk-alert.py": {
    "lang": "py",
@@ -1678,8 +2028,90 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "read_env",
+     4,
+     9
+    ],
+    [
+     "check_dumps",
+     5,
+     13
+    ],
+    [
+     "check_storage",
+     2,
+     5
+    ],
+    [
+     "check_containers",
+     6,
+     16
+    ],
+    [
+     "check_disk",
+     6,
+     14
+    ],
+    [
+     "check_ram",
+     6,
+     11
+    ],
+    [
+     "check_swap",
+     7,
+     19
+    ],
+    [
+     "check_hdd_smart",
+     14,
+     35
+    ],
+    [
+     "check_offsite_pull",
+     3,
+     10
+    ],
+    [
+     "check_giga_balance",
+     10,
+     27
+    ],
+    [
+     "check_cloudru_consumption",
+     15,
+     34
+    ],
+    [
+     "send",
+     6,
+     18
+    ],
+    [
+     "load_state",
+     2,
+     6
+    ],
+    [
+     "save_state",
+     1,
+     6
+    ],
+    [
+     "main",
+     10,
+     39
+    ],
+    [
+     "send.post",
+     2,
+     6
+    ]
+   ],
    "level": "warn",
-   "hotspot_score": 0.22
+   "hotspot_score": 0.1648
   },
   "scripts/monitoring/setup_portainer.sh": {
    "lang": "sh",
@@ -1723,9 +2155,16 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "check_init",
+     2,
+     5
+    ]
+   ],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0023
+   "hotspot_score": 0.0017
   },
   "scripts/monitoring/setup_uptime_kuma.py": {
    "lang": "py",
@@ -1769,8 +2208,15 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "ensure_dep",
+     2,
+     9
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.0017
+   "hotspot_score": 0.0012
   },
   "scripts/monitoring/usb_error_monitor.sh": {
    "lang": "sh",
@@ -1822,9 +2268,21 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "tg_send",
+     5,
+     15
+    ],
+    [
+     "trigger_watchdog",
+     2,
+     3
+    ]
+   ],
    "strict_mode": false,
    "level": "warn",
-   "hotspot_score": 0.0097
+   "hotspot_score": 0.0072
   },
   "scripts/monitoring/vps_amnezia_monitor.sh": {
    "lang": "sh",
@@ -1868,9 +2326,16 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "send_telegram",
+     4,
+     8
+    ]
+   ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0049
+   "hotspot_score": 0.0037
   },
   "scripts/network/ddns_duckdns.sh": {
    "lang": "sh",
@@ -1914,9 +2379,16 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "send_telegram",
+     4,
+     7
+    ]
+   ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0024
+   "hotspot_score": 0.0018
   },
   "scripts/network/dl_egress_guard.sh": {
    "lang": "sh",
@@ -1951,9 +2423,10 @@
    "bug_commits": 1,
    "complexity": 3.0,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0017
+   "hotspot_score": 0.0012
   },
   "scripts/network/network_health.sh": {
    "lang": "sh",
@@ -1988,9 +2461,10 @@
    "bug_commits": 1,
    "complexity": 6.8,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0038
+   "hotspot_score": 0.0028
   },
   "scripts/network/setup_vps_tunnel.sh": {
    "lang": "sh",
@@ -2025,9 +2499,10 @@
    "bug_commits": 3,
    "complexity": 3.6,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.005
+   "hotspot_score": 0.0037
   },
   "scripts/network/test_vostro_bastion_from_jetson.sh": {
    "lang": "sh",
@@ -2062,9 +2537,10 @@
    "bug_commits": 0,
    "complexity": 1.6,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0004
+   "hotspot_score": 0.0003
   },
   "scripts/quality/check_env_syntax.py": {
    "lang": "py",
@@ -2124,8 +2600,25 @@
      "params": 1
     }
    ],
+   "funcs": [
+    [
+     "strip_comment",
+     8,
+     17
+    ],
+    [
+     "check",
+     12,
+     27
+    ],
+    [
+     "main",
+     7,
+     18
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.0075
+   "hotspot_score": 0.0056
   },
   "scripts/quality/check_ps1_bom.py": {
    "lang": "py",
@@ -2185,13 +2678,254 @@
      "params": 1
     }
    ],
+   "funcs": [
+    [
+     "collect",
+     7,
+     11
+    ],
+    [
+     "check",
+     5,
+     13
+    ],
+    [
+     "main",
+     7,
+     17
+    ]
+   ],
    "level": "warn",
-   "hotspot_score": 0.0053
+   "hotspot_score": 0.004
+  },
+  "scripts/quality/code_metrics.py": {
+   "lang": "py",
+   "test": false,
+   "loc": 603,
+   "functions": 29,
+   "func_loc_max": 98,
+   "func_loc_p90": 51,
+   "func_over_warn": 2,
+   "cc_max": 53,
+   "cc_sum": 267,
+   "cc_over_warn": 6,
+   "nest_max": 12,
+   "params_max": 5,
+   "bool_params": 1,
+   "class_methods_max": 0,
+   "ctor_params_max": 0,
+   "ctor_state_max": 0,
+   "broad_catch": 0,
+   "silent_catch": 0,
+   "dated_comments": 0,
+   "todo": 0,
+   "dynamic": 6,
+   "stringly_typed": 132,
+   "magic_numbers": 1,
+   "private_imports": [],
+   "fan_out": 0,
+   "fan_in": 0,
+   "dup_lines": 0,
+   "commits": 1,
+   "churn_lines": 540,
+   "bug_commits": 0,
+   "complexity": 267,
+   "worst_functions": [
+    {
+     "name": "analyse_py",
+     "line": 215,
+     "loc": 79,
+     "cc": 53,
+     "nest": 12,
+     "params": 2
+    },
+    {
+     "name": "compare",
+     "line": 636,
+     "loc": 51,
+     "cc": 28,
+     "nest": 3,
+     "params": 3
+    },
+    {
+     "name": "compute_state",
+     "line": 492,
+     "loc": 98,
+     "cc": 22,
+     "nest": 2,
+     "params": 0
+    },
+    {
+     "name": "analyse_sh",
+     "line": 303,
+     "loc": 44,
+     "cc": 19,
+     "nest": 4,
+     "params": 2
+    },
+    {
+     "name": "import_graph",
+     "line": 424,
+     "loc": 29,
+     "cc": 17,
+     "nest": 4,
+     "params": 1
+    }
+   ],
+   "funcs": [
+    [
+     "git",
+     1,
+     4
+    ],
+    [
+     "tracked_sources",
+     5,
+     9
+    ],
+    [
+     "cyclomatic",
+     9,
+     15
+    ],
+    [
+     "nesting",
+     4,
+     8
+    ],
+    [
+     "is_silent",
+     12,
+     14
+    ],
+    [
+     "qualnames",
+     6,
+     15
+    ],
+    [
+     "is_broad",
+     4,
+     7
+    ],
+    [
+     "py_code_lines",
+     13,
+     21
+    ],
+    [
+     "analyse_py",
+     53,
+     79
+    ],
+    [
+     "analyse_sh",
+     19,
+     44
+    ],
+    [
+     "churn",
+     7,
+     20
+    ],
+    [
+     "norm_line",
+     6,
+     7
+    ],
+    [
+     "duplication",
+     10,
+     27
+    ],
+    [
+     "service_root",
+     3,
+     5
+    ],
+    [
+     "import_graph",
+     17,
+     29
+    ],
+    [
+     "cycles",
+     10,
+     28
+    ],
+    [
+     "level",
+     3,
+     3
+    ],
+    [
+     "compute_state",
+     22,
+     98
+    ],
+    [
+     "format_summary",
+     1,
+     6
+    ],
+    [
+     "write_state",
+     2,
+     6
+    ],
+    [
+     "_is_prod",
+     1,
+     2
+    ],
+    [
+     "_catch_sum",
+     1,
+     2
+    ],
+    [
+     "compare",
+     28,
+     51
+    ],
+    [
+     "_format_violation",
+     2,
+     5
+    ],
+    [
+     "cmd_check",
+     5,
+     15
+    ],
+    [
+     "main",
+     6,
+     23
+    ],
+    [
+     "qualnames.visit",
+     6,
+     11
+    ],
+    [
+     "cycles.sc",
+     8,
+     21
+    ],
+    [
+     "compare.emit",
+     3,
+     7
+    ]
+   ],
+   "level": "fail",
+   "hotspot_score": 0.0556
   },
   "scripts/quality/preflight.sh": {
    "lang": "sh",
    "test": false,
-   "loc": 216,
+   "loc": 247,
    "functions": 1,
    "func_loc_max": 29,
    "func_loc_p90": 29,
@@ -2207,7 +2941,7 @@
    "ctor_state_max": 0,
    "broad_catch": 0,
    "silent_catch": 4,
-   "dated_comments": 6,
+   "dated_comments": 7,
    "todo": 0,
    "dynamic": 0,
    "stringly_typed": 0,
@@ -2219,7 +2953,7 @@
    "commits": 9,
    "churn_lines": 414,
    "bug_commits": 5,
-   "complexity": 21.6,
+   "complexity": 24.7,
    "worst_functions": [
     {
      "name": "check_image_tags",
@@ -2230,9 +2964,16 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "check_image_tags",
+     9,
+     29
+    ]
+   ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.054
+   "hotspot_score": 0.0463
   },
   "scripts/sber/check_cloudru_consumption.py": {
    "lang": "py",
@@ -2308,8 +3049,60 @@
      "params": 1
     }
    ],
+   "funcs": [
+    [
+     "_post_json",
+     2,
+     10
+    ],
+    [
+     "_get_json",
+     2,
+     7
+    ],
+    [
+     "get_access_token",
+     2,
+     6
+    ],
+    [
+     "get_agreement_id",
+     3,
+     6
+    ],
+    [
+     "current_month_range",
+     2,
+     5
+    ],
+    [
+     "get_consumption",
+     2,
+     5
+    ],
+    [
+     "summarize",
+     9,
+     25
+    ],
+    [
+     "match_free_tier",
+     8,
+     17
+    ],
+    [
+     "poll",
+     3,
+     27
+    ],
+    [
+     "main",
+     4,
+     14
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.0308
+   "hotspot_score": 0.0231
   },
   "scripts/sber/check_gigachat_balance.sh": {
    "lang": "sh",
@@ -2344,9 +3137,10 @@
    "bug_commits": 0,
    "complexity": 3.2,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0018
+   "hotspot_score": 0.0013
   },
   "scripts/sber/cloudru_iam_token_example.sh": {
    "lang": "sh",
@@ -2381,9 +3175,10 @@
    "bug_commits": 2,
    "complexity": 2.6,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0022
+   "hotspot_score": 0.0016
   },
   "scripts/sber/gitverse_mirror_push.sh": {
    "lang": "sh",
@@ -2418,9 +3213,10 @@
    "bug_commits": 0,
    "complexity": 1.6,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0004
+   "hotspot_score": 0.0003
   },
   "scripts/sber/install_immich_hdd_timer.sh": {
    "lang": "sh",
@@ -2455,9 +3251,10 @@
    "bug_commits": 0,
    "complexity": 2.3,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0006
+   "hotspot_score": 0.0005
   },
   "scripts/sber/merge_sber_snippet.sh": {
    "lang": "sh",
@@ -2501,9 +3298,16 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "get_snip",
+     2,
+     3
+    ]
+   ],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0018
+   "hotspot_score": 0.0014
   },
   "scripts/sber/preflight_sber_pack.sh": {
    "lang": "sh",
@@ -2547,9 +3351,16 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "need_file",
+     2,
+     5
+    ]
+   ],
    "strict_mode": false,
    "level": "ok",
-   "hotspot_score": 0.0019
+   "hotspot_score": 0.0014
   },
   "scripts/sber/smoke_cloudru_fm.sh": {
    "lang": "sh",
@@ -2584,9 +3395,10 @@
    "bug_commits": 0,
    "complexity": 1.4,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0004
+   "hotspot_score": 0.0003
   },
   "scripts/sber/verify_gateway.sh": {
    "lang": "sh",
@@ -2621,9 +3433,10 @@
    "bug_commits": 1,
    "complexity": 3.7,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0021
+   "hotspot_score": 0.0015
   },
   "scripts/security/check_no_secrets.sh": {
    "lang": "sh",
@@ -2658,9 +3471,10 @@
    "bug_commits": 4,
    "complexity": 2.8,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0062
+   "hotspot_score": 0.0047
   },
   "scripts/setup/install_nextcloud_talk.sh": {
    "lang": "sh",
@@ -2695,9 +3509,10 @@
    "bug_commits": 0,
    "complexity": 7.7,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0064
+   "hotspot_score": 0.0048
   },
   "scripts/setup/install_nginx_vps.sh": {
    "lang": "sh",
@@ -2732,9 +3547,10 @@
    "bug_commits": 0,
    "complexity": 15.3,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0127
+   "hotspot_score": 0.0096
   },
   "scripts/setup/nas-offsite-backup.sh": {
    "lang": "sh",
@@ -2769,9 +3585,10 @@
    "bug_commits": 1,
    "complexity": 3.1,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0017
+   "hotspot_score": 0.0013
   },
   "scripts/setup/nasa-offsite-export.sh": {
    "lang": "sh",
@@ -2806,6 +3623,7 @@
    "bug_commits": 0,
    "complexity": 0.8,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
    "hotspot_score": 0.0002
@@ -2843,9 +3661,10 @@
    "bug_commits": 0,
    "complexity": 2.9,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0016
+   "hotspot_score": 0.0012
   },
   "scripts/storage/deploy_usb_fix.sh": {
    "lang": "sh",
@@ -2889,9 +3708,16 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "deploy_script",
+     1,
+     7
+    ]
+   ],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.002
+   "hotspot_score": 0.0015
   },
   "scripts/storage/install_docker_storage_guard.sh": {
    "lang": "sh",
@@ -2926,9 +3752,10 @@
    "bug_commits": 0,
    "complexity": 3.4,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0019
+   "hotspot_score": 0.0014
   },
   "scripts/storage/install_mount_service.sh": {
    "lang": "sh",
@@ -2963,9 +3790,10 @@
    "bug_commits": 0,
    "complexity": 2.8,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0016
+   "hotspot_score": 0.0012
   },
   "scripts/storage/install_usb_watchdog.sh": {
    "lang": "sh",
@@ -3000,9 +3828,10 @@
    "bug_commits": 2,
    "complexity": 12.9,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0179
+   "hotspot_score": 0.0134
   },
   "scripts/storage/setup_disk.sh": {
    "lang": "sh",
@@ -3037,9 +3866,10 @@
    "bug_commits": 0,
    "complexity": 4.9,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0027
+   "hotspot_score": 0.002
   },
   "scripts/storage/ssd_hotplug_recovery.sh": {
    "lang": "sh",
@@ -3074,9 +3904,10 @@
    "bug_commits": 5,
    "complexity": 5.4,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.012
+   "hotspot_score": 0.009
   },
   "scripts/storage/storage_preflight.sh": {
    "lang": "sh",
@@ -3144,9 +3975,31 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "fail",
+     1,
+     4
+    ],
+    [
+     "warn",
+     1,
+     4
+    ],
+    [
+     "path_meta",
+     3,
+     9
+    ],
+    [
+     "fstab_source_for_storage",
+     2,
+     3
+    ]
+   ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0091
+   "hotspot_score": 0.0068
   },
   "scripts/storage/usb_preboot_cycle.sh": {
    "lang": "sh",
@@ -3181,9 +4034,10 @@
    "bug_commits": 2,
    "complexity": 3.0,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0033
+   "hotspot_score": 0.0025
   },
   "scripts/storage/usb_recovery_watchdog.sh": {
    "lang": "sh",
@@ -3243,9 +4097,26 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "tg_send",
+     4,
+     9
+    ],
+    [
+     "ssd_ok",
+     2,
+     3
+    ],
+    [
+     "hub_power_cycle",
+     6,
+     11
+    ]
+   ],
    "strict_mode": true,
    "level": "fail",
-   "hotspot_score": 0.0184
+   "hotspot_score": 0.0138
   },
   "services/backup-api/app/__init__.py": {
    "lang": "py",
@@ -3280,6 +4151,7 @@
    "bug_commits": 0,
    "complexity": 0,
    "worst_functions": [],
+   "funcs": [],
    "level": "ok",
    "hotspot_score": 0.0
   },
@@ -3357,8 +4229,50 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "require_bearer",
+     7,
+     14
+    ],
+    [
+     "health",
+     2,
+     7
+    ],
+    [
+     "register_device",
+     2,
+     5
+    ],
+    [
+     "create_backup",
+     1,
+     7
+    ],
+    [
+     "_safe_target",
+     7,
+     13
+    ],
+    [
+     "upload_backup",
+     4,
+     29
+    ],
+    [
+     "list_backups",
+     8,
+     23
+    ],
+    [
+     "plan_restore",
+     1,
+     8
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.0178
+   "hotspot_score": 0.0133
   },
   "services/downloads/entrypoint.sh": {
    "lang": "sh",
@@ -3393,9 +4307,10 @@
    "bug_commits": 2,
    "complexity": 1.1,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0009
+   "hotspot_score": 0.0007
   },
   "services/downloads/on_complete.sh": {
    "lang": "sh",
@@ -3439,9 +4354,16 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "name_at",
+     4,
+     12
+    ]
+   ],
    "strict_mode": false,
    "level": "ok",
-   "hotspot_score": 0.0083
+   "hotspot_score": 0.0062
   },
   "services/downloads/on_stop.sh": {
    "lang": "sh",
@@ -3476,9 +4398,10 @@
    "bug_commits": 2,
    "complexity": 3.4,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": false,
    "level": "ok",
-   "hotspot_score": 0.0028
+   "hotspot_score": 0.0021
   },
   "services/llm-gateway/app/main.py": {
    "lang": "py",
@@ -3554,8 +4477,240 @@
      "params": 1
     }
    ],
+   "funcs": [
+    [
+     "_require_service_token",
+     3,
+     9
+    ],
+    [
+     "_name_patterns",
+     5,
+     15
+    ],
+    [
+     "redact",
+     2,
+     10
+    ],
+    [
+     "_load_usage",
+     5,
+     16
+    ],
+    [
+     "_save_usage",
+     2,
+     8
+    ],
+    [
+     "_today",
+     1,
+     2
+    ],
+    [
+     "_month",
+     1,
+     2
+    ],
+    [
+     "_current_usage",
+     3,
+     11
+    ],
+    [
+     "_estimated_cost_usd",
+     1,
+     3
+    ],
+    [
+     "_user_limits",
+     5,
+     11
+    ],
+    [
+     "_user_daily_limit",
+     3,
+     6
+    ],
+    [
+     "_user_bucket",
+     3,
+     12
+    ],
+    [
+     "_check_budget",
+     11,
+     28
+    ],
+    [
+     "_record_usage",
+     3,
+     14
+    ],
+    [
+     "_smart_routing_enabled",
+     1,
+     2
+    ],
+    [
+     "_is_complex_prompt",
+     3,
+     5
+    ],
+    [
+     "_gigachat_base",
+     1,
+     2
+    ],
+    [
+     "_gigachat_verify",
+     2,
+     5
+    ],
+    [
+     "_gigachat_access_token",
+     8,
+     35
+    ],
+    [
+     "_call_gigachat",
+     1,
+     3
+    ],
+    [
+     "_call_gigachat_locked",
+     7,
+     26
+    ],
+    [
+     "_sanitize_save_path",
+     8,
+     28
+    ],
+    [
+     "_gigachat_download_file",
+     3,
+     15
+    ],
+    [
+     "_gigachat_upload_file",
+     5,
+     20
+    ],
+    [
+     "_gigachat_image",
+     1,
+     3
+    ],
+    [
+     "_gigachat_image_locked",
+     9,
+     38
+    ],
+    [
+     "_call_deepseek",
+     5,
+     20
+    ],
+    [
+     "_cloudru_configured",
+     2,
+     3
+    ],
+    [
+     "_call_cloudru",
+     8,
+     36
+    ],
+    [
+     "_gigachat_balance",
+     4,
+     18
+    ],
+    [
+     "_deepseek_configured",
+     2,
+     3
+    ],
+    [
+     "_giga_retryable",
+     4,
+     6
+    ],
+    [
+     "_giga_fallback_enabled",
+     1,
+     6
+    ],
+    [
+     "_local_available",
+     3,
+     8
+    ],
+    [
+     "_call_ollama",
+     8,
+     27
+    ],
+    [
+     "health",
+     1,
+     22
+    ],
+    [
+     "gigachat_balance",
+     2,
+     5
+    ],
+    [
+     "usage",
+     9,
+     34
+    ],
+    [
+     "redact_endpoint",
+     2,
+     3
+    ],
+    [
+     "chat",
+     26,
+     83
+    ],
+    [
+     "explain_diagnostics",
+     1,
+     6
+    ],
+    [
+     "_finish_image",
+     6,
+     24
+    ],
+    [
+     "image_generate",
+     3,
+     11
+    ],
+    [
+     "image_presets",
+     1,
+     2
+    ],
+    [
+     "image_edit",
+     10,
+     44
+    ],
+    [
+     "usage._person",
+     5,
+     13
+    ]
+   ],
    "level": "fail",
-   "hotspot_score": 0.7778
+   "hotspot_score": 0.5826
   },
   "services/nas_jetson_nano-api/app/__init__.py": {
    "lang": "py",
@@ -3590,6 +4745,7 @@
    "bug_commits": 0,
    "complexity": 0,
    "worst_functions": [],
+   "funcs": [],
    "level": "ok",
    "hotspot_score": 0.0
   },
@@ -3643,8 +4799,20 @@
      "params": 1
     }
    ],
+   "funcs": [
+    [
+     "run_io",
+     3,
+     6
+    ],
+    [
+     "busy",
+     2,
+     3
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.0014
+   "hotspot_score": 0.001
   },
   "services/nas_jetson_nano-api/app/bobik_gate.py": {
    "lang": "py",
@@ -3712,8 +4880,30 @@
      "params": 1
     }
    ],
+   "funcs": [
+    [
+     "_compile",
+     1,
+     2
+    ],
+    [
+     "match_tool_intent",
+     15,
+     26
+    ],
+    [
+     "validate_tool_call",
+     6,
+     14
+    ],
+    [
+     "admit",
+     10,
+     48
+    ]
+   ],
    "level": "warn",
-   "hotspot_score": 0.0178
+   "hotspot_score": 0.0133
   },
   "services/nas_jetson_nano-api/app/config.py": {
    "lang": "py",
@@ -3757,8 +4947,15 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "Settings.llm_headers",
+     3,
+     3
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.0117
+   "hotspot_score": 0.0087
   },
   "services/nas_jetson_nano-api/app/dialog.py": {
    "lang": "py",
@@ -3834,8 +5031,35 @@
      "params": 1
     }
    ],
+   "funcs": [
+    [
+     "DialogMemory.__init__",
+     1,
+     9
+    ],
+    [
+     "DialogMemory._fresh",
+     3,
+     8
+    ],
+    [
+     "DialogMemory.add",
+     6,
+     10
+    ],
+    [
+     "DialogMemory.history",
+     4,
+     12
+    ],
+    [
+     "DialogMemory.forget",
+     1,
+     2
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.0083
+   "hotspot_score": 0.0062
   },
   "services/nas_jetson_nano-api/app/download_links.py": {
    "lang": "py",
@@ -3911,8 +5135,35 @@
      "params": 1
     }
    ],
+   "funcs": [
+    [
+     "_signature",
+     1,
+     3
+    ],
+    [
+     "valid_signature",
+     4,
+     5
+    ],
+    [
+     "_scope_url",
+     3,
+     8
+    ],
+    [
+     "user_url",
+     1,
+     2
+    ],
+    [
+     "owner_url",
+     1,
+     2
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.0056
+   "hotspot_score": 0.0042
   },
   "services/nas_jetson_nano-api/app/downloads.py": {
    "lang": "py",
@@ -3988,8 +5239,190 @@
      "params": 3
     }
    ],
+   "funcs": [
+    [
+     "fmt_size",
+     2,
+     4
+    ],
+    [
+     "_bad_ip",
+     6,
+     3
+    ],
+    [
+     "parse_link",
+     14,
+     26
+    ],
+    [
+     "choose_target",
+     4,
+     10
+    ],
+    [
+     "user_folder",
+     3,
+     2
+    ],
+    [
+     "_family_chat_id",
+     2,
+     2
+    ],
+    [
+     "user_dir",
+     1,
+     2
+    ],
+    [
+     "done_hint",
+     2,
+     3
+    ],
+    [
+     "_options",
+     1,
+     2
+    ],
+    [
+     "total_size",
+     5,
+     5
+    ],
+    [
+     "_disk_free",
+     2,
+     6
+    ],
+    [
+     "_head_size",
+     8,
+     20
+    ],
+    [
+     "_resolves_internal",
+     5,
+     12
+    ],
+    [
+     "_name",
+     8,
+     8
+    ],
+    [
+     "Aria2.__init__",
+     3,
+     4
+    ],
+    [
+     "Aria2.call",
+     2,
+     9
+    ],
+    [
+     "Ledger.__init__",
+     2,
+     2
+    ],
+    [
+     "Ledger.load",
+     3,
+     7
+    ],
+    [
+     "Ledger.save",
+     1,
+     6
+    ],
+    [
+     "Downloads.__init__",
+     6,
+     8
+    ],
+    [
+     "Downloads._free",
+     2,
+     6
+    ],
+    [
+     "Downloads._record",
+     1,
+     5
+    ],
+    [
+     "Downloads._notify",
+     3,
+     5
+    ],
+    [
+     "Downloads._notify_accept",
+     3,
+     10
+    ],
+    [
+     "Downloads.add_link",
+     9,
+     36
+    ],
+    [
+     "Downloads.add_torrent",
+     1,
+     8
+    ],
+    [
+     "Downloads._route_paused",
+     9,
+     34
+    ],
+    [
+     "Downloads._tick_entries",
+     7,
+     16
+    ],
+    [
+     "Downloads._reconcile",
+     18,
+     32
+    ],
+    [
+     "Downloads._tick_one",
+     11,
+     27
+    ],
+    [
+     "Downloads.tick",
+     2,
+     17
+    ],
+    [
+     "Downloads.ack",
+     1,
+     6
+    ],
+    [
+     "Downloads._guard",
+     13,
+     32
+    ],
+    [
+     "Downloads._queue",
+     1,
+     4
+    ],
+    [
+     "Downloads.list_text",
+     9,
+     20
+    ],
+    [
+     "Downloads.cancel",
+     5,
+     13
+    ]
+   ],
    "level": "warn",
-   "hotspot_score": 0.4861
+   "hotspot_score": 0.3641
   },
   "services/nas_jetson_nano-api/app/logging_setup.py": {
    "lang": "py",
@@ -4041,6 +5474,18 @@
      "params": 4
     }
    ],
+   "funcs": [
+    [
+     "setup",
+     1,
+     17
+    ],
+    [
+     "_JsonFormatter.format",
+     4,
+     13
+    ]
+   ],
    "level": "ok",
    "hotspot_score": 0.0
   },
@@ -4086,8 +5531,15 @@
      "params": 1
     }
    ],
+   "funcs": [
+    [
+     "lifespan",
+     10,
+     36
+    ]
+   ],
    "level": "warn",
-   "hotspot_score": 0.0139
+   "hotspot_score": 0.0104
   },
   "services/nas_jetson_nano-api/app/routers/__init__.py": {
    "lang": "py",
@@ -4122,6 +5574,7 @@
    "bug_commits": 0,
    "complexity": 0,
    "worst_functions": [],
+   "funcs": [],
    "level": "ok",
    "hotspot_score": 0.0
   },
@@ -4199,8 +5652,45 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "_docker_post",
+     3,
+     11
+    ],
+    [
+     "trigger_report",
+     4,
+     26
+    ],
+    [
+     "restart_container",
+     3,
+     26
+    ],
+    [
+     "trigger_backup",
+     4,
+     27
+    ],
+    [
+     "action_history",
+     8,
+     32
+    ],
+    [
+     "trigger_report._run",
+     4,
+     23
+    ],
+    [
+     "trigger_backup._run",
+     4,
+     23
+    ]
+   ],
    "level": "warn",
-   "hotspot_score": 0.0167
+   "hotspot_score": 0.0125
   },
   "services/nas_jetson_nano-api/app/routers/auth.py": {
    "lang": "py",
@@ -4276,8 +5766,50 @@
      "params": 1
     }
    ],
+   "funcs": [
+    [
+     "_validate_nextcloud",
+     3,
+     15
+    ],
+    [
+     "_create_token",
+     1,
+     6
+    ],
+    [
+     "_decode_token",
+     3,
+     13
+    ],
+    [
+     "require_auth",
+     2,
+     10
+    ],
+    [
+     "owners",
+     4,
+     5
+    ],
+    [
+     "require_owner",
+     2,
+     5
+    ],
+    [
+     "login",
+     2,
+     15
+    ],
+    [
+     "me",
+     1,
+     2
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.005
+   "hotspot_score": 0.0037
   },
   "services/nas_jetson_nano-api/app/routers/download_files.py": {
    "lang": "py",
@@ -4345,8 +5877,30 @@
      "params": 3
     }
    ],
+   "funcs": [
+    [
+     "_target",
+     10,
+     26
+    ],
+    [
+     "_authorize",
+     3,
+     3
+    ],
+    [
+     "_directory_page",
+     7,
+     16
+    ],
+    [
+     "download",
+     3,
+     8
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.0128
+   "hotspot_score": 0.0096
   },
   "services/nas_jetson_nano-api/app/routers/health.py": {
    "lang": "py",
@@ -4398,8 +5952,20 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "healthcheck",
+     5,
+     8
+    ],
+    [
+     "status",
+     1,
+     15
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.0033
+   "hotspot_score": 0.0025
   },
   "services/nas_jetson_nano-api/app/routers/logs.py": {
    "lang": "py",
@@ -4450,6 +6016,18 @@
      "nest": 1,
      "params": 3
     }
+   ],
+   "funcs": [
+    [
+     "_tail_jsonl",
+     7,
+     20
+    ],
+    [
+     "get_logs",
+     5,
+     22
+    ]
    ],
    "level": "ok",
    "hotspot_score": 0.0
@@ -4520,8 +6098,30 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "_immich_headers",
+     2,
+     11
+    ],
+    [
+     "_immich_get",
+     3,
+     10
+    ],
+    [
+     "photo_stats",
+     4,
+     32
+    ],
+    [
+     "photo_users_stats",
+     5,
+     21
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.0039
+   "hotspot_score": 0.0029
   },
   "services/nas_jetson_nano-api/app/routers/storage.py": {
    "lang": "py",
@@ -4597,8 +6197,35 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "_disk_info",
+     4,
+     20
+    ],
+    [
+     "disk_info",
+     2,
+     5
+    ],
+    [
+     "backup_info",
+     2,
+     5
+    ],
+    [
+     "_backup_info",
+     5,
+     21
+    ],
+    [
+     "storage_status",
+     2,
+     10
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.0042
+   "hotspot_score": 0.0031
   },
   "services/nas_jetson_nano-api/app/routers/system.py": {
    "lang": "py",
@@ -4674,8 +6301,60 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "_read_meminfo",
+     5,
+     18
+    ],
+    [
+     "_read_loadavg",
+     2,
+     6
+    ],
+    [
+     "_read_uptime_seconds",
+     2,
+     5
+    ],
+    [
+     "_read_disk",
+     3,
+     15
+    ],
+    [
+     "_read_disk_async",
+     2,
+     5
+    ],
+    [
+     "_read_thermal",
+     4,
+     13
+    ],
+    [
+     "_docker_ps_json",
+     10,
+     41
+    ],
+    [
+     "_http_check",
+     2,
+     8
+    ],
+    [
+     "metrics",
+     4,
+     27
+    ],
+    [
+     "containers",
+     5,
+     26
+    ]
+   ],
    "level": "warn",
-   "hotspot_score": 0.0108
+   "hotspot_score": 0.0081
   },
   "services/nas_jetson_nano-api/app/routers/talk.py": {
    "lang": "py",
@@ -4751,8 +6430,45 @@
      "params": 3
     }
    ],
+   "funcs": [
+    [
+     "_talk_url",
+     1,
+     3
+    ],
+    [
+     "_admin_auth",
+     2,
+     7
+    ],
+    [
+     "_ocs_get",
+     2,
+     8
+    ],
+    [
+     "_ocs_post",
+     2,
+     8
+    ],
+    [
+     "list_rooms",
+     2,
+     16
+    ],
+    [
+     "get_room",
+     3,
+     24
+    ],
+    [
+     "notify",
+     3,
+     28
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.0083
+   "hotspot_score": 0.0062
   },
   "services/nas_jetson_nano-api/app/routers/talk_bot.py": {
    "lang": "py",
@@ -4844,8 +6560,190 @@
      "params": 2
     }
    ],
+   "funcs": [
+    [
+     "_fmt_uptime",
+     3,
+     10
+    ],
+    [
+     "_build_help",
+     2,
+     22
+    ],
+    [
+     "_build_status",
+     7,
+     28
+    ],
+    [
+     "_build_disk",
+     6,
+     19
+    ],
+    [
+     "_build_photos",
+     4,
+     23
+    ],
+    [
+     "_hdd_mount_probe",
+     3,
+     8
+    ],
+    [
+     "_check_hdd_mount",
+     4,
+     8
+    ],
+    [
+     "_check_failed_units",
+     4,
+     13
+    ],
+    [
+     "_read_active_alerts",
+     7,
+     10
+    ],
+    [
+     "_build_health",
+     13,
+     34
+    ],
+    [
+     "_dispatch",
+     5,
+     10
+    ],
+    [
+     "_dispatch_home_tool",
+     10,
+     25
+    ],
+    [
+     "_match_command",
+     6,
+     12
+    ],
+    [
+     "_match_llm",
+     8,
+     14
+    ],
+    [
+     "_llm_quota_left",
+     3,
+     11
+    ],
+    [
+     "_count_llm_reply",
+     1,
+     5
+    ],
+    [
+     "_ask_llm",
+     12,
+     38
+    ],
+    [
+     "gate_reply",
+     11,
+     39
+    ],
+    [
+     "ask",
+     2,
+     13
+    ],
+    [
+     "remember",
+     3,
+     6
+    ],
+    [
+     "answer",
+     3,
+     8
+    ],
+    [
+     "_chat_url",
+     1,
+     3
+    ],
+    [
+     "_fetch_baseline_id",
+     4,
+     10
+    ],
+    [
+     "_poll_once",
+     5,
+     25
+    ],
+    [
+     "_actor",
+     4,
+     2
+    ],
+    [
+     "_handle_messages",
+     10,
+     37
+    ],
+    [
+     "_image_attachment",
+     5,
+     5
+    ],
+    [
+     "_dav_url",
+     1,
+     3
+    ],
+    [
+     "_download_attachment",
+     4,
+     12
+    ],
+    [
+     "_share_image_to_room",
+     3,
+     21
+    ],
+    [
+     "_handle_image_request",
+     16,
+     78
+    ],
+    [
+     "_send",
+     2,
+     9
+    ],
+    [
+     "_room_tokens",
+     4,
+     5
+    ],
+    [
+     "_room_loop",
+     6,
+     23
+    ],
+    [
+     "run_bot_loop",
+     3,
+     25
+    ],
+    [
+     "bot_status",
+     1,
+     2
+    ]
+   ],
    "level": "fail",
-   "hotspot_score": 0.93
+   "hotspot_score": 0.6966
   },
   "services/nas_jetson_nano-api/app/routers/users.py": {
    "lang": "py",
@@ -4921,6 +6819,43 @@
      "params": 1
     }
    ],
+   "funcs": [
+    [
+     "_nc_url",
+     1,
+     2
+    ],
+    [
+     "_admin_auth",
+     2,
+     7
+    ],
+    [
+     "_nc_get",
+     2,
+     7
+    ],
+    [
+     "_nc_post",
+     2,
+     7
+    ],
+    [
+     "list_users",
+     3,
+     19
+    ],
+    [
+     "get_user",
+     7,
+     26
+    ],
+    [
+     "notify_user",
+     2,
+     30
+    ]
+   ],
    "level": "ok",
    "hotspot_score": 0.0
   },
@@ -4982,8 +6917,25 @@
      "params": 1
     }
    ],
+   "funcs": [
+    [
+     "_corrections",
+     5,
+     8
+    ],
+    [
+     "apply_corrections",
+     2,
+     4
+    ],
+    [
+     "transcribe",
+     6,
+     20
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.0036
+   "hotspot_score": 0.0027
   },
   "services/nas_jetson_nano-api/app/telegram_bot.py": {
    "lang": "py",
@@ -5059,8 +7011,155 @@
      "params": 6
     }
    ],
+   "funcs": [
+    [
+     "parse_users",
+     5,
+     7
+    ],
+    [
+     "addressed_text",
+     16,
+     20
+    ],
+    [
+     "route",
+     8,
+     16
+    ],
+    [
+     "supervise",
+     8,
+     21
+    ],
+    [
+     "connect",
+     4,
+     13
+    ],
+    [
+     "run",
+     2,
+     6
+    ],
+    [
+     "TgError.__init__",
+     1,
+     4
+    ],
+    [
+     "TgApi.__init__",
+     4,
+     9
+    ],
+    [
+     "TgApi.call",
+     4,
+     10
+    ],
+    [
+     "TgApi.file_bytes",
+     4,
+     8
+    ],
+    [
+     "TelegramBot.__init__",
+     5,
+     14
+    ],
+    [
+     "TelegramBot._load",
+     5,
+     11
+    ],
+    [
+     "TelegramBot._save",
+     1,
+     6
+    ],
+    [
+     "TelegramBot._owner_chat",
+     3,
+     5
+    ],
+    [
+     "TelegramBot._say",
+     2,
+     5
+    ],
+    [
+     "TelegramBot._leave_foreign_group",
+     3,
+     10
+    ],
+    [
+     "TelegramBot.handle_update",
+     12,
+     23
+    ],
+    [
+     "TelegramBot._dispatch",
+     27,
+     65
+    ],
+    [
+     "TelegramBot._count_voice",
+     1,
+     3
+    ],
+    [
+     "TelegramBot._notify_owner_voice_down",
+     3,
+     9
+    ],
+    [
+     "TelegramBot._handle_voice",
+     14,
+     45
+    ],
+    [
+     "TelegramBot._health_reply",
+     2,
+     5
+    ],
+    [
+     "TelegramBot._stranger",
+     7,
+     21
+    ],
+    [
+     "TelegramBot.poll_once",
+     3,
+     11
+    ],
+    [
+     "TelegramBot._beat",
+     1,
+     2
+    ],
+    [
+     "TelegramBot.poll_forever",
+     5,
+     17
+    ],
+    [
+     "TelegramBot.downloads_once",
+     3,
+     10
+    ],
+    [
+     "TelegramBot.downloads_forever",
+     3,
+     8
+    ],
+    [
+     "TelegramBot._dispatch.reply",
+     1,
+     2
+    ]
+   ],
    "level": "fail",
-   "hotspot_score": 0.4797
+   "hotspot_score": 0.3593
   },
   "services/stt/stt_server.py": {
    "lang": "py",
@@ -5136,8 +7235,50 @@
      "params": 2
     }
    ],
+   "funcs": [
+    [
+     "decode_ogg",
+     6,
+     21
+    ],
+    [
+     "recognize",
+     3,
+     6
+    ],
+    [
+     "main",
+     1,
+     5
+    ],
+    [
+     "SttError.__init__",
+     1,
+     3
+    ],
+    [
+     "Handler._send",
+     1,
+     7
+    ],
+    [
+     "Handler.log_message",
+     1,
+     2
+    ],
+    [
+     "Handler.do_GET",
+     2,
+     5
+    ],
+    [
+     "Handler.do_POST",
+     8,
+     25
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.0064
+   "hotspot_score": 0.0048
   },
   "services/watchdog/job/watchdog_job.py": {
    "lang": "py",
@@ -5213,8 +7354,45 @@
      "params": 2
     }
    ],
+   "funcs": [
+    [
+     "send_telegram",
+     3,
+     12
+    ],
+    [
+     "_last_json",
+     3,
+     6
+    ],
+    [
+     "run_once",
+     9,
+     19
+    ],
+    [
+     "prepare_ssh",
+     1,
+     12
+    ],
+    [
+     "make_ssh",
+     2,
+     10
+    ],
+    [
+     "main",
+     2,
+     7
+    ],
+    [
+     "make_ssh.run",
+     2,
+     8
+    ]
+   ],
    "level": "ok",
-   "hotspot_score": 0.0122
+   "hotspot_score": 0.0092
   },
   "services/watchdog/vps/install_vps.sh": {
    "lang": "sh",
@@ -5249,9 +7427,10 @@
    "bug_commits": 2,
    "complexity": 2.8,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0023
+   "hotspot_score": 0.0017
   },
   "services/watchdog/vps/nas_liveness.py": {
    "lang": "py",
@@ -5327,8 +7506,65 @@
      "params": 1
     }
    ],
+   "funcs": [
+    [
+     "_msk",
+     1,
+     2
+    ],
+    [
+     "_describe",
+     2,
+     2
+    ],
+    [
+     "classify",
+     5,
+     8
+    ],
+    [
+     "decide",
+     9,
+     24
+    ],
+    [
+     "load_state",
+     4,
+     8
+    ],
+    [
+     "save_state",
+     2,
+     7
+    ],
+    [
+     "probe",
+     3,
+     8
+    ],
+    [
+     "cmd_check",
+     4,
+     13
+    ],
+    [
+     "send_telegram",
+     3,
+     12
+    ],
+    [
+     "cmd_notify",
+     3,
+     9
+    ],
+    [
+     "main",
+     6,
+     12
+    ]
+   ],
    "level": "warn",
-   "hotspot_score": 0.0467
+   "hotspot_score": 0.035
   },
   "tests/android/adb_readonly_check.sh": {
    "lang": "sh",
@@ -5387,6 +7623,23 @@
      "nest": 0,
      "params": 0
     }
+   ],
+   "funcs": [
+    [
+     "usage",
+     1,
+     14
+    ],
+    [
+     "check_deps",
+     2,
+     9
+    ],
+    [
+     "check_app",
+     2,
+     11
+    ]
    ],
    "strict_mode": true,
    "level": "warn"
@@ -5449,6 +7702,23 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "usage",
+     2,
+     19
+    ],
+    [
+     "check_deps",
+     3,
+     7
+    ],
+    [
+     "cleanup",
+     2,
+     7
+    ]
+   ],
    "strict_mode": true,
    "level": "warn"
   },
@@ -5485,6 +7755,7 @@
    "bug_commits": 1,
    "complexity": 3.4,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok"
   },
@@ -5562,6 +7833,88 @@
      "params": 2
     }
    ],
+   "funcs": [
+    [
+     "api",
+     5,
+     11
+    ],
+    [
+     "client",
+     1,
+     4
+    ],
+    [
+     "root_of",
+     1,
+     2
+    ],
+    [
+     "upload",
+     2,
+     4
+    ],
+    [
+     "all_files",
+     3,
+     2
+    ],
+    [
+     "test_upload_is_accepted_and_lands_in_backup_dir",
+     9,
+     12
+    ],
+    [
+     "test_reasonable_names_are_not_over_filtered",
+     3,
+     4
+    ],
+    [
+     "test_traversal_filename_stays_inside_backup_dir",
+     7,
+     11
+    ],
+    [
+     "test_safe_target_returns_only_the_basename",
+     4,
+     5
+    ],
+    [
+     "test_symlinked_backup_dir_cannot_escape",
+     4,
+     14
+    ],
+    [
+     "test_traversal_is_real_not_theoretical",
+     5,
+     7
+    ],
+    [
+     "test_bad_backup_id_is_rejected",
+     3,
+     4
+    ],
+    [
+     "test_hidden_or_dotted_filename_is_rejected",
+     3,
+     4
+    ],
+    [
+     "test_upload_without_token_is_rejected",
+     3,
+     4
+    ],
+    [
+     "test_upload_with_wrong_token_is_rejected",
+     3,
+     4
+    ],
+    [
+     "test_no_part_files_left_behind",
+     4,
+     4
+    ]
+   ],
    "level": "ok"
   },
   "tests/llm_gateway/test_failover_and_budget.py": {
@@ -5637,6 +7990,63 @@
      "nest": 2,
      "params": 0
     }
+   ],
+   "funcs": [
+    [
+     "Base.setUp",
+     7,
+     22
+    ],
+    [
+     "Base.tearDown",
+     4,
+     6
+    ],
+    [
+     "Failover.giga_answers",
+     1,
+     4
+    ],
+    [
+     "Failover.ask",
+     1,
+     5
+    ],
+    [
+     "Failover.test_no_fallback_on_auth_or_client_errors",
+     2,
+     6
+    ],
+    [
+     "Failover.test_fallback_on_transient_errors",
+     2,
+     6
+    ],
+    [
+     "Failover.test_fallback_on_transport_error",
+     1,
+     4
+    ],
+    [
+     "Failover.test_no_fallback_when_oauth_rejects_key",
+     1,
+     8
+    ],
+    [
+     "BudgetFailClosed.test_corrupted_usage_file_refuses_instead_of_resetting",
+     1,
+     7
+    ],
+    [
+     "BudgetFailClosed.test_missing_usage_file_is_a_fresh_start",
+     1,
+     4
+    ],
+    [
+     "BudgetFailClosed.test_usage_write_is_atomic",
+     2,
+     8
+    ]
    ],
    "level": "ok"
   },
@@ -5714,6 +8124,83 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "GatewayCase.setUp",
+     3,
+     13
+    ],
+    [
+     "GatewayCase.tearDown",
+     4,
+     6
+    ],
+    [
+     "GatewayCase.load",
+     5,
+     9
+    ],
+    [
+     "GatewayCase.client",
+     1,
+     3
+    ],
+    [
+     "RedactionEndpoint.redact",
+     1,
+     7
+    ],
+    [
+     "RedactionEndpoint.test_russian_secret_labels_and_separators_are_redacted",
+     1,
+     10
+    ],
+    [
+     "RedactionEndpoint.test_existing_english_labels_still_work",
+     1,
+     6
+    ],
+    [
+     "RedactionEndpoint.test_secret_label_must_be_a_whole_word",
+     1,
+     3
+    ],
+    [
+     "ChatEndpoint.test_gigachat_chat_returns_200",
+     1,
+     6
+    ],
+    [
+     "ChatEndpoint.test_technical_russian_prompt_returns_200",
+     1,
+     5
+    ],
+    [
+     "ImageEndpoint.test_generate_extracts_file_id_from_img_tag",
+     1,
+     13
+    ],
+    [
+     "NoSideEffectsOnImport.test_import_does_not_create_image_dir",
+     1,
+     4
+    ],
+    [
+     "EventLoopNotBlocked.test_health_answers_while_llm_call_is_slow",
+     1,
+     21
+    ],
+    [
+     "EventLoopNotBlocked.test_health_answers_while_llm_call_is_slow.slow",
+     1,
+     3
+    ],
+    [
+     "EventLoopNotBlocked.test_health_answers_while_llm_call_is_slow.scenario",
+     1,
+     11
+    ]
+   ],
    "level": "ok"
   },
   "tests/llm_gateway/test_sber_routing.py": {
@@ -5789,6 +8276,53 @@
      "nest": 0,
      "params": 0
     }
+   ],
+   "funcs": [
+    [
+     "_reload_main",
+     4,
+     6
+    ],
+    [
+     "TestSberRouting.setUp",
+     1,
+     2
+    ],
+    [
+     "TestSberRouting.tearDown",
+     4,
+     6
+    ],
+    [
+     "TestSberRouting.test_default_provider_is_gigachat",
+     1,
+     16
+    ],
+    [
+     "TestSberRouting.test_health_exposes_sber_fields",
+     1,
+     18
+    ],
+    [
+     "TestSberRouting.test_giga_failover_to_deepseek",
+     1,
+     25
+    ],
+    [
+     "TestSberRouting.test_cloudru_mock_without_key",
+     1,
+     10
+    ],
+    [
+     "TestSberRouting.test_balance_requires_key",
+     1,
+     6
+    ],
+    [
+     "TestSberRouting.test_giga_failover_to_deepseek.boom",
+     1,
+     2
+    ]
    ],
    "level": "ok"
   },
@@ -5866,6 +8400,183 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "_reload_main",
+     4,
+     6
+    ],
+    [
+     "TestSmartRouting.setUp",
+     1,
+     2
+    ],
+    [
+     "TestSmartRouting.tearDown",
+     4,
+     6
+    ],
+    [
+     "TestSmartRouting.test_simple_prompt_uses_lite_model",
+     1,
+     8
+    ],
+    [
+     "TestSmartRouting.test_docker_prompt_uses_max_model",
+     1,
+     8
+    ],
+    [
+     "TestSmartRouting.test_error_prompt_uses_max_model",
+     1,
+     8
+    ],
+    [
+     "TestSmartRouting.test_diagnostics_prompt_uses_max_model",
+     1,
+     8
+    ],
+    [
+     "TestSmartRouting.test_smart_routing_can_be_enabled",
+     1,
+     4
+    ],
+    [
+     "TestSmartRouting.test_health_exposes_smart_routing",
+     1,
+     12
+    ],
+    [
+     "TestImagePresets.test_new_presets_exist",
+     2,
+     14
+    ],
+    [
+     "TestImagePresets.test_existing_presets_untouched",
+     2,
+     5
+    ],
+    [
+     "TestImagePresets.test_presets_have_descriptions",
+     2,
+     9
+    ],
+    [
+     "TestSavePathRestriction.setUp",
+     1,
+     2
+    ],
+    [
+     "TestSavePathRestriction.tearDown",
+     4,
+     6
+    ],
+    [
+     "TestSavePathRestriction._normalize",
+     1,
+     2
+    ],
+    [
+     "TestSavePathRestriction.test_normal_filename_allowed",
+     1,
+     4
+    ],
+    [
+     "TestSavePathRestriction.test_path_traversal_sanitized_by_name",
+     5,
+     15
+    ],
+    [
+     "TestSavePathRestriction.test_dot_dot_rejected",
+     2,
+     8
+    ],
+    [
+     "TestSavePathRestriction.test_empty_name_rejected",
+     1,
+     6
+    ],
+    [
+     "TestSavePathRestriction.test_null_byte_rejected",
+     1,
+     6
+    ],
+    [
+     "TestSavePathRestriction.test_none_returns_empty_path",
+     1,
+     4
+    ],
+    [
+     "TestSavePathRestriction.test_output_root_is_fixed",
+     1,
+     4
+    ],
+    [
+     "TestSavePathRestriction.test_custom_output_root",
+     1,
+     3
+    ],
+    [
+     "TestServiceTokenAuth.setUp",
+     1,
+     2
+    ],
+    [
+     "TestServiceTokenAuth.tearDown",
+     4,
+     6
+    ],
+    [
+     "TestServiceTokenAuth.test_no_token_configured_allows_all",
+     1,
+     9
+    ],
+    [
+     "TestServiceTokenAuth.test_token_required_when_configured",
+     1,
+     9
+    ],
+    [
+     "TestServiceTokenAuth.test_correct_token_allows_access",
+     1,
+     13
+    ],
+    [
+     "TestServiceTokenAuth.test_wrong_token_rejected",
+     1,
+     13
+    ],
+    [
+     "TestServiceTokenAuth.test_health_no_token_required",
+     1,
+     8
+    ],
+    [
+     "TestServiceTokenAuth.test_image_generate_requires_token",
+     1,
+     9
+    ],
+    [
+     "TestServiceTokenAuth.test_image_presets_no_token_required",
+     1,
+     8
+    ],
+    [
+     "TestServiceTokenAuth.test_balance_no_token_required",
+     1,
+     11
+    ],
+    [
+     "TestServiceTokenAuth.test_usage_no_token_required",
+     1,
+     8
+    ],
+    [
+     "TestServiceTokenAuth.test_redact_no_token_required",
+     1,
+     8
+    ]
+   ],
    "level": "ok"
   },
   "tests/nas_api/test_api_access.py": {
@@ -5941,6 +8652,83 @@
      "nest": 2,
      "params": 0
     }
+   ],
+   "funcs": [
+    [
+     "load_app",
+     5,
+     22
+    ],
+    [
+     "routes",
+     4,
+     7
+    ],
+    [
+     "concrete",
+     1,
+     3
+    ],
+    [
+     "AccessMatrix.setUpClass",
+     1,
+     8
+    ],
+    [
+     "AccessMatrix.tearDownClass",
+     1,
+     3
+    ],
+    [
+     "AccessMatrix.call",
+     2,
+     5
+    ],
+    [
+     "AccessMatrix.test_route_inventory_is_not_empty",
+     1,
+     2
+    ],
+    [
+     "AccessMatrix.test_every_non_public_route_requires_token",
+     4,
+     8
+    ],
+    [
+     "AccessMatrix.test_family_member_is_not_an_operator",
+     5,
+     8
+    ],
+    [
+     "AccessMatrix.test_family_endpoints_open_to_family",
+     2,
+     4
+    ],
+    [
+     "AccessMatrix.test_owner_passes_authorization",
+     3,
+     6
+    ],
+    [
+     "AccessMatrix.test_nextcloud_admin_is_owner_so_alerts_keep_working",
+     1,
+     3
+    ],
+    [
+     "AccessMatrix.test_family_cannot_restart_database_and_docker_is_not_touched",
+     1,
+     7
+    ],
+    [
+     "AccessMatrix.test_healthcheck_stays_public",
+     1,
+     2
+    ],
+    [
+     "AccessMatrix.test_no_wildcard_cors",
+     1,
+     3
+    ]
    ],
    "level": "ok"
   },
@@ -6018,6 +8806,148 @@
      "params": 2
     }
    ],
+   "funcs": [
+    [
+     "load",
+     5,
+     16
+    ],
+    [
+     "fast_timeout",
+     1,
+     6
+    ],
+    [
+     "hang_guard",
+     2,
+     5
+    ],
+    [
+     "test_run_io_times_out_and_keeps_loop_alive",
+     6,
+     29
+    ],
+    [
+     "test_run_io_returns_value_when_disk_answers",
+     3,
+     9
+    ],
+    [
+     "test_hanging_call_is_not_duplicated",
+     10,
+     21
+    ],
+    [
+     "test_timeout_does_not_cancel_the_thread",
+     8,
+     19
+    ],
+    [
+     "test_downloads_free_timeout_means_disk_down",
+     3,
+     17
+    ],
+    [
+     "test_guard_pauses_downloads_when_disk_free_hangs",
+     5,
+     24
+    ],
+    [
+     "test_storage_disk_info_reports_timeout",
+     4,
+     17
+    ],
+    [
+     "test_storage_disk_info_passes_through_when_disk_answers",
+     2,
+     11
+    ],
+    [
+     "test_system_disk_timeout_does_not_block_healthcheck",
+     7,
+     32
+    ],
+    [
+     "test_system_disk_info_passes_through_when_disk_answers",
+     2,
+     10
+    ],
+    [
+     "fast_timeout.fast",
+     1,
+     2
+    ],
+    [
+     "Hang.__init__",
+     1,
+     4
+    ],
+    [
+     "Hang.__call__",
+     1,
+     4
+    ],
+    [
+     "test_run_io_times_out_and_keeps_loop_alive.main",
+     4,
+     21
+    ],
+    [
+     "test_run_io_returns_value_when_disk_answers.main",
+     1,
+     2
+    ],
+    [
+     "test_hanging_call_is_not_duplicated.main",
+     10,
+     15
+    ],
+    [
+     "test_timeout_does_not_cancel_the_thread.main",
+     8,
+     13
+    ],
+    [
+     "FakeAria2.__init__",
+     1,
+     2
+    ],
+    [
+     "FakeAria2.call",
+     3,
+     7
+    ],
+    [
+     "test_downloads_free_timeout_means_disk_down.main",
+     1,
+     7
+    ],
+    [
+     "test_guard_pauses_downloads_when_disk_free_hangs.main",
+     1,
+     6
+    ],
+    [
+     "test_storage_disk_info_reports_timeout.main",
+     1,
+     6
+    ],
+    [
+     "test_storage_disk_info_passes_through_when_disk_answers.main",
+     1,
+     2
+    ],
+    [
+     "test_system_disk_timeout_does_not_block_healthcheck.main",
+     4,
+     20
+    ],
+    [
+     "test_run_io_times_out_and_keeps_loop_alive.main.ticker",
+     2,
+     5
+    ]
+   ],
    "level": "ok"
   },
   "tests/nas_api/test_bobik_answer.py": {
@@ -6093,6 +9023,173 @@
      "nest": 0,
      "params": 1
     }
+   ],
+   "funcs": [
+    [
+     "load_bot",
+     5,
+     14
+    ],
+    [
+     "test_refused_question_never_reaches_llm",
+     3,
+     12
+    ],
+    [
+     "test_chat_question_goes_to_llm_and_is_counted",
+     3,
+     10
+    ],
+    [
+     "test_llm_exception_becomes_polite_reply",
+     2,
+     8
+    ],
+    [
+     "test_daily_reply_limit_is_per_user",
+     5,
+     11
+    ],
+    [
+     "test_home_tool_answers_locally",
+     3,
+     14
+    ],
+    [
+     "test_history_is_sent_as_context_and_turns_are_remembered",
+     5,
+     16
+    ],
+    [
+     "test_answer_without_dialog_keeps_old_behaviour",
+     3,
+     11
+    ],
+    [
+     "test_gate_refusal_is_not_remembered",
+     2,
+     8
+    ],
+    [
+     "test_gateway_failure_is_not_remembered",
+     3,
+     12
+    ],
+    [
+     "test_context_is_passed_to_gateway_payload",
+     4,
+     22
+    ],
+    [
+     "test_soft_gateway_failures_are_not_remembered",
+     4,
+     34
+    ],
+    [
+     "test_refused_question_never_reaches_llm.fake_llm",
+     1,
+     3
+    ],
+    [
+     "test_chat_question_goes_to_llm_and_is_counted.fake_llm",
+     1,
+     2
+    ],
+    [
+     "test_llm_exception_becomes_polite_reply.boom",
+     1,
+     2
+    ],
+    [
+     "test_daily_reply_limit_is_per_user.fake_llm",
+     1,
+     2
+    ],
+    [
+     "test_home_tool_answers_locally.fake_llm",
+     1,
+     3
+    ],
+    [
+     "test_home_tool_answers_locally.fake_tool",
+     1,
+     2
+    ],
+    [
+     "test_history_is_sent_as_context_and_turns_are_remembered.fake_llm",
+     1,
+     3
+    ],
+    [
+     "test_answer_without_dialog_keeps_old_behaviour.fake_llm",
+     1,
+     3
+    ],
+    [
+     "test_gateway_failure_is_not_remembered.boom",
+     1,
+     2
+    ],
+    [
+     "test_soft_gateway_failures_are_not_remembered.make_client",
+     1,
+     17
+    ],
+    [
+     "test_context_is_passed_to_gateway_payload.FakeResponse.json",
+     1,
+     2
+    ],
+    [
+     "test_context_is_passed_to_gateway_payload.FakeClient.__init__",
+     1,
+     2
+    ],
+    [
+     "test_context_is_passed_to_gateway_payload.FakeClient.__aenter__",
+     1,
+     2
+    ],
+    [
+     "test_context_is_passed_to_gateway_payload.FakeClient.__aexit__",
+     1,
+     2
+    ],
+    [
+     "test_context_is_passed_to_gateway_payload.FakeClient.post",
+     2,
+     3
+    ],
+    [
+     "test_soft_gateway_failures_are_not_remembered.make_client.FakeResponse.__init__",
+     1,
+     2
+    ],
+    [
+     "test_soft_gateway_failures_are_not_remembered.make_client.FakeResponse.json",
+     1,
+     2
+    ],
+    [
+     "test_soft_gateway_failures_are_not_remembered.make_client.FakeClient.__init__",
+     1,
+     2
+    ],
+    [
+     "test_soft_gateway_failures_are_not_remembered.make_client.FakeClient.__aenter__",
+     1,
+     2
+    ],
+    [
+     "test_soft_gateway_failures_are_not_remembered.make_client.FakeClient.__aexit__",
+     1,
+     2
+    ],
+    [
+     "test_soft_gateway_failures_are_not_remembered.make_client.FakeClient.post",
+     1,
+     2
+    ]
    ],
    "level": "ok"
   },
@@ -6170,6 +9267,83 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "load_bot",
+     5,
+     12
+    ],
+    [
+     "_async",
+     1,
+     4
+    ],
+    [
+     "test_hdd_check_times_out_instead_of_hanging",
+     4,
+     15
+    ],
+    [
+     "test_hdd_check_reports_not_mounted",
+     3,
+     9
+    ],
+    [
+     "test_hdd_check_ok_when_mounted",
+     2,
+     9
+    ],
+    [
+     "test_read_active_alerts_parses_state_file",
+     2,
+     12
+    ],
+    [
+     "test_read_active_alerts_missing_file_is_not_an_alarm",
+     2,
+     4
+    ],
+    [
+     "test_read_active_alerts_corrupt_file_is_not_an_alarm",
+     2,
+     8
+    ],
+    [
+     "test_failed_units_check_survives_missing_binary",
+     2,
+     7
+    ],
+    [
+     "test_build_health_all_clear",
+     2,
+     11
+    ],
+    [
+     "test_build_health_lists_every_kind_of_problem_once",
+     9,
+     20
+    ],
+    [
+     "test_build_health_ssd_not_mounted_skips_backup_check",
+     3,
+     12
+    ],
+    [
+     "_async.f",
+     1,
+     2
+    ],
+    [
+     "test_hdd_check_times_out_instead_of_hanging.hang",
+     1,
+     3
+    ],
+    [
+     "test_failed_units_check_survives_missing_binary.boom",
+     1,
+     2
+    ]
+   ],
    "level": "ok"
   },
   "tests/nas_api/test_bot_image_path.py": {
@@ -6245,6 +9419,58 @@
      "nest": 1,
      "params": 0
     }
+   ],
+   "funcs": [
+    [
+     "load_bot",
+     5,
+     14
+    ],
+    [
+     "image_message",
+     1,
+     4
+    ],
+    [
+     "BotImagePath.setUp",
+     1,
+     8
+    ],
+    [
+     "BotImagePath.tearDown",
+     1,
+     4
+    ],
+    [
+     "BotImagePath.test_gate_refuses_before_image_branch",
+     1,
+     5
+    ],
+    [
+     "BotImagePath.test_oversized_attachment_is_not_downloaded",
+     2,
+     7
+    ],
+    [
+     "BotImagePath.test_download_stops_at_limit_when_size_unknown",
+     1,
+     11
+    ],
+    [
+     "BotImagePath.setUp.fake_send",
+     1,
+     2
+    ],
+    [
+     "BotImagePath.test_download_stops_at_limit_when_size_unknown.handler",
+     1,
+     2
+    ],
+    [
+     "BotImagePath.test_download_stops_at_limit_when_size_unknown.factory",
+     1,
+     3
+    ]
    ],
    "level": "ok"
   },
@@ -6322,6 +9548,78 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "load",
+     5,
+     12
+    ],
+    [
+     "test_history_keeps_order_and_speakers",
+     2,
+     7
+    ],
+    [
+     "test_unknown_key_is_empty",
+     2,
+     3
+    ],
+    [
+     "test_keys_do_not_mix",
+     3,
+     7
+    ],
+    [
+     "test_only_last_turns_are_kept",
+     5,
+     8
+    ],
+    [
+     "test_conversation_is_forgotten_after_idle",
+     4,
+     11
+    ],
+    [
+     "test_idle_counts_from_last_turn",
+     2,
+     9
+    ],
+    [
+     "test_forget_clears_only_that_key",
+     5,
+     8
+    ],
+    [
+     "test_long_turn_is_trimmed",
+     2,
+     5
+    ],
+    [
+     "test_total_history_is_capped_dropping_oldest",
+     5,
+     8
+    ],
+    [
+     "test_whitespace_is_collapsed_and_empty_ignored",
+     2,
+     6
+    ],
+    [
+     "test_module_level_memory_exists",
+     2,
+     3
+    ],
+    [
+     "Clock.__init__",
+     1,
+     2
+    ],
+    [
+     "Clock.__call__",
+     1,
+     2
+    ]
+   ],
    "level": "ok"
   },
   "tests/nas_api/test_download_hooks.py": {
@@ -6397,6 +9695,103 @@
      "nest": 0,
      "params": 1
     }
+   ],
+   "funcs": [
+    [
+     "run_hook",
+     1,
+     3
+    ],
+    [
+     "layout",
+     1,
+     2
+    ],
+    [
+     "env_for",
+     1,
+     5
+    ],
+    [
+     "user_download",
+     1,
+     5
+    ],
+    [
+     "test_on_complete_moves_user_folder_to_personal_folder",
+     5,
+     8
+    ],
+    [
+     "test_on_complete_moves_single_file_to_personal_folder",
+     4,
+     9
+    ],
+    [
+     "test_on_complete_keeps_old_path_without_user_folder",
+     4,
+     9
+    ],
+    [
+     "test_on_complete_ignores_dotdot_escape",
+     4,
+     10
+    ],
+    [
+     "test_on_complete_ignores_path_outside_roots",
+     4,
+     9
+    ],
+    [
+     "barrier_mv",
+     1,
+     16
+    ],
+    [
+     "run_two",
+     2,
+     7
+    ],
+    [
+     "test_on_complete_parallel_same_name_keeps_both_files",
+     5,
+     13
+    ],
+    [
+     "test_on_complete_parallel_same_folder_name_keeps_both_folders",
+     5,
+     14
+    ],
+    [
+     "test_on_complete_taken_name_gets_suffix",
+     5,
+     12
+    ],
+    [
+     "fake_wget",
+     1,
+     6
+    ],
+    [
+     "stop_env",
+     1,
+     5
+    ],
+    [
+     "test_on_stop_removes_cancelled_user_download",
+     4,
+     9
+    ],
+    [
+     "test_on_stop_keeps_download_whose_status_is_unknown",
+     3,
+     6
+    ],
+    [
+     "test_on_stop_ignores_dotdot_escape",
+     3,
+     9
+    ]
    ],
    "level": "ok"
   },
@@ -6474,6 +9869,33 @@
      "params": 2
     }
    ],
+   "funcs": [
+    [
+     "load",
+     6,
+     19
+    ],
+    [
+     "test_signed_link_lists_and_downloads_personal_files",
+     7,
+     16
+    ],
+    [
+     "test_owner_link_lists_family_folders_but_hides_incomplete",
+     4,
+     8
+    ],
+    [
+     "test_invalid_expired_and_cross_user_links_are_denied",
+     4,
+     8
+    ],
+    [
+     "test_traversal_and_symlink_escape_are_denied",
+     4,
+     13
+    ]
+   ],
    "level": "ok"
   },
   "tests/nas_api/test_downloads.py": {
@@ -6550,6 +9972,483 @@
      "params": 1
     }
    ],
+   "funcs": [
+    [
+     "no_internal",
+     1,
+     2
+    ],
+    [
+     "load",
+     5,
+     13
+    ],
+    [
+     "make",
+     1,
+     7
+    ],
+    [
+     "test_parse_link_accepts_magnet_and_http",
+     3,
+     4
+    ],
+    [
+     "test_parse_link_rejects_internal_and_junk",
+     1,
+     4
+    ],
+    [
+     "test_parse_link_keeps_hex_looking_domains",
+     2,
+     3
+    ],
+    [
+     "test_head_size_does_not_follow_redirect_to_internal_address",
+     4,
+     19
+    ],
+    [
+     "test_head_size_follows_only_checked_public_redirects",
+     5,
+     21
+    ],
+    [
+     "test_choose_target_small_goes_to_hdd",
+     2,
+     3
+    ],
+    [
+     "test_choose_target_big_goes_to_hdd",
+     2,
+     3
+    ],
+    [
+     "test_choose_target_small_but_ssd_tight_goes_to_hdd",
+     2,
+     3
+    ],
+    [
+     "test_choose_target_full_ssd_does_not_change_the_answer",
+     2,
+     3
+    ],
+    [
+     "test_choose_target_refuses_when_hdd_cannot_hold_it",
+     2,
+     5
+    ],
+    [
+     "test_choose_target_unknown_size_prefers_hdd",
+     3,
+     4
+    ],
+    [
+     "test_choose_target_unknown_size_needs_hdd_room",
+     1,
+     4
+    ],
+    [
+     "test_user_folder_keeps_only_login_like_names",
+     5,
+     6
+    ],
+    [
+     "test_user_dir_is_inside_hdd_incomplete_and_cannot_escape",
+     6,
+     7
+    ],
+    [
+     "test_done_hint_points_to_personal_folder",
+     3,
+     4
+    ],
+    [
+     "test_http_link_sized_and_routed",
+     9,
+     11
+    ],
+    [
+     "test_http_link_refused_when_too_big",
+     3,
+     6
+    ],
+    [
+     "test_http_link_unknown_size_skips_preallocation",
+     3,
+     7
+    ],
+    [
+     "test_http_link_resolving_inside_is_refused",
+     3,
+     12
+    ],
+    [
+     "test_magnet_waits_for_metadata_then_routes_by_size",
+     5,
+     14
+    ],
+    [
+     "test_torrent_file_added_paused_then_routed",
+     5,
+     12
+    ],
+    [
+     "test_total_size_falls_back_to_file_lengths",
+     5,
+     7
+    ],
+    [
+     "test_paused_torrent_without_total_length_routes_and_unpauses",
+     4,
+     15
+    ],
+    [
+     "test_paused_torrent_without_lengths_at_all_keeps_waiting",
+     4,
+     9
+    ],
+    [
+     "test_completion_notified_once_to_origin_chat",
+     3,
+     10
+    ],
+    [
+     "test_unsent_notification_survives",
+     3,
+     9
+    ],
+    [
+     "test_await_dir_removed_becomes_cancelled_without_rpc",
+     4,
+     10
+    ],
+    [
+     "test_tick_continues_past_gid_that_raises",
+     5,
+     21
+    ],
+    [
+     "test_error_reported_with_reason",
+     2,
+     6
+    ],
+    [
+     "test_ledger_survives_restart_and_broken_file",
+     3,
+     7
+    ],
+    [
+     "make_clocked",
+     1,
+     5
+    ],
+    [
+     "seed",
+     1,
+     4
+    ],
+    [
+     "ledger_of",
+     1,
+     2
+    ],
+    [
+     "test_reconcile_marks_vanished_gid_lost_silently",
+     5,
+     15
+    ],
+    [
+     "test_reconcile_adopts_restarted_download_by_info_hash",
+     9,
+     20
+    ],
+    [
+     "test_reconcile_adopts_old_record_without_hash_by_torrent_name",
+     5,
+     14
+    ],
+    [
+     "test_reconcile_matches_two_same_named_records_to_two_gids",
+     7,
+     16
+    ],
+    [
+     "test_reconcile_does_not_adopt_magnet_without_metadata",
+     5,
+     13
+    ],
+    [
+     "test_reconcile_expires_lost_record_after_grace",
+     5,
+     17
+    ],
+    [
+     "test_reconcile_saves_info_hash_of_adopted_download",
+     3,
+     13
+    ],
+    [
+     "test_guard_pauses_own_downloads_once_and_resumes",
+     9,
+     21
+    ],
+    [
+     "test_disk_unavailable_counts_as_no_space",
+     2,
+     9
+    ],
+    [
+     "test_guard_pauses_with_hdd_unavailable_message",
+     3,
+     16
+    ],
+    [
+     "test_disk_free_requires_hdd_marker",
+     3,
+     17
+    ],
+    [
+     "test_guard_resume_never_unpauses_unrouted_torrent",
+     3,
+     16
+    ],
+    [
+     "test_aria2_unreachable_skips_tick",
+     4,
+     18
+    ],
+    [
+     "test_ledger_not_lost_when_tick_and_add_interleave",
+     2,
+     16
+    ],
+    [
+     "test_guard_ignores_tight_ssd_while_hdd_is_fine",
+     5,
+     13
+    ],
+    [
+     "test_http_link_added_during_guard_pause_waits",
+     9,
+     24
+    ],
+    [
+     "test_list_shows_progress_and_free_space",
+     5,
+     12
+    ],
+    [
+     "test_list_empty",
+     3,
+     6
+    ],
+    [
+     "test_cancel_by_number",
+     4,
+     7
+    ],
+    [
+     "test_notify_duplicates_completion_message_from_private_chat",
+     3,
+     10
+    ],
+    [
+     "test_notify_single_message_when_origin_is_family_group",
+     2,
+     8
+    ],
+    [
+     "test_notify_single_message_when_family_not_set",
+     2,
+     7
+    ],
+    [
+     "test_notify_duplicates_error_message_from_private_chat",
+     3,
+     10
+    ],
+    [
+     "test_accept_link_from_private_chat_notifies_group_in_outbox",
+     3,
+     8
+    ],
+    [
+     "test_accept_magnet_from_private_chat_notifies_group_in_outbox",
+     3,
+     8
+    ],
+    [
+     "test_accept_torrent_from_private_chat_notifies_group_in_outbox",
+     3,
+     8
+    ],
+    [
+     "test_accept_from_family_group_does_not_duplicate",
+     2,
+     7
+    ],
+    [
+     "test_guard_pause_message_reaches_family_group_even_if_absent",
+     5,
+     21
+    ],
+    [
+     "FakeAria2.__init__",
+     1,
+     4
+    ],
+    [
+     "FakeAria2.call",
+     8,
+     18
+    ],
+    [
+     "make.head",
+     1,
+     2
+    ],
+    [
+     "test_head_size_does_not_follow_redirect_to_internal_address.public_dns",
+     1,
+     2
+    ],
+    [
+     "test_head_size_follows_only_checked_public_redirects.public_dns",
+     1,
+     2
+    ],
+    [
+     "test_http_link_resolving_inside_is_refused.resolves_inside",
+     1,
+     2
+    ],
+    [
+     "test_http_link_resolving_inside_is_refused.head",
+     1,
+     2
+    ],
+    [
+     "test_tick_continues_past_gid_that_raises.head",
+     1,
+     2
+    ],
+    [
+     "test_guard_pauses_own_downloads_once_and_resumes.head",
+     1,
+     2
+    ],
+    [
+     "test_disk_unavailable_counts_as_no_space.broken",
+     1,
+     2
+    ],
+    [
+     "test_guard_pauses_with_hdd_unavailable_message.head",
+     1,
+     2
+    ],
+    [
+     "test_guard_pauses_with_hdd_unavailable_message.disk_free",
+     2,
+     4
+    ],
+    [
+     "test_guard_resume_never_unpauses_unrouted_torrent.head",
+     1,
+     2
+    ],
+    [
+     "test_aria2_unreachable_skips_tick.head",
+     1,
+     2
+    ],
+    [
+     "test_ledger_not_lost_when_tick_and_add_interleave.head",
+     1,
+     2
+    ],
+    [
+     "test_ledger_not_lost_when_tick_and_add_interleave.scenario",
+     1,
+     3
+    ],
+    [
+     "test_guard_ignores_tight_ssd_while_hdd_is_fine.head",
+     1,
+     2
+    ],
+    [
+     "test_http_link_added_during_guard_pause_waits.head",
+     1,
+     2
+    ],
+    [
+     "test_guard_pause_message_reaches_family_group_even_if_absent.head",
+     1,
+     2
+    ],
+    [
+     "test_head_size_does_not_follow_redirect_to_internal_address.Client.__init__",
+     2,
+     2
+    ],
+    [
+     "test_head_size_does_not_follow_redirect_to_internal_address.Client.__aenter__",
+     1,
+     2
+    ],
+    [
+     "test_head_size_does_not_follow_redirect_to_internal_address.Client.__aexit__",
+     1,
+     2
+    ],
+    [
+     "test_head_size_does_not_follow_redirect_to_internal_address.Client.head",
+     1,
+     3
+    ],
+    [
+     "test_head_size_follows_only_checked_public_redirects.Client.__init__",
+     2,
+     2
+    ],
+    [
+     "test_head_size_follows_only_checked_public_redirects.Client.__aenter__",
+     1,
+     2
+    ],
+    [
+     "test_head_size_follows_only_checked_public_redirects.Client.__aexit__",
+     1,
+     2
+    ],
+    [
+     "test_head_size_follows_only_checked_public_redirects.Client.head",
+     2,
+     5
+    ],
+    [
+     "test_tick_continues_past_gid_that_raises.FlakyAria2.call",
+     3,
+     4
+    ],
+    [
+     "test_reconcile_marks_vanished_gid_lost_silently.RestartedAria2.call",
+     2,
+     4
+    ],
+    [
+     "test_aria2_unreachable_skips_tick.BrokenAria2.call",
+     2,
+     5
+    ],
+    [
+     "test_ledger_not_lost_when_tick_and_add_interleave.SlowAria.call",
+     1,
+     3
+    ]
+   ],
    "level": "warn"
   },
   "tests/nas_api/test_llm_token.py": {
@@ -6617,6 +10516,28 @@
      "nest": 0,
      "params": 0
     }
+   ],
+   "funcs": [
+    [
+     "_settings_cls",
+     5,
+     9
+    ],
+    [
+     "LlmHeaders.test_token_is_sent_when_configured",
+     1,
+     3
+    ],
+    [
+     "LlmHeaders.test_no_header_without_token",
+     1,
+     3
+    ],
+    [
+     "LlmHeaders.test_every_gateway_call_in_bot_sends_headers",
+     2,
+     6
+    ]
    ],
    "level": "ok"
   },
@@ -6694,6 +10615,58 @@
      "params": 3
     }
    ],
+   "funcs": [
+    [
+     "load_bot",
+     5,
+     13
+    ],
+    [
+     "text_message",
+     1,
+     7
+    ],
+    [
+     "TalkDialogMemory.setUp",
+     1,
+     23
+    ],
+    [
+     "TalkDialogMemory.tearDown",
+     1,
+     6
+    ],
+    [
+     "TalkDialogMemory.test_rooms_get_separate_memory_keys_and_history_is_isolated",
+     1,
+     12
+    ],
+    [
+     "TalkDialogMemory.test_second_question_in_same_room_carries_prior_context",
+     1,
+     9
+    ],
+    [
+     "TalkDialogMemory.test_speaker_is_taken_from_actor_display_name",
+     1,
+     6
+    ],
+    [
+     "TalkDialogMemory.setUp.fake_send",
+     1,
+     2
+    ],
+    [
+     "TalkDialogMemory.setUp.fake_ask_llm",
+     1,
+     3
+    ],
+    [
+     "TalkDialogMemory.setUp.fake_admit",
+     1,
+     7
+    ]
+   ],
    "level": "ok"
   },
   "tests/nas_api/test_telegram_bot.py": {
@@ -6769,6 +10742,388 @@
      "nest": 1,
      "params": 0
     }
+   ],
+   "funcs": [
+    [
+     "load",
+     5,
+     15
+    ],
+    [
+     "make",
+     2,
+     13
+    ],
+    [
+     "msg",
+     1,
+     6
+    ],
+    [
+     "test_addressed_text_variants",
+     7,
+     11
+    ],
+    [
+     "test_addressed_text_requires_word_boundary",
+     5,
+     8
+    ],
+    [
+     "test_route",
+     7,
+     8
+    ],
+    [
+     "test_parse_users",
+     2,
+     3
+    ],
+    [
+     "test_unaddressed_group_message_is_ignored_silently",
+     4,
+     4
+    ],
+    [
+     "test_download_command_from_son_in_group",
+     3,
+     5
+    ],
+    [
+     "test_bad_link_explained",
+     3,
+     5
+    ],
+    [
+     "test_question_goes_to_gigachat_path_with_login",
+     4,
+     6
+    ],
+    [
+     "test_lookalike_callsign_is_not_addressed",
+     4,
+     4
+    ],
+    [
+     "test_list_and_cancel",
+     3,
+     6
+    ],
+    [
+     "test_files_command_returns_personal_signed_link",
+     5,
+     9
+    ],
+    [
+     "test_files_command_returns_family_view_to_owner",
+     2,
+     8
+    ],
+    [
+     "test_torrent_document_with_caption",
+     4,
+     7
+    ],
+    [
+     "test_torrent_in_private_without_caption_still_downloads",
+     4,
+     8
+    ],
+    [
+     "test_torrent_over_20mb_refused",
+     3,
+     8
+    ],
+    [
+     "test_stranger_in_private_gets_one_reply_and_owner_is_told",
+     7,
+     8
+    ],
+    [
+     "test_stranger_in_family_group_stays_silent_and_owner_is_told_once",
+     9,
+     11
+    ],
+    [
+     "test_stranger_group_then_private_both_reported",
+     6,
+     8
+    ],
+    [
+     "test_stranger_private_then_group_both_reported",
+     6,
+     8
+    ],
+    [
+     "test_foreign_group_is_left",
+     3,
+     5
+    ],
+    [
+     "test_foreign_group_owner_notified_once",
+     7,
+     9
+    ],
+    [
+     "test_poll_saves_offset_after_processing",
+     2,
+     5
+    ],
+    [
+     "test_retry_after_is_respected",
+     3,
+     12
+    ],
+    [
+     "test_download_notifications_are_sent",
+     3,
+     5
+    ],
+    [
+     "test_download_notification_failure_keeps_outbox_unacked",
+     3,
+     15
+    ],
+    [
+     "test_token_never_logged",
+     3,
+     6
+    ],
+    [
+     "test_bobik_anywhere_any_form_is_addressed",
+     8,
+     13
+    ],
+    [
+     "test_bare_bobik_gets_short_greeting",
+     4,
+     6
+    ],
+    [
+     "test_edited_message_with_bobik_is_answered_once",
+     2,
+     9
+    ],
+    [
+     "test_answered_message_edited_is_not_answered_again",
+     2,
+     7
+    ],
+    [
+     "test_poll_asks_for_edited_messages",
+     3,
+     6
+    ],
+    [
+     "test_group_uses_one_key_and_real_speaker_names",
+     2,
+     9
+    ],
+    [
+     "test_private_chat_has_its_own_key",
+     2,
+     4
+    ],
+    [
+     "test_forget_clears_the_conversation",
+     4,
+     10
+    ],
+    [
+     "test_downloads_are_not_remembered",
+     3,
+     9
+    ],
+    [
+     "test_route_recognizes_health_phrasings",
+     3,
+     6
+    ],
+    [
+     "test_route_does_not_misfire_on_unrelated_question",
+     3,
+     4
+    ],
+    [
+     "test_health_command_owner_gets_report",
+     3,
+     9
+    ],
+    [
+     "test_health_command_family_member_is_refused_without_checking_anything",
+     4,
+     12
+    ],
+    [
+     "tunnel_error",
+     2,
+     6
+    ],
+    [
+     "_no_answer",
+     1,
+     2
+    ],
+    [
+     "bot_with",
+     1,
+     3
+    ],
+    [
+     "fast_retry",
+     1,
+     5
+    ],
+    [
+     "_until",
+     3,
+     6
+    ],
+    [
+     "_drive",
+     1,
+     7
+    ],
+    [
+     "test_poll_forever_survives_non_httpx_error",
+     7,
+     13
+    ],
+    [
+     "test_status_reflects_unreachable_and_recovery",
+     4,
+     11
+    ],
+    [
+     "test_supervise_restarts_a_crashed_loop",
+     5,
+     15
+    ],
+    [
+     "test_supervise_cancels_a_loop_without_pulse",
+     5,
+     16
+    ],
+    [
+     "FakeTelegram.__init__",
+     2,
+     4
+    ],
+    [
+     "FakeTelegram.handler",
+     6,
+     15
+    ],
+    [
+     "FakeTelegram.texts",
+     2,
+     2
+    ],
+    [
+     "FakeDownloads.__init__",
+     1,
+     3
+    ],
+    [
+     "FakeDownloads.add_link",
+     1,
+     3
+    ],
+    [
+     "FakeDownloads.add_torrent",
+     1,
+     3
+    ],
+    [
+     "FakeDownloads.list_text",
+     1,
+     2
+    ],
+    [
+     "FakeDownloads.cancel",
+     1,
+     3
+    ],
+    [
+     "FakeDownloads.tick",
+     1,
+     2
+    ],
+    [
+     "FakeDownloads.ack",
+     1,
+     2
+    ],
+    [
+     "make.answer",
+     1,
+     3
+    ],
+    [
+     "test_retry_after_is_respected.handler",
+     1,
+     3
+    ],
+    [
+     "test_download_notification_failure_keeps_outbox_unacked.handler",
+     2,
+     6
+    ],
+    [
+     "test_download_notification_failure_keeps_outbox_unacked.answer",
+     1,
+     2
+    ],
+    [
+     "test_bobik_anywhere_any_form_is_addressed.at",
+     1,
+     2
+    ],
+    [
+     "test_health_command_owner_gets_report.fake_health",
+     1,
+     2
+    ],
+    [
+     "test_health_command_family_member_is_refused_without_checking_anything.fake_health",
+     1,
+     3
+    ],
+    [
+     "FlakyApi.__init__",
+     1,
+     4
+    ],
+    [
+     "FlakyApi.call",
+     2,
+     7
+    ],
+    [
+     "fast_retry.capped",
+     1,
+     2
+    ],
+    [
+     "test_poll_forever_survives_non_httpx_error.scenario",
+     5,
+     6
+    ],
+    [
+     "test_status_reflects_unreachable_and_recovery.scenario",
+     3,
+     4
+    ],
+    [
+     "test_supervise_restarts_a_crashed_loop.factory",
+     3,
+     7
+    ],
+    [
+     "test_supervise_cancels_a_loop_without_pulse.factory",
+     2,
+     7
+    ]
    ],
    "level": "ok"
   },
@@ -6852,6 +11207,273 @@
      "params": 1
     }
    ],
+   "funcs": [
+    [
+     "voice_msg",
+     1,
+     8
+    ],
+    [
+     "run_bot",
+     1,
+     4
+    ],
+    [
+     "stt_spy",
+     2,
+     9
+    ],
+    [
+     "file_spy",
+     1,
+     7
+    ],
+    [
+     "records_dump",
+     1,
+     2
+    ],
+    [
+     "voice_counters",
+     2,
+     2
+    ],
+    [
+     "state_raw",
+     1,
+     2
+    ],
+    [
+     "_client_returning",
+     1,
+     11
+    ],
+    [
+     "test_group_voice_without_callsign_is_silent_and_stores_nothing",
+     12,
+     20
+    ],
+    [
+     "test_group_voice_without_callsign_on_second_message_still_stores_nothing",
+     8,
+     13
+    ],
+    [
+     "test_voice_too_long_in_private_is_refused_without_download",
+     6,
+     10
+    ],
+    [
+     "test_voice_too_long_in_group_is_silent_without_download",
+     5,
+     8
+    ],
+    [
+     "test_voice_exactly_60_seconds_is_still_recognized",
+     5,
+     8
+    ],
+    [
+     "test_voice_over_size_limit_is_refused_like_too_long",
+     5,
+     10
+    ],
+    [
+     "test_voice_download_command_is_not_executed",
+     9,
+     17
+    ],
+    [
+     "test_stt_failure_in_private_asks_to_write_text",
+     6,
+     8
+    ],
+    [
+     "test_stt_failure_in_group_is_silent_and_notifies_owner_once_an_hour",
+     13,
+     20
+    ],
+    [
+     "test_voice_notify_interval_lives_in_state_not_in_process_memory",
+     3,
+     9
+    ],
+    [
+     "_permits",
+     4,
+     11
+    ],
+    [
+     "test_busy_queue_refuses_and_starts_no_parallel_recognition",
+     8,
+     21
+    ],
+    [
+     "test_second_voice_while_first_is_still_recognizing",
+     9,
+     33
+    ],
+    [
+     "test_voice_reply_starts_with_the_heard_text",
+     3,
+     7
+    ],
+    [
+     "test_voice_prefix_covers_every_reply_not_just_questions",
+     3,
+     6
+    ],
+    [
+     "test_stranger_voice_in_group_is_not_transcribed",
+     6,
+     9
+    ],
+    [
+     "test_stranger_voice_in_private_gets_refusal_without_transcription",
+     6,
+     8
+    ],
+    [
+     "test_empty_recognition_in_private_asks_to_repeat",
+     5,
+     10
+    ],
+    [
+     "test_empty_recognition_in_group_is_silent_and_does_not_alarm_owner",
+     5,
+     11
+    ],
+    [
+     "test_apply_corrections_whole_words_case_insensitive",
+     8,
+     12
+    ],
+    [
+     "test_stt_failed_service_reports_unavailable",
+     2,
+     7
+    ],
+    [
+     "test_stt_network_error_reports_unavailable",
+     1,
+     14
+    ],
+    [
+     "test_transcribe_applies_corrections_and_strips",
+     2,
+     6
+    ],
+    [
+     "run_bot.guarded",
+     1,
+     2
+    ],
+    [
+     "stt_spy.fake",
+     2,
+     5
+    ],
+    [
+     "file_spy.fake",
+     1,
+     3
+    ],
+    [
+     "FakeClock.__init__",
+     1,
+     2
+    ],
+    [
+     "FakeClock.time",
+     1,
+     2
+    ],
+    [
+     "FakeClock.monotonic",
+     1,
+     2
+    ],
+    [
+     "test_voice_download_command_is_not_executed.parse_spy",
+     1,
+     3
+    ],
+    [
+     "test_busy_queue_refuses_and_starts_no_parallel_recognition.scenario",
+     2,
+     8
+    ],
+    [
+     "test_second_voice_while_first_is_still_recognizing.scenario",
+     2,
+     8
+    ],
+    [
+     "_client_returning.Client.__init__",
+     1,
+     2
+    ],
+    [
+     "_client_returning.Client.__aenter__",
+     1,
+     2
+    ],
+    [
+     "_client_returning.Client.__aexit__",
+     1,
+     2
+    ],
+    [
+     "_client_returning.Client.post",
+     1,
+     2
+    ],
+    [
+     "test_busy_queue_refuses_and_starts_no_parallel_recognition.GuardClient.__init__",
+     1,
+     2
+    ],
+    [
+     "test_second_voice_while_first_is_still_recognizing.SlowClient.__init__",
+     1,
+     2
+    ],
+    [
+     "test_second_voice_while_first_is_still_recognizing.SlowClient.__aenter__",
+     1,
+     2
+    ],
+    [
+     "test_second_voice_while_first_is_still_recognizing.SlowClient.__aexit__",
+     1,
+     2
+    ],
+    [
+     "test_second_voice_while_first_is_still_recognizing.SlowClient.post",
+     1,
+     4
+    ],
+    [
+     "test_stt_network_error_reports_unavailable.BrokenClient.__init__",
+     1,
+     2
+    ],
+    [
+     "test_stt_network_error_reports_unavailable.BrokenClient.__aenter__",
+     1,
+     2
+    ],
+    [
+     "test_stt_network_error_reports_unavailable.BrokenClient.__aexit__",
+     1,
+     2
+    ],
+    [
+     "test_stt_network_error_reports_unavailable.BrokenClient.post",
+     1,
+     2
+    ]
+   ],
    "level": "warn"
   },
   "tests/network/connectivity_check.sh": {
@@ -6920,6 +11542,28 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "usage",
+     1,
+     15
+    ],
+    [
+     "check_deps",
+     4,
+     12
+    ],
+    [
+     "add_line",
+     1,
+     3
+    ],
+    [
+     "result",
+     2,
+     10
+    ]
+   ],
    "strict_mode": true,
    "level": "warn"
   },
@@ -6973,6 +11617,18 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "usage",
+     1,
+     14
+    ],
+    [
+     "check_deps",
+     2,
+     6
+    ]
+   ],
    "strict_mode": true,
    "level": "ok"
   },
@@ -7025,6 +11681,18 @@
      "nest": 0,
      "params": 0
     }
+   ],
+   "funcs": [
+    [
+     "usage",
+     1,
+     12
+    ],
+    [
+     "check_deps",
+     2,
+     5
+    ]
    ],
    "strict_mode": true,
    "level": "warn"
@@ -7087,6 +11755,23 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "usage",
+     1,
+     12
+    ],
+    [
+     "check_deps",
+     3,
+     7
+    ],
+    [
+     "check_endpoint",
+     4,
+     15
+    ]
+   ],
    "strict_mode": true,
    "level": "ok"
   },
@@ -7147,6 +11832,23 @@
      "nest": 0,
      "params": 0
     }
+   ],
+   "funcs": [
+    [
+     "usage",
+     1,
+     12
+    ],
+    [
+     "check_deps",
+     3,
+     7
+    ],
+    [
+     "check_endpoint",
+     6,
+     19
+    ]
    ],
    "strict_mode": true,
    "level": "ok"
@@ -7209,6 +11911,23 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "usage",
+     1,
+     18
+    ],
+    [
+     "check_deps",
+     2,
+     6
+    ],
+    [
+     "cleanup",
+     1,
+     7
+    ]
+   ],
    "strict_mode": true,
    "level": "warn"
   },
@@ -7262,6 +11981,18 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "usage",
+     1,
+     12
+    ],
+    [
+     "check_deps",
+     3,
+     7
+    ]
+   ],
    "strict_mode": true,
    "level": "warn"
   },
@@ -7314,6 +12045,18 @@
      "nest": 0,
      "params": 0
     }
+   ],
+   "funcs": [
+    [
+     "usage",
+     1,
+     15
+    ],
+    [
+     "check_deps",
+     4,
+     9
+    ]
    ],
    "strict_mode": true,
    "level": "fail"
@@ -7392,6 +12135,153 @@
      "params": 3
     }
    ],
+   "funcs": [
+    [
+     "_install_fake_vosk",
+     1,
+     6
+    ],
+    [
+     "pcm_bytes",
+     1,
+     2
+    ],
+    [
+     "write_wav",
+     1,
+     6
+    ],
+    [
+     "fake_opusdec",
+     4,
+     14
+    ],
+    [
+     "http_server",
+     1,
+     10
+    ],
+    [
+     "model",
+     1,
+     4
+    ],
+    [
+     "request",
+     1,
+     8
+    ],
+    [
+     "request_over_limit",
+     2,
+     10
+    ],
+    [
+     "test_decode_ogg_returns_mono_pcm_of_expected_length",
+     2,
+     3
+    ],
+    [
+     "test_decode_ogg_calls_opusdec_with_16k_and_no_stdin",
+     8,
+     11
+    ],
+    [
+     "test_decode_ogg_takes_left_channel_from_stereo",
+     3,
+     6
+    ],
+    [
+     "test_decode_ogg_rejects_unexpected_rate",
+     2,
+     5
+    ],
+    [
+     "test_decode_ogg_rejects_8_bit_samples",
+     2,
+     5
+    ],
+    [
+     "test_decode_ogg_rejects_more_than_two_channels",
+     2,
+     5
+    ],
+    [
+     "test_decode_ogg_reports_422_when_opusdec_fails",
+     2,
+     5
+    ],
+    [
+     "test_health_returns_model_name",
+     3,
+     4
+    ],
+    [
+     "test_stt_returns_recognized_text_and_duration",
+     6,
+     9
+    ],
+    [
+     "test_stt_rejects_empty_body",
+     5,
+     7
+    ],
+    [
+     "test_stt_rejects_body_over_max_bytes",
+     5,
+     7
+    ],
+    [
+     "test_stt_rejects_audio_longer_than_max_seconds",
+     4,
+     8
+    ],
+    [
+     "test_unknown_path_returns_404",
+     3,
+     3
+    ],
+    [
+     "test_recognizer_failure_returns_500_and_server_survives",
+     4,
+     8
+    ],
+    [
+     "test_log_keeps_numbers_only_without_recognized_text",
+     8,
+     9
+    ],
+    [
+     "FakeModel.__init__",
+     1,
+     5
+    ],
+    [
+     "FakeModel.__repr__",
+     1,
+     2
+    ],
+    [
+     "FakeKaldiRecognizer.__init__",
+     1,
+     6
+    ],
+    [
+     "FakeKaldiRecognizer.AcceptWaveform",
+     2,
+     5
+    ],
+    [
+     "FakeKaldiRecognizer.FinalResult",
+     1,
+     2
+    ],
+    [
+     "fake_opusdec.run",
+     4,
+     10
+    ]
+   ],
    "level": "warn"
   },
   "tests/test_healthcheck.sh": {
@@ -7427,6 +12317,7 @@
    "bug_commits": 1,
    "complexity": 1.6,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok"
   },
@@ -7463,6 +12354,7 @@
    "bug_commits": 1,
    "complexity": 1.4,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok"
   },
@@ -7499,6 +12391,7 @@
    "bug_commits": 1,
    "complexity": 1.3,
    "worst_functions": [],
+   "funcs": [],
    "strict_mode": true,
    "level": "ok"
   },
@@ -7576,6 +12469,123 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "fwd",
+     1,
+     2
+    ],
+    [
+     "Hooks.setUp",
+     2,
+     9
+    ],
+    [
+     "Hooks.tearDown",
+     1,
+     2
+    ],
+    [
+     "Hooks.run_hook",
+     1,
+     5
+    ],
+    [
+     "Hooks.run_hook_with_env",
+     1,
+     7
+    ],
+    [
+     "Hooks.wget_stub",
+     4,
+     11
+    ],
+    [
+     "Hooks.touch",
+     1,
+     6
+    ],
+    [
+     "Hooks.test_single_file_from_ssd_lands_in_final",
+     1,
+     5
+    ],
+    [
+     "Hooks.test_multi_file_torrent_moves_top_directory",
+     1,
+     7
+    ],
+    [
+     "Hooks.test_name_taken_gets_suffix_without_overwrite",
+     1,
+     7
+    ],
+    [
+     "Hooks.test_path_outside_download_roots_is_ignored",
+     1,
+     4
+    ],
+    [
+     "Hooks.test_metadata_without_path_is_ignored",
+     1,
+     2
+    ],
+    [
+     "Hooks.test_final_unavailable_keeps_file_and_fails",
+     1,
+     5
+    ],
+    [
+     "Hooks.test_on_stop_removes_partial_top_item",
+     1,
+     7
+    ],
+    [
+     "Hooks.test_on_stop_never_touches_final_or_outside",
+     2,
+     7
+    ],
+    [
+     "Hooks.test_on_stop_rejects_dot_dot",
+     1,
+     6
+    ],
+    [
+     "Hooks.test_on_stop_keeps_files_when_download_still_active",
+     1,
+     5
+    ],
+    [
+     "Hooks.test_on_stop_keeps_files_when_aria2_unreachable",
+     1,
+     5
+    ],
+    [
+     "Hooks.test_on_stop_removes_on_error_status",
+     1,
+     5
+    ],
+    [
+     "Hooks.test_failed_copy_leaves_no_partial_in_final",
+     2,
+     15
+    ],
+    [
+     "Hooks.test_success_leaves_no_temp_in_final",
+     2,
+     5
+    ],
+    [
+     "Hooks.test_entrypoint_resets_umask_for_aria2",
+     1,
+     9
+    ],
+    [
+     "Hooks.test_dockerfile_prepares_dirs_for_uid_1000",
+     1,
+     9
+    ]
+   ],
    "level": "ok"
   },
   "tests/unit/test_backup_isolation.py": {
@@ -7627,6 +12637,18 @@
      "nest": 3,
      "params": 1
     }
+   ],
+   "funcs": [
+    [
+     "volumes",
+     6,
+     10
+    ],
+    [
+     "BackupsReadOnlyForPeople.test_every_rw_hdd_mount_has_readonly_backups_overlay",
+     8,
+     14
+    ]
    ],
    "level": "ok"
   },
@@ -7704,6 +12726,68 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "TestBobikGate.test_tool_schema_enum_covers_registry",
+     1,
+     3
+    ],
+    [
+     "TestBobikGate.test_validate_tool_call_ok",
+     1,
+     4
+    ],
+    [
+     "TestBobikGate.test_validate_tool_call_rejects_unknown",
+     1,
+     3
+    ],
+    [
+     "TestBobikGate.test_validate_tool_call_rejects_extra_fields",
+     1,
+     5
+    ],
+    [
+     "TestBobikGate.test_dar_fixtures",
+     3,
+     7
+    ],
+    [
+     "TestBobikGate.test_dangerous_never_chat",
+     3,
+     7
+    ],
+    [
+     "TestBobikGate.test_home_tool_without_structured_still_refuses_danger",
+     1,
+     3
+    ],
+    [
+     "TestBobikGate.test_chat_when_no_tool",
+     1,
+     3
+    ],
+    [
+     "TestBobikGate.test_match_tool_intent_status",
+     1,
+     2
+    ],
+    [
+     "TestBobikGate.test_execute_returns_tool_name",
+     1,
+     4
+    ],
+    [
+     "TestBobikGateRegression20260926.test_general_questions_go_to_chat_not_tool",
+     3,
+     7
+    ],
+    [
+     "TestBobikGateRegression20260926.test_home_questions_still_hit_the_right_tool",
+     4,
+     7
+    ]
+   ],
    "level": "ok"
   },
   "tests/unit/test_boot_alert.py": {
@@ -7779,6 +12863,63 @@
      "nest": 0,
      "params": 3
     }
+   ],
+   "funcs": [
+    [
+     "load_module",
+     1,
+     5
+    ],
+    [
+     "main",
+     21,
+     203
+    ],
+    [
+     "main.case",
+     2,
+     7
+    ],
+    [
+     "main.ok_run",
+     1,
+     2
+    ],
+    [
+     "main.capturing_run",
+     1,
+     3
+    ],
+    [
+     "main.curl_fail_run",
+     1,
+     2
+    ],
+    [
+     "main.bad_json_run",
+     1,
+     2
+    ],
+    [
+     "main.api_error_run",
+     1,
+     2
+    ],
+    [
+     "main.flaky_run",
+     2,
+     5
+    ],
+    [
+     "main.always_fail_run",
+     1,
+     3
+    ],
+    [
+     "main.FakeProc.__init__",
+     1,
+     4
+    ]
    ],
    "level": "fail"
   },
@@ -7856,6 +12997,33 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "read_workflow",
+     1,
+     3
+    ],
+    [
+     "security_job",
+     1,
+     4
+    ],
+    [
+     "CiSecurityPolicy.test_security_checkout_fetches_full_history",
+     1,
+     3
+    ],
+    [
+     "CiSecurityPolicy.test_gitleaks_scans_git_history",
+     1,
+     7
+    ],
+    [
+     "CiSecurityPolicy.test_trivy_action_is_pinned_to_sha_with_version_comment",
+     1,
+     8
+    ]
+   ],
    "level": "ok"
   },
   "tests/unit/test_cloudru_consumption_alert.py": {
@@ -7931,6 +13099,38 @@
      "nest": 0,
      "params": 0
     }
+   ],
+   "funcs": [
+    [
+     "load_module",
+     1,
+     5
+    ],
+    [
+     "write",
+     3,
+     8
+    ],
+    [
+     "near_limit",
+     1,
+     6
+    ],
+    [
+     "with_cost",
+     1,
+     13
+    ],
+    [
+     "main",
+     12,
+     55
+    ],
+    [
+     "main.case",
+     2,
+     7
+    ]
    ],
    "level": "ok"
   },
@@ -8008,6 +13208,43 @@
      "params": 3
     }
    ],
+   "funcs": [
+    [
+     "load_module",
+     1,
+     5
+    ],
+    [
+     "main",
+     18,
+     96
+    ],
+    [
+     "main.case",
+     2,
+     7
+    ],
+    [
+     "main.stub_post",
+     1,
+     3
+    ],
+    [
+     "main.stub_get",
+     2,
+     5
+    ],
+    [
+     "main.stub_get_no_agreements",
+     1,
+     2
+    ],
+    [
+     "main.stub_post_no_token",
+     1,
+     2
+    ]
+   ],
    "level": "warn"
   },
   "tests/unit/test_cloudru_cost_is_a_rate.py": {
@@ -8068,6 +13305,23 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "load_module",
+     1,
+     5
+    ],
+    [
+     "main",
+     17,
+     57
+    ],
+    [
+     "main.case",
+     4,
+     4
+    ]
+   ],
    "level": "warn"
   },
   "tests/unit/test_cloudru_iam_token_example.py": {
@@ -8119,6 +13373,18 @@
      "nest": 2,
      "params": 0
     }
+   ],
+   "funcs": [
+    [
+     "bash_path",
+     3,
+     5
+    ],
+    [
+     "CloudRuIamTokenExample.test_server_response_cannot_become_python_source",
+     1,
+     35
+    ]
    ],
    "level": "ok"
   },
@@ -8196,6 +13462,118 @@
      "params": 3
     }
    ],
+   "funcs": [
+    [
+     "posix",
+     1,
+     2
+    ],
+    [
+     "write",
+     2,
+     6
+    ],
+    [
+     "Env.__init__",
+     3,
+     41
+    ],
+    [
+     "Env.add_target",
+     2,
+     7
+    ],
+    [
+     "Env.env",
+     2,
+     16
+    ],
+    [
+     "Env.run",
+     1,
+     4
+    ],
+    [
+     "Env.calls",
+     2,
+     5
+    ],
+    [
+     "Env.close",
+     1,
+     2
+    ],
+    [
+     "Plan.setUp",
+     1,
+     2
+    ],
+    [
+     "Plan.tearDown",
+     1,
+     2
+    ],
+    [
+     "Plan.test_plan_lists_everything_irreplaceable",
+     2,
+     7
+    ],
+    [
+     "Plan.test_missing_required_source_refuses_before_restic",
+     1,
+     7
+    ],
+    [
+     "Plan.test_no_targets_is_an_error",
+     1,
+     4
+    ],
+    [
+     "Plan.test_unmounted_target_disk_refuses",
+     1,
+     6
+    ],
+    [
+     "Run.setUp",
+     1,
+     3
+    ],
+    [
+     "Run.tearDown",
+     1,
+     2
+    ],
+    [
+     "Run.test_success_backs_up_prunes_and_stamps",
+     1,
+     8
+    ],
+    [
+     "Run.test_restic_failure_fails_run_and_leaves_no_stamp",
+     1,
+     4
+    ],
+    [
+     "RoundTrip.setUp",
+     1,
+     4
+    ],
+    [
+     "RoundTrip.tearDown",
+     1,
+     2
+    ],
+    [
+     "RoundTrip.test_backup_then_drill_passes",
+     1,
+     9
+    ],
+    [
+     "RoundTrip.test_drill_catches_incomplete_snapshot",
+     1,
+     7
+    ]
+   ],
    "level": "ok"
   },
   "tests/unit/test_container_hardening.py": {
@@ -8255,6 +13633,23 @@
      "nest": 1,
      "params": 1
     }
+   ],
+   "funcs": [
+    [
+     "read",
+     1,
+     3
+    ],
+    [
+     "Hardening.test_gateway_runs_as_non_root",
+     1,
+     4
+    ],
+    [
+     "Hardening.test_portainer_bound_to_localhost",
+     2,
+     7
+    ]
    ],
    "level": "ok"
   },
@@ -8332,6 +13727,58 @@
      "params": 2
     }
    ],
+   "funcs": [
+    [
+     "load",
+     1,
+     5
+    ],
+    [
+     "container",
+     1,
+     8
+    ],
+    [
+     "test_decision_starts_stopped_and_restarts_unhealthy",
+     4,
+     5
+    ],
+    [
+     "test_decision_does_not_touch_policy_opt_out_and_rate_limits",
+     4,
+     6
+    ],
+    [
+     "test_global_pause_prevents_even_container_inventory",
+     2,
+     7
+    ],
+    [
+     "test_per_container_marker_and_label_enable_maintenance",
+     4,
+     7
+    ],
+    [
+     "test_inventory_reads_only_homecloud_and_maintenance_label",
+     3,
+     14
+    ],
+    [
+     "test_systemd_timer_and_installer_contract",
+     5,
+     8
+    ],
+    [
+     "test_failed_telegram_delivery_is_reported",
+     3,
+     22
+    ],
+    [
+     "test_successful_telegram_delivery_is_reported",
+     3,
+     17
+    ]
+   ],
    "level": "ok"
   },
   "tests/unit/test_dl_egress_guard.py": {
@@ -8383,6 +13830,18 @@
      "nest": 0,
      "params": 0
     }
+   ],
+   "funcs": [
+    [
+     "test_guard_blocks_private_ranges_and_is_attached_to_docker_paths",
+     8,
+     15
+    ],
+    [
+     "test_watchdog_service_refreshes_guard_before_container_recovery",
+     2,
+     7
+    ]
    ],
    "level": "ok"
   },
@@ -8460,6 +13919,63 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "read",
+     1,
+     3
+    ],
+    [
+     "Infra.test_downloads_compose_limits_and_mounts",
+     1,
+     8
+    ],
+    [
+     "Infra.test_api_sees_download_dirs_read_only",
+     2,
+     9
+    ],
+    [
+     "Infra.test_socks_unit_binds_docker0_only",
+     2,
+     7
+    ],
+    [
+     "Infra.test_socks_unit_uses_same_key_and_user_as_tunnel",
+     1,
+     6
+    ],
+    [
+     "Infra.test_entrypoint_keeps_secret_out_of_argv",
+     1,
+     4
+    ],
+    [
+     "Infra.test_entrypoint_checks_hdd_marker_before_aria2",
+     1,
+     4
+    ],
+    [
+     "Infra.test_env_example_has_empty_keys",
+     2,
+     8
+    ],
+    [
+     "Infra.test_speed_timers",
+     1,
+     5
+    ],
+    [
+     "Infra.test_speed_script_sends_secret_on_stdin_only",
+     3,
+     28
+    ],
+    [
+     "Infra.test_speed_script_fails_loudly_without_secret",
+     3,
+     25
+    ]
+   ],
    "level": "ok"
   },
   "tests/unit/test_giga_balance_alert.py": {
@@ -8536,6 +14052,33 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "load_module",
+     1,
+     5
+    ],
+    [
+     "write",
+     1,
+     5
+    ],
+    [
+     "low_max",
+     1,
+     4
+    ],
+    [
+     "main",
+     8,
+     40
+    ],
+    [
+     "main.case",
+     2,
+     7
+    ]
+   ],
    "level": "ok"
   },
   "tests/unit/test_giga_balance_poll.py": {
@@ -8595,6 +14138,23 @@
      "nest": 0,
      "params": 3
     }
+   ],
+   "funcs": [
+    [
+     "run",
+     2,
+     9
+    ],
+    [
+     "main",
+     11,
+     29
+    ],
+    [
+     "main.case",
+     4,
+     5
+    ]
    ],
    "level": "ok"
   },
@@ -8672,6 +14232,58 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "read",
+     1,
+     3
+    ],
+    [
+     "run_gate",
+     6,
+     32
+    ],
+    [
+     "compose_with",
+     1,
+     2
+    ],
+    [
+     "ComposeImagesPinned.test_every_repository_image_has_sha256_digest",
+     7,
+     19
+    ],
+    [
+     "ComposeImagesPinned.test_gate_accepts_digest_even_when_human_tag_is_latest",
+     1,
+     5
+    ],
+    [
+     "ComposeImagesPinned.test_gate_rejects_latest_without_digest",
+     1,
+     6
+    ],
+    [
+     "ComposeImagesPinned.test_gate_rejects_version_tag_without_digest",
+     1,
+     5
+    ],
+    [
+     "ComposeImagesPinned.test_gate_rejects_variable_default_without_digest",
+     1,
+     5
+    ],
+    [
+     "ComposeImagesPinned.test_gate_scans_vps_compose_files",
+     1,
+     7
+    ],
+    [
+     "ComposeImagesPinned.test_gate_reports_empty_fixture",
+     1,
+     4
+    ]
+   ],
    "level": "ok"
   },
   "tests/unit/test_layout.py": {
@@ -8748,6 +14360,113 @@
      "params": 1
     }
    ],
+   "funcs": [
+    [
+     "posix",
+     1,
+     2
+    ],
+    [
+     "clean_env",
+     3,
+     4
+    ],
+    [
+     "bash_layout",
+     3,
+     8
+    ],
+    [
+     "py_layout",
+     1,
+     7
+    ],
+    [
+     "LayoutResolution.setUp",
+     1,
+     2
+    ],
+    [
+     "LayoutResolution.tearDown",
+     1,
+     2
+    ],
+    [
+     "LayoutResolution.env",
+     1,
+     4
+    ],
+    [
+     "LayoutResolution.mkdirs",
+     2,
+     3
+    ],
+    [
+     "LayoutResolution.both",
+     1,
+     2
+    ],
+    [
+     "LayoutResolution.test_legacy_device_detected",
+     2,
+     8
+    ],
+    [
+     "LayoutResolution.test_fresh_host_gets_target_layout",
+     2,
+     4
+    ],
+    [
+     "LayoutResolution.test_migrated_host_is_not_legacy",
+     2,
+     4
+    ],
+    [
+     "LayoutResolution.test_layout_file_overrides_detection",
+     2,
+     8
+    ],
+    [
+     "LayoutResolution.test_explicit_env_beats_layout_file",
+     2,
+     6
+    ],
+    [
+     "LayoutResolution.test_project_dir_is_repo_by_default",
+     2,
+     8
+    ],
+    [
+     "LayoutResolution.test_env_file_follows_project_dir",
+     2,
+     3
+    ],
+    [
+     "LayoutResolution.test_api_container_is_the_live_name",
+     2,
+     3
+    ],
+    [
+     "LayoutResolution.test_bash_and_python_agree",
+     4,
+     7
+    ],
+    [
+     "ComposeUsesLayoutVariables.test_api_compose_host_paths_are_variables",
+     5,
+     12
+    ],
+    [
+     "LiveApiContainerName.test_no_phantom_container_name",
+     5,
+     10
+    ],
+    [
+     "NoHardcodedHostPaths.test_device_scripts_use_layout",
+     7,
+     11
+    ]
+   ],
    "level": "ok"
   },
   "tests/unit/test_no_identifiers.py": {
@@ -8816,18 +14535,40 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "h",
+     1,
+     2
+    ],
+    [
+     "tracked",
+     2,
+     3
+    ],
+    [
+     "NoIdentifiers.test_forbidden_hashes_are_well_formed",
+     1,
+     2
+    ],
+    [
+     "NoIdentifiers.test_tracked_files_are_clean",
+     10,
+     17
+    ]
+   ],
    "level": "warn"
   },
   "tests/unit/test_talk_alert_selftest.py": {
    "lang": "py",
    "test": true,
-   "loc": 70,
-   "functions": 3,
+   "loc": 73,
+   "functions": 4,
    "func_loc_max": 18,
    "func_loc_p90": 18,
    "func_over_warn": 0,
    "cc_max": 6,
-   "cc_sum": 13,
+   "cc_sum": 15,
    "cc_over_warn": 0,
    "nest_max": 2,
    "params_max": 1,
@@ -8846,14 +14587,14 @@
    "fan_out": 0,
    "fan_in": 0,
    "dup_lines": 6,
-   "commits": 1,
-   "churn_lines": 117,
+   "commits": 2,
+   "churn_lines": 128,
    "bug_commits": 0,
-   "complexity": 13,
+   "complexity": 15,
    "worst_functions": [
     {
      "name": "main",
-     "line": 94,
+     "line": 103,
      "loc": 18,
      "cc": 6,
      "nest": 2,
@@ -8868,13 +14609,43 @@
      "params": 1
     },
     {
-     "name": "test_logic_matches_source",
-     "line": 77,
+     "name": "source_problems",
+     "line": 91,
      "loc": 9,
      "cc": 3,
      "nest": 1,
      "params": 0
+    },
+    {
+     "name": "test_logic_matches_source",
+     "line": 77,
+     "loc": 3,
+     "cc": 2,
+     "nest": 0,
+     "params": 0
     }
+   ],
+   "funcs": [
+    [
+     "parse_selftest",
+     4,
+     9
+    ],
+    [
+     "test_logic_matches_source",
+     2,
+     3
+    ],
+    [
+     "source_problems",
+     3,
+     9
+    ],
+    [
+     "main",
+     6,
+     18
+    ]
    ],
    "level": "ok"
   },
@@ -8952,6 +14723,38 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "read",
+     1,
+     3
+    ],
+    [
+     "VpsHostConfigTest.test_target_scripts_have_no_literal_vps_ipv4",
+     2,
+     4
+    ],
+    [
+     "VpsHostConfigTest.test_target_scripts_read_vps_host_from_config",
+     2,
+     7
+    ],
+    [
+     "VpsHostConfigTest.test_daily_report_has_no_legacy_server_ip_fallback",
+     1,
+     4
+    ],
+    [
+     "VpsHostConfigTest.test_offsite_proxy_uses_configured_host",
+     1,
+     4
+    ],
+    [
+     "VpsHostConfigTest.test_daily_report_installer_uses_host_layout",
+     1,
+     6
+    ]
+   ],
    "level": "ok"
   },
   "tests/watchdog/conftest.py": {
@@ -8987,6 +14790,7 @@
    "bug_commits": 0,
    "complexity": 0,
    "worst_functions": [],
+   "funcs": [],
    "level": "ok"
   },
   "tests/watchdog/test_install_vps.py": {
@@ -9062,6 +14866,58 @@
      "nest": 0,
      "params": 0
     }
+   ],
+   "funcs": [
+    [
+     "src",
+     1,
+     2
+    ],
+    [
+     "test_key_is_restricted_to_one_command",
+     2,
+     2
+    ],
+    [
+     "test_sshd_config_checked_and_never_restarted",
+     3,
+     4
+    ],
+    [
+     "test_sshd_checked_before_and_after_changes",
+     2,
+     2
+    ],
+    [
+     "test_does_not_touch_vpn_or_proxy_or_docker",
+     3,
+     4
+    ],
+    [
+     "test_only_ed25519_keys_accepted",
+     2,
+     2
+    ],
+    [
+     "test_password_is_not_locked_style",
+     2,
+     2
+    ],
+    [
+     "test_idempotent_authorized_keys",
+     2,
+     2
+    ],
+    [
+     "test_multiline_key_rejected",
+     2,
+     2
+    ],
+    [
+     "test_home_dir_mode_is_explicit",
+     3,
+     4
+    ]
    ],
    "level": "ok"
   },
@@ -9139,6 +14995,163 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "test_classify_both_silent_is_tunnel",
+     3,
+     4
+    ],
+    [
+     "test_classify_service_error_names_service_and_code",
+     5,
+     5
+    ],
+    [
+     "test_classify_one_silent_is_service_not_tunnel",
+     4,
+     4
+    ],
+    [
+     "test_classify_all_ok",
+     2,
+     2
+    ],
+    [
+     "test_single_failure_is_quiet",
+     5,
+     5
+    ],
+    [
+     "test_second_failure_alerts_with_msk_time",
+     5,
+     7
+    ],
+    [
+     "test_ongoing_problem_repeats_only_after_a_day",
+     5,
+     9
+    ],
+    [
+     "test_problem_kind_change_while_alerted_sends_new_down",
+     4,
+     8
+    ],
+    [
+     "test_recovery_after_alert_reports_downtime",
+     5,
+     9
+    ],
+    [
+     "test_recovery_without_alert_is_quiet",
+     3,
+     5
+    ],
+    [
+     "test_state_roundtrip_is_atomic",
+     3,
+     5
+    ],
+    [
+     "test_broken_state_reads_as_empty",
+     3,
+     6
+    ],
+    [
+     "test_missing_state_reads_as_empty",
+     2,
+     2
+    ],
+    [
+     "_serve",
+     1,
+     10
+    ],
+    [
+     "_closed_port",
+     1,
+     6
+    ],
+    [
+     "test_probe_returns_http_code",
+     3,
+     7
+    ],
+    [
+     "test_probe_closed_port_is_none",
+     2,
+     2
+    ],
+    [
+     "test_cmd_check_two_runs_alert_and_persist",
+     7,
+     10
+    ],
+    [
+     "test_cmd_notify_passes_fields_and_reports_ok",
+     3,
+     8
+    ],
+    [
+     "test_cmd_notify_rejects_bad_request_without_sending",
+     4,
+     4
+    ],
+    [
+     "test_main_uses_ssh_original_command_and_prints_json",
+     4,
+     9
+    ],
+    [
+     "test_main_rejects_unknown_command",
+     3,
+     4
+    ],
+    [
+     "test_main_blank_command_means_check",
+     3,
+     6
+    ],
+    [
+     "test_cmd_check_survives_state_save_failure",
+     3,
+     7
+    ],
+    [
+     "test_main_notify_reads_bounded_stdin",
+     3,
+     7
+    ],
+    [
+     "test_cmd_notify_passes_fields_and_reports_ok.fake_send",
+     1,
+     3
+    ],
+    [
+     "test_cmd_check_survives_state_save_failure.boom",
+     1,
+     2
+    ],
+    [
+     "_TrackingStdin.__init__",
+     1,
+     3
+    ],
+    [
+     "_TrackingStdin.read",
+     1,
+     3
+    ],
+    [
+     "_serve.H.do_GET",
+     1,
+     3
+    ],
+    [
+     "_serve.H.log_message",
+     1,
+     2
+    ]
+   ],
    "level": "ok"
   },
   "tests/watchdog/test_watchdog_job.py": {
@@ -9215,19 +15228,111 @@
      "params": 0
     }
    ],
+   "funcs": [
+    [
+     "at",
+     1,
+     2
+    ],
+    [
+     "check_json",
+     1,
+     2
+    ],
+    [
+     "test_quiet_when_nothing_happened",
+     3,
+     4
+    ],
+    [
+     "test_event_goes_to_owner_directly",
+     4,
+     7
+    ],
+    [
+     "test_telegram_unreachable_falls_back_to_vps_relay",
+     4,
+     9
+    ],
+    [
+     "test_both_paths_failed_is_reported_as_failure",
+     2,
+     4
+    ],
+    [
+     "test_vps_down_alerts_in_first_ten_minutes_of_hour",
+     2,
+     4
+    ],
+    [
+     "test_vps_down_alert_log_names_ssh_return_code",
+     2,
+     3
+    ],
+    [
+     "test_vps_down_quiet_rest_of_hour",
+     3,
+     4
+    ],
+    [
+     "test_vps_down_quiet_log_names_ssh_return_code",
+     2,
+     3
+    ],
+    [
+     "test_garbage_from_vps_counts_as_vps_down",
+     2,
+     4
+    ],
+    [
+     "test_log_line_never_contains_token_or_text",
+     3,
+     4
+    ],
+    [
+     "test_prepare_ssh_writes_key_and_pins_host",
+     8,
+     9
+    ],
+    [
+     "test_dockerfile_runs_unprivileged",
+     3,
+     6
+    ],
+    [
+     "FakeSsh.__init__",
+     1,
+     3
+    ],
+    [
+     "FakeSsh.__call__",
+     2,
+     5
+    ],
+    [
+     "FakeSend.__init__",
+     1,
+     2
+    ],
+    [
+     "FakeSend.__call__",
+     1,
+     3
+    ]
+   ],
    "level": "ok"
   }
  },
  "totals": {
-  "files": 161,
-  "prod_files": 103,
-  "prod_loc": 10116,
-  "test_loc": 7362,
-  "prod_loc_py": 6287,
-  "prod_loc_sh": 3829,
+  "files": 162,
+  "prod_files": 104,
+  "prod_loc": 10750,
+  "test_loc": 7365,
+  "prod_loc_py": 6890,
+  "prod_loc_sh": 3860,
   "warn": 27,
-  "fail": 7,
-  "dup_pct_all": 6.32,
+  "fail": 8,
+  "dup_pct_all": 6.08,
   "import_cycles": [],
   "top_dup_pairs": [
    {
@@ -9356,6 +15461,6 @@
     "b": "tests/nas_api/test_bobik_answer.py"
    }
   ],
-  "top10_loc_share_pct": 39.6
+  "top10_loc_share_pct": 41.2
  }
 }

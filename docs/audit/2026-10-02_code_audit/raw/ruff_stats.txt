@@ -1,0 +1,8 @@
+6	F401	[*] unused-import
+3	E402	[ ] module-import-not-at-top-of-file
+1	E401	[*] multiple-imports-on-one-line
+1	E731	[ ] lambda-assignment
+1	E741	[ ] ambiguous-variable-name
+1	F541	[*] f-string-missing-placeholders
+Found 13 errors.
+[*] 8 fixable with the `--fix` option (1 hidden fix can be enabled with the `--unsafe-fixes` option).

@@ -1,0 +1,13 @@
+=== mypy services/llm-gateway
+Success: no issues found in 1 source file
+=== mypy services/nas_jetson_nano-api
+services\nas_jetson_nano-api\app\telegram_bot.py:86: error: Argument 1 to "AsyncClient" has incompatible type "**dict[str, int]"; expected "str | Callable[[bytes], str]"  [arg-type]
+services\nas_jetson_nano-api\app\telegram_bot.py:236: error: Argument 1 to "_leave_foreign_group" of "TelegramBot" has incompatible type "Any | None"; expected "int"  [arg-type]
+services\nas_jetson_nano-api\app\telegram_bot.py:531: error: Unsupported operand types for + ("object" and "int")  [operator]
+Found 36 errors in 8 files (checked 23 source files)
+=== mypy services/backup-api
+Success: no issues found in 2 source files
+=== mypy services/watchdog
+Success: no issues found in 2 source files
+=== mypy services/stt
+Success: no issues found in 1 source file

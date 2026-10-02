@@ -1,0 +1,64 @@
+# Code audit plan 2026-10-02
+
+> Basis — `REPORT.ru.md` (findings CQ-NN). Russian version — PLAN.ru.md. Each stage is a
+> separate PR ≤ ~400 lines and ≤ 10 files; before the edit — a characterising test, green on
+> the current code and failing under a deliberate break. Rollback of each stage — `git revert <commit>`;
+> rollout to the Jetson — only according to the deployment runbook and on the owner's word (CLAUDE.md, rule no. 14).
+> Executors per rule no. 16: **S** — a Sonnet subagent (implementation), **D** — DeepSeek (tests,
+> mechanics), **L** — the lead (design, acceptance, rollout).
+>
+> Intersections with `WORK_PLAN.md`: stage 3 is part of item 2.8 (SH-2), stage 7 is a step towards 3.1
+> (SD-2), stage 9 depends on 3.5 (QA-3). There is no need to duplicate the items: when the plan is accepted,
+> the stages are entered into `WORK_PLAN` as sub-items.
+
+## Order: from mechanics to structure
+
+| # | stage | findings | files | metric before → after | characterising test before the edit | who | estimate |
+|---|---|---|---|---|---|---|---|
+| 1 | The bot's HDD check via `blocking.run_io` | CQ-01 | `routers/talk_bot.py`, test | copies of the HDD check 2 → 1; threads with a hanging disk N → 1 | 10 calls to `_check_hdd_mount` with a hanging probe → `blocking.busy()` one thread, replies "не отвечает" ("not responding") | S + D (test) | ~30 lines, 1 session |
+| 2 | Exception texts do not go to the chat; reasons go to the log | CQ-05, CQ-07, CQ-04 | `talk_bot.py:198,539`, `llm-gateway/main.py:860-868` (+ a reason field in `/health`) | silent `except` in hotspots −2; exception-text leaks 1 → 0 | an exception with a path → no path in the reply; Immich 401 → a log entry; local model TLS error → reason in `/health` | S + D | ~60 lines, 1 session |
+| 3 | `--max-time` in all Telegram sends from shell | CQ-10 | `vps_amnezia_monitor.sh`, `ddns_duckdns.sh` + a guard in `preflight.sh` | `sendMessage` calls without a timeout 2 → 0 | guard test: grep finds a `sendMessage` without `--max-time` → fail | D | ~20 lines; then a shared `tg_send()` per WORK_PLAN 2.8 |
+| 4 | `_head_size`: "the network failed" ≠ "size unknown" | CQ-03 | `downloads.py:152-171`, `add_link` | broad `except` in `downloads.py` −1 | TLS/timeout in HEAD → a distinguishable outcome; no Content-Length → `None` as now | S + D | ~50 lines, 1 session |
+| 5 | A test returning a list → `assert` | CQ-15 | `tests/unit/test_talk_alert_selftest.py` | tests with no checks 1 → 0 | a deliberate return of the `error` search in production code → the test is red both under pytest and directly | D | ~5 lines |
+| 6 | Drop `|| true` from the NAS API compose check in CI | CQ-11 | `.github/workflows/quality-checks.yml:81` | non-blocking gates 3 → 2 | a branch with a deliberately broken compose → CI red | L | 1 line; shellcheck `|| true` — after clearing the warnings |
+| 7 | A guard on hardcoded `../../config/.env` and the VPS IP + migrating 10 scripts to `layout.sh` | CQ-09 | 10 scripts, `install_usb_watchdog.sh`, a guard in `preflight.sh` | files with a hardcoded `ENV_FILE` 10 → 0; literal IPs outside `*.example` 7 → 0 (VPS installers — by decision) | a guard test + for each script a run with a substituted `/etc/nas-layout.env` | D (mechanics) + L | 2 PRs of ~5 files each |
+| 8 | Metrics ratchet | all | `scripts/quality/code_metrics.py` (already written), `preflight.sh`, CI, `baseline.json` | — | a deliberate regression (`talk_bot.py` +1 function with CC 20) → the gate is red | L + D | see below |
+| 9 | mypy with a baseline of 36 | CQ-12 | `preflight.sh`, CI | new mypy errors block | add a deliberate type error → red | D | after QA-3/QA-2 |
+| 10 | Reconcile the 31 "callerless" shell scripts with the Jetson and the VPS | CQ-16 | documentation only (`docs/REPOSITORY_STRUCTURE.md` or the runbooks section) | unknown scripts 31 → 0 (each: works / installer / archive) | — (reading from the device, no edits) | L (live access — lead only) | 1 session, the Jetson is needed |
+
+## Structural stages (after 1–8)
+
+| # | stage | findings | approach | characterising test | estimate |
+|---|---|---|---|---|---|
+| 11 | The `app/services/` layer in the NAS API | CQ-02 | move `_read_meminfo/_read_loadavg/_read_uptime_seconds/_read_thermal/_docker_ps_json` (system), `_immich_get` (photos), `_ocs_post/_admin_auth/_OCS_HEADERS` (talk), `_build_health` into public functions `app/services/{system,immich,talk_ocs,health}.py`; routers and bots call the services. **The logic does not change**, only the location and the names | architecture test: no module imports a `_`-name from another module, and no non-router module imports `app.routers.*`; plus the current 212 NAS API tests | 2–3 PRs of ~150 lines each |
+| 12 | Bot texts separate from decisions | CQ-14 (part), C in `talk_bot.py`, `telegram_bot.py`, `downloads.py` | reply texts → `app/texts.py` (pure functions); `_handle_image_request`, `_dispatch`, `_route_paused` remain the decision machine | pin the exact texts of 429/403/422/success for images (currently the test checks only the fact of refusal) | 2 PRs |
+| 13 | Bot state as a type | CQ-06 and E in `telegram_bot.py` | `_STATE` → a dataclass with all keys; `llm_failed_last` → the return value of `ask()`, not a field | test: two concurrent `ask` calls (one with a gateway failure) → the memory records only the successful one | 1–2 PRs, **REQUIRES A HUMAN DECISION**: the format of the bot's `/status` changes if the keys are renamed |
+| 14 | Split up `llm-gateway/app/main.py` | CQ-14 | along the axes: `providers/{giga,deepseek,ollama,cloudru}.py`, `budget.py` (together with GW-1/GW-2 from WORK_PLAN 3.3), `images.py`; **do not split the personal-data redaction** | the current 47 gateway tests + a test: each provider receives already-redacted text | 3 PRs; take only together with GW-1/2 |
+
+## The ratchet (stage 8) — how to build it in, not build it alongside
+
+- The gates already exist: `.githooks/pre-commit` → `scripts/quality/preflight.sh`, CI `quality-checks.yml`.
+  The new check is a `code_metrics.py --check docs/audit/2026-10-02_code_audit/baseline.json` mode
+  inside `preflight.sh`, not a separate workflow.
+- Check rules: (1) the number of files in `fail` does not grow; (2) a modified file that already violates
+  a threshold does not worsen its own `cc_max`, `func_loc_max`, `broad_catch+silent_catch`; (3) a new function —
+  CC ≤ 10, length ≤ 40; (4) an exception — an explicit `--allow-regression <file> --reason "…"`,
+  visible in the history.
+- Self-check: a branch with a deliberate violation → `preflight.sh` and CI are red; without that the
+  stage is not closed (rule no. 14: "a check without a defect history is ballast").
+- Safeguards in `CONTRIBUTING.md`: a new bot command — a new function in `app/services/`,
+  not a branch in `_dispatch`; texts — in `app/texts.py`; a new copy of "where `.env` lives" is forbidden,
+  only `layout.sh`/`nas_layout.py`.
+
+## Do not do
+
+Rewrite `bobik_gate.py`, unify the "бобик" grammars of Talk/Telegram, split the personal-data
+redaction, move the "deliberate" duplicates of the watchdog and `read_env()` into a shared module,
+clean out the dated comments (the rationale is in `REPORT.ru.md` §9).
+
+## Question for the owner
+
+Which stages to take? The lead's proposal: **1–6 in one pass** (mechanical, each with a test,
+~170 lines in total, closing P1 and all P2 except CQ-09), then **8** (the ratchet, so that the
+structural stages are not rolled back), then **11**. Stages 7 and 10 require access to the Jetson;
+13 — decisions about the `/status` format.

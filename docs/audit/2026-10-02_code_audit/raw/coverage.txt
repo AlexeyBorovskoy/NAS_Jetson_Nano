@@ -1,0 +1,37 @@
+Name                                                         Stmts   Miss Branch BrPart  Cover
+----------------------------------------------------------------------------------------------
+services\nas_jetson_nano-api\app\logging_setup.py               23     15      4      0    30%
+scripts\monitoring\nas_jetson_nano-talk-alert.py               254    163     92      5    31%
+services\nas_jetson_nano-api\app\main.py                        57     28     10      1    45%
+services\nas_jetson_nano-api\app\routers\logs.py                41     19     12      3    47%
+services\nas_jetson_nano-api\app\routers\talk_bot.py           515    259    168     24    47%
+services\nas_jetson_nano-api\app\routers\photos.py              80     35     10      1    51%
+services\nas_jetson_nano-api\app\routers\system.py             135     58     28      7    52%
+services\nas_jetson_nano-api\app\routers\actions.py            110     45     20      3    52%
+services\nas_jetson_nano-api\app\routers\storage.py             57     24      8      1    52%
+services\nas_jetson_nano-api\app\routers\users.py              100     37     12      1    57%
+scripts\monitoring\nas_jetson_nano-boot-alert.py               228     77     66      6    65%
+services\llm-gateway\app\main.py                               545    168    138     29    66%
+services\nas_jetson_nano-api\app\routers\talk.py                95     28      6      1    67%
+services\backup-api\app\main.py                                125     29     32      4    70%
+services\watchdog\job\watchdog_job.py                           71     22     10      1    72%
+services\nas_jetson_nano-api\app\routers\auth.py                78     20     10      2    73%
+scripts\sber\check_cloudru_consumption.py                      115     25     20      3    78%
+services\nas_jetson_nano-api\app\routers\download_files.py      64     11     22      6    80%
+services\nas_jetson_nano-api\app\routers\health.py              20      3      2      1    82%
+services\nas_jetson_nano-api\app\bobik_gate.py                  87      9     52     10    86%
+services\nas_jetson_nano-api\app\telegram_bot.py               409     44    136     15    88%
+services\nas_jetson_nano-api\app\downloads.py                  424     45    120     11    88%
+services\watchdog\vps\nas_liveness.py                          109      9     20      1    92%
+services\stt\stt_server.py                                      94      5     18      1    95%
+scripts\lib\nas_layout.py                                       43      0     12      0   100%
+services\backup-api\app\__init__.py                              0      0      0      0   100%
+services\nas_jetson_nano-api\app\__init__.py                     0      0      0      0   100%
+services\nas_jetson_nano-api\app\blocking.py                    13      0      2      0   100%
+services\nas_jetson_nano-api\app\config.py                      74      0      0      0   100%
+services\nas_jetson_nano-api\app\dialog.py                      47      0     12      0   100%
+services\nas_jetson_nano-api\app\download_links.py              26      0      4      0   100%
+services\nas_jetson_nano-api\app\routers\__init__.py             0      0      0      0   100%
+services\nas_jetson_nano-api\app\stt.py                         39      0      8      0   100%
+----------------------------------------------------------------------------------------------
+TOTAL                                                         4078   1178   1054    137    68%

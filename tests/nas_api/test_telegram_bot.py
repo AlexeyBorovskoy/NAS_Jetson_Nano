@@ -494,13 +494,15 @@ def test_route_does_not_misfire_on_unrelated_question():
 
 
 def test_health_command_owner_gets_report(monkeypatch):
+    # CQ-02 (аудит 2026-10-02): build_health переехал в app/services/home_health.py —
+    # telegram_bot._health_reply зовёт его оттуда публично, подмена нацелена туда же.
     mod, bot, tg, dl, asked = make()
-    from app.routers import talk_bot as talk_bot_mod
+    from app.services import home_health
 
     async def fake_health():
         return "✅ Дома всё в порядке — контейнеры, диски и бэкапы штатно."
 
-    monkeypatch.setattr(talk_bot_mod, "_build_health", fake_health)
+    monkeypatch.setattr(home_health, "build_health", fake_health)
     asyncio.run(bot.handle_update(msg("бобик, что сломалось", uid=OWNER)))
     assert tg.texts() == [(FAMILY, "✅ Дома всё в порядке — контейнеры, диски и бэкапы штатно.")]
     assert asked == []
@@ -508,14 +510,14 @@ def test_health_command_owner_gets_report(monkeypatch):
 
 def test_health_command_family_member_is_refused_without_checking_anything(monkeypatch):
     mod, bot, tg, dl, asked = make()
-    from app.routers import talk_bot as talk_bot_mod
+    from app.services import home_health
     called = []
 
     async def fake_health():
         called.append(1)
         return "✅ ..."
 
-    monkeypatch.setattr(talk_bot_mod, "_build_health", fake_health)
+    monkeypatch.setattr(home_health, "build_health", fake_health)
     asyncio.run(bot.handle_update(msg("бобик, что сломалось", uid=SON)))
     assert called == []  # регрессия: не владелец не должен даже триггерить проверки
     assert tg.texts() == [(FAMILY, mod.HEALTH_OWNER_ONLY_TEXT)]

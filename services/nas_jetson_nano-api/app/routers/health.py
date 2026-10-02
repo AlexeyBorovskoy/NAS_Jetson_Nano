@@ -26,6 +26,9 @@ async def healthcheck():
     body = {"status": "ok", "version": VERSION, "service": "nas_jetson_nano-api"}
     if settings.telegram_bot_enabled and settings.telegram_bot_token:
         # Бот живёт в том же процессе: без этого поля глухой бот выглядел «здоровым» (20–26.09).
+        # CQ-02 (аудит 2026-10-02): это чтение публичного `STATUS`, не приватного имени,
+        # и роутер, зовущий не-роутер, не нарушает направление слоёв из стадии 11 —
+        # оставлено как есть, перенос не требовался.
         from app.telegram_bot import STATUS
         last = STATUS.get("last_ok") or 0
         body["telegram"] = {"state": STATUS.get("state"), "restarts": STATUS.get("restarts", 0),

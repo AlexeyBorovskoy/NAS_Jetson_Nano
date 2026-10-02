@@ -37,18 +37,14 @@ from __future__ import annotations
 
 import asyncio
 import base64
-import json
 import logging
-import os
 import time
-from pathlib import Path
 from urllib.parse import quote
 
 import httpx
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-from app import blocking
 from app import dialog as dialog_mem
 from app.bobik_gate import (
     ADMIT_CHAT,
@@ -58,10 +54,8 @@ from app.bobik_gate import (
     admit,
 )
 from app.config import settings
-from app.routers import photos as photos_mod
 from app.routers import storage as storage_mod
-from app.routers import system as system_mod
-from app.routers.talk import _OCS_HEADERS, _admin_auth, _ocs_post
+from app.services import immich, system_info, talk_ocs
 
 log = logging.getLogger("nas_jetson_nano_api.talk_bot")
 router = APIRouter(prefix="/v1/talk/bot", tags=["Talk — Чат"])
@@ -141,14 +135,14 @@ def _build_help() -> str:
 
 
 async def _build_status() -> str:
-    ram = system_mod._read_meminfo()
-    load = system_mod._read_loadavg()
-    up = system_mod._read_uptime_seconds()
-    thermal = system_mod._read_thermal()
+    ram = system_info.read_meminfo()
+    load = system_info.read_loadavg()
+    up = system_info.read_uptime_seconds()
+    thermal = system_info.read_thermal()
     cpu_t = next((z["temp_c"] for z in thermal if z["zone"] == "CPU-therm"), None)
 
     expected = set(settings.expected_containers.split())
-    containers = await system_mod._docker_ps_json()
+    containers = await system_info.docker_ps_json()
     running = sum(1 for c in containers if c.get("state", "").lower() == "running")
     unhealthy = [
         c.get("name", "")
@@ -196,7 +190,7 @@ async def _build_disk() -> str:
 
 async def _build_photos() -> str:
     try:
-        stats = await photos_mod._immich_get("api/server/statistics")
+        stats = await immich.immich_get("api/server/statistics")
     except Exception as exc:
         # CQ-07 (аудит 2026-10-02): раньше причина (сеть? ключ? URL?) не попадала
         # даже в журнал. Пишем только ТИП исключения — в тексте может быть URL с
@@ -215,7 +209,7 @@ async def _build_photos() -> str:
         f"- Занято: {usage_gb} GB",
     ]
     try:
-        albums = await photos_mod._immich_get("api/albums")
+        albums = await immich.immich_get("api/albums")
         if isinstance(albums, list):
             lines.append(f"- Альбомы: {len(albums)}")
     except Exception:
@@ -223,133 +217,15 @@ async def _build_photos() -> str:
     return "\n".join(lines)
 
 
-# ── «что сломалось?» (E3) ────────────────────────────────────────────────────────
-# Владелец узнаёт о неполадках не от системы, а сам замечает — как 2026-09-20, когда
-# завис HDD и вместе с ним лёг NAS API. Ответ обязан быть коротким (человек читает
-# в Telegram, не сводку) и не должен виснуть сам: именно зависший ntfs-3g уронил API
-# в тот раз, потому что обращение к мёртвой точке монтирования встало намертво.
-
-HDD_ROOT = Path("/mnt/hdd2tb")
-HDD_CHECK_TIMEOUT = 3.0
-SYSTEMD_CHECK_TIMEOUT = 3.0
-DISK_WARN_PCT = 90
-DUMP_MAX_AGE_HOURS = 26  # тот же запас, что у scripts/monitoring/nas_jetson_nano-talk-alert.py
-
-
-def _hdd_mount_probe() -> tuple[bool, str]:
-    """Синхронная проверка — обязана вызываться только через `blocking.run_io` (см. ниже).
-
-    Зависший ntfs-3g держит `os.stat()` в D-state сколько угодно; в event loop
-    это остановило бы обработку любых других сообщений бота. Поток, оставшийся
-    висеть навсегда после того, как вызывающий код отступился по таймауту, —
-    меньшее зло по сравнению с остановкой всего API (инцидент 2026-09-20). Ключ
-    `blocking.run_io` один на все вызовы — пока поток не вернулся, новый не
-    заводится (CQ-01, аудит 2026-10-02): раньше каждый вопрос «что сломалось?»
-    плодил свой навсегда висящий поток и через ~8 вопросов исчерпывал пул,
-    общий с `app/blocking.py` (API-1), ломая защиту таймаутом у /storage и /system.
-    """
-    try:
-        if not HDD_ROOT.exists():
-            return False, ""
-        mounted = os.stat(HDD_ROOT).st_dev != os.stat("/").st_dev
-    except OSError as exc:
-        return False, str(exc)
-    return mounted, ""
-
-
-async def _check_hdd_mount(timeout: float = HDD_CHECK_TIMEOUT) -> str | None:
-    """None = смонтирован и здоров; иначе — короткая причина."""
-    try:
-        mounted, err = await blocking.run_io("hdd2tb_mount", _hdd_mount_probe, timeout=timeout)
-    except asyncio.TimeoutError:
-        return "HDD /mnt/hdd2tb не отвечает (таймаут %.0fс — похоже на зависший ntfs-3g)" % timeout
-    if not mounted:
-        return "HDD /mnt/hdd2tb не смонтирован" + (" (%s)" % err if err else "")
-    return None
-
-
-async def _check_failed_units(timeout: float = SYSTEMD_CHECK_TIMEOUT) -> str | None:
-    """Лучшее, что можно сделать из контейнера API: внутри нет systemd/dbus, и в
-    обычном деплое команды просто нет — тогда молчим, а не выдумываем ответ,
-    вместо того чтобы объявлять «всё чисто» без проверки."""
-    try:
-        proc = await asyncio.create_subprocess_exec(
-            "systemctl", "--failed", "--plain", "--no-legend",
-            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL,
-        )
-        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout)
-    except (FileNotFoundError, OSError, asyncio.TimeoutError):
-        return None
-    names = [line.split()[0] for line in stdout.decode().splitlines() if line.strip()]
-    if names:
-        return "systemd: аварийные юниты — %s" % ", ".join(names)
-    return None
-
-
-def _read_active_alerts() -> list[str]:
-    """Phase E (scripts/monitoring/nas_jetson_nano-talk-alert.py) уже проверяет то,
-    что из контейнера API не проверить вовсе — SMART HDD, swap, off-site бэкап,
-    квоты GigaChat, расходы Cloud.ru. Читаем готовый снимок, а не пересчитываем.
-    Файла нет или он битый — не тревога, а «данных нет»: остальные проверки
-    в этом модуле прямые и от этого файла не зависят."""
-    try:
-        with open(settings.talk_alert_state_file, encoding="utf-8") as fh:
-            state = json.load(fh)
-    except (OSError, ValueError):
-        return []
-    if not isinstance(state, dict):
-        return []
-    return [v.get("text") or key for key, v in state.items()
-            if isinstance(v, dict) and v.get("active") and v.get("text")]
-
-
-async def _build_health() -> str:
-    """Короткий человеческий ответ: что не в порядке, или одна строка, если всё
-    хорошо. Каждая проверка — best-effort и не роняет остальные."""
-    problems: list[str] = []
-
-    try:
-        expected = set(settings.expected_containers.split())
-        containers = await system_mod._docker_ps_json()
-        down = [c.get("name", "") for c in containers
-                if c.get("name") in expected and c.get("state", "").lower() != "running"]
-        if down:
-            problems.append("не работают контейнеры: %s" % ", ".join(down))
-    except Exception as exc:
-        problems.append("не смог проверить контейнеры (%s)" % exc)
-
-    ssd = await storage_mod.disk_info(storage_mod.STORAGE_ROOT)
-    if not ssd.get("mounted"):
-        problems.append("SSD /mnt/storage не смонтирован")
-    else:
-        if ssd.get("used_pct", 0) >= DISK_WARN_PCT:
-            problems.append("SSD почти заполнен — %s%%" % ssd["used_pct"])
-        for d in (await storage_mod.backup_info()).get("dumps", []):
-            age = d.get("age_hours")
-            if age is None:
-                problems.append("нет дампа %s" % d["db"])
-            elif age > DUMP_MAX_AGE_HOURS:
-                problems.append("бэкап %s устарел — %dч назад" % (d["db"], age))
-
-    hdd_problem = await _check_hdd_mount()
-    if hdd_problem:
-        problems.append(hdd_problem)
-
-    unit_problem = await _check_failed_units()
-    if unit_problem:
-        problems.append(unit_problem)
-
-    problems.extend(_read_active_alerts())
-
-    if not problems:
-        return "✅ Дома всё в порядке — контейнеры, диски и бэкапы штатно."
-    seen = dict.fromkeys(problems)  # без повторов (алерт может дублировать прямую проверку), порядок сохранён
-    return "⚠️ Не в порядке:\n" + "\n".join("- %s" % p for p in seen)
+# «Что сломалось?» (E3) — весь блок (HDD_ROOT и другие константы, _hdd_mount_probe,
+# _check_hdd_mount, _check_failed_units, _read_active_alerts, _build_health) переехал
+# в app/services/home_health.py (CQ-02, аудит 2026-10-02): его звал как приватную
+# функцию чужого роутера только app/telegram_bot.py, сам Talk-бот им не пользуется.
 
 
 async def _dispatch(handler: str) -> str:
     if handler == "ping":
-        return f"🏓 pong · uptime {_fmt_uptime(system_mod._read_uptime_seconds())}"
+        return f"🏓 pong · uptime {_fmt_uptime(system_info.read_uptime_seconds())}"
     if handler == "status":
         return await _build_status()
     if handler == "disk":
@@ -608,7 +484,9 @@ async def _fetch_baseline_id(token: str) -> int:
     """Latest message id in the room, so we don't replay history on startup."""
     params = {"lookIntoFuture": 0, "limit": 1, "setReadMarker": 0}
     async with httpx.AsyncClient(timeout=15.0) as client:
-        r = await client.get(_chat_url(token), auth=_admin_auth(), headers=_OCS_HEADERS, params=params)
+        r = await client.get(
+            _chat_url(token), auth=talk_ocs.admin_auth(), headers=talk_ocs.OCS_HEADERS, params=params,
+        )
     if r.status_code == 200:
         data = r.json().get("ocs", {}).get("data", [])
         if data:
@@ -629,7 +507,9 @@ async def _poll_once(token: str, last_id: int) -> tuple[list[dict], int]:
     }
     client_timeout = settings.talk_bot_poll_timeout + 15
     async with httpx.AsyncClient(timeout=client_timeout) as client:
-        r = await client.get(_chat_url(token), auth=_admin_auth(), headers=_OCS_HEADERS, params=params)
+        r = await client.get(
+            _chat_url(token), auth=talk_ocs.admin_auth(), headers=talk_ocs.OCS_HEADERS, params=params,
+        )
 
     if r.status_code == 304:  # no new messages within the long-poll window
         return [], last_id
@@ -723,7 +603,7 @@ async def _download_attachment(actor: str, path: str) -> bytes:
     limit = settings.talk_bot_max_attachment_bytes
     buf = bytearray()
     async with httpx.AsyncClient(timeout=120.0) as client:
-        async with client.stream("GET", _dav_url(actor, path), auth=_admin_auth()) as r:
+        async with client.stream("GET", _dav_url(actor, path), auth=talk_ocs.admin_auth()) as r:
             if r.status_code != 200:
                 raise RuntimeError(f"WebDAV {r.status_code} для {actor}/{path}")
             # C6: потоково и с пределом — раньше r.content читал файл целиком в память.
@@ -741,7 +621,7 @@ async def _share_image_to_room(token: str, data: bytes, filename: str) -> None:
     async with httpx.AsyncClient(timeout=180.0) as client:
         put = await client.put(
             _dav_url(admin_user, remote_path),
-            auth=_admin_auth(),
+            auth=talk_ocs.admin_auth(),
             content=data,
             headers={"Content-Type": "image/jpeg"},
         )
@@ -750,8 +630,8 @@ async def _share_image_to_room(token: str, data: bytes, filename: str) -> None:
         share = await client.post(
             f"{settings.nextcloud_internal_url.rstrip('/')}"
             "/ocs/v2.php/apps/files_sharing/api/v1/shares",
-            auth=_admin_auth(),
-            headers=_OCS_HEADERS,
+            auth=talk_ocs.admin_auth(),
+            headers=talk_ocs.OCS_HEADERS,
             data={"shareType": 10, "shareWith": token, "path": f"/{remote_path}"},
         )
         if share.status_code not in (200, 201):
@@ -845,11 +725,11 @@ async def _handle_image_request(token: str, m: dict, question: str, user: str) -
 async def _send(token: str, message: str, display_name: str) -> None:
     """Post a reply, swallowing transport errors so the loop survives.
 
-    Uses the shared `_ocs_post`, which now sends form data — see the note there
+    Uses the shared `talk_ocs.ocs_post`, which now sends form data — see the note there
     about the JSON body that made every OCS POST fail silently.
     """
     try:
-        await _ocs_post(
+        await talk_ocs.ocs_post(
             f"chat/{token}",
             {"message": message, "actorDisplayName": display_name},
             version="v1",

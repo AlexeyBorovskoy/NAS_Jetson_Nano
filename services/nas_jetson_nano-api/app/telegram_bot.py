@@ -164,6 +164,14 @@ class TelegramBot:
         self.downloads = downloads
         self.beats: dict = {}  # пульс циклов для супервизора
         if answer is None:
+            # CQ-02 (аудит 2026-10-02): этот импорт НЕ переносился. `talk_bot.answer`
+            # уже публичное имя (не приватное — находка CQ-02 была про `_`-имена), а
+            # сам он — вершина целой цепочки Phase C (_STATE, gate_reply, _ask_llm,
+            # remember, bobik_gate), которая никуда не входит в перечень стадии 11
+            # (PLAN.ru.md: только system/photos/talk/health-хелперы). Перенести
+            # пришлось бы весь этот блок разом — это другая, более рискованная задача,
+            # а не переименование. Допустимое исключение из правила «не-роутер не
+            # импортирует app.routers» — см. allowlist в test_layering.py.
             from app.routers import talk_bot
             answer = talk_bot.answer
         self.answer = answer
@@ -404,11 +412,17 @@ class TelegramBot:
 
     async def _health_reply(self, login: str) -> str:
         """E3: «что сломалось?» — только владельцу (settings.telegram_owner_login).
-        Остальным членам семьи — вежливый отказ, а не подробности о системе."""
+        Остальным членам семьи — вежливый отказ, а не подробности о системе.
+
+        CQ-02 (аудит 2026-10-02): раньше здесь жил ленивый импорт приватной
+        `app.routers.talk_bot._build_health` — переименование внутри чужого роутера
+        молча ломало бы этот ответ. Теперь `build_health` — публичная функция
+        сервисного слоя (`app/services/home_health.py`), и зовём её через модуль,
+        как и прежде лениво (чтобы не тянуть сервис при каждом старте бота)."""
         if login != settings.telegram_owner_login:
             return HEALTH_OWNER_ONLY_TEXT
-        from app.routers import talk_bot as talk_bot_mod
-        return await talk_bot_mod._build_health()
+        from app.services import home_health
+        return await home_health.build_health()
 
     async def _stranger(self, msg: dict, chat: dict) -> None:
         uid = (msg.get("from") or {}).get("id")

@@ -1,0 +1,50 @@
+# GitHub Pages: Jekyll site from docs/ (same input as the former "deploy from
+# branch main, /docs" source), built by our own workflow since 2026-10-02.
+#
+# Why: the built-in pages-build-deployment checks out submodules, and the
+# private submodule tools/deepseek-worker cannot be cloned there
+# ("repository not found"), so every Pages build failed from 2026-10-01 on.
+# actions/checkout does not fetch submodules unless asked, and the site
+# needs nothing outside docs/.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/configure-pages@v5
+      - uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./docs
+          destination: ./_site
+      - uses: actions/upload-pages-artifact@v3
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

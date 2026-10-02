@@ -1,8 +1,8 @@
 {
  "schema": 1,
  "repo": "NAS_Jetson_Nano",
- "commit": "210d0d43e25343e82d4a92460eb824c7608a2d6a",
- "generated_at": "2026-10-02T11:41:56+00:00",
+ "commit": "2377b6fa81d63191f6fad05e360190d374b1c7af",
+ "generated_at": "2026-10-02T11:46:54+00:00",
  "stack": [
   "python",
   "bash",
@@ -180,7 +180,7 @@
    ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0159
+   "hotspot_score": 0.0152
   },
   "scripts/backup/config_backup.sh": {
    "lang": "sh",
@@ -233,7 +233,7 @@
    ],
    "strict_mode": false,
    "level": "ok",
-   "hotspot_score": 0.0018
+   "hotspot_score": 0.0017
   },
   "scripts/backup/immich_hdd_second_copy.sh": {
    "lang": "sh",
@@ -309,7 +309,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0008
+   "hotspot_score": 0.0007
   },
   "scripts/backup/install_restic.sh": {
    "lang": "sh",
@@ -385,7 +385,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0037
+   "hotspot_score": 0.0036
   },
   "scripts/backup/restic_s3_cloudru_example.sh": {
    "lang": "sh",
@@ -476,7 +476,7 @@
    ],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0009
+   "hotspot_score": 0.0008
   },
   "scripts/backup/restore_drill.sh": {
    "lang": "sh",
@@ -605,7 +605,7 @@
    ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0036
+   "hotspot_score": 0.0034
   },
   "scripts/diagnostics/hardware_audit.sh": {
    "lang": "sh",
@@ -643,7 +643,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0025
+   "hotspot_score": 0.0024
   },
   "scripts/diagnostics/sd_wear_check.sh": {
    "lang": "sh",
@@ -709,7 +709,7 @@
    ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0055
+   "hotspot_score": 0.0053
   },
   "scripts/diagnostics/smart_check.sh": {
    "lang": "sh",
@@ -762,7 +762,7 @@
    ],
    "strict_mode": false,
    "level": "ok",
-   "hotspot_score": 0.0043
+   "hotspot_score": 0.0041
   },
   "scripts/diagnostics/storage_health.sh": {
    "lang": "sh",
@@ -815,7 +815,7 @@
    ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0135
+   "hotspot_score": 0.0128
   },
   "scripts/docs/correct_publication_claims_docx.py": {
    "lang": "py",
@@ -893,7 +893,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0021
+   "hotspot_score": 0.002
   },
   "scripts/downloads/aria2_speed.sh": {
    "lang": "sh",
@@ -984,7 +984,7 @@
    ],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0131
+   "hotspot_score": 0.0125
   },
   "scripts/immich/set_ml_url.sh": {
    "lang": "sh",
@@ -1050,7 +1050,7 @@
    ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0018
+   "hotspot_score": 0.0017
   },
   "scripts/lib/install_layout.sh": {
    "lang": "sh",
@@ -1204,7 +1204,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0034
+   "hotspot_score": 0.0032
   },
   "scripts/maintenance/docker_update_plan.sh": {
    "lang": "sh",
@@ -1242,7 +1242,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0026
+   "hotspot_score": 0.0025
   },
   "scripts/monitoring/install_beszel_agent.sh": {
    "lang": "sh",
@@ -1280,7 +1280,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0041
+   "hotspot_score": 0.0039
   },
   "scripts/monitoring/install_beszel_agent_vps.sh": {
    "lang": "sh",
@@ -1318,7 +1318,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0024
+   "hotspot_score": 0.0023
   },
   "scripts/monitoring/install_container_watchdog.sh": {
    "lang": "sh",
@@ -1409,7 +1409,7 @@
    ],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0007
+   "hotspot_score": 0.0006
   },
   "scripts/monitoring/jms583_health.sh": {
    "lang": "sh",
@@ -1475,7 +1475,7 @@
    ],
    "strict_mode": false,
    "level": "fail",
-   "hotspot_score": 0.0148
+   "hotspot_score": 0.0141
   },
   "scripts/monitoring/nas_jetson_nano-beszel-report.py": {
    "lang": "py",
@@ -1742,7 +1742,7 @@
     ]
    ],
    "level": "fail",
-   "hotspot_score": 0.0161
+   "hotspot_score": 0.0153
   },
   "scripts/monitoring/nas_jetson_nano-container-watchdog.py": {
    "lang": "py",
@@ -1861,7 +1861,7 @@
     ]
    ],
    "level": "warn",
-   "hotspot_score": 0.0352
+   "hotspot_score": 0.0335
   },
   "scripts/monitoring/nas_jetson_nano-daily-report.sh": {
    "lang": "sh",
@@ -1914,7 +1914,7 @@
    ],
    "strict_mode": false,
    "level": "fail",
-   "hotspot_score": 0.0203
+   "hotspot_score": 0.0194
   },
   "scripts/monitoring/nas_jetson_nano-send-report-telegram.sh": {
    "lang": "sh",
@@ -1952,7 +1952,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0062
+   "hotspot_score": 0.0059
   },
   "scripts/monitoring/nas_jetson_nano-talk-alert.py": {
    "lang": "py",
@@ -2111,7 +2111,7 @@
     ]
    ],
    "level": "warn",
-   "hotspot_score": 0.1483
+   "hotspot_score": 0.1413
   },
   "scripts/monitoring/setup_portainer.sh": {
    "lang": "sh",
@@ -2164,7 +2164,7 @@
    ],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0016
+   "hotspot_score": 0.0015
   },
   "scripts/monitoring/setup_uptime_kuma.py": {
    "lang": "py",
@@ -2282,7 +2282,7 @@
    ],
    "strict_mode": false,
    "level": "warn",
-   "hotspot_score": 0.0065
+   "hotspot_score": 0.0062
   },
   "scripts/monitoring/vps_amnezia_monitor.sh": {
    "lang": "sh",
@@ -2335,7 +2335,7 @@
    ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0044
+   "hotspot_score": 0.0042
   },
   "scripts/network/ddns_duckdns.sh": {
    "lang": "sh",
@@ -2388,7 +2388,7 @@
    ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0024
+   "hotspot_score": 0.0023
   },
   "scripts/network/dl_egress_guard.sh": {
    "lang": "sh",
@@ -2464,7 +2464,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0025
+   "hotspot_score": 0.0024
   },
   "scripts/network/setup_vps_tunnel.sh": {
    "lang": "sh",
@@ -2502,7 +2502,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0034
+   "hotspot_score": 0.0032
   },
   "scripts/network/test_vostro_bastion_from_jetson.sh": {
    "lang": "sh",
@@ -2618,7 +2618,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0051
+   "hotspot_score": 0.0048
   },
   "scripts/quality/check_ps1_bom.py": {
    "lang": "py",
@@ -2696,7 +2696,7 @@
     ]
    ],
    "level": "warn",
-   "hotspot_score": 0.0036
+   "hotspot_score": 0.0034
   },
   "scripts/quality/code_metrics.py": {
    "lang": "py",
@@ -2920,7 +2920,7 @@
     ]
    ],
    "level": "fail",
-   "hotspot_score": 0.1
+   "hotspot_score": 0.0952
   },
   "scripts/quality/preflight.sh": {
    "lang": "sh",
@@ -2950,8 +2950,8 @@
    "fan_out": 0,
    "fan_in": 0,
    "dup_lines": 0,
-   "commits": 11,
-   "churn_lines": 537,
+   "commits": 12,
+   "churn_lines": 571,
    "bug_commits": 6,
    "complexity": 27.5,
    "worst_functions": [
@@ -2986,7 +2986,7 @@
    ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0566
+   "hotspot_score": 0.0589
   },
   "scripts/sber/check_cloudru_consumption.py": {
    "lang": "py",
@@ -3115,7 +3115,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0208
+   "hotspot_score": 0.0198
   },
   "scripts/sber/check_gigachat_balance.sh": {
    "lang": "sh",
@@ -3153,7 +3153,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0012
+   "hotspot_score": 0.0011
   },
   "scripts/sber/cloudru_iam_token_example.sh": {
    "lang": "sh",
@@ -3191,7 +3191,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0015
+   "hotspot_score": 0.0014
   },
   "scripts/sber/gitverse_mirror_push.sh": {
    "lang": "sh",
@@ -3373,7 +3373,7 @@
    ],
    "strict_mode": false,
    "level": "ok",
-   "hotspot_score": 0.0013
+   "hotspot_score": 0.0012
   },
   "scripts/sber/smoke_cloudru_fm.sh": {
    "lang": "sh",
@@ -3411,7 +3411,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0003
+   "hotspot_score": 0.0002
   },
   "scripts/sber/verify_gateway.sh": {
    "lang": "sh",
@@ -3449,7 +3449,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0014
+   "hotspot_score": 0.0013
   },
   "scripts/security/check_no_secrets.sh": {
    "lang": "sh",
@@ -3487,7 +3487,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0042
+   "hotspot_score": 0.004
   },
   "scripts/setup/install_nextcloud_talk.sh": {
    "lang": "sh",
@@ -3525,7 +3525,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0043
+   "hotspot_score": 0.0041
   },
   "scripts/setup/install_nginx_vps.sh": {
    "lang": "sh",
@@ -3563,7 +3563,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0086
+   "hotspot_score": 0.0082
   },
   "scripts/setup/nas-offsite-backup.sh": {
    "lang": "sh",
@@ -3601,7 +3601,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0012
+   "hotspot_score": 0.0011
   },
   "scripts/setup/nasa-offsite-export.sh": {
    "lang": "sh",
@@ -3677,7 +3677,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0011
+   "hotspot_score": 0.001
   },
   "scripts/storage/deploy_usb_fix.sh": {
    "lang": "sh",
@@ -3768,7 +3768,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0013
+   "hotspot_score": 0.0012
   },
   "scripts/storage/install_mount_service.sh": {
    "lang": "sh",
@@ -3844,7 +3844,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0145
+   "hotspot_score": 0.0138
   },
   "scripts/storage/setup_disk.sh": {
    "lang": "sh",
@@ -3882,7 +3882,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0018
+   "hotspot_score": 0.0017
   },
   "scripts/storage/ssd_hotplug_recovery.sh": {
    "lang": "sh",
@@ -3920,7 +3920,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0081
+   "hotspot_score": 0.0077
   },
   "scripts/storage/storage_preflight.sh": {
    "lang": "sh",
@@ -4012,7 +4012,7 @@
    ],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0061
+   "hotspot_score": 0.0058
   },
   "scripts/storage/usb_preboot_cycle.sh": {
    "lang": "sh",
@@ -4050,7 +4050,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "warn",
-   "hotspot_score": 0.0022
+   "hotspot_score": 0.0021
   },
   "scripts/storage/usb_recovery_watchdog.sh": {
    "lang": "sh",
@@ -4129,7 +4129,7 @@
    ],
    "strict_mode": true,
    "level": "fail",
-   "hotspot_score": 0.0124
+   "hotspot_score": 0.0118
   },
   "services/backup-api/app/__init__.py": {
    "lang": "py",
@@ -4285,7 +4285,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.012
+   "hotspot_score": 0.0114
   },
   "services/downloads/entrypoint.sh": {
    "lang": "sh",
@@ -4376,7 +4376,7 @@
    ],
    "strict_mode": false,
    "level": "ok",
-   "hotspot_score": 0.0056
+   "hotspot_score": 0.0054
   },
   "services/downloads/on_stop.sh": {
    "lang": "sh",
@@ -4414,7 +4414,7 @@
    "funcs": [],
    "strict_mode": false,
    "level": "ok",
-   "hotspot_score": 0.0019
+   "hotspot_score": 0.0018
   },
   "services/llm-gateway/app/main.py": {
    "lang": "py",
@@ -4723,7 +4723,7 @@
     ]
    ],
    "level": "fail",
-   "hotspot_score": 0.573
+   "hotspot_score": 0.5457
   },
   "services/nas_jetson_nano-api/app/__init__.py": {
    "lang": "py",
@@ -4751,7 +4751,7 @@
    "magic_numbers": 0,
    "private_imports": [],
    "fan_out": 0,
-   "fan_in": 7,
+   "fan_in": 8,
    "dup_lines": 0,
    "commits": 0,
    "churn_lines": 0,
@@ -4916,7 +4916,7 @@
     ]
    ],
    "level": "warn",
-   "hotspot_score": 0.012
+   "hotspot_score": 0.0114
   },
   "services/nas_jetson_nano-api/app/config.py": {
    "lang": "py",
@@ -4944,7 +4944,7 @@
    "magic_numbers": 0,
    "private_imports": [],
    "fan_out": 0,
-   "fan_in": 15,
+   "fan_in": 17,
    "dup_lines": 0,
    "commits": 14,
    "churn_lines": 118,
@@ -4968,7 +4968,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0079
+   "hotspot_score": 0.0075
   },
   "services/nas_jetson_nano-api/app/dialog.py": {
    "lang": "py",
@@ -5072,7 +5072,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0056
+   "hotspot_score": 0.0054
   },
   "services/nas_jetson_nano-api/app/download_links.py": {
    "lang": "py",
@@ -5176,7 +5176,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0037
+   "hotspot_score": 0.0036
   },
   "services/nas_jetson_nano-api/app/downloads.py": {
    "lang": "py",
@@ -5435,7 +5435,7 @@
     ]
    ],
    "level": "warn",
-   "hotspot_score": 0.3625
+   "hotspot_score": 0.3453
   },
   "services/nas_jetson_nano-api/app/logging_setup.py": {
    "lang": "py",
@@ -5552,7 +5552,7 @@
     ]
    ],
    "level": "warn",
-   "hotspot_score": 0.0094
+   "hotspot_score": 0.0089
   },
   "services/nas_jetson_nano-api/app/routers/__init__.py": {
    "lang": "py",
@@ -5580,7 +5580,7 @@
    "magic_numbers": 0,
    "private_imports": [],
    "fan_out": 0,
-   "fan_in": 3,
+   "fan_in": 4,
    "dup_lines": 0,
    "commits": 0,
    "churn_lines": 0,
@@ -5618,7 +5618,7 @@
    "private_imports": [],
    "fan_out": 2,
    "fan_in": 1,
-   "dup_lines": 0,
+   "dup_lines": 6,
    "commits": 2,
    "churn_lines": 4,
    "bug_commits": 2,
@@ -5703,7 +5703,7 @@
     ]
    ],
    "level": "warn",
-   "hotspot_score": 0.0112
+   "hotspot_score": 0.0107
   },
   "services/nas_jetson_nano-api/app/routers/auth.py": {
    "lang": "py",
@@ -5822,7 +5822,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0034
+   "hotspot_score": 0.0032
   },
   "services/nas_jetson_nano-api/app/routers/download_files.py": {
    "lang": "py",
@@ -5913,7 +5913,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0086
+   "hotspot_score": 0.0082
   },
   "services/nas_jetson_nano-api/app/routers/health.py": {
    "lang": "py",
@@ -5934,7 +5934,7 @@
    "ctor_state_max": 0,
    "broad_catch": 0,
    "silent_catch": 0,
-   "dated_comments": 0,
+   "dated_comments": 1,
    "todo": 0,
    "dynamic": 0,
    "stringly_typed": 6,
@@ -5943,8 +5943,8 @@
    "fan_out": 3,
    "fan_in": 1,
    "dup_lines": 0,
-   "commits": 2,
-   "churn_lines": 17,
+   "commits": 3,
+   "churn_lines": 20,
    "bug_commits": 2,
    "complexity": 6,
    "worst_functions": [
@@ -5958,7 +5958,7 @@
     },
     {
      "name": "status",
-     "line": 45,
+     "line": 48,
      "loc": 15,
      "cc": 1,
      "nest": 0,
@@ -5978,7 +5978,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0022
+   "hotspot_score": 0.0032
   },
   "services/nas_jetson_nano-api/app/routers/logs.py": {
    "lang": "py",
@@ -6048,13 +6048,13 @@
   "services/nas_jetson_nano-api/app/routers/photos.py": {
    "lang": "py",
    "test": false,
-   "loc": 129,
-   "functions": 4,
+   "loc": 107,
+   "functions": 2,
    "func_loc_max": 32,
    "func_loc_p90": 32,
    "func_over_warn": 0,
    "cc_max": 5,
-   "cc_sum": 14,
+   "cc_sum": 9,
    "cc_over_warn": 0,
    "nest_max": 1,
    "params_max": 1,
@@ -6064,23 +6064,23 @@
    "ctor_state_max": 0,
    "broad_catch": 0,
    "silent_catch": 0,
-   "dated_comments": 0,
+   "dated_comments": 1,
    "todo": 0,
    "dynamic": 0,
    "stringly_typed": 18,
-   "magic_numbers": 2,
+   "magic_numbers": 0,
    "private_imports": [],
-   "fan_out": 2,
-   "fan_in": 2,
-   "dup_lines": 8,
-   "commits": 1,
-   "churn_lines": 4,
+   "fan_out": 3,
+   "fan_in": 1,
+   "dup_lines": 0,
+   "commits": 2,
+   "churn_lines": 43,
    "bug_commits": 1,
-   "complexity": 14,
+   "complexity": 9,
    "worst_functions": [
     {
      "name": "photo_users_stats",
-     "line": 154,
+     "line": 129,
      "loc": 21,
      "cc": 5,
      "nest": 1,
@@ -6088,40 +6088,14 @@
     },
     {
      "name": "photo_stats",
-     "line": 103,
+     "line": 78,
      "loc": 32,
      "cc": 4,
      "nest": 1,
      "params": 1
-    },
-    {
-     "name": "_immich_get",
-     "line": 42,
-     "loc": 10,
-     "cc": 3,
-     "nest": 1,
-     "params": 1
-    },
-    {
-     "name": "_immich_headers",
-     "line": 29,
-     "loc": 11,
-     "cc": 2,
-     "nest": 1,
-     "params": 0
     }
    ],
    "funcs": [
-    [
-     "_immich_headers",
-     2,
-     11
-    ],
-    [
-     "_immich_get",
-     3,
-     10
-    ],
     [
      "photo_stats",
      4,
@@ -6134,7 +6108,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0026
+   "hotspot_score": 0.0032
   },
   "services/nas_jetson_nano-api/app/routers/storage.py": {
    "lang": "py",
@@ -6162,7 +6136,7 @@
    "magic_numbers": 0,
    "private_imports": [],
    "fan_out": 3,
-   "fan_in": 2,
+   "fan_in": 3,
    "dup_lines": 0,
    "commits": 1,
    "churn_lines": 21,
@@ -6238,98 +6212,83 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0028
+   "hotspot_score": 0.0027
   },
   "services/nas_jetson_nano-api/app/routers/system.py": {
    "lang": "py",
    "test": false,
-   "loc": 194,
-   "functions": 10,
-   "func_loc_max": 41,
-   "func_loc_p90": 41,
+   "loc": 111,
+   "functions": 5,
+   "func_loc_max": 27,
+   "func_loc_p90": 27,
    "func_over_warn": 0,
-   "cc_max": 10,
-   "cc_sum": 39,
+   "cc_max": 5,
+   "cc_sum": 16,
    "cc_over_warn": 0,
-   "nest_max": 4,
+   "nest_max": 2,
    "params_max": 2,
    "bool_params": 0,
    "class_methods_max": 0,
    "ctor_params_max": 0,
    "ctor_state_max": 0,
-   "broad_catch": 3,
-   "silent_catch": 5,
-   "dated_comments": 0,
+   "broad_catch": 1,
+   "silent_catch": 0,
+   "dated_comments": 1,
    "todo": 0,
    "dynamic": 0,
-   "stringly_typed": 18,
+   "stringly_typed": 10,
    "magic_numbers": 0,
    "private_imports": [],
-   "fan_out": 3,
-   "fan_in": 2,
+   "fan_out": 5,
+   "fan_in": 1,
    "dup_lines": 0,
-   "commits": 1,
-   "churn_lines": 11,
+   "commits": 2,
+   "churn_lines": 125,
    "bug_commits": 1,
-   "complexity": 39,
+   "complexity": 16,
    "worst_functions": [
     {
-     "name": "_docker_ps_json",
-     "line": 106,
-     "loc": 41,
-     "cc": 10,
-     "nest": 4,
-     "params": 0
-    },
-    {
      "name": "containers",
-     "line": 216,
+     "line": 122,
      "loc": 26,
      "cc": 5,
      "nest": 2,
      "params": 0
     },
     {
-     "name": "_read_meminfo",
-     "line": 27,
-     "loc": 18,
-     "cc": 5,
-     "nest": 3,
-     "params": 0
-    },
-    {
      "name": "metrics",
-     "line": 173,
+     "line": 79,
      "loc": 27,
      "cc": 4,
      "nest": 2,
      "params": 0
     },
     {
-     "name": "_read_thermal",
-     "line": 87,
-     "loc": 13,
-     "cc": 4,
-     "nest": 3,
-     "params": 0
+     "name": "_read_disk",
+     "line": 31,
+     "loc": 15,
+     "cc": 3,
+     "nest": 1,
+     "params": 1
+    },
+    {
+     "name": "_http_check",
+     "line": 56,
+     "loc": 8,
+     "cc": 2,
+     "nest": 2,
+     "params": 2
+    },
+    {
+     "name": "_read_disk_async",
+     "line": 48,
+     "loc": 5,
+     "cc": 2,
+     "nest": 1,
+     "params": 1
     }
    ],
    "funcs": [
-    [
-     "_read_meminfo",
-     5,
-     18
-    ],
-    [
-     "_read_loadavg",
-     2,
-     6
-    ],
-    [
-     "_read_uptime_seconds",
-     2,
-     5
-    ],
     [
      "_read_disk",
      3,
@@ -6339,16 +6298,6 @@
      "_read_disk_async",
      2,
      5
-    ],
-    [
-     "_read_thermal",
-     4,
-     13
-    ],
-    [
-     "_docker_ps_json",
-     10,
-     41
     ],
     [
      "_http_check",
@@ -6366,45 +6315,45 @@
      26
     ]
    ],
-   "level": "warn",
-   "hotspot_score": 0.0073
+   "level": "ok",
+   "hotspot_score": 0.0057
   },
   "services/nas_jetson_nano-api/app/routers/talk.py": {
    "lang": "py",
    "test": false,
-   "loc": 183,
-   "functions": 7,
+   "loc": 168,
+   "functions": 5,
    "func_loc_max": 28,
    "func_loc_p90": 28,
    "func_over_warn": 0,
    "cc_max": 3,
-   "cc_sum": 15,
+   "cc_sum": 11,
    "cc_over_warn": 0,
    "nest_max": 1,
-   "params_max": 3,
+   "params_max": 2,
    "bool_params": 0,
    "class_methods_max": 0,
    "ctor_params_max": 0,
    "ctor_state_max": 0,
    "broad_catch": 0,
    "silent_catch": 0,
-   "dated_comments": 1,
+   "dated_comments": 2,
    "todo": 0,
    "dynamic": 0,
    "stringly_typed": 33,
    "magic_numbers": 0,
    "private_imports": [],
-   "fan_out": 2,
-   "fan_in": 2,
-   "dup_lines": 6,
-   "commits": 2,
-   "churn_lines": 38,
+   "fan_out": 4,
+   "fan_in": 1,
+   "dup_lines": 0,
+   "commits": 3,
+   "churn_lines": 77,
    "bug_commits": 2,
-   "complexity": 15,
+   "complexity": 11,
    "worst_functions": [
     {
      "name": "notify",
-     "line": 222,
+     "line": 199,
      "loc": 28,
      "cc": 3,
      "nest": 1,
@@ -6412,7 +6361,7 @@
     },
     {
      "name": "get_room",
-     "line": 181,
+     "line": 158,
      "loc": 24,
      "cc": 3,
      "nest": 0,
@@ -6420,7 +6369,7 @@
     },
     {
      "name": "list_rooms",
-     "line": 153,
+     "line": 130,
      "loc": 16,
      "cc": 2,
      "nest": 0,
@@ -6428,19 +6377,19 @@
     },
     {
      "name": "_ocs_get",
-     "line": 55,
+     "line": 50,
      "loc": 8,
      "cc": 2,
      "nest": 1,
      "params": 1
     },
     {
-     "name": "_ocs_post",
-     "line": 65,
-     "loc": 8,
-     "cc": 2,
-     "nest": 1,
-     "params": 3
+     "name": "_talk_url",
+     "line": 39,
+     "loc": 3,
+     "cc": 1,
+     "nest": 0,
+     "params": 2
     }
    ],
    "funcs": [
@@ -6450,17 +6399,7 @@
      3
     ],
     [
-     "_admin_auth",
-     2,
-     7
-    ],
-    [
      "_ocs_get",
-     2,
-     8
-    ],
-    [
-     "_ocs_post",
      2,
      8
     ],
@@ -6481,76 +6420,52 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0056
+   "hotspot_score": 0.0059
   },
   "services/nas_jetson_nano-api/app/routers/talk_bot.py": {
    "lang": "py",
    "test": false,
-   "loc": 687,
-   "functions": 36,
+   "loc": 607,
+   "functions": 31,
    "func_loc_max": 78,
    "func_loc_p90": 37,
    "func_over_warn": 1,
    "cc_max": 16,
-   "cc_sum": 186,
-   "cc_over_warn": 2,
+   "cc_sum": 155,
+   "cc_over_warn": 1,
    "nest_max": 4,
    "params_max": 4,
    "bool_params": 0,
    "class_methods_max": 0,
    "ctor_params_max": 0,
    "ctor_state_max": 0,
-   "broad_catch": 14,
-   "silent_catch": 5,
-   "dated_comments": 6,
+   "broad_catch": 13,
+   "silent_catch": 4,
+   "dated_comments": 4,
    "todo": 0,
    "dynamic": 3,
-   "stringly_typed": 115,
+   "stringly_typed": 102,
    "magic_numbers": 10,
-   "private_imports": [
-    {
-     "line": 64,
-     "from": "app.routers.talk",
-     "name": "_OCS_HEADERS"
-    },
-    {
-     "line": 64,
-     "from": "app.routers.talk",
-     "name": "_admin_auth"
-    },
-    {
-     "line": 64,
-     "from": "app.routers.talk",
-     "name": "_ocs_post"
-    }
-   ],
+   "private_imports": [],
    "fan_out": 10,
    "fan_in": 2,
    "dup_lines": 0,
-   "commits": 20,
-   "churn_lines": 1348,
+   "commits": 21,
+   "churn_lines": 1518,
    "bug_commits": 10,
-   "complexity": 186,
+   "complexity": 155,
    "worst_functions": [
     {
      "name": "_handle_image_request",
-     "line": 761,
+     "line": 641,
      "loc": 78,
      "cc": 16,
      "nest": 2,
      "params": 4
     },
     {
-     "name": "_build_health",
-     "line": 306,
-     "loc": 34,
-     "cc": 13,
-     "nest": 4,
-     "params": 0
-    },
-    {
      "name": "_ask_llm",
-     "line": 459,
+     "line": 335,
      "loc": 38,
      "cc": 12,
      "nest": 2,
@@ -6558,7 +6473,7 @@
     },
     {
      "name": "gate_reply",
-     "line": 514,
+     "line": 390,
      "loc": 39,
      "cc": 11,
      "nest": 2,
@@ -6566,10 +6481,18 @@
     },
     {
      "name": "_handle_messages",
-     "line": 655,
+     "line": 535,
      "loc": 37,
      "cc": 10,
      "nest": 3,
+     "params": 2
+    },
+    {
+     "name": "_dispatch_home_tool",
+     "line": 238,
+     "loc": 25,
+     "cc": 10,
+     "nest": 1,
      "params": 2
     }
    ],
@@ -6598,31 +6521,6 @@
      "_build_photos",
      4,
      24
-    ],
-    [
-     "_hdd_mount_probe",
-     3,
-     8
-    ],
-    [
-     "_check_hdd_mount",
-     4,
-     8
-    ],
-    [
-     "_check_failed_units",
-     4,
-     13
-    ],
-    [
-     "_read_active_alerts",
-     7,
-     10
-    ],
-    [
-     "_build_health",
-     13,
-     34
     ],
     [
      "_dispatch",
@@ -6687,12 +6585,12 @@
     [
      "_fetch_baseline_id",
      4,
-     10
+     12
     ],
     [
      "_poll_once",
      5,
-     25
+     27
     ],
     [
      "_actor",
@@ -6756,7 +6654,7 @@
     ]
    ],
    "level": "fail",
-   "hotspot_score": 0.6966
+   "hotspot_score": 0.5805
   },
   "services/nas_jetson_nano-api/app/routers/users.py": {
    "lang": "py",
@@ -6785,7 +6683,7 @@
    "private_imports": [],
    "fan_out": 2,
    "fan_in": 1,
-   "dup_lines": 14,
+   "dup_lines": 0,
    "commits": 0,
    "churn_lines": 0,
    "bug_commits": 0,
@@ -6872,6 +6770,394 @@
    "level": "ok",
    "hotspot_score": 0.0
   },
+  "services/nas_jetson_nano-api/app/services/__init__.py": {
+   "lang": "py",
+   "test": false,
+   "loc": 0,
+   "functions": 0,
+   "func_loc_max": 0,
+   "func_loc_p90": 0,
+   "func_over_warn": 0,
+   "cc_max": 0,
+   "cc_sum": 0,
+   "cc_over_warn": 0,
+   "nest_max": 0,
+   "params_max": 0,
+   "bool_params": 0,
+   "class_methods_max": 0,
+   "ctor_params_max": 0,
+   "ctor_state_max": 0,
+   "broad_catch": 0,
+   "silent_catch": 0,
+   "dated_comments": 0,
+   "todo": 0,
+   "dynamic": 0,
+   "stringly_typed": 0,
+   "magic_numbers": 0,
+   "private_imports": [],
+   "fan_out": 0,
+   "fan_in": 6,
+   "dup_lines": 0,
+   "commits": 1,
+   "churn_lines": 0,
+   "bug_commits": 0,
+   "complexity": 0,
+   "worst_functions": [],
+   "funcs": [],
+   "level": "ok",
+   "hotspot_score": 0.0
+  },
+  "services/nas_jetson_nano-api/app/services/home_health.py": {
+   "lang": "py",
+   "test": false,
+   "loc": 87,
+   "functions": 5,
+   "func_loc_max": 34,
+   "func_loc_p90": 34,
+   "func_over_warn": 0,
+   "cc_max": 13,
+   "cc_sum": 31,
+   "cc_over_warn": 1,
+   "nest_max": 4,
+   "params_max": 1,
+   "bool_params": 0,
+   "class_methods_max": 0,
+   "ctor_params_max": 0,
+   "ctor_state_max": 0,
+   "broad_catch": 1,
+   "silent_catch": 1,
+   "dated_comments": 3,
+   "todo": 0,
+   "dynamic": 0,
+   "stringly_typed": 13,
+   "magic_numbers": 0,
+   "private_imports": [],
+   "fan_out": 7,
+   "fan_in": 1,
+   "dup_lines": 0,
+   "commits": 1,
+   "churn_lines": 152,
+   "bug_commits": 0,
+   "complexity": 31,
+   "worst_functions": [
+    {
+     "name": "build_health",
+     "line": 111,
+     "loc": 34,
+     "cc": 13,
+     "nest": 4,
+     "params": 0
+    },
+    {
+     "name": "_read_active_alerts",
+     "line": 94,
+     "loc": 10,
+     "cc": 7,
+     "nest": 2,
+     "params": 0
+    },
+    {
+     "name": "_check_failed_units",
+     "line": 76,
+     "loc": 13,
+     "cc": 4,
+     "nest": 1,
+     "params": 1
+    },
+    {
+     "name": "_check_hdd_mount",
+     "line": 65,
+     "loc": 8,
+     "cc": 4,
+     "nest": 1,
+     "params": 1
+    },
+    {
+     "name": "_hdd_mount_probe",
+     "line": 44,
+     "loc": 8,
+     "cc": 3,
+     "nest": 2,
+     "params": 0
+    }
+   ],
+   "funcs": [
+    [
+     "_hdd_mount_probe",
+     3,
+     8
+    ],
+    [
+     "_check_hdd_mount",
+     4,
+     8
+    ],
+    [
+     "_check_failed_units",
+     4,
+     13
+    ],
+    [
+     "_read_active_alerts",
+     7,
+     10
+    ],
+    [
+     "build_health",
+     13,
+     34
+    ]
+   ],
+   "level": "warn",
+   "hotspot_score": 0.0055
+  },
+  "services/nas_jetson_nano-api/app/services/immich.py": {
+   "lang": "py",
+   "test": false,
+   "loc": 25,
+   "functions": 2,
+   "func_loc_max": 11,
+   "func_loc_p90": 11,
+   "func_over_warn": 0,
+   "cc_max": 3,
+   "cc_sum": 5,
+   "cc_over_warn": 0,
+   "nest_max": 1,
+   "params_max": 1,
+   "bool_params": 0,
+   "class_methods_max": 0,
+   "ctor_params_max": 0,
+   "ctor_state_max": 0,
+   "broad_catch": 0,
+   "silent_catch": 0,
+   "dated_comments": 0,
+   "todo": 0,
+   "dynamic": 0,
+   "stringly_typed": 0,
+   "magic_numbers": 2,
+   "private_imports": [],
+   "fan_out": 1,
+   "fan_in": 2,
+   "dup_lines": 0,
+   "commits": 1,
+   "churn_lines": 40,
+   "bug_commits": 0,
+   "complexity": 5,
+   "worst_functions": [
+    {
+     "name": "immich_get",
+     "line": 31,
+     "loc": 10,
+     "cc": 3,
+     "nest": 1,
+     "params": 1
+    },
+    {
+     "name": "_immich_headers",
+     "line": 18,
+     "loc": 11,
+     "cc": 2,
+     "nest": 1,
+     "params": 0
+    }
+   ],
+   "funcs": [
+    [
+     "_immich_headers",
+     2,
+     11
+    ],
+    [
+     "immich_get",
+     3,
+     10
+    ]
+   ],
+   "level": "ok",
+   "hotspot_score": 0.0009
+  },
+  "services/nas_jetson_nano-api/app/services/system_info.py": {
+   "lang": "py",
+   "test": false,
+   "loc": 90,
+   "functions": 5,
+   "func_loc_max": 41,
+   "func_loc_p90": 41,
+   "func_over_warn": 0,
+   "cc_max": 10,
+   "cc_sum": 23,
+   "cc_over_warn": 0,
+   "nest_max": 4,
+   "params_max": 0,
+   "bool_params": 0,
+   "class_methods_max": 0,
+   "ctor_params_max": 0,
+   "ctor_state_max": 0,
+   "broad_catch": 2,
+   "silent_catch": 5,
+   "dated_comments": 0,
+   "todo": 0,
+   "dynamic": 0,
+   "stringly_typed": 8,
+   "magic_numbers": 0,
+   "private_imports": [],
+   "fan_out": 0,
+   "fan_in": 3,
+   "dup_lines": 6,
+   "commits": 1,
+   "churn_lines": 122,
+   "bug_commits": 0,
+   "complexity": 23,
+   "worst_functions": [
+    {
+     "name": "docker_ps_json",
+     "line": 81,
+     "loc": 41,
+     "cc": 10,
+     "nest": 4,
+     "params": 0
+    },
+    {
+     "name": "read_meminfo",
+     "line": 27,
+     "loc": 18,
+     "cc": 5,
+     "nest": 3,
+     "params": 0
+    },
+    {
+     "name": "read_thermal",
+     "line": 62,
+     "loc": 13,
+     "cc": 4,
+     "nest": 3,
+     "params": 0
+    },
+    {
+     "name": "read_loadavg",
+     "line": 47,
+     "loc": 6,
+     "cc": 2,
+     "nest": 1,
+     "params": 0
+    },
+    {
+     "name": "read_uptime_seconds",
+     "line": 55,
+     "loc": 5,
+     "cc": 2,
+     "nest": 1,
+     "params": 0
+    }
+   ],
+   "funcs": [
+    [
+     "read_meminfo",
+     5,
+     18
+    ],
+    [
+     "read_loadavg",
+     2,
+     6
+    ],
+    [
+     "read_uptime_seconds",
+     2,
+     5
+    ],
+    [
+     "read_thermal",
+     4,
+     13
+    ],
+    [
+     "docker_ps_json",
+     10,
+     41
+    ]
+   ],
+   "level": "warn",
+   "hotspot_score": 0.0041
+  },
+  "services/nas_jetson_nano-api/app/services/talk_ocs.py": {
+   "lang": "py",
+   "test": false,
+   "loc": 25,
+   "functions": 3,
+   "func_loc_max": 8,
+   "func_loc_p90": 8,
+   "func_over_warn": 0,
+   "cc_max": 2,
+   "cc_sum": 5,
+   "cc_over_warn": 0,
+   "nest_max": 1,
+   "params_max": 3,
+   "bool_params": 0,
+   "class_methods_max": 0,
+   "ctor_params_max": 0,
+   "ctor_state_max": 0,
+   "broad_catch": 0,
+   "silent_catch": 0,
+   "dated_comments": 0,
+   "todo": 0,
+   "dynamic": 0,
+   "stringly_typed": 0,
+   "magic_numbers": 0,
+   "private_imports": [],
+   "fan_out": 1,
+   "fan_in": 2,
+   "dup_lines": 0,
+   "commits": 1,
+   "churn_lines": 59,
+   "bug_commits": 0,
+   "complexity": 5,
+   "worst_functions": [
+    {
+     "name": "ocs_post",
+     "line": 44,
+     "loc": 8,
+     "cc": 2,
+     "nest": 1,
+     "params": 3
+    },
+    {
+     "name": "admin_auth",
+     "line": 35,
+     "loc": 7,
+     "cc": 2,
+     "nest": 1,
+     "params": 0
+    },
+    {
+     "name": "_talk_url",
+     "line": 30,
+     "loc": 3,
+     "cc": 1,
+     "nest": 0,
+     "params": 2
+    }
+   ],
+   "funcs": [
+    [
+     "_talk_url",
+     1,
+     3
+    ],
+    [
+     "admin_auth",
+     2,
+     7
+    ],
+    [
+     "ocs_post",
+     2,
+     8
+    ]
+   ],
+   "level": "ok",
+   "hotspot_score": 0.0009
+  },
   "services/nas_jetson_nano-api/app/stt.py": {
    "lang": "py",
    "test": false,
@@ -6948,7 +7234,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0024
+   "hotspot_score": 0.0023
   },
   "services/nas_jetson_nano-api/app/telegram_bot.py": {
    "lang": "py",
@@ -6969,23 +7255,23 @@
    "ctor_state_max": 10,
    "broad_catch": 6,
    "silent_catch": 4,
-   "dated_comments": 7,
+   "dated_comments": 9,
    "todo": 0,
    "dynamic": 0,
    "stringly_typed": 69,
    "magic_numbers": 0,
    "private_imports": [],
-   "fan_out": 8,
+   "fan_out": 10,
    "fan_in": 2,
    "dup_lines": 0,
-   "commits": 11,
-   "churn_lines": 653,
+   "commits": 12,
+   "churn_lines": 673,
    "bug_commits": 5,
    "complexity": 157,
    "worst_functions": [
     {
      "name": "_dispatch",
-     "line": 249,
+     "line": 257,
      "loc": 65,
      "cc": 27,
      "nest": 6,
@@ -7001,7 +7287,7 @@
     },
     {
      "name": "_handle_voice",
-     "line": 348,
+     "line": 356,
      "loc": 45,
      "cc": 14,
      "nest": 2,
@@ -7009,7 +7295,7 @@
     },
     {
      "name": "handle_update",
-     "line": 223,
+     "line": 231,
      "loc": 23,
      "cc": 12,
      "nest": 2,
@@ -7017,7 +7303,7 @@
     },
     {
      "name": "supervise",
-     "line": 509,
+     "line": 523,
      "loc": 21,
      "cc": 8,
      "nest": 5,
@@ -7172,7 +7458,7 @@
     ]
    ],
    "level": "fail",
-   "hotspot_score": 0.3234
+   "hotspot_score": 0.336
   },
   "services/stt/stt_server.py": {
    "lang": "py",
@@ -7291,7 +7577,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0043
+   "hotspot_score": 0.0041
   },
   "services/watchdog/job/watchdog_job.py": {
    "lang": "py",
@@ -7405,7 +7691,7 @@
     ]
    ],
    "level": "ok",
-   "hotspot_score": 0.0082
+   "hotspot_score": 0.0078
   },
   "services/watchdog/vps/install_vps.sh": {
    "lang": "sh",
@@ -7443,7 +7729,7 @@
    "funcs": [],
    "strict_mode": true,
    "level": "ok",
-   "hotspot_score": 0.0016
+   "hotspot_score": 0.0015
   },
   "services/watchdog/vps/nas_liveness.py": {
    "lang": "py",
@@ -7577,7 +7863,7 @@
     ]
    ],
    "level": "warn",
-   "hotspot_score": 0.0315
+   "hotspot_score": 0.03
   },
   "tests/android/adb_readonly_check.sh": {
    "lang": "sh",
@@ -9337,13 +9623,13 @@
   "tests/nas_api/test_bobik_health.py": {
    "lang": "py",
    "test": true,
-   "loc": 166,
-   "functions": 20,
+   "loc": 171,
+   "functions": 22,
    "func_loc_max": 20,
-   "func_loc_p90": 20,
+   "func_loc_p90": 15,
    "func_over_warn": 0,
    "cc_max": 9,
-   "cc_sum": 54,
+   "cc_sum": 56,
    "cc_over_warn": 0,
    "nest_max": 2,
    "params_max": 2,
@@ -9353,7 +9639,7 @@
    "ctor_state_max": 0,
    "broad_catch": 0,
    "silent_catch": 0,
-   "dated_comments": 3,
+   "dated_comments": 4,
    "todo": 0,
    "dynamic": 0,
    "stringly_typed": 3,
@@ -9361,15 +9647,15 @@
    "private_imports": [],
    "fan_out": 0,
    "fan_in": 0,
-   "dup_lines": 26,
-   "commits": 3,
-   "churn_lines": 243,
+   "dup_lines": 22,
+   "commits": 4,
+   "churn_lines": 376,
    "bug_commits": 2,
-   "complexity": 54,
+   "complexity": 56,
    "worst_functions": [
     {
      "name": "test_build_health_lists_every_kind_of_problem_once",
-     "line": 188,
+     "line": 206,
      "loc": 20,
      "cc": 9,
      "nest": 0,
@@ -9377,23 +9663,23 @@
     },
     {
      "name": "test_hdd_check_shares_blocking_key_on_repeated_calls",
-     "line": 72,
+     "line": 90,
      "loc": 20,
      "cc": 6,
      "nest": 0,
      "params": 1
     },
     {
-     "name": "load_bot",
-     "line": 26,
-     "loc": 12,
+     "name": "_reset_app_modules",
+     "line": 34,
+     "loc": 11,
      "cc": 5,
      "nest": 2,
      "params": 0
     },
     {
      "name": "test_hdd_check_times_out_instead_of_hanging",
-     "line": 48,
+     "line": 66,
      "loc": 15,
      "cc": 4,
      "nest": 1,
@@ -9401,7 +9687,7 @@
     },
     {
      "name": "test_build_photos_logs_failure_type_without_changing_the_reply",
-     "line": 228,
+     "line": 246,
      "loc": 10,
      "cc": 4,
      "nest": 1,
@@ -9410,9 +9696,19 @@
    ],
    "funcs": [
     [
-     "load_bot",
+     "_reset_app_modules",
      5,
-     12
+     11
+    ],
+    [
+     "load_bot",
+     1,
+     3
+    ],
+    [
+     "load_health",
+     1,
+     3
     ],
     [
      "_async",
@@ -10707,6 +11003,149 @@
    ],
    "level": "warn"
   },
+  "tests/nas_api/test_layering.py": {
+   "lang": "py",
+   "test": true,
+   "loc": 149,
+   "functions": 13,
+   "func_loc_max": 19,
+   "func_loc_p90": 15,
+   "func_over_warn": 0,
+   "cc_max": 16,
+   "cc_sum": 78,
+   "cc_over_warn": 1,
+   "nest_max": 5,
+   "params_max": 2,
+   "bool_params": 0,
+   "class_methods_max": 0,
+   "ctor_params_max": 0,
+   "ctor_state_max": 0,
+   "broad_catch": 0,
+   "silent_catch": 0,
+   "dated_comments": 0,
+   "todo": 0,
+   "dynamic": 0,
+   "stringly_typed": 0,
+   "magic_numbers": 0,
+   "private_imports": [],
+   "fan_out": 0,
+   "fan_in": 0,
+   "dup_lines": 0,
+   "commits": 1,
+   "churn_lines": 221,
+   "bug_commits": 0,
+   "complexity": 78,
+   "worst_functions": [
+    {
+     "name": "_module_aliases",
+     "line": 106,
+     "loc": 19,
+     "cc": 16,
+     "nest": 5,
+     "params": 2
+    },
+    {
+     "name": "_private_import_violations",
+     "line": 89,
+     "loc": 14,
+     "cc": 9,
+     "nest": 5,
+     "params": 2
+    },
+    {
+     "name": "_services_purity_violations",
+     "line": 174,
+     "loc": 15,
+     "cc": 8,
+     "nest": 3,
+     "params": 2
+    },
+    {
+     "name": "_private_attr_violations",
+     "line": 132,
+     "loc": 14,
+     "cc": 8,
+     "nest": 4,
+     "params": 2
+    },
+    {
+     "name": "_routers_as_library_violations",
+     "line": 157,
+     "loc": 13,
+     "cc": 8,
+     "nest": 3,
+     "params": 2
+    }
+   ],
+   "funcs": [
+    [
+     "_module_name",
+     2,
+     6
+    ],
+    [
+     "_iter_app_modules",
+     3,
+     5
+    ],
+    [
+     "_import_targets",
+     8,
+     10
+    ],
+    [
+     "_private_import_violations",
+     9,
+     14
+    ],
+    [
+     "_module_aliases",
+     16,
+     19
+    ],
+    [
+     "_private_attr_violations",
+     8,
+     14
+    ],
+    [
+     "_is_allowed",
+     5,
+     5
+    ],
+    [
+     "_routers_as_library_violations",
+     8,
+     13
+    ],
+    [
+     "_services_purity_violations",
+     8,
+     15
+    ],
+    [
+     "_all_violations",
+     2,
+     9
+    ],
+    [
+     "test_no_private_cross_module_imports_or_calls",
+     3,
+     4
+    ],
+    [
+     "test_only_main_and_routers_import_routers",
+     3,
+     4
+    ],
+    [
+     "test_services_do_not_depend_on_routers_or_telegram_bot",
+     3,
+     4
+    ]
+   ],
+   "level": "warn"
+  },
   "tests/nas_api/test_llm_token.py": {
    "lang": "py",
    "test": true,
@@ -10944,7 +11383,7 @@
    "ctor_state_max": 3,
    "broad_catch": 0,
    "silent_catch": 0,
-   "dated_comments": 3,
+   "dated_comments": 4,
    "todo": 0,
    "dynamic": 0,
    "stringly_typed": 28,
@@ -10953,8 +11392,8 @@
    "fan_out": 0,
    "fan_in": 0,
    "dup_lines": 13,
-   "commits": 11,
-   "churn_lines": 689,
+   "commits": 12,
+   "churn_lines": 699,
    "bug_commits": 4,
    "complexity": 235,
    "worst_functions": [
@@ -10976,7 +11415,7 @@
     },
     {
      "name": "test_poll_forever_survives_non_httpx_error",
-     "line": 600,
+     "line": 602,
      "loc": 13,
      "cc": 7,
      "nest": 0,
@@ -15773,15 +16212,15 @@
   }
  },
  "totals": {
-  "files": 164,
-  "prod_files": 104,
-  "prod_loc": 10804,
-  "test_loc": 7716,
-  "prod_loc_py": 6916,
+  "files": 170,
+  "prod_files": 109,
+  "prod_loc": 10831,
+  "test_loc": 7870,
+  "prod_loc_py": 6943,
   "prod_loc_sh": 3888,
-  "warn": 27,
+  "warn": 28,
   "fail": 8,
-  "dup_pct_all": 6.3,
+  "dup_pct_all": 6.1,
   "import_cycles": [],
   "top_dup_pairs": [
    {
@@ -15910,6 +16349,6 @@
     "b": "tests/nas_api/test_bot_image_path.py"
    }
   ],
-  "top10_loc_share_pct": 41.5
+  "top10_loc_share_pct": 40.7
  }
 }

@@ -79,7 +79,7 @@ ssh -i "$VPS_KEY" \
     -o BatchMode=yes \
     "${VPS_USER}@${VPS_HOST}" \
     ". ${REMOTE_ENV}; rm -f ${REMOTE_ENV};
-     curl -sS -X POST \"https://api.telegram.org/bot\${TELEGRAM_BOT_TOKEN}/sendMessage\" \
+     curl -sS -X POST --max-time 10 \"https://api.telegram.org/bot\${TELEGRAM_BOT_TOKEN}/sendMessage\" \
          -d \"chat_id=\${TELEGRAM_CHAT_ID}\" \
          --data-urlencode 'text@-'" \
     < "$REPORT_FILE" \

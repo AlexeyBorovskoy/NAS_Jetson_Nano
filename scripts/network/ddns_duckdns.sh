@@ -26,7 +26,7 @@ log() { echo "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$LOG_FILE"; }
 send_telegram() {
     local msg="$1"
     [[ -z "${NAS_JETSON_NANO_TELEGRAM_TOKEN:-}" || -z "${NAS_JETSON_NANO_TELEGRAM_CHAT_ID:-}" ]] && return
-    curl -s -X POST "https://api.telegram.org/bot${NAS_JETSON_NANO_TELEGRAM_TOKEN}/sendMessage" \
+    curl -s -X POST --max-time 10 "https://api.telegram.org/bot${NAS_JETSON_NANO_TELEGRAM_TOKEN}/sendMessage" \
         -d "chat_id=${NAS_JETSON_NANO_TELEGRAM_CHAT_ID}" \
         -d "text=${msg}" >/dev/null 2>&1 || true
 }

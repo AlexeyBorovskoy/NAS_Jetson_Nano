@@ -251,6 +251,80 @@ head_ "7б. Immutable Compose images / sha256 image pins"
 # the pulled content. The gate is blocking for Jetson and VPS Compose files.
 check_image_tags
 
+# ── 7в. 🔴 Таймаут curl к Telegram ─────────────────────────────────────────────
+head_ "7в. Таймаут curl к Telegram / curl timeout"
+#
+# История дефекта (CQ-10, аудит кода 2026-10-02): часть вызовов
+# `curl ... https://api.telegram.org/bot<token>/sendMessage` уходила без --max-time.
+# При недоступном Telegram curl висит до TCP-таймаута (минуты): юнит или таймер всё
+# это время не завершается и не перезапускается, а тревога не уходит — снаружи это
+# выглядит как тишина, а не как поломка. Аудит назвал vps_amnezia_monitor.sh и
+# ddns_duckdns.sh; эта же проверка нашла ещё два — отправку отчёта по расписанию
+# и storage-alert (оба ходят на Telegram с VPS внутри ssh-строки).
+#
+# Почему awk, а не python: раздел обязан работать и там, где python нет вовсе.
+# Строки-продолжения (обратный слеш в конце) склеиваются: без этого вызов,
+# разбитый на `curl -sS -X POST \` + `"…/sendMessage"`, не нашёлся бы совсем.
+check_tg_curl_timeout() {
+    local tg_file tg_report tg_line tg_n
+    local tg_calls=0 tg_files=0 tg_bad=0
+    while IFS= read -r tg_file; do
+        [ -f "$tg_file" ] || continue
+        tg_report=$(awk '
+            BEGIN { CR = sprintf("%c", 13) }
+            function emit() {
+                if (buf ~ /^[[:space:]]*#/) { buf = ""; ln = 0; return }
+                if (buf ~ /curl/ &&
+                    buf ~ /sendMessage/) {
+                    calls++
+                    if (index(buf, "--max-time") == 0 &&
+                        buf !~ /[[:space:]]-m([[:space:]]|[0-9])/) {
+                        printf "BAD %s:%d\n", FILENAME, ln
+                    }
+                }
+                buf = ""
+                ln = 0
+            }
+            {
+                line = $0
+                if (length(line) > 0 && substr(line, length(line)) == CR)
+                    line = substr(line, 1, length(line) - 1)
+                if (buf == "") ln = NR
+                if (line ~ /\\$/) {
+                    sub(/\\$/, "", line)
+                    buf = buf " " line
+                    next
+                }
+                buf = buf " " line
+                emit()
+            }
+            END {
+                if (buf != "") emit()
+                printf "COUNT %d\n", calls
+            }
+        ' "$tg_file")
+        tg_n="${tg_report##*COUNT }"
+        case "$tg_n" in
+            ''|*[!0-9]*) tg_n=0 ;;
+        esac
+        tg_calls=$((tg_calls + tg_n))
+        if [ "$tg_n" -gt 0 ]; then
+            tg_files=$((tg_files + 1))
+        fi
+        while IFS= read -r tg_line; do
+            [ -n "$tg_line" ] || continue
+            bad "curl к Telegram без --max-time: ${tg_line#BAD }"
+            tg_bad=$((tg_bad + 1))
+        done < <(printf '%s\n' "$tg_report" | grep '^BAD ' || true)
+    done < <(git ls-files '*.sh')
+    if [ "$tg_calls" -eq 0 ]; then
+        warn "вызовов Telegram-отправки в *.sh не найдено — проверять нечего"
+    elif [ "$tg_bad" -eq 0 ]; then
+        ok "curl к Telegram: $tg_calls вызовов в $tg_files файлах, у всех есть --max-time"
+    fi
+}
+check_tg_curl_timeout
+
 # ── 8. Регрессионные тесты ─────────────────────────────────────────────────────
 head_ "8. Регрессионные тесты / regression tests"
 #

@@ -238,3 +238,93 @@ Subagent analyses: hotspots and duplication — the summary is in §4 and §7; e
 re-verified against the code (`talk_bot.py:198,254,539`, `downloads.py:170`, `main.py:868`,
 `telegram_bot.py:446-450`, `blocking.py:21-27`, `install_usb_watchdog.sh:22`,
 `vps_amnezia_monitor.sh:22`, `ddns_duckdns.sh:29`).
+
+## 12. Addendum (2026-10-02, evening): behaviour, coupling, criticality
+
+> Basis — a comparison with the second prompt "full architecture audit". Only the stages
+> applicable to Python and shell were taken from it: resources, multithreading, timeouts along
+> call chains, as well as coupling of changes by git and criticality. The behaviour passes were
+> run by Opus and Sonnet subagents, read-only. The lead re-verified every fact below against the code.
+> Evidence levels: **C** — CONFIRMED, **L** — LIKELY, **P** — POSSIBLE, **FP** — checked and rejected.
+
+### 12.1. Timeouts along call chains (TO-NN)
+
+| ID | Where | Lvl. | Prior. | Essence and scenario |
+|---|---|---|---|---|
+| **GW-6↑** (26.09 — low) | `llm-gateway/app/main.py:729` | C | **P1** | `OpenAI(...)` without `timeout` (the SDK default is ≈600 s). New consequence: DeepSeek is the fallback path after GigaChat 429/5xx (`main.py:821-832`). The bot waits 150 s, the gateway — up to ~750 s, and the bot gives up first. This is the class of the 24.08 incident; the subagent's TO-01 is a duplicate of GW-6 |
+| **TO-02** | `config.py:110` (300 s) versus `main.py:703+633` (300+120) and `+653` (180) | C | **P1** | image generation — the gateway up to 420 s, editing — up to 600 s, the bot waits 300 s. The bot replies "не получилось" ("it did not work out"), while the gateway later spends tokens for nothing |
+| TO-03 | `main.py:496+536` versus `config.py:104` | C (low probability) | P3 | OAuth 30 + chat 120 = 150, exactly the bot's timeout — there is no strict "greater than" |
+| TO-05 | `scripts/sber/check_gigachat_balance.sh:15` | C | P3 | `curl` to the gateway without `--max-time`; gate 7в checks only Telegram, while the class is wider |
+| TO-06 | `scripts/setup/nas-offsite-backup.sh:34-41` | C (relevance — P) | P4→P2 | `ssh` without `ServerAliveInterval`: after a break, `ssh \| tar` hangs. Whether the unit works after ADR-0007 — verify on the Vostro |
+| TO-07 | `services/stt/stt_server.py:70-75` | P | P3 | recognition has no timeout of its own; the single-threaded server keeps computing after the client leaves |
+| TO-08 | `container-watchdog.service` (300 s) versus `docker()` at 120 s each | P | P4 | in a mass failure the watchdog does not fit into 300 s |
+| ~~TO-04~~ | backup units without `TimeoutStartSec` | **FP** | — | for `Type=oneshot` the start timeout is disabled by default. On 26.09 this was already rejected as SD-4; the subagent reopened it, the lead rejected it on the earlier analysis |
+
+CONCLUSION: the rule "the caller waits strictly longer than the callee" is recorded only as text in CLAUDE.md.
+That is why the class comes back in every new branch of the code: Ollama was fixed, but the DeepSeek
+fallback and the images — were not. What is needed is an automatic check, not another point fix (PLAN, stage 16).
+
+### 12.2. Multithreading and resources (CC-NN)
+
+| ID | Where | Lvl. | Prior. | Essence and scenario |
+|---|---|---|---|---|
+| **CC-01** | `routers/download_files.py:70` | C | **P2** | the synchronous `def download` runs in the anyio pool (40 threads) with no timeout on `/dl/hdd` (ntfs-3g). While the HDD hangs, every refresh of the "файлы" ("files") page leaves a permanently hanging thread; the pool is exhausted — the same class as CQ-01 |
+| **CC-02** | `downloads.py:501-509` + `tick:471-480` | C | **P2** | the guard pauses downloads one by one, but writes `paused_gids` after the loop; `tick` catches only `HTTPError`. An error in the middle of the loop — the downloads are paused, but they are not in the ledger; when space frees up, they will **never** be unpaused |
+| CC-03 | `downloads.py:471-476` | C | P3 | an exception other than `HTTPError` aborts the tick before `ledger.save`: the actions in aria2 have already been performed, while the tick's messages are lost |
+| CC-04 | `telegram_bot.py:257-263` versus the supervisor (300 s) | L | P3 | a voice question: 45 s + queue + 120 + 150 s — more than 300 s. The supervisor cancels the loop, the `answered` key is already written → after the restart there is no reply, and the user does not learn about it |
+| CC-06 | `downloads.py:241-246`, `telegram_bot.py:192-197`, `llm-gateway/main.py:178-184` | P | P3 | writing via tmp + `os.replace`, but without `fsync`. After a hardware reset (like 17.08) the gateway, by its own fail-closed (`main.py:168-172`), answers **503 to every question** |
+| CC-07 | `main.py:517,672` | C | P3 | `_gigachat_flight_lock` without a timeout: waiting requests hold threads, and after the client leaves the tokens are still spent |
+| CC-08 | `main.py:957-970` + healthcheck 3 s + the watchdog | P | P3 | `/health` synchronously calls the workstation (2 s per phase) → the container is unhealthy → the watchdog does `docker restart` in the middle of a provider call |
+| CC-09 | `actions.py:183-202` and others | C | P3 | after a timeout `communicate()` does not kill the process. Two presses of "бэкап сейчас" ("backup now") — two `backup_databases.sh` in parallel (extends SD-3) |
+| CC-12 | `blocking.py:21-27` | C | P3 | 6 disk keys out of 8 threads of the shared pool; one more key per path — and the CQ-01 class comes back. A separate pool for disks is needed |
+| CC-05, CC-10, CC-11, CC-13, CC-14 | the subagent's analysis | C/P/L | P4 | orphaned tasks on shutdown; `create_task` without a saved reference; reading logs up to 10 MB in the event loop; no `Handler.timeout` in STT; `last_id` is advanced before processing |
+| FP | `_LOCAL_LAST_ERROR`, `id(self.disk_free)`, a single `Ledger`/`Lock` | FP | — | no races: assignment is atomic under the GIL, the id is stable, there is a single writer |
+
+**Open question — verify against the device.** The NAS API compose in git mounts only
+`/mnt/hdd2tb/Downloads` and `/mnt/storage/downloads`. If the device has no override of its own, then
+`home_health._hdd_mount_probe` and `/v1/storage` for the disk roots always answer "не смонтирован"
+("not mounted"), that is, they check nothing. This contradicts the E3 rollout of 20.09, so no conclusion
+is drawn — only the question.
+
+### 12.3. Coupling of changes by git
+
+File pairs with ≥ 3 joint commits. Mass commits (> 12 files) are excluded; the window is 392 commits.
+
+| pair | together | share | conclusion |
+|---|---|---|---|
+| `nas_jetson_nano-api/app/config.py` ↔ `docker-compose.nas_jetson_nano-api.yml` | 9 | 0.69 | **hidden coupling → CQ-18** |
+| `config.py` ↔ `routers/talk_bot.py` | 9 | 0.69 | every new bot capability brings a new setting — a consequence of CQ-18 |
+| `llm-gateway/app/main.py` ↔ its compose | 7 | 0.70 | the same mechanism of passing settings |
+| `llm-gateway/app/main.py` ↔ `routers/talk_bot.py` | 5 | 0.42 | **an explicit contract** on the 429/422/403 codes (`main.py:287-299,1329` ↔ `talk_bot.py:487,808-822`) — normal |
+| `daily-report.sh` ↔ `send-report-telegram.sh`; the three USB scripts | 4/4; 3/3 | 1.0 | in effect a single module (see also §7) |
+
+**CQ-18 (C, P3).** The compose has no `env_file`: the variables are listed by hand. Because of this
+**27 of the 66 NAS API settings cannot be set through `.env`** — the value is silently ignored there.
+Among them are `talk_bot_safety_gate`, `stt_timeout`, `talk_bot_image_timeout` (and it is exactly the one
+that has to be changed for TO-02), `voice_*`, `aria2_rpc_url`. This mirrors the 20.09 pitfall with
+`TELEGRAM_PROXY`. Wiring in `env_file` wholesale is not a way out: something else from the shared `.env`
+would leak into the container. The solution is a test: every `Settings` field is either passed in compose
+or listed explicitly as "default value only".
+
+### 12.4. Criticality × test protection
+
+The hotspot formula (change frequency × complexity) does not see files that change rarely and are
+simple, but where an error means data loss or a security hole. Criticality 3 is explicitly assigned to
+26 files: backup and restore, mounting, the second copy of photos, personal-data redaction,
+authorisation, SSRF/egress, the secrets gate. **Without a single test** (the file name does not occur in `tests/`):
+
+- `scripts/backup/immich_hdd_second_copy.sh` — **the only second copy of the photos** (it closed
+  P0 on 22.09). Verified by reading: `rsync -a` without `--delete` (what was deleted on the SSD stays on the HDD —
+  that is safe); the checks "the source exists / the HDD exists / ≥ 20 GB free" are in place. There is no test;
+- `scripts/security/check_no_secrets.sh` — the secrets gate, 8 commits, on 30.08 it broke every commit;
+- `scripts/backup/setup_config_backup.sh`, `install_restic.sh`, `scripts/storage/install_mount_service.sh`, `setup_disk.sh`.
+
+There is a test, but the behaviour is not covered: `backup_databases.sh`, `config_backup.sh`, `restore_drill.sh`,
+`ssd_hotplug_recovery.sh` (8 commits, was broken for 11 days), `storage_preflight.sh`.
+
+### 12.5. A known limitation of the ratchet
+
+Rule R3 counts any function in a new file as new code. That is why a move without changes
+(stage 11: `build_health`, `docker_ps_json` — the bodies match by AST up to the module name)
+had to be accepted explicitly: `--update` with the reason in commit `fc9c91a`. The improvement — match
+functions across files by body hash.

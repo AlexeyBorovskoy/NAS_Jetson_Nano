@@ -35,6 +35,33 @@
 | 13 | Bot state as a type | CQ-06 and E in `telegram_bot.py` | `_STATE` → a dataclass with all keys; `llm_failed_last` → the return value of `ask()`, not a field | test: two concurrent `ask` calls (one with a gateway failure) → the memory records only the successful one | 1–2 PRs, **REQUIRES A HUMAN DECISION**: the format of the bot's `/status` changes if the keys are renamed |
 | 14 | Split up `llm-gateway/app/main.py` | CQ-14 | along the axes: `providers/{giga,deepseek,ollama,cloudru}.py`, `budget.py` (together with GW-1/GW-2 from WORK_PLAN 3.3), `images.py`; **do not split the personal-data redaction** | the current 47 gateway tests + a test: each provider receives already-redacted text | 3 PRs; take only together with GW-1/2 |
 
+## Execution status (2026-10-02, branch `quality/code-audit-2026-10`)
+
+Done and accepted by the lead (tests in place, `preflight` with the ratchet passed):
+stage **1** — `8a02001`, **2** — `aaa6b07`, **3** — `9ee6c5a`, **4** — `6d0c8f7`, **5** — `d88dedb`,
+**6** — `c3c6623`, **8** — `75e5c21`…`210d0d4` and `b4691ba`, **11** — `1c7eb98`, `51912d4`, `f3d951c`
+(private cross-module calls 13 → 0) and `fc9c91a`.
+Not started: 7, 9, 10, 12, 13, 14. No rollout to the Jetson was done.
+
+## Addendum: stages for the findings of report §12
+
+| # | stage | findings | approach | characterising test before the edit | prior. |
+|---|---|---|---|---|---|
+| 15 | Gateway provider timeouts below the bot's timeout | GW-6↑, TO-02, TO-03 | `OpenAI(..., timeout=DEEPSEEK_TIMEOUT)` (90 s); images — either `TALK_BOT_IMAGE_TIMEOUT` ≥ the sum of the gateway's steps (450/650 s), or a shared request deadline in the gateway; GigaChat OAuth — 15 s. **CQ-18 first**: `talk_bot_image_timeout` cannot currently be set through `.env` | a gateway with a slow DeepSeek stub → the reply arrives before the bot's timeout | **P1** |
+| 16 | A timeout-hierarchy check | the TO class | test: a table "caller → all callee chains (with sequential steps and fallback paths)", the inequality `caller > sum(callee)`; generalise gate 7в from Telegram to any `curl` in `scripts/**/*.sh` (TO-05) | the test is red on the current code (TO-02) | P1 |
+| 17 | The "файлы" ("files") page and the download guard | CC-01, CC-02, CC-03 | `download` → `async def` + `blocking.run_io` with a timeout and a 503; in `_guard`, append to `paused_gids` after each pause, catch `RuntimeError` on every download; in `tick` — `except Exception` with a log and **always** `ledger.save` | a hanging `stat` → a 503 and one thread; an error on the third pause → all three in `paused_gids` | P2 |
+| 18 | Explicit settings passing | CQ-18 | test: every `Settings` field of the NAS API and the gateway is either passed in compose or listed explicitly as "default only" with a reason; add the needed ones to compose (`TALK_BOT_IMAGE_TIMEOUT`, `STT_TIMEOUT`, …) | the test is red: 27 fields | P3 |
+| 19 | A separate pool for disks | CC-12 | `ThreadPoolExecutor(4)` in `blocking.run_io` | N keys hang → DNS and `to_thread` stay alive | P3 |
+| 20 | `fsync` for state files | CC-06 | a shared `atomic_write()` (flush + fsync of the file and the directory) for the download ledger, the bot state and the gateway accounting; on a corrupt file the gateway restores from `.bak` instead of answering 503 to everything | a corrupt accounting file → the gateway answers | P3 |
+| 21 | Processes and the backup button | CC-09 | `proc.kill(); await proc.wait()` on timeout; an `asyncio.Lock` "a backup is already running" → 409 | two requests in a row → one process | P3 |
+| 22 | Tests for critical scripts that have none | §12.4 | `immich_hdd_second_copy.sh` (no source / no HDD / too little space → code ≠ 0 and nothing is copied; no `--delete`), `check_no_secrets.sh` (a secret is caught, a `*_FILE` path is not) | — these are the tests | P2 |
+| 23 | Verification against the device (read-only) | the §12.2 question, TO-06 | whether the disk roots are mounted into the API container; whether the off-site unit on the Vostro is alive after ADR-0007 | — | — |
+| 24 | The ratchet: a move ≠ new code; coverage of changed files | §12.5, the v3 prompt | matching functions by body hash; the coverage of a changed file not below baseline, and for critical ones — a test for any edit | a deliberate move → not a violation | P4 |
+
+Order: **18 → 15 → 16** (without 18, TO-02 cannot be fixed by a setting), then 17 and 22, then 19–21.
+Stages 15 and 17 change behaviour for the family (waiting times, a 503 reply instead of a hang) — after
+the rollout, an announcement to the group (rule no. 18).
+
 ## The ratchet (stage 8) — how to build it in, not build it alongside
 
 - The gates already exist: `.githooks/pre-commit` → `scripts/quality/preflight.sh`, CI `quality-checks.yml`.

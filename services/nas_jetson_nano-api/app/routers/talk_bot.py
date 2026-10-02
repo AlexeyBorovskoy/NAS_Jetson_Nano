@@ -197,7 +197,11 @@ async def _build_disk() -> str:
 async def _build_photos() -> str:
     try:
         stats = await photos_mod._immich_get("api/server/statistics")
-    except Exception:
+    except Exception as exc:
+        # CQ-07 (аудит 2026-10-02): раньше причина (сеть? ключ? URL?) не попадала
+        # даже в журнал. Пишем только ТИП исключения — в тексте может быть URL с
+        # ключом, его в журнал не кладём. Ответ владельцу не меняется.
+        log.warning("immich statistics failed: %s", type(exc).__name__)
         return (
             "📷 **Immich**\n- ⚠️ Недоступен или `IMMICH_API_KEY` не настроен."
         )
@@ -539,9 +543,12 @@ async def gate_reply(question: str, user: str) -> str | None:
         _STATE["gate_execute"] = _STATE.get("gate_execute", 0) + 1
         try:
             reply = await _dispatch_home_tool(decision["tool"], user=user)
-        except Exception as exc:
+        except Exception:
+            # CQ-05 (аудит 2026-10-02): текст исключения мог нести пути/адреса
+            # (например /mnt/hdd2tb/...) прямо в комнату Talk. Подробности — только
+            # в журнале API, семье — общая фраза.
             log.exception("bobik home tool failed")
-            reply = f"🐕 Ошибка локальной команды: {exc}"
+            reply = "🐕 Локальная команда не выполнилась — подробности в журнале NAS."
         _STATE["replied"] = _STATE.get("replied", 0) + 1
         log.info("bobik home tool",
                  extra={"fields": {"user": user, "tool": decision.get("tool"),

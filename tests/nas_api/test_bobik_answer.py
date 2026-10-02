@@ -94,6 +94,24 @@ def test_daily_reply_limit_is_per_user(monkeypatch):
     assert asyncio.run(bot.answer("q", "ivan")) == "🐕 ok"
 
 
+def test_home_tool_failure_does_not_leak_exception_text(monkeypatch):
+    """CQ-05 (аудит 2026-10-02): `f"🐕 Ошибка локальной команды: {exc}"` отправлял
+    текст исключения прямо в комнату Talk — а в нём могут быть пути и адреса
+    (например /mnt/hdd2tb/...). Ответ семье обязан быть общим, подробности —
+    только в журнале API (log.exception)."""
+    bot = load_bot()
+
+    async def boom(tool, user=""):
+        raise RuntimeError("/mnt/hdd2tb/secret/path недоступен")
+
+    monkeypatch.setattr(bot, "_dispatch_home_tool", boom)
+    monkeypatch.setattr(bot, "admit", lambda text, structured_tools=True: {
+        "decision": bot.ADMIT_EXECUTE, "tool": "disk", "message": None, "reason": "tool_intent"})
+    reply = asyncio.run(bot.answer("сколько места?", "admin"))
+    assert "/mnt/" not in reply
+    assert "не выполнилась" in reply
+
+
 def test_home_tool_answers_locally(monkeypatch):
     bot = load_bot()
     called = []

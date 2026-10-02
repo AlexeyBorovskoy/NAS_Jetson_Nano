@@ -857,15 +857,36 @@ def _giga_fallback_enabled() -> bool:
 # про модель, а не всегда про маршрут.
 
 
+# CQ-04 (аудит 2026-10-02): `except Exception: return False` прятал причину, по которой
+# шлюз уходит с бесплатной локальной модели во внешнее облако — а это решает, кто платит
+# за следующий вопрос. Короткая причина последней неудачи — здесь, видна в /health.
+_LOCAL_LAST_ERROR: Optional[str] = None
+
+
 def _local_available(timeout: float = 2.0) -> bool:
     """Отвечает ли локальная модель прямо сейчас. Дёшево и без побочных эффектов."""
+    global _LOCAL_LAST_ERROR
     url = os.getenv("LLM_LOCAL_URL", "").strip().rstrip("/")
     if not url:
         return False
     try:
-        return httpx.get(url + "/api/tags", timeout=timeout).status_code == 200
-    except Exception:
+        status = httpx.get(url + "/api/tags", timeout=timeout).status_code
+    except Exception as exc:
+        reason = "%s: %s" % (type(exc).__name__, str(exc)[:160])
+        if _LOCAL_LAST_ERROR != reason:  # не спамить журнал одной и той же причиной
+            log.warning("local model unavailable: %s", reason)
+            _LOCAL_LAST_ERROR = reason
         return False
+    if status == 200:
+        if _LOCAL_LAST_ERROR is not None:
+            log.info("local model is reachable again")
+            _LOCAL_LAST_ERROR = None
+        return True
+    reason = "HTTP %d" % status
+    if _LOCAL_LAST_ERROR != reason:
+        log.warning("local model unavailable: %s", reason)
+        _LOCAL_LAST_ERROR = reason
+    return False
 
 
 def _call_ollama(system: str, user: str, model: str) -> tuple[str, int]:
@@ -948,6 +969,8 @@ def health():
             # Live reachability — workstation is not a prod node (ADR-0007).
             "ollama": _local_available(),
         },
+        # CQ-04: причина последней неудачи локальной модели — почему шлюз ушёл в облако.
+        "ollama_last_error": _LOCAL_LAST_ERROR,
         "prefer_local": os.getenv("LLM_PREFER_LOCAL", "false").strip().lower() == "true",
         "giga_fallback_deepseek": _giga_fallback_enabled(),
         "gigachat_base": _gigachat_base(),

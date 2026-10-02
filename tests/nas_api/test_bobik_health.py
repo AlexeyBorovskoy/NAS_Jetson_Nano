@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import importlib
 import json
+import logging
 import os
 import sys
 import tempfile
@@ -220,3 +221,23 @@ def test_build_health_ssd_not_mounted_skips_backup_check(monkeypatch):
     result = asyncio.run(bot._build_health())
     assert "SSD /mnt/storage не смонтирован" in result
     assert called == []
+
+
+# ── фото Immich: отказ не должен быть немым ─────────────────────────────────────
+
+def test_build_photos_logs_failure_type_without_changing_the_reply(monkeypatch, caplog):
+    """CQ-07 (аудит 2026-10-02): молчаливый `except Exception: return "...Недоступен..."`
+    прятал причину (сеть? ключ? URL?) даже из журнала. Добавлен `log.warning` с ТИПОМ
+    исключения — без текста, чтобы в журнал не утёк ключ/URL из сообщения об ошибке.
+    Ответ владельцу не меняется."""
+    bot = load_bot()
+
+    async def boom(path):
+        raise RuntimeError("http://192.168.0.50:2283/api/server/statistics?key=secret")
+
+    monkeypatch.setattr(bot.photos_mod, "_immich_get", boom)
+    with caplog.at_level(logging.WARNING):
+        result = asyncio.run(bot._build_photos())
+    assert result == "📷 **Immich**\n- ⚠️ Недоступен или `IMMICH_API_KEY` не настроен."
+    assert "RuntimeError" in caplog.text
+    assert "secret" not in caplog.text

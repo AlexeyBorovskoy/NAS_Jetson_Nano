@@ -6,9 +6,25 @@ plus git churn. No third-party dependencies: lizard/radon/jscpd are not
 installed on the workstation and the audit forbids installing tools without
 the owner's consent.
 
-Usage: python scripts/quality/code_metrics.py --out baseline.json [--summary]
+Usage:
+    python scripts/quality/code_metrics.py --out baseline.json [--summary]
+    python scripts/quality/code_metrics.py --update baseline.json [--summary]
+    python scripts/quality/code_metrics.py --check baseline.json \
+        [--allow-regression FILE --reason TEXT]...
 Metric definitions are written into the JSON ("definitions") so numbers stay
 comparable between sessions.
+
+Stage 8 (metrics ratchet): --check compares the current tree against a
+baseline and fails (exit 1) on a regression in an already-unhealthy module,
+a newly complex function, or a growing count of `fail`-level modules;
+--update regenerates the baseline after a real improvement. See
+docs/audit/2026-10-02_code_audit/PLAN.ru.md, section "Храповик".
+
+Dev-tool note: `is_silent()` already matches on `ast.Constant`, which the
+CPython parser only emits from 3.8 (3.6/3.7 produce `ast.Num`/`ast.Str`/
+`ast.NameConstant` instead) — harmless here because this script is a
+developer/CI tool that is never executed on the Jetson itself, only its
+3.6-compatible *syntax* matters for the `vermin --target=3.6-` gate.
 """
 import argparse
 import ast
@@ -22,6 +38,18 @@ import sys
 import tokenize
 from collections import defaultdict
 from pathlib import Path
+
+# --check/--update print Russian violation lines; on Windows the console
+# codepage is cp1251, not UTF-8, and would otherwise mangle them (the same
+# trap as the .ps1-encoding finding in CLAUDE.md's "грабли"). Guarded by the
+# encoding check (not just `hasattr(..., "buffer")`) so loading this module
+# from a caller that already wrapped sys.stdout (e.g. a test importing this
+# file with importlib) does not wrap it a second time — a second TextIOWrapper
+# around the same buffer gets garbage-collected and closes the shared buffer
+# out from under the first one ("I/O operation on closed file").
+if hasattr(sys.stdout, "buffer") and (sys.stdout.encoding or "").lower() != "utf-8":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",
+                                  errors="replace", line_buffering=True)
 
 EXCLUDE_TOP = {"archive", "research", "kaggle", "tools", "docs", "DNS",
                "assets", "artifacts"}
@@ -128,6 +156,30 @@ def is_silent(handler):
     return True
 
 
+def qualnames(tree):
+    """Map id(FunctionDef|AsyncFunctionDef) -> dotted qualname (Class.method,
+    outer.inner for nested defs, or a bare name at module level). Used by
+    --check (stage 8 ratchet) to tell a renamed/moved function from a new
+    one. Kept as a separate pass over the same tree object so node ids stay
+    valid (no gc between this call and the lookup)."""
+    out = {}
+
+    def visit(node, prefix):
+        for ch in ast.iter_child_nodes(node):
+            if isinstance(ch, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                qn = ch.name if not prefix else prefix + "." + ch.name
+                out[id(ch)] = qn
+                visit(ch, qn)
+            elif isinstance(ch, ast.ClassDef):
+                qn = ch.name if not prefix else prefix + "." + ch.name
+                visit(ch, qn)
+            else:
+                visit(ch, prefix)
+
+    visit(tree, "")
+    return out
+
+
 def is_broad(handler):
     t = handler.type
     if t is None:
@@ -163,6 +215,7 @@ def py_code_lines(src, tree):
 def analyse_py(path, src):
     tree = ast.parse(src)
     code, comments, doc_lines = py_code_lines(src, tree)
+    quals = qualnames(tree)
     m = {"lang": "py", "loc": len(code), "functions": [], "classes": [],
          "broad_catch": [], "silent_catch": [], "dynamic": 0,
          "stringly_typed": 0, "magic_numbers": 0, "imports": [],
@@ -186,7 +239,8 @@ def analyse_py(path, src):
             m["functions"].append({"name": n.name, "line": n.lineno,
                                    "loc": floc, "cc": cyclomatic(n),
                                    "nest": nesting(n), "params": len(params),
-                                   "bool_params": bools})
+                                   "bool_params": bools,
+                                   "qualname": quals.get(id(n), n.name)})
         elif isinstance(n, ast.ClassDef):
             meths = [b for b in n.body if isinstance(b, (ast.FunctionDef,
                                                           ast.AsyncFunctionDef))]
@@ -288,7 +342,7 @@ def analyse_sh(path, src):
                          for k in range(start, j + 1))
             m["functions"].append({"name": name, "line": start, "loc": len(body),
                                    "cc": cc, "nest": nest, "params": 0,
-                                   "bool_params": 0})
+                                   "bool_params": 0, "qualname": name})
             i = j
         i += 1
     return m
@@ -296,8 +350,16 @@ def analyse_sh(path, src):
 
 # ── Repo-level ────────────────────────────────────────────────────────────
 def churn():
-    out = git("log", "--numstat", "--format=%x00%s")
     stats = defaultdict(lambda: {"commits": 0, "lines": 0, "bug_commits": 0})
+    try:
+        out = git("log", "--numstat", "--format=%x00%s")
+    except (subprocess.CalledProcessError, OSError):
+        # A shallow CI checkout (actions/checkout default depth=1) can still
+        # make `git log` succeed with one commit; this guards the rarer case
+        # (no .git, a corrupt shallow-grafts file) where it exits non-zero.
+        # --check never compares commits/churn/hotspot, so an empty result
+        # here cannot change the ratchet's verdict.
+        return stats
     for block in out.split("\x00")[1:]:
         lines = block.strip("\n").splitlines()
         subj, files = lines[0], lines[1:]
@@ -427,11 +489,11 @@ def level(v, key):
     return "fail" if v > f else "warn" if v > w else "ok"
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--out", required=True)
-    ap.add_argument("--summary", action="store_true")
-    a = ap.parse_args()
+def compute_state():
+    """Analyse the tracked tree and return the same dict that used to be
+    written straight to JSON by the old `main()`. Shared by --out, --update
+    and --check (the latter uses it as "current" to compare against a
+    baseline) so the three modes can never silently drift apart."""
     files = tracked_sources()
     mods, srcs = {}, {}
     for f in files:
@@ -487,6 +549,10 @@ def main():
                 ({"name": x["name"], "line": x["line"], "loc": x["loc"], "cc": x["cc"],
                   "nest": x["nest"], "params": x["params"]} for x in fns),
                 key=lambda x: (-x["cc"], -x["loc"]))[:5],
+            # Stage 8 (metrics ratchet, --check): per-function fingerprint so a
+            # renamed/moved function isn't mistaken for a brand-new one, and a
+            # genuinely new function can be held to a stricter CC<=10/loc<=40.
+            "funcs": [[x.get("qualname", x["name"]), x["cc"], x["loc"]] for x in fns],
         }
         if "strict_mode" in m:
             rec["strict_mode"] = m["strict_mode"]
@@ -527,13 +593,183 @@ def main():
             "tool_versions": {"python": sys.version.split()[0], "metrics": "code_metrics.py v1"},
             "thresholds": THRESHOLDS, "definitions": DEFINITIONS,
             "modules": out_mods, "totals": totals}
-    Path(a.out).write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
-    if a.summary:
-        t = totals
-        print(f"prod files {t['prod_files']}, loc {t['prod_loc']} (py {t['prod_loc_py']}, "
-              f"sh {t['prod_loc_sh']}), test loc {t['test_loc']}, warn {t['warn']}, "
-              f"fail {t['fail']}, dup {t['dup_pct_all']}%, top10 share {t['top10_loc_share_pct']}%, "
-              f"cycles {len(t['import_cycles'])}")
+    return data
+
+
+def format_summary(data):
+    t = data["totals"]
+    return (f"prod files {t['prod_files']}, loc {t['prod_loc']} (py {t['prod_loc_py']}, "
+            f"sh {t['prod_loc_sh']}), test loc {t['test_loc']}, warn {t['warn']}, "
+            f"fail {t['fail']}, dup {t['dup_pct_all']}%, top10 share {t['top10_loc_share_pct']}%, "
+            f"cycles {len(t['import_cycles'])}")
+
+
+def write_state(path, summary=False):
+    data = compute_state()
+    Path(path).write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
+    if summary:
+        print(format_summary(data))
+    return 0
+
+
+# ── Stage 8: metrics ratchet (--check / --update) ───────────────────────────
+#
+# History (docs/audit/2026-10-02_code_audit/PLAN.ru.md, "Храповик"): the audit
+# that produced this file's baseline found 17 structural findings; without a
+# gate, a mechanical refactor fixing them is free to drift back the moment
+# nobody is looking (rule #14 in CLAUDE.md: "an error is caught locally, not
+# in production"). --check turns the one-off baseline.json into a standing
+# gate wired into preflight.sh and CI, not a report read once and forgotten.
+RATCHET_METRICS = ("cc_max", "func_loc_max", "nest_max")
+NEW_FUNC_CC_MAX = 10
+NEW_FUNC_LOC_MAX = 40
+
+
+def _is_prod(rec):
+    return not rec.get("test", False)
+
+
+def _catch_sum(rec):
+    return rec.get("broad_catch", 0) + rec.get("silent_catch", 0)
+
+
+def compare(baseline, current, allow=None):
+    """Pure comparison, no I/O — kept separate from argv/git/filesystem so
+    tests/unit/test_code_metrics_ratchet.py can feed it synthetic dicts.
+
+    `baseline`/`current` accept either a full code_metrics.py JSON document
+    (a dict with a "modules" key) or a bare {file: record} modules dict —
+    both shapes are used by callers (the CLI passes full documents; tests
+    often pass bare modules dicts to keep fixtures short).
+
+    `allow`: {file: reason} — a file present here has its violations printed
+    as "allowed" and excluded from the pass/fail verdict (rule R4).
+
+    Returns a list of violation dicts: {file, rule, before, after, allowed,
+    reason}. Only product files (record["test"] is falsy) are considered —
+    tests/ is explicitly out of scope for the ratchet.
+
+    Rules (see PLAN.ru.md "Храповик"):
+      R1 - the count of `fail`-level product modules must not grow.
+      R2 - a module already `warn`/`fail` in the baseline must not get worse
+           on cc_max / func_loc_max / nest_max / (broad_catch+silent_catch);
+           loc may grow by at most 10% (tests add lines near the code they
+           cover; the complexity/catch metrics above stay strict).
+      R3 - a function absent from the baseline's `funcs` fingerprint (a new
+           function, or any function in a brand-new file) must have
+           CC <= 10 and <= 40 lines - a stricter bar than the legacy
+           thresholds, so new code cannot be grandfathered in at warn level.
+      R4 - a violation whose file is in `allow` is reported, not failed.
+    """
+    b_mods = baseline.get("modules", baseline)
+    c_mods = current.get("modules", current)
+    allow = allow or {}
+    out = []
+
+    def emit(allow_key, rule, before, after, label=None):
+        v = {"file": label if label is not None else allow_key, "rule": rule,
+             "before": before, "after": after, "allowed": False, "reason": None}
+        if allow_key in allow:
+            v["allowed"] = True
+            v["reason"] = allow[allow_key]
+        out.append(v)
+
+    # R1 — fail-level product modules must not grow in number.
+    b_fail = sum(1 for f, m in b_mods.items() if _is_prod(m) and m.get("level") == "fail")
+    c_fail_files = [f for f, m in c_mods.items() if _is_prod(m) and m.get("level") == "fail"]
+    if len(c_fail_files) > b_fail:
+        newly = [f for f in c_fail_files if b_mods.get(f, {}).get("level") != "fail"]
+        for f in newly or c_fail_files:
+            emit(f, "R1 fail-count", b_mods.get(f, {}).get("level", "-"), "fail")
+
+    # R2 — an already-unhealthy module must not get worse.
+    for f, b in b_mods.items():
+        if not _is_prod(b) or b.get("level") not in ("warn", "fail"):
+            continue
+        c = c_mods.get(f)
+        if c is None or not _is_prod(c):
+            continue  # deleted, or reclassified as a test — not a regression here
+        for metric in RATCHET_METRICS:
+            bv, cv = b.get(metric, 0), c.get(metric, 0)
+            if cv > bv:
+                emit(f, "R2 " + metric, bv, cv)
+        bcatch, ccatch = _catch_sum(b), _catch_sum(c)
+        if ccatch > bcatch:
+            emit(f, "R2 broad_catch+silent_catch", bcatch, ccatch)
+        bloc, cloc = b.get("loc", 0), c.get("loc", 0)
+        if cloc > bloc * 1.1:
+            emit(f, "R2 loc (+10% allowance)", bloc, cloc)
+
+    # R3 — a brand-new function must be simple.
+    for f, c in c_mods.items():
+        if not _is_prod(c):
+            continue
+        b = b_mods.get(f)
+        known = set()
+        if b is not None:
+            known = {fn[0] for fn in b.get("funcs", [])}
+        for fn in c.get("funcs", []):
+            qual, cc_v, loc_v = fn[0], fn[1], fn[2]
+            if qual in known:
+                continue
+            if cc_v > NEW_FUNC_CC_MAX or loc_v > NEW_FUNC_LOC_MAX:
+                emit(f, "R3 new-function", "-",
+                     "cc=%s loc=%s (limit cc<=%s loc<=%s)" %
+                     (cc_v, loc_v, NEW_FUNC_CC_MAX, NEW_FUNC_LOC_MAX),
+                     label="%s:%s" % (f, qual))
+
+    return out
+
+
+def _format_violation(v):
+    line = "%s: %s, было -> стало: %s -> %s" % (v["file"], v["rule"], v["before"], v["after"])
+    if v["allowed"]:
+        line += " — разрешено: %s" % v["reason"]
+    return line
+
+
+def cmd_check(baseline_path, allow_pairs):
+    baseline = json.loads(Path(baseline_path).read_text(encoding="utf-8"))
+    allow = dict(allow_pairs)
+    current = compute_state()
+    violations = compare(baseline, current, allow)
+    for v in violations:
+        print(_format_violation(v))
+    failed = [v for v in violations if not v["allowed"]]
+    allowed = [v for v in violations if v["allowed"]]
+    print("")
+    if failed:
+        print("храповик метрик: %d нарушени(й), разрешено: %d" % (len(failed), len(allowed)))
+        return 1
+    print("храповик метрик: нарушений нет (разрешено: %d)" % len(allowed))
+    return 0
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", metavar="BASELINE",
+                    help="write current metrics to BASELINE (original mode)")
+    ap.add_argument("--update", metavar="BASELINE",
+                    help="same as --out, named for the ratchet-improved workflow")
+    ap.add_argument("--check", metavar="BASELINE",
+                    help="compare the current tree against BASELINE; exit 1 on a regression")
+    ap.add_argument("--allow-regression", action="append", default=[],
+                    dest="allow_regression", metavar="FILE",
+                    help="suppress regressions in FILE (repeatable, pairs with --reason)")
+    ap.add_argument("--reason", action="append", default=[], metavar="TEXT",
+                    help="reason for the matching --allow-regression (repeatable)")
+    ap.add_argument("--summary", action="store_true")
+    a = ap.parse_args()
+
+    modes = [m for m in (a.out, a.update, a.check) if m]
+    if len(modes) != 1:
+        ap.error("ровно один из --out / --update / --check обязателен")
+    if len(a.allow_regression) != len(a.reason):
+        ap.error("у каждого --allow-regression обязан быть свой --reason")
+
+    if a.check:
+        sys.exit(cmd_check(a.check, list(zip(a.allow_regression, a.reason))))
+    sys.exit(write_state(a.update or a.out, a.summary))
 
 
 if __name__ == "__main__":

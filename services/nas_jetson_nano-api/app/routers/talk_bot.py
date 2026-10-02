@@ -48,6 +48,7 @@ import httpx
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
+from app import blocking
 from app import dialog as dialog_mem
 from app.bobik_gate import (
     ADMIT_CHAT,
@@ -232,12 +233,16 @@ DUMP_MAX_AGE_HOURS = 26  # тот же запас, что у scripts/monitoring/
 
 
 def _hdd_mount_probe() -> tuple[bool, str]:
-    """Синхронная проверка — обязана вызываться только через поток (см. ниже).
+    """Синхронная проверка — обязана вызываться только через `blocking.run_io` (см. ниже).
 
     Зависший ntfs-3g держит `os.stat()` в D-state сколько угодно; в event loop
     это остановило бы обработку любых других сообщений бота. Поток, оставшийся
     висеть навсегда после того, как вызывающий код отступился по таймауту, —
-    меньшее зло по сравнению с остановкой всего API (инцидент 2026-09-20).
+    меньшее зло по сравнению с остановкой всего API (инцидент 2026-09-20). Ключ
+    `blocking.run_io` один на все вызовы — пока поток не вернулся, новый не
+    заводится (CQ-01, аудит 2026-10-02): раньше каждый вопрос «что сломалось?»
+    плодил свой навсегда висящий поток и через ~8 вопросов исчерпывал пул,
+    общий с `app/blocking.py` (API-1), ломая защиту таймаутом у /storage и /system.
     """
     try:
         if not HDD_ROOT.exists():
@@ -251,7 +256,7 @@ def _hdd_mount_probe() -> tuple[bool, str]:
 async def _check_hdd_mount(timeout: float = HDD_CHECK_TIMEOUT) -> str | None:
     """None = смонтирован и здоров; иначе — короткая причина."""
     try:
-        mounted, err = await asyncio.wait_for(asyncio.to_thread(_hdd_mount_probe), timeout=timeout)
+        mounted, err = await blocking.run_io("hdd2tb_mount", _hdd_mount_probe, timeout=timeout)
     except asyncio.TimeoutError:
         return "HDD /mnt/hdd2tb не отвечает (таймаут %.0fс — похоже на зависший ntfs-3g)" % timeout
     if not mounted:

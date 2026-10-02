@@ -14,6 +14,7 @@ import json
 import os
 import sys
 import tempfile
+import threading
 import time
 from pathlib import Path
 
@@ -65,6 +66,40 @@ def test_hdd_check_times_out_instead_of_hanging(monkeypatch):
         loop.close()
     assert elapsed < 1.0, "проверка HDD не должна ждать зависший диск"
     assert result is not None and "не отвечает" in result
+
+
+def test_hdd_check_shares_blocking_key_on_repeated_calls(monkeypatch):
+    """CQ-01 (аудит 2026-10-02): раньше каждый вопрос «что сломалось?» заводил свой
+    `asyncio.to_thread(_hdd_mount_probe)` — на зависшем ntfs-3g поток оставался висеть
+    навсегда, и примерно через 8 вопросов исчерпывал пул потоков, общий с
+    `app/blocking.py` (API-1), после чего ломалась защита таймаутом у /storage и
+    /system. Проверка обязана идти через `blocking.run_io("hdd2tb_mount", ...)`:
+    на висящий диск заводится только один поток, остальные обращения ждут его же
+    future и так же упираются в таймаут — новый поток не плодится."""
+    bot = load_bot()
+
+    event = threading.Event()
+    calls = {"n": 0}
+
+    def hang():
+        calls["n"] += 1
+        event.wait(30)  # страховка от вечного зависания прогона
+        return True, ""
+
+    monkeypatch.setattr(bot, "_hdd_mount_probe", hang)
+
+    async def main():
+        results = []
+        for _ in range(10):
+            results.append(await bot._check_hdd_mount(timeout=0.05))
+        event.set()
+        await asyncio.sleep(0.05)  # поток возвращается, пока цикл ещё жив
+        return results
+
+    results = asyncio.run(main())
+    assert len(results) == 10
+    assert all(r is not None and "не отвечает" in r for r in results), results
+    assert calls["n"] == 1, "probe вызван %d раз(а) — поток заводится на каждый вызов" % calls["n"]
 
 
 def test_hdd_check_reports_not_mounted():

@@ -27,6 +27,8 @@ services:
       - /mnt/hdd2tb/Downloads:/dl/hdd:ro
     environment:
       API_LOG_LEVEL: ${NAS_JETSON_NANO_API_LOG_LEVEL:-INFO}
+      LOG_MAX_BYTES: ${LOG_MAX_BYTES:-10485760}
+      LOG_BACKUP_COUNT: ${LOG_BACKUP_COUNT:-5}
       JWT_SECRET: ${NAS_JETSON_NANO_API_JWT_SECRET}
       JWT_TTL_HOURS: ${NAS_JETSON_NANO_API_JWT_TTL_HOURS:-24}
       NEXTCLOUD_INTERNAL_URL: ${NEXTCLOUD_INTERNAL_URL:-http://host.docker.internal:8080}
@@ -59,6 +61,7 @@ services:
       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
       TALK_FAMILY_ROOM: ${TALK_FAMILY_ROOM:-}
       IMMICH_API_KEY: ${IMMICH_API_KEY}
+      IMMICH_INTERNAL_URL: ${IMMICH_INTERNAL_URL:-http://host.docker.internal:2283}
       # Talk AI bot (Phase A). Disabled by default; set TALK_BOT_ENABLED=true in .env to activate.
       TALK_BOT_ENABLED: ${TALK_BOT_ENABLED:-false}
       TALK_BOT_ROOM: ${TALK_BOT_ROOM:-}
@@ -74,15 +77,23 @@ services:
       TALK_BOT_LLM_PROVIDER: ${TALK_BOT_LLM_PROVIDER:-gigachat}
       # A3: тот же токен, что у шлюза; пусто — заголовок не шлётся
       LLM_GATEWAY_SERVICE_TOKEN: ${LLM_GATEWAY_SERVICE_TOKEN:-}
-      TALK_BOT_LLM_TIMEOUT: ${TALK_BOT_LLM_TIMEOUT:-150}
+      TALK_BOT_LLM_TIMEOUT: ${TALK_BOT_LLM_TIMEOUT:-240}
       TALK_BOT_LLM_MAX_CHARS: ${TALK_BOT_LLM_MAX_CHARS:-1000}
       TALK_BOT_LLM_DAILY_REPLIES: ${TALK_BOT_LLM_DAILY_REPLIES:-50}
+      # Stage 15: includes upload, generation, download and OAuth refreshes.
+      TALK_BOT_IMAGE_TIMEOUT: ${TALK_BOT_IMAGE_TIMEOUT:-650}
+      TALK_BOT_STRUCTURED_TOOLS: ${TALK_BOT_STRUCTURED_TOOLS:-true}
+      TALK_BOT_SAFETY_GATE: ${TALK_BOT_SAFETY_GATE:-true}
       # Telegram-бот, первый срез (качалка + вопросы @бобик)
       TELEGRAM_BOT_ENABLED: ${TELEGRAM_BOT_ENABLED:-false}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_USERS: ${TELEGRAM_USERS:-}
       TELEGRAM_FAMILY_CHAT_ID: ${TELEGRAM_FAMILY_CHAT_ID:-}
       TELEGRAM_PROXY: ${TELEGRAM_PROXY:-socks5://172.17.0.1:1080}
+      TELEGRAM_OWNER_LOGIN: ${TELEGRAM_OWNER_LOGIN:-admin}
+      TELEGRAM_API: ${TELEGRAM_API:-https://api.telegram.org}
+      TELEGRAM_CALLSIGNS: ${TELEGRAM_CALLSIGNS:-@бобик|бобик,}
+      ARIA2_RPC_URL: ${ARIA2_RPC_URL:-http://host.docker.internal:6800/jsonrpc}
       ARIA2_RPC_SECRET: ${ARIA2_RPC_SECRET:-}
       DL_SSD_MIN_FREE_GB: ${DL_SSD_MIN_FREE_GB:-40}
       DL_HDD_MIN_FREE_GB: ${DL_HDD_MIN_FREE_GB:-50}
@@ -92,6 +103,11 @@ services:
       DOWNLOAD_LINK_TTL_SECONDS: ${DOWNLOAD_LINK_TTL_SECONDS:-86400}
       # E10: голосовые — распознавание в отдельном контейнере homecloud_stt (та же сеть)
       STT_URL: ${STT_URL:-http://homecloud_stt:8790/stt}
+      STT_TIMEOUT: ${STT_TIMEOUT:-120.0}
+      VOICE_MAX_SECONDS: ${VOICE_MAX_SECONDS:-60}
+      VOICE_MAX_BYTES: ${VOICE_MAX_BYTES:-2097152}
+      VOICE_QUEUE_WAIT: ${VOICE_QUEUE_WAIT:-120.0}
+      VOICE_CORRECTIONS: ${VOICE_CORRECTIONS:-}
     healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8099/healthcheck', timeout=3)\""]
       interval: 30s

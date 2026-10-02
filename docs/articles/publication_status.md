@@ -1,6 +1,7 @@
 # Статус публикаций / Publication status
 
 > Проверено / Verified: 2026-09-08
+> DEV.to: план обновлён 2026-10-02 / plan updated 2026-10-02; other entries retain their dated evidence.
 
 ## Habr — Часть 1 (запуск) / Part 1 (launch)
 
@@ -30,6 +31,19 @@
 - 🇷🇺 **Статус: черновик; публикация не подтверждена.**
 - 🇬🇧 **Status: draft; publication is not confirmed.**
 - Draft / Черновик: `docs/articles/hackaday_project_en.md`
+
+## DEV.to — семейное облако / Family cloud
+
+- 🇷🇺 **Статус: редакционный план принят владельцем 2026-10-02.** Статья не написана и не опубликована.
+- 🇬🇧 **Status: editorial plan approved by the owner on 2026-10-02.** Article not written or published.
+- Title / Заголовок: **From NAS to Family Cloud: Lessons from a 4GB Jetson Nano**.
+- Plan / План: [RU](DEVTO_PUBLICATION_PLAN_2026-10.ru.md) · [EN](DEVTO_PUBLICATION_PLAN_2026-10.md).
+- 🇷🇺 Семь разделов, три подтверждаемые истории, 2 000–2 500 английских слов;
+  следующий шаг — таблица «утверждение → источник → дата → статус реализации».
+- 🇬🇧 Seven sections, three evidence-backed stories, 2,000–2,500 English words;
+  next step: the claim → source → date → implementation-status table.
+- 🇷🇺 Финальная редактура и публикация — владельцем; URL записать только после публикации.
+- 🇬🇧 Final editing and publication belong to the owner; record the URL only after publication.
 
 ## Социальные анонсы / Social announcements
 

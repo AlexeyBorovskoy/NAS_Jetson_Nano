@@ -59,8 +59,68 @@ Not started: 7, 9, 10, 12, 13, 14. No rollout to the Jetson was done.
 | 24 | The ratchet: a move ≠ new code; coverage of changed files | §12.5, the v3 prompt | matching functions by body hash; the coverage of a changed file not below baseline, and for critical ones — a test for any edit | a deliberate move → not a violation | P4 |
 
 Order: **18 → 15 → 16** (without 18, TO-02 cannot be fixed by a setting), then 17 and 22, then 19–21.
+
+Stage **18 is implemented locally**: Compose now forwards 15 NAS API settings
+and the gateway's `GIGACHAT_MODEL_COMPLEX`, preserving defaults. Of 66 NAS API
+fields, 54 are in Compose and 12 remain fixed with reasons in
+`tests/unit/test_settings_compose.py`. The test inspects AST without importing
+services and catches missing settings, stale exemptions and wrong source variables.
+Before the fix it failed on 15 API settings and one gateway setting.
+Examples are in `config/.env.example`; the real `.env` was not changed.
+Stage 18 preserved the 300 s image timeout; stage 15 below changes it to 650 s.
+
+Verification: `.venv/Scripts/python.exe tests/unit/test_settings_compose.py` — 5 passed;
+NAS API — 221, gateway — 52; full `preflight.sh` using `.venv` and Git Bash — exit 0,
+no metrics violations (local ShellCheck unavailable; Compose skipped in the gate).
+Both Compose files were separately checked with `config --format json` and a synthetic
+env file: 650/125 s overrides and model passed through; safety defaults remain true.
+Future deployment risk: previously ignored `.env` values now take effect; review them
+without exposing secrets before deployment. Rollback: reverse the stage 18 patch in
+Compose, example and test; no runtime rollback needed because no device was changed.
+
 Stages 15 and 17 change behaviour for the family (waiting times, a 503 reply instead of a hang) — after
 the rollout, an announcement to the group (rule no. 18).
+
+### Stage 15 — local implementation
+
+- DeepSeek: `DEEPSEEK_TIMEOUT=90`, forwarded through Compose and the example;
+  `max_retries=0` replaces two SDK retries; the context manager closes the client.
+- GigaChat OAuth: 15 s. Bot text default 240 s > 15+120+90=225.
+- Image default 650 s > upload180 + generation300 + download120 + 3×OAuth15=645.
+  The conservative case refreshes at every step; the usual case refreshes once.
+- Telegram supervision now refreshes heartbeat before each batch update;
+  poll allowance includes getFile45 + download45 + voice queue120 + STT120 +
+  sendChatAction45 + LLM240 + sendMessage45 + margin30 = 690 s with defaults.
+  Downloads retain 300 s. This is a necessary dependency of longer LLM waits.
+- Before the fix: 3 new gateway and 3 poll tests failed. After: 4 gateway tests
+  (including synthetic image/edit with three refreshes) and 3 poll tests pass offline.
+- DeepSeek received only a read-only public-code inventory in an isolated worktree:
+  `nas-stage15-timeout-inventory-20261002`, independently reviewed and accepted (`DONE`),
+  three runs, approximately $0.103. Design and integration stayed with the lead;
+  a separate reviewer found the missing `sendChatAction` operation.
+
+Files: `services/llm-gateway/app/main.py`, `services/nas_jetson_nano-api/app/{config,telegram_bot}.py`,
+both Compose files (`llm-gateway`, `nas_jetson_nano-api`), `config/.env.example`,
+`tests/llm_gateway/test_provider_timeouts.py`, `tests/nas_api/test_poll_timeout_budget.py`,
+`CHANGELOG.md`, PLAN/CHECKPOINT RU/EN pairs. Verification commands (separate processes):
+`.venv/Scripts/python.exe -m pytest -q tests/llm_gateway` and
+`.venv/Scripts/python.exe -m pytest -q tests/nas_api`; full gate:
+`bash scripts/quality/preflight.sh` with `.venv/Scripts` and Git Bash on PATH.
+Result: gateway **56 passed**, API **224 passed**, watchdog 44, backup 24+1 skip,
+STT 17; full preflight exit 0, no metrics violations, clean `git diff --check`.
+Two gate warnings: ShellCheck absent and Compose skipped; both Compose files
+were separately validated with `config --format json` and an isolated synthetic
+env file (defaults 240/650/90 and overrides 245/655/12).
+One STT test initially reported a connection error; isolated and full reruns passed.
+
+Limits/risks: HTTPX/SDK timeouts bound network phases/inactivity, not total request
+duration. `_gigachat_flight_lock`/`_token_lock` waits remain unbounded (CC-07);
+there is no global deadline or cancellation after the client stops waiting.
+DeepSeek/OAuth fail earlier; the bot waits longer. Before a future rollout, review
+old explicit 150/300 values in `.env` because they override the new defaults;
+do not expose secret values. Privacy, mounts, networks and real `.env` files are unchanged.
+Rollback: reverse only stage 15, preserving stage 18; no runtime rollback needed.
+Next: stage 16; deployment separately, then an announcement to the family.
 
 ## The ratchet (stage 8) — how to build it in, not build it alongside
 

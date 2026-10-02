@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — 2026-10-02 · Settings and timeouts / Настройки и таймауты
+
+- Stage 15: DeepSeek uses a configurable 90 s network timeout, no SDK retries
+  and a closed client; GigaChat OAuth uses 15 s. Bot defaults are 240 s for
+  text and 650 s for images, covering sequential fallback/file operations.
+- Стадия 15: DeepSeek — настраиваемый сетевой таймаут 90 с, без повторов SDK,
+  клиент закрывается; OAuth GigaChat — 15 с. Defaults бота: текст 240 с,
+  картинки 650 с, с учётом последовательного fallback и операций с файлами.
+- Telegram poll supervision includes the voice/LLM operation budget (690 s
+  at default settings) and refreshes heartbeat between batch updates;
+  the downloads watchdog retains 300 s. These are not global HTTP deadlines.
+- Сторож Telegram poll учитывает голосовой/LLM-путь (690 с при defaults),
+  пульс обновляется между сообщениями пакета; сторож закачек остаётся 300 с.
+  Это не общие HTTP-дедлайны.
+- Stage 18 (CQ-18): forwarded 15 missing NAS API settings and
+  `GIGACHAT_MODEL_COMPLEX` into Compose, preserving existing defaults.
+- Стадия 18 (CQ-18): compose передаёт 15 недостающих настроек NAS API и
+  `GIGACHAT_MODEL_COMPLEX`; прежние значения по умолчанию сохранены.
+- Added a static completeness and forwarding test to the existing unit-test
+  gate, with reasons for 12 fixed container defaults. No deployment.
+- В существующие ворота unit-тестов добавлена проверка полноты и передачи
+  переменных, с причинами для 12 фиксированных настроек контейнера. Выката нет.
+
 ## [Unreleased] — 2026-10-01 · Security hardening
 
 ### Security / Безопасность

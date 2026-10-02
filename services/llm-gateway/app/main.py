@@ -493,7 +493,7 @@ def _gigachat_access_token() -> str:
                 },
                 data={"scope": scope},
                 verify=_gigachat_verify(),
-                timeout=30.0,
+                timeout=15.0,
             )
         except Exception as exc:
             raise HTTPException(status_code=502, detail=f"GigaChat OAuth transport error: {exc}") from exc
@@ -726,16 +726,18 @@ def _call_deepseek(system: str, user: str, model: str) -> tuple[str, int]:
         raise HTTPException(status_code=500, detail="openai SDK is not installed")
     api_key = os.getenv("DEEPSEEK_API_KEY", "")
     base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
-    client = OpenAI(api_key=api_key, base_url=base_url)
     try:
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-            stream=False,
-        )
+        # One attempt: SDK retries would multiply the fallback wait beyond the bot budget.
+        with OpenAI(api_key=api_key, base_url=base_url,
+                    timeout=float(os.getenv("DEEPSEEK_TIMEOUT", "90")), max_retries=0) as client:
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+                stream=False,
+            )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"LLM provider error: {exc}") from exc
     content = response.choices[0].message.content or ""

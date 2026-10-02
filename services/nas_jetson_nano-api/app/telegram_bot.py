@@ -28,6 +28,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 TORRENT_LIMIT = 20 * 1024 * 1024  # предел Bot API getFile — на сам .torrent, не на закачку
+TELEGRAM_HTTP_TIMEOUT = 45
 HELP = ("🐕 Я Бобик. Обращайтесь по имени — «бобик, …» — и дальше:\n"
         "• скачай <magnet или ссылка> — скачаю домой, в \\\\192.168.0.50\\hdd2tb\\Downloads\n"
         "• .torrent-файл с подписью «@бобик скачай»\n"
@@ -78,7 +79,7 @@ class TgApi:
     def __init__(self, token: str, proxy=None, base=None, transport=None):
         self._token = token
         self._base = (base or settings.telegram_api).rstrip("/")
-        kw = {"timeout": 45}
+        kw = {"timeout": TELEGRAM_HTTP_TIMEOUT}
         if transport is not None:
             kw["transport"] = transport
         elif proxy:
@@ -456,6 +457,8 @@ class TelegramBot:
         updates = await self.api.call("getUpdates", offset=offset, timeout=30,
                                       allowed_updates=["message", "edited_message", "my_chat_member"])
         for upd in updates:
+            # A batch may contain several long LLM replies; each update is progress.
+            self._beat("poll")
             try:
                 await self.handle_update(upd)
             except Exception:
@@ -513,11 +516,16 @@ class TelegramBot:
 # Состояние для /healthcheck: без токена и без содержимого сообщений.
 STATUS = {"state": "starting", "last_ok": 0.0, "restarts": 0}
 
-# Один проход poll_once не дольше таймаута httpx (45 с), пауза — не дольше 60 с;
-# пульса нет 5 минут — цикл завис (например, повис на рукопожатии SOCKS), перезапускаем.
+# Downloads retain the 5-minute hang threshold; poll uses the voice + LLM budget below.
 STALE_AFTER = 300
 CHECK_EVERY = 30
 RESTART_DELAY = 5
+
+
+def poll_stale_after() -> float:
+    """Allow getFile, download, queue, STT, typing, LLM, reply + margin."""
+    return max(STALE_AFTER, 4 * TELEGRAM_HTTP_TIMEOUT + settings.voice_queue_wait
+               + settings.stt_timeout + settings.talk_bot_llm_timeout + CHECK_EVERY)
 
 
 async def supervise(name: str, factory, beats: dict, stale_after: float = STALE_AFTER,
@@ -567,5 +575,6 @@ async def run() -> None:
     api = TgApi(settings.telegram_bot_token, proxy=settings.telegram_proxy or None)
     bot = TelegramBot(api, downloads_mod.Downloads())
     await connect(api, bot)
-    await asyncio.gather(supervise("poll", bot.poll_forever, bot.beats),
+    await asyncio.gather(supervise("poll", bot.poll_forever, bot.beats,
+                                  stale_after=poll_stale_after()),
                          supervise("downloads", bot.downloads_forever, bot.beats))

@@ -101,13 +101,15 @@ class Settings(BaseSettings):
     api_owners: str = ""
     # CORS (C1): пусто — кросс-доменные запросы из браузера запрещены (было `*`).
     api_cors_origins: str = ""
-    talk_bot_llm_timeout: int = 150
+    # OAuth 15 + GigaChat 120 + DeepSeek fallback 90 = 225 s, plus margin.
+    talk_bot_llm_timeout: int = 240
     # Guard against a wall-of-text question inflating the bill.
     talk_bot_llm_max_chars: int = 1000
     # Second budget guard, at bot level: max LLM replies per day. 0 = unlimited.
     talk_bot_llm_daily_replies: int = 50
     # Картинки генерируются заметно дольше текста.
-    talk_bot_image_timeout: int = 300
+    # Edit: upload 180 + generation 300 + download 120 + up to 3 OAuth calls (15 each).
+    talk_bot_image_timeout: int = 650
     # C6: предел вложения для `@бобик` (контейнер API ограничен 128 МБ, плюс base64 +33 %).
     talk_bot_max_attachment_bytes: int = 10 * 1024 * 1024
     # ADR-0011: safety gate + local home tools on @бобик path (no Jetson flag needed

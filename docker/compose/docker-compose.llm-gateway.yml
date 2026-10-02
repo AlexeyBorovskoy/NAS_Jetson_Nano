@@ -13,6 +13,8 @@ services:
       DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
       DEEPSEEK_MODEL: ${DEEPSEEK_MODEL}
+      # One SDK attempt, no automatic retries (stage 15).
+      DEEPSEEK_TIMEOUT: ${DEEPSEEK_TIMEOUT:-90}
       DEEPSEEK_REASONER_MODEL: ${DEEPSEEK_REASONER_MODEL}
       # GigaChat / Sber — второй провайдер за тем же редактированием и бюджетом.
       GIGACHAT_AUTH_KEY: ${GIGACHAT_AUTH_KEY:-}
@@ -20,6 +22,7 @@ services:
       GIGACHAT_OAUTH_URL: ${GIGACHAT_OAUTH_URL:-https://ngw.devices.sberbank.ru:9443/api/v2/oauth}
       GIGACHAT_BASE_URL: ${GIGACHAT_BASE_URL:-https://api.giga.chat/v1}
       GIGACHAT_MODEL: ${GIGACHAT_MODEL:-GigaChat-2}
+      GIGACHAT_MODEL_COMPLEX: ${GIGACHAT_MODEL_COMPLEX:-GigaChat-2-Max}
       GIGACHAT_IMAGE_MODEL: ${GIGACHAT_IMAGE_MODEL:-GigaChat-2-Max}
       GIGACHAT_CA_BUNDLE: ${GIGACHAT_CA_BUNDLE:-/certs/russian_trusted_bundle.pem}
       GIGACHAT_VERIFY_SSL: ${GIGACHAT_VERIFY_SSL:-true}

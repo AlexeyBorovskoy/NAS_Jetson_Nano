@@ -46,6 +46,8 @@ mandatory behaviour passes, evidence levels).
    the gateway `/health`, a download). After the rollout an announcement to the group is not needed (nothing visible to the family),
    except for the local-command error text.
 3. Next stages: 18 → 15 → 16, then 17 and 22.
+   Addendum: stages 18 and 15 are implemented locally (status in PLAN.md).
+   Next: 16; this session did not deploy. Stage 15 requires a family announcement on rollout.
 4. The board: `m0158` (Vostro rules) is unanswered.
 5. Attention: on resuming after the limit, a subagent reported a block "смена email пользователя" ("changing the user's email") in the
    tool output; nothing was done about it.

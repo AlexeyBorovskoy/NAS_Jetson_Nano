@@ -12,6 +12,8 @@
 | habr_ready.md | RU | Habr article — clean paste for Markdown editor | ready |
 | habr_wysiwyg.html | RU | Habr article — HTML for WYSIWYG editor paste | ready |
 | hackaday_project_en.md | EN | Hackaday.io project page | draft |
+| [DEVTO_PUBLICATION_PLAN_2026-10.md](DEVTO_PUBLICATION_PLAN_2026-10.md) | EN | DEV.to editorial and publication plan | approved 2026-10-02; article pending |
+| [DEVTO_PUBLICATION_PLAN_2026-10.ru.md](DEVTO_PUBLICATION_PLAN_2026-10.ru.md) | RU | Принятый план публикации DEV.to | принят 2026-10-02; статья не написана |
 | publication_status.md | RU/EN | Publication checklist and links | active |
 | GITHUB_PUBLICATION_CHECKLIST.md | RU/EN | Pre-publish checklist | active |
 | GITHUB_PAGES_IMAGE_AUDIT.md | EN | Screenshot audit | active |
@@ -45,3 +47,4 @@ See [reddit/](reddit/) folder:
 - Habr — Часть 2 / Part 2: в подготовке / in preparation (Шаг 2 — см. `docs/plans/POST_HABR_FEEDBACK_2026-08.md`)
 - GitHub Pages: https://alexeyborovskoy.github.io/NAS_Jetson_Nano/articles/habr_article_ru.html
 - Подробнее / Details: [publication_status.md](publication_status.md)
+- DEV.to: план принят 2026-10-02, статья не написана и не опубликована / plan approved, article not written or published → [RU](DEVTO_PUBLICATION_PLAN_2026-10.ru.md) · [EN](DEVTO_PUBLICATION_PLAN_2026-10.md)

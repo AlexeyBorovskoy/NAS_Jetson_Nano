@@ -205,6 +205,10 @@ jobs:
       - name: STT tests
         run: python -m pytest -q tests/stt
 
+      # Учёт VPN и нагрузки VPS (спецификация 2026-10-04): только стандартная библиотека.
+      - name: VPN monitor tests
+        run: python -m pytest -q tests/vpn_monitor
+
   # ---------------------------------------------------------------------------
   # actionlint: validate GitHub Actions workflow files
   # ---------------------------------------------------------------------------

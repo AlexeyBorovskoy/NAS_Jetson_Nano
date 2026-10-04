@@ -52,7 +52,7 @@
 
 ```
 VPS
-├─ nasa-vpnmon-collect.timer   каждые 60 с → /usr/local/sbin/nasa-vpnmon-collect.py  (root)
+├─ nasa-vpnmon-collect.timer   каждые 60 с → /usr/local/lib/nasa-vpnmon/collect.py  (root)
 │     лимиты юнита: CPUQuota=20 %, MemoryMax=64M, Nice=10, TimeoutStartSec=30
 │     ├─ docker exec amnezia-awg2 <постоянный скрипт чтения>   — один exec на запуск
 │     ├─ docker inspect amnezia-awg2 / amnezia-xray            — StartedAt, RestartCount, Pid
@@ -62,7 +62,7 @@ VPS
 │     │  /proc/net/dev (WAN), nf_conntrack_count, /proc/sys/kernel/random/boot_id
 │     └─ SQLite /var/lib/nasa-vpnmon/vpnmon.db  (0600, WAL)
 └─ nasa-vpnmon-report.timer    10:00 Europe/Moscow, Persistent=true
-      → /usr/local/sbin/nasa-vpnmon-report.py → Telegram sendMessage владельцу
+      → /usr/local/lib/nasa-vpnmon/report.py → Telegram sendMessage владельцу
         юнит: TimeoutStartSec=300 (> 3 попыток × 10 с + паузы 30/60 с = 120 с)
         токен и chat_id: /etc/nasa-vpnmon/telegram.env (root, 0600)
         имена безымянных пиров: /etc/nasa-vpnmon/names.conf (root, 0600, вне git)
@@ -70,11 +70,13 @@ VPS
 
 Код — `services/vpn_monitor/` (`collect.py`, `report.py`, общий модуль хранения, `install_vps.sh`,
 юниты), тесты — `tests/vpn_monitor/`. Только стандартная библиотека Python 3.12 (`sqlite3`,
-`zoneinfo`, `urllib`); `apt`/`pip` не нужны.
+`urllib`); `apt`/`pip` не нужны. Время Москвы — фиксированный сдвиг UTC+3 (летнего времени нет
+с 2014 г.); `zoneinfo` не используется — на Windows в тестах у него нет базы поясов.
 
 **Постоянный скрипт чтения внутри `amnezia-awg2`** — строка-константа в коде, без подстановок:
-`wg show awg0 allowed-ips; echo @@; wg show awg0 transfer; echo @@; wg show awg0 latest-handshakes;
-echo @@; cat /opt/amnezia/awg/clientsTable`. 🔴 Запрещены `wg show … dump` (печатает preshared-ключи)
+`set -e; wg show awg0 allowed-ips; echo @@; wg show awg0 transfer; echo @@; wg show awg0 latest-handshakes;
+echo @@; cat /opt/amnezia/awg/clientsTable 2>/dev/null || true`. `set -e`: сбой `wg` — это «awg2
+недоступен», а не «ноль пиров» (иначе все пиры были бы помечены удалёнными). 🔴 Запрещены `wg show … dump` (печатает preshared-ключи)
 и `wg showconf` (печатает приватный ключ) — это проверяется тестом по исходнику.
 
 ## 6. Учёт (часть 2, утверждена)
@@ -118,7 +120,7 @@ echo @@; cat /opt/amnezia/awg/clientsTable`. 🔴 Запрещены `wg show �
 
 Один запуск сборщика — одна транзакция: при ошибке не пишется ничего.
 
-## 7. Отчёт (часть 3 — на просмотр)
+## 7. Отчёт
 
 Отправка в 10:00 МСК за прошедшие московские сутки; окна 7 и 30 дней — последние полные сутки,
 заканчивая вчерашними. Формат — HTML (`<pre>` для таблицы), все имена экранируются.
@@ -148,7 +150,7 @@ AmneziaWG: 21 клиент · были в сети 7 · сейчас 5
 - Предел Telegram 4096 символов: при превышении — второе сообщение, а не обрезка.
 - Если вчерашний отчёт не дошёл, первая строка: «⚠️ отчёт за ДД.ММ не был доставлен».
 
-## 8. Сбои и самоконтроль (часть 4 — на просмотр)
+## 8. Сбои и самоконтроль
 
 | Сбой | Поведение |
 |---|---|
@@ -163,7 +165,7 @@ AmneziaWG: 21 клиент · были в сети 7 · сейчас 5
 Сборщик **никогда** не выполняет в контейнерах ничего, кроме постоянного скрипта чтения; `docker`
 вызывается только с `exec` (этот скрипт) и `inspect`.
 
-## 9. Безопасность и правило №13 (часть 5 — на просмотр)
+## 9. Безопасность и правило №13
 
 - Корень нужен ради `docker exec`; лимиты юнита не дают сборщику отнять CPU у VPN.
 - Токен — `/etc/nasa-vpnmon/telegram.env` (root, 0600). Переносится с Jetson по SSH одной
@@ -174,7 +176,7 @@ AmneziaWG: 21 клиент · были в сети 7 · сейчас 5
 - **Правило №13 при установке и откате:** до и после — `StartedAt`/`RestartCount` у `amnezia-*`
   без изменений, число пиров в `wg show awg0 peers` не уменьшилось, наружу слушают только прежние порты.
 
-## 10. Тестирование (часть 6 — на просмотр)
+## 10. Тестирование
 
 **Модульные, без VPS** (`tests/vpn_monitor/`, в `preflight.sh` и CI как у других сервисов):
 разбор вывода `wg show` и `clientsTable` (фикстуры без настоящих ключей); обычная разница;
@@ -195,7 +197,7 @@ AmneziaWG: 21 клиент · были в сети 7 · сейчас 5
 - **Выкат:** `install_vps.sh` кладёт скрипты и юниты, создаёт каталоги, включает таймеры; токен и
   `names.conf` — отдельными шагами ведущего. До и после — проверки правила №13.
 - **Откат:** `systemctl disable --now nasa-vpnmon-collect.timer nasa-vpnmon-report.timer`, удалить
-  юниты, `/usr/local/sbin/nasa-vpnmon-*`, `/etc/nasa-vpnmon`, `/var/lib/nasa-vpnmon`. VPN не задет.
+  юниты, `/usr/local/lib/nasa-vpnmon`, `/etc/nasa-vpnmon`, `/var/lib/nasa-vpnmon`. VPN не задет.
 - **Исполнители (правило №16):** реализация по плану — субагент Sonnet (TDD); английская пара
   спецификации и runbook — DeepSeek; установка на VPS, перенос токена, живые проверки и приёмка —
   только ведущий (VPS — критичная зона).

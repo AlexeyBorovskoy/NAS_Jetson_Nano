@@ -55,7 +55,7 @@ Not touching: Amnezia containers and configs, firewall, routes, sshd, Docker. No
 
 ```
 VPS
-├─ nasa-vpnmon-collect.timer   every 60 s → /usr/local/sbin/nasa-vpnmon-collect.py  (root)
+├─ nasa-vpnmon-collect.timer   every 60 s → /usr/local/lib/nasa-vpnmon/collect.py  (root)
 │     unit limits: CPUQuota=20 %, MemoryMax=64M, Nice=10, TimeoutStartSec=30
 │     ├─ docker exec amnezia-awg2 <permanent read script>      — one exec per run
 │     ├─ docker inspect amnezia-awg2 / amnezia-xray            — StartedAt, RestartCount, Pid
@@ -65,19 +65,21 @@ VPS
 │     │  /proc/net/dev (WAN), nf_conntrack_count, /proc/sys/kernel/random/boot_id
 │     └─ SQLite /var/lib/nasa-vpnmon/vpnmon.db  (0600, WAL)
 └─ nasa-vpnmon-report.timer    10:00 Europe/Moscow, Persistent=true
-      → /usr/local/sbin/nasa-vpnmon-report.py → Telegram sendMessage to the owner
+      → /usr/local/lib/nasa-vpnmon/report.py → Telegram sendMessage to the owner
         unit: TimeoutStartSec=300 (> 3 attempts × 10 s + pauses 30/60 s = 120 s)
         token and chat_id: /etc/nasa-vpnmon/telegram.env (root, 0600)
         names of unnamed peers: /etc/nasa-vpnmon/names.conf (root, 0600, outside git)
 ```
 
 Code — `services/vpn_monitor/` (`collect.py`, `report.py`, a shared storage module, `install_vps.sh`,
-units), tests — `tests/vpn_monitor/`. Python 3.12 standard library only (`sqlite3`, `zoneinfo`,
-`urllib`); `apt`/`pip` are not needed.
+units), tests — `tests/vpn_monitor/`. Python 3.12 standard library only (`sqlite3`,
+`urllib`); `apt`/`pip` are not needed. Moscow time is a fixed UTC+3 offset (no DST since 2014);
+`zoneinfo` is not used — on Windows it has no zone database in tests.
 
 **The permanent read script inside `amnezia-awg2`** — a constant string in the code, with no
-substitutions: `wg show awg0 allowed-ips; echo @@; wg show awg0 transfer; echo @@; wg show awg0
-latest-handshakes; echo @@; cat /opt/amnezia/awg/clientsTable`. 🔴 `wg show … dump` (prints preshared
+substitutions: `set -e; wg show awg0 allowed-ips; echo @@; wg show awg0 transfer; echo @@; wg show awg0
+latest-handshakes; echo @@; cat /opt/amnezia/awg/clientsTable 2>/dev/null || true`. `set -e`: a `wg`
+failure means "awg2 unavailable", not "zero peers" (otherwise every peer would be marked removed). 🔴 `wg show … dump` (prints preshared
 keys) and `wg showconf` (prints the private key) are forbidden — this is checked by a test against the
 source.
 
@@ -123,7 +125,7 @@ source.
 
 One collector run is one transaction: on error nothing is written.
 
-## 7. Report (part 3 — for review)
+## 7. Report
 
 Sent at 10:00 MSK for the Moscow day that has passed; the 7- and 30-day windows are the last full days,
 ending with yesterday. The format is HTML (`<pre>` for the table), all names are escaped.
@@ -155,7 +157,7 @@ Collection: 1438 of 1440 min
 - If yesterday's report did not arrive, the first line is: "⚠️ the report for DD.MM was not
   delivered".
 
-## 8. Failures and self-checks (part 4 — for review)
+## 8. Failures and self-checks
 
 | Failure | Behaviour |
 |---|---|
@@ -170,7 +172,7 @@ Collection: 1438 of 1440 min
 The collector **never** runs anything inside the containers except the permanent read script; `docker`
 is invoked only with `exec` (that script) and `inspect`.
 
-## 9. Security and rule #13 (part 5 — for review)
+## 9. Security and rule #13
 
 - Root is needed for `docker exec`; the unit limits keep the collector from taking CPU away from the
   VPN.
@@ -184,7 +186,7 @@ is invoked only with `exec` (that script) and `inspect`.
   `amnezia-*` unchanged, the number of peers in `wg show awg0 peers` has not decreased, and only the
   previous ports listen externally.
 
-## 10. Testing (part 6 — for review)
+## 10. Testing
 
 **Unit tests, without a VPS** (`tests/vpn_monitor/`, in `preflight.sh` and CI like the other
 services): parsing the output of `wg show` and `clientsTable` (fixtures without real keys); an ordinary
@@ -205,7 +207,7 @@ download 100 MB over the VPN on a known device and find it in the hourly row (±
 - **Deployment:** `install_vps.sh` installs the scripts and units, creates the directories, enables the
   timers; the token and `names.conf` are separate steps by the lead. Rule #13 checks before and after.
 - **Rollback:** `systemctl disable --now nasa-vpnmon-collect.timer nasa-vpnmon-report.timer`, remove
-  the units, `/usr/local/sbin/nasa-vpnmon-*`, `/etc/nasa-vpnmon`, `/var/lib/nasa-vpnmon`. The VPN is
+  the units, `/usr/local/lib/nasa-vpnmon`, `/etc/nasa-vpnmon`, `/var/lib/nasa-vpnmon`. The VPN is
   not affected.
 - **Executors (rule #16):** implementation per the plan — a Sonnet subagent (TDD); the English pair of
   the specification and the runbook — DeepSeek; installation on the VPS, token transfer, live checks

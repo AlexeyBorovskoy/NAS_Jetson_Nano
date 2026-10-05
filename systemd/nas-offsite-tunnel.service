@@ -1,0 +1,24 @@
+[Unit]
+Description=Vostro reverse SSH tunnel to VPS (off-site backup channel for NAS_Jetson_Nano)
+After=network-online.target
+Wants=network-online.target
+
+# Base unit as deployed on Vostro since 2026-08-24. Since 2026-10-05 its
+# ExecStart is overridden by nas-offsite-tunnel.service.d/10-pick-address.conf
+# (picks a reachable VPS address on every start); kept here for the record.
+[Service]
+Type=simple
+User=alexey
+ExecStart=/usr/bin/autossh -N \
+    -R 10222:localhost:22 \
+    -o ServerAliveInterval=30 \
+    -o ServerAliveCountMax=3 \
+    -o ExitOnForwardFailure=yes \
+    -o StrictHostKeyChecking=accept-new \
+    -i /home/alexey/.ssh/id_ed25519_nas_offsite \
+    root@95.163.176.103
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -57,9 +57,10 @@ Verified 05.10: `193.8.215.130` picked, `127.0.0.1:10222` listening on the VPS,
 09:07:43. Rollback: delete the drop-in, `daemon-reload`, restart (record in Vostro
 `HOST_CONTRACT.md`, section of 05.10).
 
-⚠️ The client leg has the same exposure: the `vps-nas` alias is pinned to `95.163.176.103`.
+The client leg has the same exposure: the `vps-nas` alias is pinned to `95.163.176.103`.
 Under AmneziaVPN that address is routed inside the tunnel and works regardless; without VPN
-a future flip on the home ISP breaks `vostro-bastion` until the alias points at the other address.
+a flip on the client's ISP breaks it. Since 2026-10-05 the operator config has `-alt` twins on
+`193.8.215.130` (see «Operator SSH»): if `vps-nas` times out, use the same command with `-alt`.
 
 ### Live test 2026-09-11
 
@@ -85,7 +86,26 @@ Host vostro-bastion
   User alexey
   IdentityFile ~/.ssh/id_ed25519_nas_vostro_admin
   ProxyCommand ssh -i ~/.ssh/borovskoy_new_ed25519 -W 127.0.0.1:10222 vps-nas
+
+# 2026-10-05: fallback on the other address of the same VPS. The host key is the
+# same, so it is verified against the 95.163.176.103 record (HostKeyAlias).
+Host vps-nas-alt
+  HostName 193.8.215.130
+  User root
+  HostKeyAlias 95.163.176.103
+  IdentityFile ~/.ssh/borovskoy_new_ed25519
+
+Host vostro-bastion-alt
+  HostName 127.0.0.1
+  User alexey
+  HostKeyAlias vostro-bastion
+  IdentityFile ~/.ssh/id_ed25519_nas_vostro_admin
+  ProxyCommand ssh -i ~/.ssh/borovskoy_new_ed25519 -W 127.0.0.1:10222 vps-nas-alt
+# jetson-via-vps-alt: the same pattern with -W 127.0.0.1:10022
 ```
+
+Verified 2026-10-05 from the office workstation over the direct (non-VPN) route, with both
+Git Bash ssh and Windows OpenSSH: `vps-nas-alt`, `vostro-bastion-alt`, `jetson-via-vps-alt` → OK.
 
 ```powershell
 ssh vostro-bastion

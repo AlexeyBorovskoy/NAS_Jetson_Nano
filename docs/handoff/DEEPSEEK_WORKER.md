@@ -16,7 +16,7 @@
 | Skill ведущего Claude | `tools/deepseek-worker/skill/deepseek-worker/SKILL.md`, установлен в `~/.claude/skills/deepseek-worker/` |
 | Конфигурация проекта | `ds_worker.toml` в корне репозитория |
 | История задач | `ds_board/` (в `.gitignore`, не в git) |
-| Worktree исполнителя | `E:/nas-ds-<task_id>`, ветка `deepseek/<task_id>` |
+| Worktree исполнителя | `.agent-work/worktrees/nas-ds-<task_id>`, ветка `deepseek/<task_id>` |
 | Ключ API | файл владельца `C:/Users/Alexey/.config/belgorod/deepseek-worker-key` — **общий счёт с ботом Белгорода** |
 
 ⚠️ Репозиторий проекта **публичный**, ядро — **приватное**. Сабмодуль публикует только ссылку и хеш;
@@ -108,9 +108,12 @@ Claude Code посчитан по тарифам Anthropic и завышен п�
 доступы Cloud.ru/Сбер; содержимое доски соседей.
 
 **Как это закрыто технически** (`ds_worker.toml`):
-- worktree создаётся вне основной копии, в `E:/nas-ds-<task>`, и содержит только файлы git;
-- `security.deny_read` запрещает основную копию проекта целиком (там лежат `.env`, `docs/local`,
-  `.claude`), `E:/agent_coordination`, `~/.claude`, `~/.config`, `~/.ssh` и маски секретов;
+- worktree создаётся внутри каталога проекта, в `.agent-work/worktrees/nas-ds-<task>`, и содержит только файлы git;
+- `security.deny_read` перечисляет текущие непосредственные файлы и каталоги основной копии,
+  кроме `.agent-work`; маски закрывают архивы, временные результаты, `E:/agent_coordination`,
+  `~/.claude`, `~/.config`, `~/.ssh` и типовые секреты. При добавлении нового каталога корня
+  список обновляется. Это разрешения Claude Code, а не изоляция ОС: чужие worktree и выполнение
+  кода технически не изолированы. Для документации разрешены только Read/Grep/Glob/Write/Edit;
 - ключ передаётся только в окружение дочернего процесса — не в argv, не в лог, не в `RESULT.json`.
 
 **Соотношение с субагентами Claude** (`CLAUDE.md`, `docs/20_AGENT_OPERATING_MODEL.md`):
@@ -151,7 +154,7 @@ Owner's policy of 2026-09-25, "Claude leads, DeepSeek is the cheap worker", hand
 | Lead's skill | `tools/deepseek-worker/skill/deepseek-worker/SKILL.md` → `~/.claude/skills/` |
 | Project config | `ds_worker.toml` at the repo root |
 | Task history | `ds_board/` (git-ignored) |
-| Worker worktree | `E:/nas-ds-<task_id>`, branch `deepseek/<task_id>` |
+| Worker worktree | `.agent-work/worktrees/nas-ds-<task_id>`, branch `deepseek/<task_id>` |
 | API key | owner's file `C:/Users/Alexey/.config/belgorod/deepseek-worker-key` — **billing shared with the Belgorod bot** |
 
 ⚠️ This repository is **public**, the core is **private**: the submodule publishes only a URL and a

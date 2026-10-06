@@ -107,3 +107,6 @@ config/*.env
 
 # DeepSeek worker: история задач (ds-worker), не в git
 ds_board/
+
+# Local agent worktrees, archives and temporary outputs (owner 2026-10-06)
+/.agent-work/

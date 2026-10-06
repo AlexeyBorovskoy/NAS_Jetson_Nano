@@ -141,3 +141,13 @@ python E:\agent_coordination\coord.py post --from nas --to work --kind answer --
 ```
 
 🇬🇧 Answer open `ask` items to `nas` about Sber stack; never put secrets on the board.
+
+
+## 9. Размещение артефактов / Artifact locations
+
+🇷🇺 Правило владельца от 06.10.2026: все создаваемые агентами артефакты NAS хранятся внутри каталога проекта. Рабочие копии субагентов — `.agent-work/worktrees/`, архивы и материалы очистки — `.agent-work/archives/`, временные результаты — `.agent-work/tmp/`, история DeepSeek — `ds_board/`, остальные локальные результаты — `artifacts/`. Не создавать копии и результаты в корне диска E или в соседних каталогах вне проекта. Пробелы в пути обрабатывать корректным quoting, а не выносом артефактов наружу. Локальные рабочие каталоги исключать из Git; перед удалением проверять завершённость задач и сохранять уникальные результаты.
+
+🇬🇧 Owner rule dated 2026-10-06: keep all agent-generated NAS artifacts inside the project directory. Use `.agent-work/worktrees/` for agent worktrees, `.agent-work/archives/` for cleanup archives, `.agent-work/tmp/` for temporary outputs, `ds_board/` for DeepSeek history, and `artifacts/` for other local outputs. Do not create artifacts at the drive root or in sibling directories. Quote paths containing spaces instead of relocating artifacts outside the project. Ignore local working directories in Git; verify task completion and preserve unique results before cleanup.
+
+🇷🇺 Существующие внешние хранилища секретов остаются на месте: секреты не переносить в проект. Общая координационная доска раздела 8 сохраняется как канал обмена между проектами; публиковать там только сообщения и ссылки на материалы, без секретов.
+🇬🇧 Existing external credential stores remain in place; do not move secrets into the project. The shared coordination board in section 8 remains the cross-project communication channel; post only messages and artifact references there, without secrets.

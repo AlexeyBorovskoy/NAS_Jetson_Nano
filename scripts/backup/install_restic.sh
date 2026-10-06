@@ -36,7 +36,7 @@ file="$work/restic_${VERSION}_linux_${ARCH}.bz2"
 if [[ -n "${1:-}" ]]; then
     cp "$1" "$file"
 else
-    curl -fsSL -o "$file" \
+    curl --max-time 300 -fsSL -o "$file" \
         "https://github.com/restic/restic/releases/download/v${VERSION}/restic_${VERSION}_linux_${ARCH}.bz2"
 fi
 

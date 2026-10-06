@@ -23,7 +23,7 @@ fi
 # Check if already initialized
 check_init() {
     local code
-    code=$(curl -sf -o /dev/null -w "%{http_code}" "${PORTAINER_URL}/api/users/admin/check" 2>/dev/null || echo "000")
+    code=$(curl --max-time 30 -sf -o /dev/null -w "%{http_code}" "${PORTAINER_URL}/api/users/admin/check" 2>/dev/null || echo "000")
     echo "$code"
 }
 
@@ -43,7 +43,7 @@ fi
 
 # Initialize admin
 log "Initializing Portainer admin user..."
-RESPONSE=$(curl -sf -X POST "${PORTAINER_URL}/api/users/admin/init" \
+RESPONSE=$(curl --max-time 30 -sf -X POST "${PORTAINER_URL}/api/users/admin/init" \
     -H "Content-Type: application/json" \
     -d "{\"Username\":\"admin\",\"Password\":\"${PORTAINER_ADMIN_PASSWORD}\"}" || true)
 

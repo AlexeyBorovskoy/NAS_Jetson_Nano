@@ -34,13 +34,13 @@ fi
 
 # ── 1. download arm64 binary ─────────────────────────────────────────────────
 echo "[1/4] Downloading Beszel agent (arm64)..."
-LATEST=$(curl -sS "https://api.github.com/repos/henrygd/beszel/releases/latest" \
+LATEST=$(curl --max-time 300 -sS "https://api.github.com/repos/henrygd/beszel/releases/latest" \
     | python3 -c "import sys,json; print(json.load(sys.stdin)['tag_name'])" 2>/dev/null \
     || echo "latest")
 
-curl -sL "https://github.com/henrygd/beszel/releases/download/${LATEST}/beszel-agent_linux_arm64.tar.gz" \
+curl --max-time 300 -sL "https://github.com/henrygd/beszel/releases/download/${LATEST}/beszel-agent_linux_arm64.tar.gz" \
     | tar -xz -C /tmp/ beszel-agent 2>/dev/null \
-    || curl -sL "https://github.com/henrygd/beszel/releases/latest/download/beszel-agent_linux_arm64.tar.gz" \
+    || curl --max-time 300 -sL "https://github.com/henrygd/beszel/releases/latest/download/beszel-agent_linux_arm64.tar.gz" \
     | tar -xz -C /tmp/ beszel-agent
 
 mv /tmp/beszel-agent "$BINARY"

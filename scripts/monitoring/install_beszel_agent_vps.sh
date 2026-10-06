@@ -37,7 +37,7 @@ fi
 # ── 2. download amd64 binary ──────────────────────────────────────────────────
 VERSION="v0.18.7"
 echo "[2/4] Downloading Beszel agent (amd64, $VERSION)..."
-curl -sL "https://github.com/henrygd/beszel/releases/download/${VERSION}/beszel-agent_linux_amd64.tar.gz" \
+curl --max-time 300 -sL "https://github.com/henrygd/beszel/releases/download/${VERSION}/beszel-agent_linux_amd64.tar.gz" \
     | tar -xz -C /tmp/ beszel-agent
 mv /tmp/beszel-agent "$BINARY"
 chmod +x "$BINARY"

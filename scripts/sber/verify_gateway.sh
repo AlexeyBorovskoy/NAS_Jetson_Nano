@@ -8,7 +8,7 @@ BASE="${1:-http://127.0.0.1:8090}"
 BASE="${BASE%/}"
 
 echo "=== health ==="
-curl -fsS "$BASE/health" | tee /tmp/llm_health.json
+curl --max-time 240 -fsS "$BASE/health" | tee /tmp/llm_health.json
 echo
 
 PY_BIN="$(command -v python3 || command -v python)"
@@ -32,7 +32,7 @@ echo "=== chat gigachat ==="
 # A3: шлюз с включённым токеном требует X-Service-Token (тот же ключ, что в .env).
 AUTH_HDR=()
 [[ -n "${LLM_GATEWAY_SERVICE_TOKEN:-}" ]] && AUTH_HDR=(-H "X-Service-Token: ${LLM_GATEWAY_SERVICE_TOKEN}")
-code=$(curl -sS -o /tmp/llm_chat.json -w "%{http_code}" \
+code=$(curl --max-time 240 -sS -o /tmp/llm_chat.json -w "%{http_code}" \
   -H "Content-Type: application/json" "${AUTH_HDR[@]}" \
   -d '{"prompt":"Ответь одним словом: ок","provider":"gigachat","user":"admin"}' \
   "$BASE/v1/chat" || true)
@@ -41,7 +41,7 @@ head -c 500 /tmp/llm_chat.json 2>/dev/null; echo
 
 if [[ "$code" == "200" ]]; then
   echo "=== balance (if key set) ==="
-  curl -sS "$BASE/v1/provider/gigachat/balance" | head -c 800 || true
+  curl --max-time 240 -sS "$BASE/v1/provider/gigachat/balance" | head -c 800 || true
   echo
 fi
 

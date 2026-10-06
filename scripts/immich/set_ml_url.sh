@@ -61,7 +61,7 @@ trap 'rm -f "$CUR_FILE"' EXIT
 
 fetch_current() {
     local code
-    code=$(curl -sS -H "x-api-key: ${IMMICH_API_KEY}" \
+    code=$(curl --max-time 30 -sS -H "x-api-key: ${IMMICH_API_KEY}" \
         -o "$CUR_FILE" -w "%{http_code}" \
         "${BASE}/api/system-config")
     if [ "$code" != "200" ]; then
@@ -76,7 +76,7 @@ put_config() {
     local file="$1"
     local out code
     out="$(mktemp)"
-    code=$(curl -sS -X PUT \
+    code=$(curl --max-time 30 -sS -X PUT \
         -H "x-api-key: ${IMMICH_API_KEY}" \
         -H "Content-Type: application/json" \
         --data-binary "@${file}" \

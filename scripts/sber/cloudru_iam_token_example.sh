@@ -13,7 +13,7 @@ set -euo pipefail
 : "${CLOUDRU_KEY_SECRET:?}"
 
 # Official: https://cloud.ru/docs/console_api/ug/topics/quickstart
-resp=$(curl -sS -X POST \
+resp=$(curl --max-time 30 -sS -X POST \
   --data-urlencode "grant_type=access_key" \
   --data-urlencode "client_id=${CLOUDRU_KEY_ID}" \
   --data-urlencode "client_secret=${CLOUDRU_KEY_SECRET}" \

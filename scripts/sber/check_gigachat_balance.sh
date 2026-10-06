@@ -12,7 +12,7 @@ OUT="${GIGA_BALANCE_FILE:-/var/lib/nas-giga-balance/balance.json}"
 TMP="$(mktemp)"
 trap 'rm -f "$TMP"' EXIT
 
-code=$(curl -sS -o "$TMP" -w "%{http_code}" \
+code=$(curl --max-time 60 -sS -o "$TMP" -w "%{http_code}" \
   "${URL}/v1/provider/gigachat/balance" || true)
 
 echo "HTTP $code"

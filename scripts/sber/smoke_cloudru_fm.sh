@@ -9,7 +9,7 @@ set -euo pipefail
 BASE="${CLOUDRU_FM_BASE_URL:-https://foundation-models.api.cloud.ru/v1}"
 MODEL="${CLOUDRU_FM_MODEL:-GigaChat/GigaChat-2-Max}"
 
-code=$(curl -sS -o /tmp/fm_smoke.json -w "%{http_code}" \
+code=$(curl --max-time 150 -sS -o /tmp/fm_smoke.json -w "%{http_code}" \
   -H "Authorization: Bearer ${CLOUDRU_FM_API_KEY}" \
   -H "Content-Type: application/json" \
   -d "{\"model\":\"${MODEL}\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":8}" \

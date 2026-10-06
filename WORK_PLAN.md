@@ -1,5 +1,27 @@
 # Work Plan
 
+> Current local checkpoint: [2026-10-06](docs/plans/CHECKPOINT_2026-10-06.md).
+> VPS/VPN monitor tasks 1–7 and code-audit stages 16, 17, 22 are implemented and
+> locally verified. Monitor task 8 (deployment) is pending separate owner authorization.
+> Vostro recovery was merged into `main` as `de6df4f`; this does not mean deployment.
+
+## Execution update — 2026-10-06
+
+| Item | Local status | Evidence / next action |
+|---|---|---|
+| VPS/VPN monitor tasks 1–7 | Complete: collection/storage, queries/rendering, report sender, installer/systemd and documentation | 101 monitor tests; [implementation plan](docs/superpowers/plans/2026-10-04-vps-vpn-monitor.md) |
+| VPS/VPN monitor task 8 | **Not deployed** | Separate deployment instruction and explicit authorization for read-only VPN counter access; do not modify Amnezia |
+| Vostro tunnel recovery | Merged into `main`, `de6df4f` | Local integration; deployment and live connectivity verification remain separate |
+| Code audit 16 | Complete locally | Default caller budgets include sequential fallback and OAuth refreshes; per-invocation curl deadline gate |
+| Code audit 17 | Complete locally | Bounded file-page preparation; single disk probe; durable partial pause/resume progress and alerts |
+| Code audit 22 | Complete locally | Synthetic tests for second-copy failure barriers and tracked secret detection |
+| Agent artifacts | Project-local rule/configuration applied | `.agent-work/` for worktrees/archives/tmp; existing external credential stores remain in place |
+
+Acceptance: NAS API **234 passed**, VPS/VPN monitor **101 passed**, **27 unit-test
+scripts** in the commit hook; metrics ratchet has no violations. HTTP phase timeouts
+are not strict wall-clock deadlines; FileResponse streaming after preparation remains
+outside the preparation deadline. Historical entries below retain their dated evidence.
+
 > Source — the 2026-09-26 audit (`docs/audit/2026-09-26_full_audit/REPORT.md`). Only
 > **confirmed** and actionable items are listed here. Russian version — `WORK_PLAN.ru.md`.
 > Assignee per rule #16: **D** — DeepSeek (mechanical work by card), **C** — Claude (lead),

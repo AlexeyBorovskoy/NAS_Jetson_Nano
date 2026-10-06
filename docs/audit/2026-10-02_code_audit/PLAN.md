@@ -1,5 +1,25 @@
 # Code audit plan 2026-10-02
 
+> Current execution: [checkpoint 2026-10-06](../../plans/CHECKPOINT_2026-10-06.md).
+> Stages **16, 17, 22 are implemented and verified locally**; no deployment.
+
+## Acceptance update — 2026-10-06
+
+| Stage | Implemented | Verification |
+|---|---|---|
+| 16 | Default network-budget table includes GigaChat→DeepSeek fallback, local probe and OAuth refresh per image step. Every literal curl invocation under `scripts` requires its own nonzero deadline, including SSH commands and substitutions | `test_timeout_hierarchy.py`: provider chains, multiline/non-Telegram curl, separate calls, quoted SSH, prose and zero deadlines |
+| 17 | Async signed file-page preparation through one bounded disk probe; 503 on timeout; partial guard pause/resume progress and initial alerts persist even after RPC failure; cancelled/missing GIDs do not block recovery | `test_download_blocking.py`, `test_download_guard_failures.py`; NAS API **234 passed** |
+| 22 | Second-copy failure barriers and secret scanner tested with synthetic directories, commands and a temporary Git repository | `test_critical_shell_scripts.py`: missing source/HDD, low space, non-destructive dry-run, synthetic tracked secret, allowed file reference and excluded untracked content |
+
+Full acceptance also includes **101 monitor tests** and **27 unit-test scripts** in
+the commit hook; metrics ratchet has no violations. HTTP phase timeouts are not
+strict wall-clock deadlines, and gateway locks remain unbounded. FileResponse
+streaming after preparation is outside that preparation timeout. Curl checking is
+a documented heuristic; computed commands/options hidden in arrays need manual review.
+
+Historical stage descriptions and earlier acceptance reports below are preserved.
+Deployment remains a separate owner-authorized step; monitor task 8 was not performed.
+
 > Basis — `REPORT.ru.md` (findings CQ-NN). Russian version — PLAN.ru.md. Each stage is a
 > separate PR ≤ ~400 lines and ≤ 10 files; before the edit — a characterising test, green on
 > the current code and failing under a deliberate break. Rollback of each stage — `git revert <commit>`;
@@ -120,7 +140,8 @@ DeepSeek/OAuth fail earlier; the bot waits longer. Before a future rollout, revi
 old explicit 150/300 values in `.env` because they override the new defaults;
 do not expose secret values. Privacy, mounts, networks and real `.env` files are unchanged.
 Rollback: reverse only stage 15, preserving stage 18; no runtime rollback needed.
-Next: stage 16; deployment separately, then an announcement to the family.
+Next after the 2026-10-06 acceptance: review/publish locally verified stages 16/17/22;
+deployment separately, then an announcement to the family after rollout.
 
 ## The ratchet (stage 8) — how to build it in, not build it alongside
 

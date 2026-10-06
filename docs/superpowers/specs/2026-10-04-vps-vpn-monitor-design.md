@@ -56,7 +56,7 @@ Not touching: Amnezia containers and configs, firewall, routes, sshd, Docker. No
 ```
 VPS
 ├─ nasa-vpnmon-collect.timer   every 60 s → /usr/local/lib/nasa-vpnmon/collect.py  (root)
-│     unit limits: CPUQuota=20 %, MemoryMax=64M, Nice=10, TimeoutStartSec=30
+│     unit limits: CPUQuota=20 %, MemoryMax=64M, Nice=10, TimeoutStartSec=50 (> 4 subprocesses × 10 s)
 │     ├─ docker exec amnezia-awg2 <permanent read script>      — one exec per run
 │     ├─ docker inspect amnezia-awg2 / amnezia-xray            — StartedAt, RestartCount, Pid
 │     ├─ /proc/<pid awg2>/net/dev                              — awg0 counters, no exec

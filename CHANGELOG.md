@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — 2026-10-06 · Monitor and audit / Монитор и аудит
+
+- VPS/VPN monitor tasks 1–7 are implemented and locally tested: collection,
+  storage, queries, rendering, resumable report delivery, installer/systemd and
+  documentation. Task 8 deployment was **not performed** and requires separate
+  authorization, including explicit permission for read-only VPN counter access.
+- Задачи 1–7 монитора VPS/VPN реализованы локально; задача 8 — **без выката**,
+  требуется отдельное разрешение, включая read-only чтение VPN-счётчиков.
+- Merged Vostro tunnel recovery into `main` as `de6df4f`; no live rollout implied.
+- Исправление восстановления туннеля Vostro включено в `main`: `de6df4f`.
+- Audit stages 16/17/22: sequential timeout-budget checks and per-call curl gate;
+  bounded file-page preparation; durable partial pause/resume and notification
+  progress; isolated synthetic tests for critical copy/security scripts.
+- Стадии 16/17/22: проверка цепочек таймаутов и каждого curl; ограничение подготовки
+  страницы файлов; сохранение частичных операций стража и уведомлений; тесты
+  критичных shell-скриптов на синтетическом окружении.
+- Agent worktrees, archives and temporary artifacts stay inside the project;
+  existing external credential stores remain unchanged.
+- Acceptance: NAS API 234 passed; monitor 101 passed; hook runs 27 unit-test
+  scripts; metrics ratchet has no violations. HTTP timeouts are not strict
+  wall-clock deadlines; FileResponse streaming remains outside the preparation timeout.
+
+
 ## [Unreleased] — 2026-10-02 · Settings and timeouts / Настройки и таймауты
 
 - Stage 15: DeepSeek uses a configurable 90 s network timeout, no SDK retries

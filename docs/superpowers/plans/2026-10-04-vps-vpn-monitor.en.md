@@ -1,58 +1,59 @@
-# Учёт нагрузки VPS и трафика пользователей VPN — план реализации
+# VPS Load and VPN User Traffic Accounting — Implementation Plan
 
-> Приёмка 06.10.2026: локально готовы задачи 1–7; задача 8 не выполнялась. Команды ниже — только для будущего отдельно разрешённого выката. До доступа к VPN-счётчикам требуется явное разрешение владельца на строго read-only сбор; общий запрет изменения Amnezia сохраняется. Снимок безопасности вызывает только `docker inspect` и `ss`, число клиентов владелец сверяет в Amnezia Desktop. Число 21 в исторических примерах — замер октября, а не сегодняшняя гарантия.
+> Acceptance 2026-10-06: tasks 1–7 are ready locally; task 8 has not been executed. Commands below require a separately authorized deployment. Reading VPN counters requires explicit owner authorization for strictly read-only collection; the prohibition on changing Amnezia remains. The safety snapshot uses only `docker inspect` and `ss`; the owner verifies peer counts in Amnezia Desktop. Historical examples with 21 peers are dated measurements, not today's guarantee.
 >
-> Перенос токена использует `sudo -n`, без пароля Nextcloud. Если у оператора нет разрешённого non-interactive sudo для чтения исходного файла, остановиться и подготовить доступ с владельцем; не угадывать пароль. Неполный поток не заменяет действующий токен на VPS. Откат отключает только монитор и сохраняет БД/конфигурацию.
+> Token transfer uses `sudo -n`, never a Nextcloud password. If the operator lacks approved non-interactive sudo access to the source file, stop and arrange access with the owner. An incomplete stream does not replace the existing token on the VPS. Rollback stops only this monitor and preserves its database and configuration.
 >
-> Отправитель сохраняет подтверждённые части между запусками. Потеря ответа Telegram после приёма сообщения может дать повтор; строгого exactly-once нет. Бюджет 240 с ограничивает начало попыток, systemd завершает процесс через 300 с. `Persistent=true` догоняет последний отчётный день, не все пропущенные дни.
+> Delivery persists acknowledged chunks across runs. Lost Telegram acknowledgements can cause duplicates; exactly-once is not guaranteed. The 240-second budget controls admission of attempts; systemd terminates the process after 300 seconds. `Persistent=true` catches up the latest report day, not every missed day.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> Russian version — `2026-10-04-vps-vpn-monitor.md` (RU canon; this file is its English pair). Code blocks are preserved verbatim from the Russian original, so Russian human-facing strings and comments inside them remain as in the source.
 
-**Цель:** раз в минуту снимать на VPS счётчики пиров AmneziaWG и метрики хоста (только чтение) и раз в сутки в 10:00 МСК присылать владельцу сводку в Telegram.
+**Goal:** every minute, take AmneziaWG peer counters and host metrics on the VPS (read-only); once a day at 10:00 MSK send the owner a summary in Telegram.
 
-**Архитектура:** четыре модуля на стандартной библиотеке Python: разбор сырых данных, хранение и учёт в SQLite, выборки для отчёта, текст отчёта. Плюс два скрипта: `collect.py` под таймером раз в минуту и `report.py` под таймером в 10:00 МСК. Ставятся в `/usr/local/lib/nasa-vpnmon/` установщиком без пакетов и портов.
+**Architecture:** four modules on the Python standard library: raw-data parsing, storage and accounting in SQLite, queries for the report, report text. Plus two scripts: `collect.py` under a one-minute timer and `report.py` under a 10:00 MSK timer. They are installed into `/usr/local/lib/nasa-vpnmon/` by an installer with no packages and no ports.
 
-**Стек:** Python 3.12 на VPS (тесты: 3.11 на Windows и Linux), `sqlite3`, `urllib`, systemd; pytest — только в тестах.
+**Stack:** Python 3.12 on the VPS (tests: 3.11 on Windows and Linux), `sqlite3`, `urllib`, systemd; pytest in tests only.
 
-**Спецификация:** `docs/superpowers/specs/2026-10-04-vps-vpn-monitor-design.ru.md` (EN — `…-design.md`). Исполнитель читает её вместе с планом.
+**Spec:** `docs/superpowers/specs/2026-10-04-vps-vpn-monitor-design.md` (EN; Russian pair — `2026-10-04-vps-vpn-monitor-design.ru.md`). The implementer reads it together with the plan.
 
-## Общие ограничения
+## General constraints
 
-- Только стандартная библиотека. **`zoneinfo` не использовать:** на Windows у него нет базы поясов. МСК = `timezone(timedelta(hours=3), "MSK")`.
-- Храповик метрик (`scripts/quality/code_metrics.py`): **у новой функции цикломатическая сложность ≤ 10 и длина ≤ 40 строк**, модуль ≤ 600 строк, параметров ≤ 5.
-- Идентификаторы на английском, комментарии и строки для людей на русском, как в остальном репозитории.
-- В `collect.py` нигде, включая комментарии, нет слов `dump`, `showconf` и `private`. `docker` вызывается только с `exec` и `inspect`. Это проверяется тестом.
-- Пути на VPS: код — `/usr/local/lib/nasa-vpnmon/`; БД — `/var/lib/nasa-vpnmon/vpnmon.db` (каталог 0700, файл 0600); `/etc/nasa-vpnmon/names.conf` и `/etc/nasa-vpnmon/telegram.env` (0600).
-- Юниты: `nasa-vpnmon-collect.{service,timer}` (раз в 60 с; `CPUQuota=20%`, `MemoryMax=64M`, `Nice=10`, `TimeoutStartSec=50` — больше 4 вызовов подпроцессов × `EXEC_TIMEOUT` 10 с) и `nasa-vpnmon-report.{service,timer}` (`OnCalendar=*-*-* 10:00:00 Europe/Moscow`, `Persistent=true`, `TimeoutStartSec=300`).
-- Новых портов, пакетов и пользователей нет. Amnezia, ufw, iptables, sshd и nginx не трогаются.
-- В git не попадают настоящие ключи пиров, имена людей и токены: в тестах фиктивные ключи `"A" * 43 + "="` и имена «Клиент-А».
-- Задачи 1–7 выполняются локально, без доступа к VPS и Jetson. Задача 8 — только ведущий и только после слова владельца «деплой».
-- Тесты: `.venv/Scripts/python.exe -m pytest -q tests/vpn_monitor` (Windows) или `python -m pytest -q tests/vpn_monitor`. Коммит запускает ворота `.githooks/pre-commit`. `--no-verify` запрещён. Последняя строка сообщения коммита: `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- Standard library only. **Do not use `zoneinfo`:** on Windows it has no timezone database. MSK = `timezone(timedelta(hours=3), "MSK")`.
+- Metrics ratchet (`scripts/quality/code_metrics.py`): **for a new function, cyclomatic complexity ≤ 10 and length ≤ 40 lines**, module ≤ 600 lines, parameters ≤ 5.
+- Identifiers in English, comments and human-facing strings in Russian, as elsewhere in the repository.
+- In `collect.py`, nowhere — including comments — do the words `dump`, `showconf` and `private` appear. `docker` is called only with `exec` and `inspect`. This is checked by a test.
+- Paths on the VPS: code — `/usr/local/lib/nasa-vpnmon/`; DB — `/var/lib/nasa-vpnmon/vpnmon.db` (directory 0700, file 0600); `/etc/nasa-vpnmon/names.conf` and `/etc/nasa-vpnmon/telegram.env` (0600).
+- Units: `nasa-vpnmon-collect.{service,timer}` (every 60 s; `CPUQuota=20%`, `MemoryMax=64M`, `Nice=10`, `TimeoutStartSec=50` — more than 4 subprocess calls × `EXEC_TIMEOUT` 10 s) and `nasa-vpnmon-report.{service,timer}` (`OnCalendar=*-*-* 10:00:00 Europe/Moscow`, `Persistent=true`, `TimeoutStartSec=300`).
+- No new ports, packages or users. Amnezia, ufw, iptables, sshd and nginx are not touched.
+- Real peer keys, people's names and tokens never get into git: tests use fake keys `"A" * 43 + "="` and names such as «Клиент-А».
+- Tasks 1–7 are done locally, with no access to the VPS or the Jetson. Task 8 — lead only, and only after the owner says «деплой» (deploy).
+- Tests: `.venv/Scripts/python.exe -m pytest -q tests/vpn_monitor` (Windows) or `python -m pytest -q tests/vpn_monitor`. A commit runs the gate `.githooks/pre-commit`. `--no-verify` is forbidden. The last line of the commit message: `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 
-## На что смотреть при приёмке
+## What to watch for at acceptance
 
-Случаи, которые спецификация подразумевает, но легко упустить. Тест на каждый — в задаче, которой принадлежит код.
+Cases the spec implies but that are easy to miss. Each has a test in the task that owns the code.
 
-1. **`wg` ответил пусто** (интерфейс пересоздаётся, контейнер в процессе запуска). Ожидание: это «awg2 недоступен», и пиры **не** помечаются удалёнными. Тест — задача 3, `test_zero_peers_is_unavailable_not_mass_removal`.
-2. **Таймер отчёта сработал дважды за одни сутки** (`Persistent=true` после загрузки или ручной запуск). Ожидание: второе сообщение не уходит. Тест — задача 5, `test_second_send_same_day_is_skipped`.
-3. **Имя клиента с `<`, `&` или длиннее столбца.** Ожидание: HTML остаётся корректным (Telegram не отклоняет сообщение), таблица не разъезжается. Тест — задача 4, `test_render_escapes_and_truncates_names`.
-4. **Пир добавлен после начала учёта.** Ожидание: его счётчик засчитывается целиком, а не как точка отсчёта 0. Тест — задача 2, `test_new_peer_after_start_counts_whole_counter`.
-5. **Пропуск сбора дольше 5 мин** (VPS занят, таймер стоял). Ожидание: байты учтены, пиковая скорость не завышена. Тест — задача 2, `test_long_gap_counts_bytes_without_peak`.
+1. **`wg` returned empty** (the interface is being recreated, the container is starting). Expected: this is "awg2 unavailable", and peers are **not** marked removed. Test — task 3, `test_zero_peers_is_unavailable_not_mass_removal`.
+2. **The report timer fired twice in the same day** (`Persistent=true` after boot, or a manual run). Expected: the second message is not sent. Test — task 5, `test_second_send_same_day_is_skipped`.
+3. **A client name with `<`, `&`, or longer than the column.** Expected: the HTML stays valid (Telegram does not reject the message) and the table does not fall apart. Test — task 4, `test_render_escapes_and_truncates_names`.
+4. **A peer added after accounting started.** Expected: its counter is counted in full, not as a zero starting point. Test — task 2, `test_new_peer_after_start_counts_whole_counter`.
+5. **A collection gap longer than 5 min** (the VPS was busy, the timer was stalled). Expected: the bytes are counted, the peak rate is not inflated. Test — task 2, `test_long_gap_counts_bytes_without_peak`.
 
 ---
 
-### Задача 1: разбор сырых данных и подключение тестов к воротам
+### Task 1: raw-data parsing and wiring the tests into the gates
 
-**Файлы:**
-- Создать: `services/vpn_monitor/vpnmon_parse.py`
-- Создать: `tests/vpn_monitor/conftest.py`, `tests/vpn_monitor/test_parse.py`
-- Изменить: `scripts/quality/preflight.sh` — список `for SVC_TESTS in …` в разделе 9
-- Изменить: `.github/workflows/quality-checks.yml` — шаг после «STT tests»
+**Files:**
+- Create: `services/vpn_monitor/vpnmon_parse.py`
+- Create: `tests/vpn_monitor/conftest.py`, `tests/vpn_monitor/test_parse.py`
+- Change: `scripts/quality/preflight.sh` — the `for SVC_TESTS in …` list in section 9
+- Change: `.github/workflows/quality-checks.yml` — the step after "STT tests"
 
-**Интерфейсы:**
-- Производит (`vpnmon_parse`): `split_sections(text, count) -> list[str]`; `parse_key_values(text) -> dict[str, list[str]]`; `parse_peers(allowed, transfer, handshakes) -> dict[key, {"vpn_ip": str|None, "rx": int, "tx": int, "handshake": int}]`; `parse_clients_table(text) -> dict[key, name]` (`ValueError` при ошибке); `parse_names_conf(text) -> list[(prefix, name)]`; `resolve_names(keys, table|None, conf) -> dict[key, name]`; `parse_cpu(stat) -> (busy, total)`; `parse_btime(stat) -> int`; `parse_mem(meminfo) -> (used, total)`; `parse_load1(loadavg) -> float`; `parse_net_dev(text, iface) -> (rx, tx)|None`; `parse_default_iface(route) -> str|None`; `parse_inspect(text) -> (pid, started, running)`; `shutdown_reason(journal) -> str|None`; константа `SECTION_MARK = "@@"`.
+**Interfaces:**
+- Produces (`vpnmon_parse`): `split_sections(text, count) -> list[str]`; `parse_key_values(text) -> dict[str, list[str]]`; `parse_peers(allowed, transfer, handshakes) -> dict[key, {"vpn_ip": str|None, "rx": int, "tx": int, "handshake": int}]`; `parse_clients_table(text) -> dict[key, name]` (`ValueError` on error); `parse_names_conf(text) -> list[(prefix, name)]`; `resolve_names(keys, table|None, conf) -> dict[key, name]`; `parse_cpu(stat) -> (busy, total)`; `parse_btime(stat) -> int`; `parse_mem(meminfo) -> (used, total)`; `parse_load1(loadavg) -> float`; `parse_net_dev(text, iface) -> (rx, tx)|None`; `parse_default_iface(route) -> str|None`; `parse_inspect(text) -> (pid, started, running)`; `shutdown_reason(journal) -> str|None`; constant `SECTION_MARK = "@@"`.
 
-- [ ] **Шаг 1: conftest и падающие тесты**
+- [ ] **Step 1: conftest and failing tests**
 
 `tests/vpn_monitor/conftest.py`:
 ```python
@@ -196,12 +197,12 @@ def test_shutdown_reason_prefers_most_specific():
     assert vp.shutdown_reason("ничего\n") is None
 ```
 
-- [ ] **Шаг 2: убедиться, что тесты падают**
+- [ ] **Step 2: confirm the tests fail**
 
 Run: `.venv/Scripts/python.exe -m pytest -q tests/vpn_monitor/test_parse.py`
-Expected: FAIL с `ModuleNotFoundError: No module named 'vpnmon_parse'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'vpnmon_parse'`
 
-- [ ] **Шаг 3: реализация**
+- [ ] **Step 3: implementation**
 
 `services/vpn_monitor/vpnmon_parse.py`:
 ```python
@@ -385,47 +386,47 @@ def shutdown_reason(journal_text):
     return None
 ```
 
-- [ ] **Шаг 4: убедиться, что тесты проходят**
+- [ ] **Step 4: confirm the tests pass**
 
 Run: `.venv/Scripts/python.exe -m pytest -q tests/vpn_monitor/test_parse.py`
-Expected: все тесты PASS
+Expected: all tests PASS
 
-- [ ] **Шаг 5: подключить каталог к воротам и CI**
+- [ ] **Step 5: wire the directory into the gates and CI**
 
-`scripts/quality/preflight.sh`, раздел 9: в строке
+`scripts/quality/preflight.sh`, section 9: on the line
 `for SVC_TESTS in tests/llm_gateway tests/nas_api tests/watchdog tests/backup_api tests/stt; do`
-добавить в конец ` tests/vpn_monitor`.
+add ` tests/vpn_monitor` at the end.
 
-`.github/workflows/quality-checks.yml`: сразу после шага «STT tests» (тот же отступ):
+`.github/workflows/quality-checks.yml`: right after the "STT tests" step (same indentation):
 ```yaml
       # Учёт VPN и нагрузки VPS (спецификация 2026-10-04): только стандартная библиотека.
       - name: VPN monitor tests
         run: python -m pytest -q tests/vpn_monitor
 ```
 
-- [ ] **Шаг 6: коммит**
+- [ ] **Step 6: commit**
 
 ```bash
 git add services/vpn_monitor/vpnmon_parse.py tests/vpn_monitor scripts/quality/preflight.sh .github/workflows/quality-checks.yml
 git commit -m "feat(vpnmon): parsers for wg, clientsTable and /proc" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
-Expected: ворота пройдены, в разделе 9 строка `tests/vpn_monitor: N passed`.
+Expected: the gates pass, section 9 shows the line `tests/vpn_monitor: N passed`.
 
 ---
 
-### Задача 2: хранение и учёт приращений
+### Task 2: storage and increment accounting
 
-**Файлы:**
-- Создать: `services/vpn_monitor/vpnmon_store.py`
-- Создать: `tests/vpn_monitor/test_store.py`
+**Files:**
+- Create: `services/vpn_monitor/vpnmon_store.py`
+- Create: `tests/vpn_monitor/test_store.py`
 
-**Интерфейсы:**
-- Потребляет: ничего из задачи 1.
-- Производит (`vpnmon_store`): константы `HOUR=3600`, `DAY=86400`, `RETENTION_DAYS=400`, `MAX_RATE_INTERVAL=300`, `HOST_COUNTERS=("wan","awg","xray")`; `open_db(path) -> sqlite3.Connection`; `get_meta(db, key, default=None) -> str|default`; `set_meta(db, key, value)`; `get_state(db) -> dict[str,str]`; `set_state(db, mapping)`; `add_event(db, ts, kind, detail=None)` (`detail` — словарь, хранится JSON); `hour_of(ts) -> int`; `counter_delta(prev|None, cur, same_epoch) -> int`; `minute_rate(nbytes, elapsed) -> float|None`; `record_peers(db, now, peers, names, epoch)`; `record_host(db, now, host)`; `purge_old(db, now, days=RETENTION_DAYS)`. Функции `record_*`, `set_*`, `add_event` и `purge_old` **не делают commit**: транзакцией владеет вызывающий (`with db:`).
-- Контракт словаря `host` для `record_host`:
+**Interfaces:**
+- Consumes: nothing from task 1.
+- Produces (`vpnmon_store`): constants `HOUR=3600`, `DAY=86400`, `RETENTION_DAYS=400`, `MAX_RATE_INTERVAL=300`, `HOST_COUNTERS=("wan","awg","xray")`; `open_db(path) -> sqlite3.Connection`; `get_meta(db, key, default=None) -> str|default`; `set_meta(db, key, value)`; `get_state(db) -> dict[str,str]`; `set_state(db, mapping)`; `add_event(db, ts, kind, detail=None)` (`detail` is a dict, stored as JSON); `hour_of(ts) -> int`; `counter_delta(prev|None, cur, same_epoch) -> int`; `minute_rate(nbytes, elapsed) -> float|None`; `record_peers(db, now, peers, names, epoch)`; `record_host(db, now, host)`; `purge_old(db, now, days=RETENTION_DAYS)`. The functions `record_*`, `set_*`, `add_event` and `purge_old` **do not commit**: the caller owns the transaction (`with db:`).
+- The `host` dict contract for `record_host`:
   `{"boot_id": str, "btime": int, "cpu": (busy, total), "mem_used": int, "mem_total": int, "load1": float, "disk_pct": float, "conntrack": int|None, "counters": {"wan"|"awg"|"xray": (epoch, rx, tx)|None}, "started": {имя_контейнера: StartedAt|None}, "awg_ok": bool, "shutdown_reason": str|None (необязательно)}`.
 
-- [ ] **Шаг 1: падающие тесты**
+- [ ] **Step 1: failing tests**
 
 `tests/vpn_monitor/test_store.py`:
 ```python
@@ -637,12 +638,12 @@ def test_purge_old(db):
     assert counts == [0, 0, 0]
 ```
 
-- [ ] **Шаг 2: убедиться, что тесты падают**
+- [ ] **Step 2: confirm the tests fail**
 
 Run: `.venv/Scripts/python.exe -m pytest -q tests/vpn_monitor/test_store.py`
-Expected: FAIL с `ModuleNotFoundError: No module named 'vpnmon_store'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'vpnmon_store'`
 
-- [ ] **Шаг 3: реализация**
+- [ ] **Step 3: implementation**
 
 `services/vpn_monitor/vpnmon_store.py`:
 ```python
@@ -911,12 +912,12 @@ def purge_old(db, now, days=RETENTION_DAYS):
     db.execute("DELETE FROM events WHERE ts < ?", (edge,))
 ```
 
-- [ ] **Шаг 4: убедиться, что тесты проходят**
+- [ ] **Step 4: confirm the tests pass**
 
 Run: `.venv/Scripts/python.exe -m pytest -q tests/vpn_monitor/test_store.py`
-Expected: все тесты PASS
+Expected: all tests PASS
 
-- [ ] **Шаг 5: коммит**
+- [ ] **Step 5: commit**
 
 ```bash
 git add services/vpn_monitor/vpnmon_store.py tests/vpn_monitor/test_store.py
@@ -925,17 +926,17 @@ git commit -m "feat(vpnmon): reset-safe hourly accounting in SQLite" -m "Co-Auth
 
 ---
 
-### Задача 3: сборщик `collect.py`
+### Task 3: the `collect.py` collector
 
-**Файлы:**
-- Создать: `services/vpn_monitor/collect.py`
-- Создать: `tests/vpn_monitor/test_collect.py`
+**Files:**
+- Create: `services/vpn_monitor/collect.py`
+- Create: `tests/vpn_monitor/test_collect.py`
 
-**Интерфейсы:**
-- Потребляет: `vpnmon_parse` (задача 1), `vpnmon_store` (задача 2), контракт `host` из задачи 2.
-- Производит (`collect`): `WG_READ_SCRIPT`, `INSPECT_FORMAT`, `JOURNAL_PREV_BOOT`, `AWG="amnezia-awg2"`, `XRAY="amnezia-xray"`; `run(cmd) -> str|None`; `make_proc_reader(root) -> callable(rel) -> str` (нет файла → `""`); `disk_pct(path) -> float`; `inspect(runner, name) -> (pid, started, running)|None`; `gather_awg(runner, conf) -> (peers, names)|None`; `gather_host(proc, disk, awg_info, xray_info) -> host`; `snapshot(src) -> (awg|None, awg_info|None, host)`; `collect_once(db, now, src) -> (awg|None, host)`; `print_snapshot(awg, host)`; `main(argv=None) -> int`. `src` — любой объект с атрибутами `runner`, `proc`, `disk` (число, %), `conf` (список из `parse_names_conf`).
+**Interfaces:**
+- Consumes: `vpnmon_parse` (task 1), `vpnmon_store` (task 2), the `host` contract from task 2.
+- Produces (`collect`): `WG_READ_SCRIPT`, `INSPECT_FORMAT`, `JOURNAL_PREV_BOOT`, `AWG="amnezia-awg2"`, `XRAY="amnezia-xray"`; `run(cmd) -> str|None`; `make_proc_reader(root) -> callable(rel) -> str` (no file → `""`); `disk_pct(path) -> float`; `inspect(runner, name) -> (pid, started, running)|None`; `gather_awg(runner, conf) -> (peers, names)|None`; `gather_host(proc, disk, awg_info, xray_info) -> host`; `snapshot(src) -> (awg|None, awg_info|None, host)`; `collect_once(db, now, src) -> (awg|None, host)`; `print_snapshot(awg, host)`; `main(argv=None) -> int`. `src` — any object with attributes `runner`, `proc`, `disk` (a number, %), `conf` (a list from `parse_names_conf`).
 
-- [ ] **Шаг 1: падающие тесты**
+- [ ] **Step 1: failing tests**
 
 `tests/vpn_monitor/test_collect.py`:
 ```python
@@ -1112,12 +1113,12 @@ def test_read_script_is_constant_and_fails_closed():
     assert collect.WG_READ_SCRIPT.startswith("set -e;")
 ```
 
-- [ ] **Шаг 2: убедиться, что тесты падают**
+- [ ] **Step 2: confirm the tests fail**
 
 Run: `.venv/Scripts/python.exe -m pytest -q tests/vpn_monitor/test_collect.py`
-Expected: FAIL с `ModuleNotFoundError: No module named 'collect'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'collect'`
 
-- [ ] **Шаг 3: реализация**
+- [ ] **Step 3: implementation**
 
 `services/vpn_monitor/collect.py`:
 ```python
@@ -1308,12 +1309,12 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
-- [ ] **Шаг 4: убедиться, что тесты проходят**
+- [ ] **Step 4: confirm the tests pass**
 
 Run: `.venv/Scripts/python.exe -m pytest -q tests/vpn_monitor`
-Expected: все тесты PASS (задачи 1–3)
+Expected: all tests PASS (tasks 1–3)
 
-- [ ] **Шаг 5: коммит**
+- [ ] **Step 5: commit**
 
 ```bash
 git add services/vpn_monitor/collect.py tests/vpn_monitor/test_collect.py
@@ -1322,18 +1323,18 @@ git commit -m "feat(vpnmon): read-only one-minute collector" -m "Co-Authored-By:
 
 ---
 
-### Задача 4: выборки и текст отчёта
+### Task 4: queries and report text
 
-**Файлы:**
-- Создать: `services/vpn_monitor/vpnmon_query.py`, `services/vpn_monitor/vpnmon_render.py`
-- Создать: `tests/vpn_monitor/test_report_text.py`
+**Files:**
+- Create: `services/vpn_monitor/vpnmon_query.py`, `services/vpn_monitor/vpnmon_render.py`
+- Create: `tests/vpn_monitor/test_report_text.py`
 
-**Интерфейсы:**
-- Потребляет: `vpnmon_store` (`DAY`, `HOUR`, `get_meta`, `set_meta`, `add_event`, схема таблиц).
-- Производит (`vpnmon_query`): `MSK`, `DAY`, `ONLINE_WINDOW=180`; `report_day(now) -> date`; `day_bounds(day) -> (start, end)`; `peer_totals(db, start, end) -> {key: (rx, tx, peak)}`; `host_summary(db, start, end) -> dict`; `events_between(db, start, end) -> [(ts, kind, dict)]`; `peers_list(db) -> [dict]`; `build_report(db, day, now) -> dict` с ключами `day, now, start, end, host, events, peers, day_totals, week_totals, month_totals, monitoring_start, failed_day`.
-- Производит (`vpnmon_render`): `TG_LIMIT=4096`; `fmt_bytes`, `fmt_short`, `fmt_rate`, `fmt_time(ts, day)`, `docker_time(started) -> float|None`, `silence_counts(peers, now) -> {7|30|90: [имена]}`, `render(data) -> str` (без HTML), `to_messages(text, limit=TG_LIMIT) -> [str]` (каждое `<pre>…</pre>`, экранировано, ≤ limit).
+**Interfaces:**
+- Consumes: `vpnmon_store` (`DAY`, `HOUR`, `get_meta`, `set_meta`, `add_event`, the table schema).
+- Produces (`vpnmon_query`): `MSK`, `DAY`, `ONLINE_WINDOW=180`; `report_day(now) -> date`; `day_bounds(day) -> (start, end)`; `peer_totals(db, start, end) -> {key: (rx, tx, peak)}`; `host_summary(db, start, end) -> dict`; `events_between(db, start, end) -> [(ts, kind, dict)]`; `peers_list(db) -> [dict]`; `build_report(db, day, now) -> dict` with keys `day, now, start, end, host, events, peers, day_totals, week_totals, month_totals, monitoring_start, failed_day`.
+- Produces (`vpnmon_render`): `TG_LIMIT=4096`; `fmt_bytes`, `fmt_short`, `fmt_rate`, `fmt_time(ts, day)`, `docker_time(started) -> float|None`, `silence_counts(peers, now) -> {7|30|90: [names]}`, `render(data) -> str` (no HTML), `to_messages(text, limit=TG_LIMIT) -> [str]` (each `<pre>…</pre>`, escaped, ≤ limit).
 
-- [ ] **Шаг 1: падающие тесты**
+- [ ] **Step 1: failing tests**
 
 `tests/vpn_monitor/test_report_text.py`:
 ```python
@@ -1528,12 +1529,12 @@ def test_week_and_month_boundaries(db):
     assert data["month_totals"][KEY_C][1] == 7 * MB
 ```
 
-- [ ] **Шаг 2: убедиться, что тесты падают**
+- [ ] **Step 2: confirm the tests fail**
 
 Run: `.venv/Scripts/python.exe -m pytest -q tests/vpn_monitor/test_report_text.py`
-Expected: FAIL с `ModuleNotFoundError: No module named 'vpnmon_query'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'vpnmon_query'`
 
-- [ ] **Шаг 3: реализация выборок**
+- [ ] **Step 3: implementation of the queries**
 
 `services/vpn_monitor/vpnmon_query.py`:
 ```python
@@ -1612,7 +1613,7 @@ def build_report(db, day, now):
     }
 ```
 
-- [ ] **Шаг 4: реализация текста**
+- [ ] **Step 4: implementation of the text**
 
 `services/vpn_monitor/vpnmon_render.py`:
 ```python
@@ -1833,14 +1834,14 @@ def to_messages(text, limit=TG_LIMIT):
     return ["<pre>" + html.escape(chunk or "", quote=False) + "</pre>" for chunk in chunks]
 ```
 
-Примечание к `test_to_messages_splits_long_text_by_lines`: текст теста не содержит `<`, `>`, `&`, поэтому после снятия `<pre>` склеенный текст совпадает с исходным.
+Note on `test_to_messages_splits_long_text_by_lines`: the test text contains no `<`, `>`, `&`, so after stripping `<pre>` the joined text matches the original.
 
-- [ ] **Шаг 5: убедиться, что тесты проходят**
+- [ ] **Step 5: confirm the tests pass**
 
 Run: `.venv/Scripts/python.exe -m pytest -q tests/vpn_monitor`
-Expected: все тесты PASS (задачи 1–4)
+Expected: all tests PASS (tasks 1–4)
 
-- [ ] **Шаг 6: коммит**
+- [ ] **Step 6: commit**
 
 ```bash
 git add services/vpn_monitor/vpnmon_query.py services/vpn_monitor/vpnmon_render.py tests/vpn_monitor/test_report_text.py
@@ -1849,17 +1850,17 @@ git commit -m "feat(vpnmon): daily report windows and text" -m "Co-Authored-By: 
 
 ---
 
-### Задача 5: `report.py` — отправка в Telegram, повторы, однократность
+### Task 5: `report.py` — Telegram delivery, retries, once-per-day guard
 
-**Файлы:**
-- Создать: `services/vpn_monitor/report.py`
-- Создать: `tests/vpn_monitor/test_report_send.py`
+**Files:**
+- Create: `services/vpn_monitor/report.py`
+- Create: `tests/vpn_monitor/test_report_send.py`
 
-**Интерфейсы:**
-- Потребляет: `vpnmon_query.build_report`, `vpnmon_query.report_day`, `vpnmon_render.render`, `vpnmon_render.to_messages`, `vpnmon_store.open_db/get_meta/set_meta/add_event/purge_old`.
-- Производит (`report`): `HTTP_TIMEOUT=10`, `RETRY_PAUSES=(30, 60)`, `TEST_TEXT`; `read_env(path) -> dict`; `send_message(token, chat_id, text, opener=urlopen)`; `with_retries(action, sleep=time.sleep, pauses=RETRY_PAUSES) -> (bool, str|None)`; `deliver(messages, send, sleep=time.sleep) -> (bool, str|None)`; `run_send(db, now, day, send, force=False, sleep=time.sleep) -> int`; `main(argv=None) -> int`.
+**Interfaces:**
+- Consumes: `vpnmon_query.build_report`, `vpnmon_query.report_day`, `vpnmon_render.render`, `vpnmon_render.to_messages`, `vpnmon_store.open_db/get_meta/set_meta/add_event/purge_old`.
+- Produces (`report`): `HTTP_TIMEOUT=10`, `RETRY_PAUSES=(30, 60)`, `TEST_TEXT`; `read_env(path) -> dict`; `send_message(token, chat_id, text, opener=urlopen)`; `with_retries(action, sleep=time.sleep, pauses=RETRY_PAUSES) -> (bool, str|None)`; `deliver(messages, send, sleep=time.sleep) -> (bool, str|None)`; `run_send(db, now, day, send, force=False, sleep=time.sleep) -> int`; `main(argv=None) -> int`.
 
-- [ ] **Шаг 1: падающие тесты**
+- [ ] **Step 1: failing tests**
 
 `tests/vpn_monitor/test_report_send.py`:
 ```python
@@ -2075,12 +2076,12 @@ def test_retry_does_not_sleep_past_budget(monkeypatch):
     assert pauses == []
 ```
 
-- [ ] **Шаг 2: убедиться, что тесты падают**
+- [ ] **Step 2: confirm the tests fail**
 
 Run: `.venv/Scripts/python.exe -m pytest -q tests/vpn_monitor/test_report_send.py`
-Expected: FAIL с `ModuleNotFoundError: No module named 'report'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'report'`
 
-- [ ] **Шаг 3: реализация**
+- [ ] **Step 3: implementation**
 
 `services/vpn_monitor/report.py`:
 ```python
@@ -2327,12 +2328,12 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
-- [ ] **Шаг 4: убедиться, что тесты проходят**
+- [ ] **Step 4: confirm the tests pass**
 
 Run: `.venv/Scripts/python.exe -m pytest -q tests/vpn_monitor`
-Expected: все тесты PASS (задачи 1–5)
+Expected: all tests PASS (tasks 1–5)
 
-- [ ] **Шаг 5: коммит**
+- [ ] **Step 5: commit**
 
 ```bash
 git add services/vpn_monitor/report.py tests/vpn_monitor/test_report_send.py
@@ -2341,19 +2342,19 @@ git commit -m "feat(vpnmon): Telegram delivery with retries and once-per-day gua
 
 ---
 
-### Задача 6: юниты, установщик, примеры и снимок правила №13
+### Task 6: units, installer, examples and the rule-13 snapshot
 
-**Файлы:**
-- Создать: `services/vpn_monitor/systemd/nasa-vpnmon-collect.service`, `…-collect.timer`, `…-report.service`, `…-report.timer`
-- Создать: `services/vpn_monitor/install_vps.sh`, `services/vpn_monitor/rule13_snapshot.sh`
-- Создать: `services/vpn_monitor/names.conf.example`, `services/vpn_monitor/telegram.env.example`
-- Создать: `tests/vpn_monitor/test_deploy.py`
+**Files:**
+- Create: `services/vpn_monitor/systemd/nasa-vpnmon-collect.service`, `…-collect.timer`, `…-report.service`, `…-report.timer`
+- Create: `services/vpn_monitor/install_vps.sh`, `services/vpn_monitor/rule13_snapshot.sh`
+- Create: `services/vpn_monitor/names.conf.example`, `services/vpn_monitor/telegram.env.example`
+- Create: `tests/vpn_monitor/test_deploy.py`
 
-**Интерфейсы:**
-- Потребляет: `report.HTTP_TIMEOUT`, `report.RETRY_PAUSES` (задача 5); список модулей `services/vpn_monitor/*.py`.
-- Производит: файлы для задачи 8.
+**Interfaces:**
+- Consumes: `report.HTTP_TIMEOUT`, `report.RETRY_PAUSES` (task 5); the list of modules `services/vpn_monitor/*.py`.
+- Produces: the files for task 8.
 
-- [ ] **Шаг 1: падающие тесты**
+- [ ] **Step 1: failing tests**
 
 `tests/vpn_monitor/test_deploy.py`:
 ```python
@@ -2428,12 +2429,12 @@ def test_rule13_snapshot_only_reads():
     assert "docker exec" not in s and "wg show" not in s
 ```
 
-- [ ] **Шаг 2: убедиться, что тесты падают**
+- [ ] **Step 2: confirm the tests fail**
 
 Run: `.venv/Scripts/python.exe -m pytest -q tests/vpn_monitor/test_deploy.py`
-Expected: FAIL с `FileNotFoundError` на `systemd/nasa-vpnmon-collect.service`
+Expected: FAIL with `FileNotFoundError` on `systemd/nasa-vpnmon-collect.service`
 
-- [ ] **Шаг 3: юниты**
+- [ ] **Step 3: units**
 
 `services/vpn_monitor/systemd/nasa-vpnmon-collect.service`:
 ```ini
@@ -2499,7 +2500,7 @@ Persistent=true
 WantedBy=timers.target
 ```
 
-- [ ] **Шаг 4: установщик, снимок, примеры**
+- [ ] **Step 4: installer, snapshot, examples**
 
 `services/vpn_monitor/install_vps.sh`:
 ```bash
@@ -2579,14 +2580,14 @@ TELEGRAM_BOT_TOKEN=
 TELEGRAM_CHAT_ID=
 ```
 
-- [ ] **Шаг 5: убедиться, что тесты и ворота проходят**
+- [ ] **Step 5: confirm the tests and the gates pass**
 
 Run: `.venv/Scripts/python.exe -m pytest -q tests/vpn_monitor`
-Expected: все тесты PASS
-Run: `bash scripts/quality/preflight.sh` (Git Bash, `.venv/Scripts` в PATH)
-Expected: `ВОРОТА ПРОЙДЕНЫ`; раздел 1 видит два новых `.sh`; раздел 10 (храповик) без нарушений
+Expected: all tests PASS
+Run: `bash scripts/quality/preflight.sh` (Git Bash, `.venv/Scripts` in PATH)
+Expected: `ВОРОТА ПРОЙДЕНЫ` (gates passed); section 1 sees the two new `.sh` files; section 10 (ratchet) reports no violations
 
-- [ ] **Шаг 6: коммит**
+- [ ] **Step 6: commit**
 
 ```bash
 git add services/vpn_monitor/systemd services/vpn_monitor/install_vps.sh services/vpn_monitor/rule13_snapshot.sh services/vpn_monitor/names.conf.example services/vpn_monitor/telegram.env.example tests/vpn_monitor/test_deploy.py
@@ -2595,55 +2596,55 @@ git commit -m "feat(vpnmon): systemd units, installer and rule-13 snapshot" -m "
 
 ---
 
-### Задача 7: runbook, CHANGELOG, английские пары (исполнитель DeepSeek)
+### Task 7: runbook, CHANGELOG, English pairs (DeepSeek executor)
 
-**Файлы:**
-- Создать: `docs/plans/DEPLOY_VPNMON_2026-10.ru.md` и пару `docs/plans/DEPLOY_VPNMON_2026-10.md`. Содержание — шаги задачи 8 этого плана дословно, команды без изменений, плюс раздел «Откат».
-- Создать: `docs/superpowers/plans/2026-10-04-vps-vpn-monitor.en.md`. Это не формат проекта `X.md`/`X.ru.md`: русский план уже лежит как `X.md`, и переименование сломало бы ссылки. Поэтому английская пара получает суффикс `.en.md`. Перевод полный.
-- Изменить: `CHANGELOG.md` — запись в «Unreleased»: «VPS/VPN monitor: one-minute read-only collector and daily 10:00 MSK Telegram report (spec 2026-10-04)».
+**Files:**
+- Create: `docs/plans/DEPLOY_VPNMON_2026-10.ru.md` and the pair `docs/plans/DEPLOY_VPNMON_2026-10.md`. Content — the steps of task 8 of this plan verbatim, commands unchanged, plus a "Rollback" section.
+- Create: `docs/superpowers/plans/2026-10-04-vps-vpn-monitor.en.md`. This is not the project's `X.md`/`X.ru.md` format: the Russian plan already lives as `X.md`, and renaming would break links. Therefore the English pair gets the `.en.md` suffix. Full translation.
+- Change: `CHANGELOG.md` — an entry under "Unreleased": "VPS/VPN monitor: one-minute read-only collector and daily 10:00 MSK Telegram report (spec 2026-10-04)".
 
-Карточка `ds-worker`, `needs_edit: true`, `base` — последний коммит задачи 6. В карточку не кладутся ключи пиров, имена и токены. Ведущий принимает работу сверкой: число разделов совпадает, все команды из задачи 8 присутствуют дословно, в EN-файлах нет кириллицы.
+The `ds-worker` card, `needs_edit: true`, `base` — the last commit of task 6. Peer keys, names and tokens are not put into the card. The lead accepts the work by cross-checking: the number of sections matches, all commands from task 8 are present verbatim, and the EN files contain no Cyrillic.
 
-- [ ] **Шаг 1:** написать и запустить карточку (`ds-worker new` → `ds-worker run`)
-- [ ] **Шаг 2:** принять по сверке выше (`ds-worker review --accept`) и влить коммит исполнителя в ветку (`git merge --ff-only deepseek/<task_id>`)
+- [ ] **Step 1:** write and run the card (`ds-worker new` → `ds-worker run`)
+- [ ] **Step 2:** accept by the check above (`ds-worker review --accept`) and merge the executor's commit into the branch (`git merge --ff-only deepseek/<task_id>`)
 
 ---
 
-### Задача 8: выкат на VPS (только ведущий, после слова владельца «деплой»)
+### Task 8: rollout to the VPS (lead only, after the owner says «деплой»)
 
-Зона критическая (правило №16): ни субагент, ни DeepSeek эту задачу не выполняют. Команды запускаются с рабочей станции. `VPS` ниже — `root@95.163.176.103` с ключом `~/.ssh/borovskoy_new_ed25519`.
+A critical zone (rule №16): neither a subagent nor DeepSeek performs this task. The commands are run from the workstation. `VPS` below means `root@95.163.176.103` with the key `~/.ssh/borovskoy_new_ed25519`.
 
-- [ ] **Шаг 1: код на VPS во временный каталог**
+- [ ] **Step 1: the code on the VPS, into a temporary directory**
 
 ```bash
 cd "e:/Linux mint/virtual_VM/shared/NAS_Jetson_Nano"
 tar -C services --exclude=__pycache__ -czf - vpn_monitor | ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'umask 077; test ! -e /root/vpnmon-src && mkdir /root/vpnmon-src && tar -C /root/vpnmon-src -xzf - && ls /root/vpnmon-src/vpn_monitor'
 ```
 
-- [ ] **Шаг 2: снимок правила №13 «до»**
+- [ ] **Step 2: rule 13 snapshot "before"**
 
 ```bash
 ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'bash /root/vpnmon-src/vpn_monitor/rule13_snapshot.sh | tee /root/vpnmon-rule13-before.txt'
 ```
-Ожидание: `amnezia-awg2`/`amnezia-xray` running, peer count = owner baseline; среди слушающих наружу (`0.0.0.0`/`[::]`) только 22, 443, 40568/udp и прежние сервисные порты.
+Expected: `amnezia-awg2`/`amnezia-xray` running, peer count = owner baseline; among the listeners exposed outward (`0.0.0.0`/`[::]`) only 22, 443, 40568/udp and the previous service ports.
 
-- [ ] **Шаг 3: пробный замер без записи и сверка с `wg`**
+- [ ] **Step 3: trial sample with no write, cross-checked against `wg`**
 
 ```bash
 ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'cd /root/vpnmon-src/vpn_monitor && python3 collect.py --dry-run --names /nonexistent; echo ---; docker exec amnezia-awg2 wg show awg0 transfer | sort -k3 -n | tail -3 | cut -c1-8,44-'
 ```
-Ожидание: `peers=21`; у трёх верхних по `tx` значения совпадают с `wg show` (с поправкой на секунды между командами); `awg: rx=… tx=…`, `wan`, `xray` не «нет».
+Expected: `peers=21`; for the top three by `tx` the values match `wg show` (allowing for the seconds between the commands); `awg: rx=… tx=…`, `wan`, `xray` are not "нет".
 
-- [ ] **Шаг 4: установка**
+- [ ] **Step 4: installation**
 
 ```bash
 ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'bash /root/vpnmon-src/vpn_monitor/install_vps.sh'
 ```
-Ожидание: в списке таймеров есть `nasa-vpnmon-collect.timer`; сообщение «таймер отчёта НЕ включён» (токена ещё нет).
+Expected: `nasa-vpnmon-collect.timer` appears in the timer list; the message "таймер отчёта НЕ включён" (no token yet).
 
-- [ ] **Шаг 5: `names.conf` — шесть безымянных пиров**
+- [ ] **Step 5: `names.conf` — six unnamed peers**
 
-По выводу шага 3 взять префиксы ключей для `10.8.1.17` (Vostro) и `10.8.1.18`–`.22` («запасной-1»…«запасной-5» по возрастанию адреса) и записать на VPS. Значения в git не попадают.
+From the output of step 3, take the key prefixes for `10.8.1.17` (Vostro) and `10.8.1.18`–`.22` («запасной-1»…«запасной-5» in ascending address order) and write them on the VPS. The values never get into git.
 ```bash
 ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'umask 077; cat > /etc/nasa-vpnmon/names.conf' <<'EOF'
 <префикс .17> = Vostro
@@ -2654,61 +2655,61 @@ ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'umask 077; cat > /etc/n
 <префикс .22> = запасной-5
 EOF
 ```
-Заглушки `<префикс …>` ведущий заменяет реальными префиксами из шага 3 в момент выполнения.
+The lead replaces the `<префикс …>` placeholders with the real prefixes from step 3 at execution time.
 
-- [ ] **Шаг 6: токен с Jetson на VPS без вывода на экран**
+- [ ] **Step 6: the token from the Jetson to the VPS without printing it**
 
-С рабочей станции из домашней сети (правило №17). Сначала проверить, что файл на Jetson на месте:
+From the workstation, from the home network (rule №17). First check that the file is in place on the Jetson:
 ```bash
 ssh admin@192.168.0.50 'ls -l /etc/nasa-monitor/telegram.env'
 ```
-Затем перенести две строки конвейером: значение идёт из stdout Jetson в stdin VPS и нигде не печатается.
+Then transfer the two lines through a pipeline: the value goes from the Jetson's stdout to the VPS's stdin and is never printed anywhere.
 ```bash
 set -o pipefail
 ssh -o BatchMode=yes admin@192.168.0.50 'sudo -n grep -E "^TELEGRAM_(BOT_TOKEN|CHAT_ID)=" /etc/nasa-monitor/telegram.env' \
   | ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'set -e; umask 077; tmp=$(mktemp /etc/nasa-vpnmon/telegram.env.XXXXXX); trap '\''rm -f "$tmp"'\'' EXIT; cat > "$tmp"; grep -q "^TELEGRAM_BOT_TOKEN=." "$tmp"; grep -q "^TELEGRAM_CHAT_ID=." "$tmp"; chmod 600 "$tmp"; mv "$tmp" /etc/nasa-vpnmon/telegram.env; echo 2'
 ```
-Ожидание: `2`.
+Expected: `2`.
 
-- [ ] **Шаг 7: проверочное сообщение и включение отчёта**
+- [ ] **Step 7: test message and enabling the report**
 
 ```bash
 ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'python3 /usr/local/lib/nasa-vpnmon/report.py --test && systemctl enable --now nasa-vpnmon-report.timer && systemctl list-timers --all "nasa-vpnmon-*" --no-pager'
 ```
-Ожидание: `проверка: доставлено`; владелец видит сообщение 🧪; следующий запуск отчёта — 10:00 МСК.
+Expected: `проверка: доставлено`; the owner sees the 🧪 message; the next report run — 10:00 MSK.
 
-- [ ] **Шаг 8: через 5 минут — данные в БД и расход ресурсов**
+- [ ] **Step 8: after 5 minutes — data in the DB and resource usage**
 
 ```bash
 ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'python3 -c "import sqlite3; d=sqlite3.connect(\"/var/lib/nasa-vpnmon/vpnmon.db\"); print(\"host\", d.execute(\"select count(*), sum(samples) from host_hourly\").fetchone(), \"peers\", d.execute(\"select count(*) from peers\").fetchone())"; systemctl show nasa-vpnmon-collect.service -p CPUUsageNSec -p MemoryPeak -p Result; journalctl -u nasa-vpnmon-collect -n 5 --no-pager; ls -l /var/lib/nasa-vpnmon /etc/nasa-vpnmon'
 ```
-Ожидание: `peers (21,)`, `samples` ≥ 4; `Result=success`; `MemoryPeak` < 64 МБ; файлы 0600, каталоги 0700.
+Expected: `peers (21,)`, `samples` ≥ 4; `Result=success`; `MemoryPeak` < 64 MB; files 0600, directories 0700.
 
-- [ ] **Шаг 9: отчёт за текущие сутки на экран**
+- [ ] **Step 9: the report for the current day to screen**
 
 ```bash
 ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'python3 /usr/local/lib/nasa-vpnmon/report.py --stdout --day $(TZ=Europe/Moscow date +%F)'
 ```
-Ожидание: все блоки макета §7; шесть пиров названы по `names.conf`; «Не подключались с ДД.ММ» — дата сегодняшняя.
+Expected: all blocks of the §7 layout; the six peers named via `names.conf`; "Не подключались с ДД.ММ" — today's date.
 
-- [ ] **Шаг 10: снимок правила №13 «после»**
+- [ ] **Step 10: rule 13 snapshot "after"**
 
 ```bash
 ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'bash /root/vpnmon-src/vpn_monitor/rule13_snapshot.sh | diff /root/vpnmon-rule13-before.txt - && echo "правило 13: без изменений"'
 ```
-Ожидание: `правило 13: без изменений`. Любая разница — стоп, откат (ниже) и разбор.
+Expected: `правило 13: без изменений`. Any difference — stop, roll back (below) and investigate.
 
-- [ ] **Шаг 11: документация и публикация**
+- [ ] **Step 11: documentation and publication**
 
-- Влить ветку `feat/vpn-monitor-2026-10` в `main` (`git merge --ff-only`) и выложить по процедуре правила №15.
-- `CLAUDE.md` + `CLAUDE.en.md`: строка таблицы «VPN-учёт» (юниты, время отчёта); пиров **21** (замер 04.10); простой VPS 04.10 04:55–05:27 UTC; новая контрольная точка.
-- Семье объявление **не нужно**: отчёт видит только владелец (правило №18 касается видимого семье).
+- Merge the branch `feat/vpn-monitor-2026-10` into `main` (`git merge --ff-only`) and publish per the rule №15 procedure.
+- `CLAUDE.md` + `CLAUDE.en.md`: a table row for VPN accounting (units, report time); peers **21** (measured 04.10); VPS downtime 04.10 04:55–05:27 UTC; a new checkpoint.
+- No family announcement is needed: only the owner sees the report (rule №18 concerns what the family can see).
 
-- [ ] **Шаг 12: на следующий день в 10:00 МСК**
+- [ ] **Step 12: the next day at 10:00 MSK**
 
-Пришёл настоящий отчёт; владелец подтверждает. При желании владельца — сверка объёма: скачать 100 МБ через VPN на известном устройстве, затем `report.py --stdout --day <сегодня>` показывает прирост около 100 МБ (±5 %) у этого клиента.
+The real report has arrived; the owner confirms. If the owner wishes — a volume cross-check: download 100 MB through the VPN on a known device, then `report.py --stdout --day <today>` shows a growth of about 100 MB (±5 %) for that client.
 
-**Откат** (VPN не задет, проверка — снимок правила №13 до и после):
+**Rollback** (VPN untouched, verified by the rule 13 snapshot before and after):
 ```bash
 ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'systemctl disable --now nasa-vpnmon-collect.timer nasa-vpnmon-report.timer; systemctl stop nasa-vpnmon-collect.service nasa-vpnmon-report.service'
 ```

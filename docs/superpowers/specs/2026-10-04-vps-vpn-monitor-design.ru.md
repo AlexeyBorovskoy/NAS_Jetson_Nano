@@ -53,7 +53,7 @@
 ```
 VPS
 ├─ nasa-vpnmon-collect.timer   каждые 60 с → /usr/local/lib/nasa-vpnmon/collect.py  (root)
-│     лимиты юнита: CPUQuota=20 %, MemoryMax=64M, Nice=10, TimeoutStartSec=30
+│     лимиты юнита: CPUQuota=20 %, MemoryMax=64M, Nice=10, TimeoutStartSec=50 (> 4 подпроцесса × 10 с)
 │     ├─ docker exec amnezia-awg2 <постоянный скрипт чтения>   — один exec на запуск
 │     ├─ docker inspect amnezia-awg2 / amnezia-xray            — StartedAt, RestartCount, Pid
 │     ├─ /proc/<pid awg2>/net/dev                              — счётчики awg0, без exec

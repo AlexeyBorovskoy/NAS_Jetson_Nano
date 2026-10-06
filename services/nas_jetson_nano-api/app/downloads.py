@@ -205,6 +205,15 @@ def _name(st: dict, fallback: str = "") -> str:
     return fallback or st.get("gid", "?")
 
 
+class Aria2Error(RuntimeError):
+    """Keep the structured RPC error separate from transport failures."""
+
+    def __init__(self, error: dict):
+        self.code = error.get("code")
+        self.missing_gid = bool(re.fullmatch(r"GID(?: #[0-9a-fA-F]+)? (?:is )?not found", error.get("message", "")))
+        super().__init__("aria2: %s" % error.get("message"))
+
+
 class Aria2:
     """aria2 JSON-RPC. Секрет — первым параметром (`token:…`), в журнал не пишется."""
 
@@ -220,7 +229,7 @@ class Aria2:
             r = await c.post(self.url, json=body)
         data = r.json()
         if "error" in data:
-            raise RuntimeError("aria2: %s" % data["error"].get("message"))
+            raise Aria2Error(data["error"])
         return data["result"]
 
 
@@ -468,16 +477,19 @@ class Downloads:
             data = self.ledger.load()
             meta = data.pop("_meta", {})
             outbox = data.pop("_outbox", [])
+            meta.pop("tick_failed", None)
             try:
                 await self._tick_entries(data, meta, msgs)
                 await self._reconcile(data, meta, msgs)
                 await self._guard(data, meta, msgs)
-            except httpx.HTTPError:
-                log.warning("aria2 недоступен — такт пропущен")
-            outbox.extend({"chat_id": c, "text": t} for c, t in msgs)
-            data["_meta"] = meta
-            data["_outbox"] = outbox
-            self.ledger.save(data)
+            except Exception:
+                log.exception("download tick failed; preserving partial progress")
+                meta["tick_failed"] = True
+            finally:
+                outbox.extend({"chat_id": c, "text": t} for c, t in msgs)
+                data["_meta"] = meta
+                data["_outbox"] = outbox
+                self.ledger.save(data)
             return [(m["chat_id"], m["text"]) for m in outbox]
 
     async def ack(self, n: int) -> None:
@@ -499,30 +511,64 @@ class Downloads:
             chats.add(family)
         chats = sorted(chats)
         if disk_down or hdd < hdd_min:
-            if not meta.get("paused"):
-                gids = [st["gid"] for st in await self.aria2.call("tellActive", ["gid"])]
-                gids += [st["gid"] for st in await self.aria2.call("tellWaiting", 0, 1000, ["gid", "status"])
-                         if st.get("status") == "waiting"]
-                for gid in gids:
-                    await self.aria2.call("pause", gid)
-                meta["paused"] = True
-                meta["paused_gids"] = gids
+            first_pause = not meta.get("paused")
+            if first_pause or meta.get("pause_pending"):
                 if disk_down:
                     # И6: диск (обычно HDD — маркер пропал) реально недоступен,
                     # это другая причина паузы, не «мало места»
                     text = "⏸ Пауза закачек — HDD недоступен."
                 else:
                     text = "⏸ Пауза закачек — мало места (HDD: нужно ещё %s)." % fmt_size(hdd_min - hdd)
-                msgs.extend((c, text) for c in chats)
+                if first_pause:
+                    msgs.extend((c, text) for c in chats)
+                await self._pause_guard(meta)
         elif meta.get("paused") and hdd >= hdd_min + _RESUME_MARGIN:
-            for gid in meta.get("paused_gids", []):
-                try:
-                    await self.aria2.call("unpause", gid)
-                except RuntimeError:
-                    pass  # закачку успели отменить
-            meta["paused"] = False
-            meta["paused_gids"] = []
-            msgs.extend((c, "▶️ Место есть — продолжаю закачки.") for c in chats)
+            await self._resume_guard(meta, data)
+            if not meta["paused"]:
+                msgs.extend((c, "▶️ Место есть — продолжаю закачки.") for c in chats)
+
+    async def _resume_guard(self, meta: dict, data: dict) -> None:
+        remaining = meta.setdefault("paused_gids", [])
+        meta.pop("resume_pending", None)
+        for gid in list(remaining):
+            if data.get(gid, {}).get("state") == "cancelled":
+                remaining.remove(gid)
+                continue
+            try:
+                await self.aria2.call("unpause", gid)
+            except Aria2Error as exc:
+                if exc.missing_gid:
+                    remaining.remove(gid)
+                    continue
+                meta["resume_pending"] = True
+                log.warning("guard resume RPC failed; will retry")
+            except RuntimeError:
+                log.warning("guard resume failed; keeping gid for retry", extra={"fields": {"gid": gid}})
+                meta["resume_pending"] = True
+            else:
+                remaining.remove(gid)
+        meta["paused"] = bool(remaining)
+        meta["pause_pending"] = False
+        meta["paused_gids"] = remaining
+
+    async def _pause_guard(self, meta: dict) -> None:
+        meta["pause_pending"] = True
+        meta["paused"] = True
+        retry = False
+        gids = [st["gid"] for st in await self.aria2.call("tellActive", ["gid"])]
+        gids += [st["gid"] for st in await self.aria2.call("tellWaiting", 0, 1000, ["gid", "status"])
+                 if st.get("status") == "waiting"]
+        for gid in gids:
+            if gid in meta.setdefault("paused_gids", []):
+                continue
+            try:
+                await self.aria2.call("pause", gid)
+            except RuntimeError:
+                log.warning("guard pause failed; will retry", extra={"fields": {"gid": gid}})
+                retry = True
+                continue
+            meta["paused_gids"].append(gid)
+        meta["pause_pending"] = retry
 
     async def _queue(self) -> list:
         active = await self.aria2.call("tellActive", _KEYS)

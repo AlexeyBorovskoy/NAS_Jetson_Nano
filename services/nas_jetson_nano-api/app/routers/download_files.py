@@ -1,14 +1,16 @@
 """Read-only file delivery for Telegram's short-lived signed links."""
 from __future__ import annotations
 
+import asyncio
 import html
+import stat
 import urllib.parse
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse
 
-from app import download_links
+from app import blocking, download_links
 from app.config import settings
 
 router = APIRouter(prefix="/downloads", tags=["Downloads"])
@@ -65,13 +67,26 @@ def _directory_page(root: Path, target: Path, user: str, expires: int, sig: str)
     return HTMLResponse(body, headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow"})
 
 
-@router.get("/{user}", include_in_schema=False)
-@router.get("/{user}/{relative:path}", include_in_schema=False)
-def download(user: str, relative: str = "", expires: int | None = Query(default=None), sig: str = ""):
-    _authorize(user, expires, sig)
+def _prepare_download(user: str, relative: str, expires: int, sig: str):
     root, target = _target(user, relative)
     if target.is_dir():
         return _directory_page(root, target, user, expires, sig)
-    if not target.is_file():
+    info = target.stat()
+    if not stat.S_ISREG(info.st_mode):
         raise HTTPException(status_code=404, detail="Not found")
-    return FileResponse(target, filename=target.name, headers={"Cache-Control": "private, no-store"})
+    return FileResponse(target, filename=target.name, stat_result=info,
+                        headers={"Cache-Control": "private, no-store"})
+
+
+@router.get("/{user}", include_in_schema=False)
+@router.get("/{user}/{relative:path}", include_in_schema=False)
+async def download(user: str, relative: str = "", expires: int | None = Query(default=None), sig: str = ""):
+    _authorize(user, expires, sig)
+    # One probe for the entire disk, not one hanging thread per attacker-controlled path.
+    # Never reuse another request's result (signed users may differ).
+    if blocking.busy("download_files"):
+        raise HTTPException(status_code=503, detail="Storage temporarily unavailable")
+    try:
+        return await blocking.run_io("download_files", _prepare_download, user, relative, expires, sig)
+    except (asyncio.TimeoutError, OSError) as exc:
+        raise HTTPException(status_code=503, detail="Storage temporarily unavailable") from exc

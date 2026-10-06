@@ -251,20 +251,11 @@ head_ "7б. Immutable Compose images / sha256 image pins"
 # the pulled content. The gate is blocking for Jetson and VPS Compose files.
 check_image_tags
 
-# ── 7в. 🔴 Таймаут curl к Telegram ─────────────────────────────────────────────
-head_ "7в. Таймаут curl к Telegram / curl timeout"
-#
-# История дефекта (CQ-10, аудит кода 2026-10-02): часть вызовов
-# `curl ... https://api.telegram.org/bot<token>/sendMessage` уходила без --max-time.
-# При недоступном Telegram curl висит до TCP-таймаута (минуты): юнит или таймер всё
-# это время не завершается и не перезапускается, а тревога не уходит — снаружи это
-# выглядит как тишина, а не как поломка. Аудит назвал vps_amnezia_monitor.sh и
-# ddns_duckdns.sh; эта же проверка нашла ещё два — отправку отчёта по расписанию
-# и storage-alert (оба ходят на Telegram с VPS внутри ssh-строки).
-#
-# Почему awk, а не python: раздел обязан работать и там, где python нет вовсе.
-# Строки-продолжения (обратный слеш в конце) склеиваются: без этого вызов,
-# разбитый на `curl -sS -X POST \` + `"…/sendMessage"`, не нашёлся бы совсем.
+# ── 7в. 🔴 Curl deadlines ─────────────────────────────────────────────
+head_ "7в. Curl deadlines / curl timeout"
+# Stage 16: every network curl under scripts requires --max-time, not only Telegram.
+# Join backslash continuations; detect executable calls and commands embedded in SSH.
+# A connection timeout alone does not bound a server that accepts but never responds.
 check_tg_curl_timeout() {
     local tg_file tg_report tg_line tg_n
     local tg_calls=0 tg_files=0 tg_bad=0
@@ -281,14 +272,14 @@ check_tg_curl_timeout() {
         fi
         while IFS= read -r tg_line; do
             [ -n "$tg_line" ] || continue
-            bad "curl к Telegram без --max-time: ${tg_line#BAD }"
+            bad "curl without --max-time: ${tg_line#BAD }"
             tg_bad=$((tg_bad + 1))
         done < <(printf '%s\n' "$tg_report" | grep '^BAD ' || true)
-    done < <(git ls-files '*.sh')
+    done < <(git ls-files 'scripts/*.sh' 'scripts/**/*.sh')
     if [ "$tg_calls" -eq 0 ]; then
-        warn "вызовов Telegram-отправки в *.sh не найдено — проверять нечего"
+        warn "curl calls in scripts/**/*.sh не найдено — проверять нечего"
     elif [ "$tg_bad" -eq 0 ]; then
-        ok "curl к Telegram: $tg_calls вызовов в $tg_files файлах, у всех есть --max-time"
+        ok "curl: $tg_calls вызовов в $tg_files файлах, у всех есть --max-time"
     fi
 }
 check_tg_curl_timeout

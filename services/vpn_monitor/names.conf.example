@@ -1,0 +1,5 @@
+# Имена пиров, которых нет в clientsTable Amnezia. На VPS: /etc/nasa-vpnmon/names.conf (0600).
+# Формат: первые 8 символов публичного ключа = имя. Настоящий файл в git не кладётся.
+# Префикс брать из первого столбца `python3 /usr/local/lib/nasa-vpnmon/collect.py --dry-run`.
+# AbCdEfGh = Vostro
+# IjKlMnOp = запасной-1

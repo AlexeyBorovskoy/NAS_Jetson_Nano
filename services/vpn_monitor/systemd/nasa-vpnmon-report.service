@@ -1,0 +1,15 @@
+[Unit]
+Description=NAS VPN monitor: daily Telegram report (spec 2026-10-04)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/lib/nasa-vpnmon/report.py --send
+Nice=10
+CPUQuota=20%
+MemoryMax=96M
+TimeoutStartSec=300
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full

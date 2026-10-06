@@ -1,0 +1,9 @@
+[Unit]
+Description=NAS VPN monitor: daily report at 10:00 MSK
+
+[Timer]
+OnCalendar=*-*-* 10:00:00 Europe/Moscow
+Persistent=true
+
+[Install]
+WantedBy=timers.target

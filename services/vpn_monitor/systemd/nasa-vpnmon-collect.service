@@ -1,0 +1,14 @@
+[Unit]
+Description=NAS VPN monitor: one read-only sample (spec 2026-10-04)
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/lib/nasa-vpnmon/collect.py
+Nice=10
+CPUQuota=20%
+MemoryMax=64M
+TimeoutStartSec=50
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full

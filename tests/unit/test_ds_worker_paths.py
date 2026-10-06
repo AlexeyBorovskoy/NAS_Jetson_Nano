@@ -18,8 +18,11 @@ class WorkerPathsTest(unittest.TestCase):
         self.assertEqual(target, ROOT / ".agent-work" / "worktrees")
 
     def test_current_tracked_root_children_have_main_copy_denies(self):
-        files = subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True).splitlines()
-        roots = {name.split("/", 1)[0] for name in files}
+        # NUL paths stay literal even when CI enables quoting for Cyrillic names.
+        files = subprocess.check_output(
+            ["git", "-c", "core.quotepath=true", "ls-files", "-z"],
+            cwd=ROOT, text=True, encoding="utf-8").split("\0")
+        roots = {name.split("/", 1)[0] for name in files if name}
         denies = self.config["security"]["deny_read"]
         denied = {name[len(MAIN_DENY):].removesuffix("/**") for name in denies
                   if name.startswith(MAIN_DENY)}

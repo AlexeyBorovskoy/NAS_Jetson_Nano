@@ -6,7 +6,7 @@
 >
 > Delivery persists acknowledged chunks across runs. Lost Telegram acknowledgements can cause duplicates; exactly-once is not guaranteed. The 240-second budget controls admission of attempts; systemd terminates the process after 300 seconds. `Persistent=true` catches up the latest report day, not every missed day.
 
-> **Date:** 2026-10-07 · **Status:** ready to deploy; deployment happens only after the owner's word «деплой» (deploy)
+> **Date:** 2026-10-08 · **Status:** conditionally ready; deployment is blocked only pending authorized noninteractive read access to the Jetson token source.
 > Preparation 07.10: outside variant of step 6 through the tunnel, peer count by measurement, no rollout.
 > **Basis:** task 8 of the plan `docs/superpowers/plans/2026-10-04-vps-vpn-monitor.md` (EN — `…-monitor.en.md`);
 > spec `docs/superpowers/specs/2026-10-04-vps-vpn-monitor-design.ru.md` §10–11 (EN — `…-design.md`).
@@ -258,8 +258,9 @@ shows a growth of about 100 MB (±5 %) for that client.
 - **Observation only.** No rate limits, no blocks; the collector calls `docker` only with
   `exec` (the constant read script) and `inspect`; `dump`/`showconf` are forbidden and checked
   by a test (spec §8).
-- **`amnezia-awg2` being unavailable** does not distort accounting: the minute is flagged with
-  an `awg_unavailable` event, host metrics keep being written, peers are not marked removed.
+- **`amnezia-awg2` being unavailable** does not distort accounting: an `awg_unavailable` event
+  records the availability transition; each unavailable sample increments the hourly `awg_miss`
+  count. Host metrics keep being written, and peers are not marked removed.
 - **No secrets in git:** only `names.conf.example` and `telegram.env.example` without values
   enter the repository.
 - The report goes only to the owner's personal chat; no family announcement is needed (step 11).
@@ -290,3 +291,31 @@ vps 'b=$(cut -d= -f2 /root/vpnmon-peers-before.txt); a=$(cd /root/vpnmon-src/vpn
 - ⚠️ The plan (task 8) contains a fuller rollback variant, up to deleting the directories.
   This runbook deliberately does not apply it: irreversible deletion of accounting data is not
   part of a rollback.
+
+## 9. Readiness check (2026-10-08)
+
+The one-time VPN-counter read was explicitly authorized and completed. Deployment remains blocked
+only pending authorized noninteractive read access to the Jetson token source. This one-time
+counter approval does not authorize recurring collector access or deployment.
+
+Read-only evidence: repository HEAD `dce1727`; 101 VPN monitor tests passed; all five GitHub
+workflows succeeded. Capped VPS metadata: Python 3.12.3, SQLite 3.45.1, systemd 255, RAM 1967 MiB
+(1485 MiB available), swap 511 MiB unused, disk 21439 MiB free (28% used). Both Amnezia
+containers were running, restart count 0, started `2026-10-04T05:27:49Z`. No monitor units,
+timers, or installation directories were present. Telegram HTTPS returned 200. Collector/report
+unit memory limits remain 64 MiB/96 MiB.
+
+The Jetson token source `/etc/nasa-monitor/telegram.env` exists with mode 0600 and owner root:root.
+The exact noninteractive sudo read was denied, and credential validity remains unverified.
+Windows OpenSSH banner checks timed out; the Git Bash SSH client successfully reached the Jetson.
+No token contents were read or transferred. The initial metadata-only stage did not use `docker exec`
+or `wg`; the later one-time counter check is recorded below. Installation, timer activation, and
+runtime changes were not performed. Recheck fresh-install target paths before deployment because
+the installer overwrites existing code and units.
+
+**One-time checks (2026-10-08):** each of the three `wg show` views contained 23 entries; their key
+sets matched and numeric fields were valid. Amnezia container inspection before and after was
+identical. The Jetson source file exists with mode 0600 and owner root:root, but the exact runbook
+`sudo -n grep` command was denied with “sudo: a password is required”; grep did not run and the token
+remains unread. Next step: arrange approved noninteractive source-file read access with the owner;
+do not guess a password or change sudoers as part of this check.

@@ -1,12 +1,13 @@
 # Учёт VPN и нагрузки VPS — runbook выката на VPS
 
-> Приёмка 06.10.2026: локально готовы задачи 1–7; задача 8 не выполнялась. Команды ниже — только для будущего отдельно разрешённого выката. До доступа к VPN-счётчикам требуется явное разрешение владельца на строго read-only сбор; общий запрет изменения Amnezia сохраняется. Снимок безопасности вызывает только `docker inspect` и `ss`, число клиентов владелец сверяет в Amnezia Desktop. Число 21 в исторических примерах — замер октября, а не сегодняшняя гарантия.
+> Приёмка 06.10.2026: локально готовы задачи 1–7; задача 8 не выполнялась. Команды ниже — только для будущего отдельно разрешённого выката. До доступа к VPN-счётчикам требуется явное разрешение владельца на строго read-only сбор; общий запрет изменения Amnezia сохраняется. Снимок безопасности вызывает только `docker inspect` и `ss`; число пиров фиксируется пробным замером до выката (шаг 2) и сверяется после (шаг 10) — не должно уменьшиться, владелец может дополнительно сверить в Amnezia Desktop. Число 21 в исторических примерах — замер октября, а не сегодняшняя гарантия.
 >
 > Перенос токена использует `sudo -n`, без пароля Nextcloud. Если у оператора нет разрешённого non-interactive sudo для чтения исходного файла, остановиться и подготовить доступ с владельцем; не угадывать пароль. Неполный поток не заменяет действующий токен на VPS. Откат отключает только монитор и сохраняет БД/конфигурацию.
 >
 > Отправитель сохраняет подтверждённые части между запусками. Потеря ответа Telegram после приёма сообщения может дать повтор; строгого exactly-once нет. Бюджет 240 с ограничивает начало попыток, systemd завершает процесс через 300 с. `Persistent=true` догоняет последний отчётный день, не все пропущенные дни.
 
-> **Дата:** 2026-10-06 · **Статус:** готов к выкату; выкат — только после слова владельца «деплой»
+> **Дата:** 2026-10-07 · **Статус:** готов к выкату; выкат — только после слова владельца «деплой»
+> Подготовка 07.10: вариант шага 6 снаружи через туннель, число пиров замером, без выката.
 > **Основание:** задача 8 плана `docs/superpowers/plans/2026-10-04-vps-vpn-monitor.md`;
 > спецификация `docs/superpowers/specs/2026-10-04-vps-vpn-monitor-design.ru.md` §10–11.
 > Английская пара — `DEPLOY_VPNMON_2026-10.md`.
@@ -20,6 +21,10 @@
 - Перед началом и после завершения — снимки правила №13 (до/после, команда в шаге 2).
 - Ничего необратимого: runbook не удаляет данные. Полное удаление учёта (юниты, код,
   каталоги) в него не входит — см. §8.
+- Любая команда на VPS выполняется через helper `vps` ниже с ограничением памяти
+  (правило владельца 2026-10-08): `MemoryMax=256M`, `MemorySwapMax=0`.
+  04.10 наша же диагностика прочитала весь журнал sshd в переменную оболочки и задушила VPN
+  нехваткой памяти (CLAUDE.md, «Грабли»). Журнал — только потоком и с `--since`, не в переменную.
 
 ## 2. Что делает выкат
 
@@ -37,10 +42,40 @@
 
 - Код задач 1–6 плана слит в ветку выката; рабочая станция — на этом репозитории.
 - Доступ с рабочей станции: `root@95.163.176.103`, ключ `~/.ssh/borovskoy_new_ed25519`.
-- Шаг 6 (перенос токена) выполняется с рабочей станции **из домашней сети** (правило №17):
-  прямой ssh на Jetson, `admin@192.168.0.50`, тем же ключом.
+- Шаг 6 (перенос токена) имеет два варианта (правило №17): **6а** — из домашней сети, прямой
+  ssh на Jetson, `admin@192.168.0.50`, тем же ключом; **6б** — снаружи, через обратный туннель
+  Jetson (алиас `jetson-via-vps`; путь через VPS правило №17 разрешает только снаружи).
+- Провайдеры попеременно блокируют два адреса VPS (CLAUDE.md «Грабли», 2026-10-05): если
+  `95.163.176.103` не отвечает, задать `VPS_HOST=193.8.215.130` в helper ниже; оставить
+  `VPS_HOST_KEY_ALIAS=95.163.176.103` (тот же проверенный ключ хоста; `accept-new` запрещён),
+  а алиас `jetson-via-vps` — на `jetson-via-vps-alt`. Справка по алиасам —
+  `docs/plans/VOSTRO_BASTION_HOME_ACCESS.md`.
 - На Jetson на месте файл `/etc/nasa-monitor/telegram.env` (тот же бот и `chat_id`, что у
   ежедневного отчёта Jetson).
+
+### Команды VPS с ограничением памяти
+
+Перед любым шагом определить helper в локальной сессии Git Bash. Login shell на VPS
+должен быть Bash для совместимости с quoting `%q`. Helper принимает одну строку команды
+и сохраняет stdin для tar, here-documents и конвейера учётных данных. Весь удалённый
+shell/конвейер работает в ограниченном scope; прямым SSH на VPS helper не обходить.
+Если scope или ограничения памяти не создаются — стоп, без повторения без ограничений.
+Службы монитора systemd сохраняют отдельные лимиты своих юнитов.
+
+```bash
+VPS_HOST=95.163.176.103
+VPS_HOST_KEY_ALIAS=95.163.176.103
+vps() {
+  [ "$#" -eq 1 ] || { printf '%s\n' 'vps: exactly one command argument required' >&2; return 2; }
+  local program
+  printf -v program '%q' "$1"
+  ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=8 \
+    -o ServerAliveInterval=15 -o ServerAliveCountMax=2 \
+    -o "HostKeyAlias=$VPS_HOST_KEY_ALIAS" -i ~/.ssh/borovskoy_new_ed25519 \
+    "root@$VPS_HOST" \
+    "systemd-run --quiet --scope -p MemoryMax=256M -p MemorySwapMax=0 bash -c $program"
+}
+```
 
 ## 4. Шаги выката (1–10)
 
@@ -48,23 +83,28 @@
 
 ```bash
 cd "e:/Linux mint/virtual_VM/shared/NAS_Jetson_Nano"
-tar -C services --exclude=__pycache__ -czf - vpn_monitor | ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'umask 077; test ! -e /root/vpnmon-src && mkdir /root/vpnmon-src && tar -C /root/vpnmon-src -xzf - && ls /root/vpnmon-src/vpn_monitor'
+tar -C services --exclude=__pycache__ -czf - vpn_monitor | vps 'umask 077; test ! -e /root/vpnmon-src && mkdir /root/vpnmon-src && tar -C /root/vpnmon-src -xzf - && ls /root/vpnmon-src/vpn_monitor'
 ```
 
 - [ ] **Шаг 2: снимок правила №13 «до»**
 
 ```bash
-ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'bash /root/vpnmon-src/vpn_monitor/rule13_snapshot.sh | tee /root/vpnmon-rule13-before.txt'
+vps 'bash /root/vpnmon-src/vpn_monitor/rule13_snapshot.sh | tee /root/vpnmon-rule13-before.txt'
 ```
-Ожидание: `amnezia-awg2`/`amnezia-xray` running, peer count = owner baseline; среди слушающих наружу
+Второй командой — записать число пиров замером (только число, без идентификаторов):
+```bash
+vps 'set -o pipefail; cd /root/vpnmon-src/vpn_monitor && python3 collect.py --dry-run --names /nonexistent | tail -1 > /root/vpnmon-peers-before.txt && grep -E "^peers=[1-9][0-9]*$" /root/vpnmon-peers-before.txt'
+```
+Ожидание: одна строка `peers=N` (только число, без идентификаторов); вывода нет или `awg: недоступен` — СТОП.
+Снимок: `amnezia-awg2`/`amnezia-xray` running, `peers=N` записано; среди слушающих наружу
 (`0.0.0.0`/`[::]`) только 22, 443, 40568/udp и прежние сервисные порты.
 
 - [ ] **Шаг 3: пробный замер без записи и сверка с `wg`**
 
 ```bash
-ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'cd /root/vpnmon-src/vpn_monitor && python3 collect.py --dry-run --names /nonexistent; echo ---; docker exec amnezia-awg2 wg show awg0 transfer | sort -k3 -n | tail -3 | cut -c1-8,44-'
+vps 'cd /root/vpnmon-src/vpn_monitor && python3 collect.py --dry-run --names /nonexistent; echo ---; docker exec amnezia-awg2 wg show awg0 transfer | sort -k3 -n | tail -3 | cut -c1-8,44-'
 ```
-Ожидание: peer count = recorded baseline; у трёх верхних по `tx` значения совпадают с `wg show` (с поправкой на
+Ожидание: последняя строка `peers=N` совпадает со значением шага 2; у трёх верхних по `tx` значения совпадают с `wg show` (с поправкой на
 секунды между командами); `awg: rx=… tx=…`, `wan`, `xray` не «нет».
 ⚠️ Вывод `--dry-run` печатает префиксы ключей и имена — не копировать его в чаты и
 документы (см. §7).
@@ -72,7 +112,7 @@ ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'cd /root/vpnmon-src/vpn
 - [ ] **Шаг 4: установка**
 
 ```bash
-ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'bash /root/vpnmon-src/vpn_monitor/install_vps.sh'
+vps 'bash /root/vpnmon-src/vpn_monitor/install_vps.sh'
 ```
 Ожидание: в списке таймеров есть `nasa-vpnmon-collect.timer`; сообщение «таймер отчёта
 НЕ включён» (токена ещё нет).
@@ -81,8 +121,12 @@ ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'bash /root/vpnmon-src/v
 
 По выводу шага 3 взять префиксы ключей для `10.8.1.17` (Vostro) и `10.8.1.18`–`.22`
 («запасной-1»…«запасной-5» по возрастанию адреса) и записать на VPS. Значения в git не попадают.
+
+07.10 телефоны заново добавлены в VPN: если шаг 3 показывает не шесть безымянных пиров («?»)
+или адреса иные, чем `.17`–`.22`, — не угадывать, спросить имена у владельца и записать только
+сказанное им. Реальные имена и префиксы ключей никогда не попадают в git, чаты и карточки задач.
 ```bash
-ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'umask 077; cat > /etc/nasa-vpnmon/names.conf' <<'EOF'
+vps 'umask 077; cat > /etc/nasa-vpnmon/names.conf' <<'EOF'
 <префикс .17> = Vostro
 <префикс .18> = запасной-1
 <префикс .19> = запасной-2
@@ -95,37 +139,51 @@ EOF
 
 - [ ] **Шаг 6: токен с Jetson на VPS без вывода на экран**
 
-С рабочей станции из домашней сети (правило №17). Сначала проверить, что файл на Jetson на месте:
+**6а. Из домашней сети** (правило №17). Сначала проверить, что файл на Jetson на месте и sudo доступен без пароля:
 ```bash
-ssh admin@192.168.0.50 'ls -l /etc/nasa-monitor/telegram.env'
+ssh -o BatchMode=yes admin@192.168.0.50 'ls -l /etc/nasa-monitor/telegram.env && sudo -n grep -E "^TELEGRAM_(BOT_TOKEN|CHAT_ID)=" /etc/nasa-monitor/telegram.env >/dev/null && echo sudo-ok'
 ```
+Ожидание: файл перечислен и `sudo-ok`; иначе СТОП, пароль не угадывать.
 Затем перенести две строки конвейером: значение идёт из stdout Jetson в stdin VPS и нигде не печатается.
 ```bash
 set -o pipefail
 ssh -o BatchMode=yes admin@192.168.0.50 'sudo -n grep -E "^TELEGRAM_(BOT_TOKEN|CHAT_ID)=" /etc/nasa-monitor/telegram.env' \
-  | ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'set -e; umask 077; tmp=$(mktemp /etc/nasa-vpnmon/telegram.env.XXXXXX); trap '\''rm -f "$tmp"'\'' EXIT; cat > "$tmp"; grep -q "^TELEGRAM_BOT_TOKEN=." "$tmp"; grep -q "^TELEGRAM_CHAT_ID=." "$tmp"; chmod 600 "$tmp"; mv "$tmp" /etc/nasa-vpnmon/telegram.env; echo 2'
+  | vps 'set -e; umask 077; tmp=$(mktemp /etc/nasa-vpnmon/telegram.env.XXXXXX); trap '\''rm -f "$tmp"'\'' EXIT; cat > "$tmp"; grep -q "^TELEGRAM_BOT_TOKEN=." "$tmp"; grep -q "^TELEGRAM_CHAT_ID=." "$tmp"; chmod 600 "$tmp"; mv "$tmp" /etc/nasa-vpnmon/telegram.env; echo 2'
+```
+Ожидание: `2`.
+
+**6б. Снаружи, через обратный туннель Jetson** (путь через VPS правило №17 разрешает только снаружи). Сначала тот же предполётный контроль через алиас `jetson-via-vps`:
+```bash
+ssh -o BatchMode=yes jetson-via-vps 'ls -l /etc/nasa-monitor/telegram.env && sudo -n grep -E "^TELEGRAM_(BOT_TOKEN|CHAT_ID)=" /etc/nasa-monitor/telegram.env >/dev/null && echo sudo-ok'
+```
+Ожидание: файл перечислен и `sudo-ok`; иначе СТОП, пароль не угадывать.
+Затем тот же перенос конвейером:
+```bash
+set -o pipefail
+ssh -o BatchMode=yes jetson-via-vps 'sudo -n grep -E "^TELEGRAM_(BOT_TOKEN|CHAT_ID)=" /etc/nasa-monitor/telegram.env' \
+  | vps 'set -e; umask 077; tmp=$(mktemp /etc/nasa-vpnmon/telegram.env.XXXXXX); trap '\''rm -f "$tmp"'\'' EXIT; cat > "$tmp"; grep -q "^TELEGRAM_BOT_TOKEN=." "$tmp"; grep -q "^TELEGRAM_CHAT_ID=." "$tmp"; chmod 600 "$tmp"; mv "$tmp" /etc/nasa-vpnmon/telegram.env; echo 2'
 ```
 Ожидание: `2`.
 
 - [ ] **Шаг 7: проверочное сообщение и включение отчёта**
 
 ```bash
-ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'python3 /usr/local/lib/nasa-vpnmon/report.py --test && systemctl enable --now nasa-vpnmon-report.timer && systemctl list-timers --all "nasa-vpnmon-*" --no-pager'
+vps 'python3 /usr/local/lib/nasa-vpnmon/report.py --test && systemctl enable --now nasa-vpnmon-report.timer && systemctl list-timers --all "nasa-vpnmon-*" --no-pager'
 ```
 Ожидание: `проверка: доставлено`; владелец видит сообщение 🧪; следующий запуск отчёта — 10:00 МСК.
 
 - [ ] **Шаг 8: через 5 минут — данные в БД и расход ресурсов**
 
 ```bash
-ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'python3 -c "import sqlite3; d=sqlite3.connect(\"/var/lib/nasa-vpnmon/vpnmon.db\"); print(\"host\", d.execute(\"select count(*), sum(samples) from host_hourly\").fetchone(), \"peers\", d.execute(\"select count(*) from peers\").fetchone())"; systemctl show nasa-vpnmon-collect.service -p CPUUsageNSec -p MemoryPeak -p Result; journalctl -u nasa-vpnmon-collect -n 5 --no-pager; ls -l /var/lib/nasa-vpnmon /etc/nasa-vpnmon'
+vps 'python3 -c "import sqlite3; d=sqlite3.connect(\"/var/lib/nasa-vpnmon/vpnmon.db\"); print(\"host\", d.execute(\"select count(*), sum(samples) from host_hourly\").fetchone(), \"peers\", d.execute(\"select count(*) from peers where removed_at is null\").fetchone())"; systemctl show nasa-vpnmon-collect.service -p CPUUsageNSec -p MemoryPeak -p Result; journalctl -u nasa-vpnmon-collect --since "15 minutes ago" -n 5 --no-pager; ls -l /var/lib/nasa-vpnmon /etc/nasa-vpnmon'
 ```
-Ожидание: peer count = recorded baseline, `samples` ≥ 4; `Result=success`; `MemoryPeak` < 64 МБ; файлы 0600,
+Ожидание: активных пиров ≥ N из шага 2, `samples` ≥ 4; `Result=success`; `MemoryPeak` < 64 МБ; файлы 0600,
 каталоги 0700.
 
 - [ ] **Шаг 9: отчёт за текущие сутки на экран**
 
 ```bash
-ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'python3 /usr/local/lib/nasa-vpnmon/report.py --stdout --day $(TZ=Europe/Moscow date +%F)'
+vps 'python3 /usr/local/lib/nasa-vpnmon/report.py --stdout --day $(TZ=Europe/Moscow date +%F)'
 ```
 Ожидание: все блоки макета §7; шесть пиров названы по `names.conf`; «Не подключались с ДД.ММ» —
 дата сегодняшняя.
@@ -133,9 +191,13 @@ ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'python3 /usr/local/lib/
 - [ ] **Шаг 10: снимок правила №13 «после»**
 
 ```bash
-ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'bash /root/vpnmon-src/vpn_monitor/rule13_snapshot.sh | diff /root/vpnmon-rule13-before.txt - && echo "правило 13: без изменений"'
+vps 'bash /root/vpnmon-src/vpn_monitor/rule13_snapshot.sh | diff /root/vpnmon-rule13-before.txt - && echo "правило 13: без изменений"'
 ```
-Ожидание: `правило 13: без изменений`. Любая разница — стоп, откат (§8) и разбор.
+Второй командой — сверить число активных пиров с замером шага 2:
+```bash
+vps 'b=$(cut -d= -f2 /root/vpnmon-peers-before.txt); a=$(cd /root/vpnmon-src/vpn_monitor && python3 collect.py --dry-run --names /nonexistent | tail -1 | cut -d= -f2); echo "пиров: до=$b после=$a"; [ -n "$b" ] && [ -n "$a" ] && [ "$a" -ge "$b" ] && echo "пиры: не уменьшилось"'
+```
+Ожидание: и `правило 13: без изменений`, и `пиры: не уменьшилось`; иначе СТОП, откат (§8), разбор.
 
 ⚠️ Отличие от плана (задача 8): команда очистки `rm -rf /root/vpnmon-src` здесь намеренно
 не выполняется — копия исходников на VPS остаётся как запасной путь восстановления и
@@ -145,10 +207,11 @@ ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'bash /root/vpnmon-src/v
 
 - [ ] **Шаг 11: документация и публикация**
 
-- Влить ветку `feat/vpn-monitor-2026-10` в `main` (`git merge --ff-only`) и выложить по
-  процедуре правила №15.
-- `CLAUDE.md` + `CLAUDE.en.md`: строка таблицы «VPN-учёт» (юниты, время отчёта); пиров
-  **21** (замер 04.10); простой VPS 04.10 04:55–05:27 UTC; новая контрольная точка.
+- Код монитора уже в `main` (влит до 06.10). Ветку с этой подготовкой влить в `main`, если
+  ещё не влита (`git merge --ff-only`), и выложить по процедуре правила №15.
+- `CLAUDE.md` + `CLAUDE.en.md`: строка таблицы «VPN-учёт» (юниты, время отчёта); число пиров —
+  по замеру шага 2 (`peers=N`), а не историческое 21; простой VPS 04.10 04:55–05:27 UTC;
+  новая контрольная точка.
 - Семье объявление **не нужно**: отчёт видит только владелец (правило №18 касается
   видимого семье).
 
@@ -162,13 +225,13 @@ ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'bash /root/vpnmon-src/v
 
 | Когда | Что проверяем | Ожидание |
 |---|---|---|
-| Шаг 2 | Правило №13 «до» | `amnezia-*` running, peer count = owner baseline, наружу только 22/443/40568/udp и прежние сервисные порты |
-| Шаг 3 | Разбор совпадает с `wg` | peer count = recorded baseline, верхние по `tx` сходятся, `wan`/`xray`/`awg` не «нет» |
+| Шаг 2 | Правило №13 «до» и число пиров | `amnezia-*` running, `peers=N` записано (только число), наружу только 22/443/40568/udp и прежние сервисные порты |
+| Шаг 3 | Разбор совпадает с `wg` | последняя строка `peers=N` равна шагу 2, верхние по `tx` сходятся, `wan`/`xray`/`awg` не «нет» |
 | Шаг 4 | Установка | `nasa-vpnmon-collect.timer` в списке; отчётный таймер ещё выключен |
 | Шаг 7 | Канал Telegram | `проверка: доставлено`; 🧪 у владельца; следующий запуск 10:00 МСК |
-| Шаг 8 | Запись и ресурсы | peer count = recorded baseline, `samples` ≥ 4, `Result=success`, `MemoryPeak` < 64 МБ, права 0600/0700 |
+| Шаг 8 | Запись и ресурсы | активных пиров ≥ N из шага 2, `samples` ≥ 4, `Result=success`, `MemoryPeak` < 64 МБ, права 0600/0700 |
 | Шаг 9 | Текст отчёта | Все блоки §7; шесть пиров по `names.conf` |
-| Шаг 10 | Правило №13 «после» | `правило 13: без изменений` — иначе стоп и откат |
+| Шаг 10 | Правило №13 «после» и число пиров | `правило 13: без изменений` и `пиры: не уменьшилось` — иначе стоп и откат |
 | +1 сутки | Настоящий отчёт | Сообщение в 10:00 МСК; владелец подтверждает |
 | По желанию | Сверка объёма | 100 МБ через VPN → прирост ≈100 МБ (±5 %) у клиента |
 
@@ -199,12 +262,17 @@ ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'bash /root/vpnmon-src/v
 Ничего не удаляется: ни БД, ни конфиг, ни код, ни юниты. VPN не задет.
 
 ```bash
-ssh -i ~/.ssh/borovskoy_new_ed25519 root@95.163.176.103 'systemctl disable --now nasa-vpnmon-collect.timer nasa-vpnmon-report.timer; systemctl stop nasa-vpnmon-collect.service nasa-vpnmon-report.service; systemctl list-timers --all "nasa-vpnmon-*" --no-pager; bash /root/vpnmon-src/vpn_monitor/rule13_snapshot.sh | diff /root/vpnmon-rule13-before.txt - && echo "правило 13: без изменений"'
+vps 'systemctl disable --now nasa-vpnmon-collect.timer nasa-vpnmon-report.timer; systemctl stop nasa-vpnmon-collect.service nasa-vpnmon-report.service; systemctl list-timers --all "nasa-vpnmon-*" --no-pager; bash /root/vpnmon-src/vpn_monitor/rule13_snapshot.sh | diff /root/vpnmon-rule13-before.txt - && echo "правило 13: без изменений"'
 ```
 Ожидание: таймеры выключены, `правило 13: без изменений`.
 
+Та же проверка числа пиров, что в шаге 10:
+```bash
+vps 'b=$(cut -d= -f2 /root/vpnmon-peers-before.txt); a=$(cd /root/vpnmon-src/vpn_monitor && python3 collect.py --dry-run --names /nonexistent | tail -1 | cut -d= -f2); echo "пиров: до=$b после=$a"; [ -n "$b" ] && [ -n "$a" ] && [ "$a" -ge "$b" ] && echo "пиры: не уменьшилось"'
+```
+
 - Повторное включение при необходимости (история не теряется):
-  `systemctl enable --now nasa-vpnmon-collect.timer nasa-vpnmon-report.timer`.
+  `vps 'systemctl enable --now nasa-vpnmon-collect.timer nasa-vpnmon-report.timer'`.
 - Полное удаление (юниты `/etc/systemd/system/nasa-vpnmon-*`, код `/usr/local/lib/nasa-vpnmon`,
   конфиг `/etc/nasa-vpnmon`, БД `/var/lib/nasa-vpnmon`) этим runbook'ом **не выполняется** —
   отдельное решение владельца, и даже тогда БД и `names.conf` рекомендуется сохранить:

@@ -94,3 +94,11 @@ at the VPS is needed.
 - `preflight.sh` cannot be run from a copy outside the repository — it looks for files relative to itself.
 - DeepSeek card for reading large documents needs `max_turns` ≥ 30 and instruction to write `RESULT.json`
   immediately; at 20 turns executor exhausted limit on reading.
+
+## Codex integration — 2026-10-08
+
+Hygiene gate is committed in `d180977`; synthetic Git subprocesses clear inherited
+`GIT_*`. All 18 hygiene tests and the real pre-commit hook passed. The monitor
+preparation branch is integrated with the VPS memory rule and corrected SSH
+examples. Historical pending statements above describe the pre-integration snapshot.
+Monitor deployment remains pending; no runtime configuration was changed by this integration.

@@ -61,23 +61,23 @@ Aliases described in `~/.ssh/config` of the station and in `docs/plans/VOSTRO_BA
 ## 5. First commands and expected result
 
 ```bash
-git status --short            # 9 files of cleanliness work in index (see §4) — do not lose
+git status --short            # expect a clean working tree after integration
 git config --get core.bare    # false; true = hook defect recurred, fix: git config core.bare false
-git log --oneline -3          # commit of this checkpoint on top of 69d93f7
+git log --oneline -3          # latest integration commits
 git worktree list             # branch deepseek/nas-vpnmon-deploy-prep-20261007 and old deepseek/* — do not delete without check
 python E:\agent_coordination\coord.py list --agent nas --open
 ```
 
 ## 6. Work queue
 
-1. **Repository hygiene:** Codex work dated 06.10; synthetic repository tests must clear
-   inherited `GIT_*` before committing. Verify ordinary execution and an isolated Git hook.
-   Do not bypass a failing gate with `--no-verify`; fix its cause.
-2. **Merge** `deepseek/nas-vpnmon-deploy-prep-20261007` (3 commits): conflict in `CLAUDE.md` — keep
-   both header from cleanliness work and line "VPS memory / swap" and Pitfalls section on out-of-memory.
-   Gates, then both mirrors.
+1. **Repository hygiene:** integrated in `d180977`. Synthetic tests clear `GIT_*`;
+   ordinary execution (18 tests), an isolated real Git hook and the main repository
+   hook passed without bypass.
+2. **Monitor preparation:** `deepseek/nas-vpnmon-deploy-prep-20261007` is integrated.
+   Hygiene guidance and the VPS memory rule are preserved; SSH instructions apply
+   memory limits. This integrates documentation, not deployment.
 3. VPS/VPN monitor, task 8 — **awaits owner**, do not start yourself.
-4. VPN client failures — await data from owner: device, time, network.
+4. VPN client failures — profile identified; observe a phone attempt through Deco at the VPS.
 5. Audit, stages 19–21 — `docs/audit/2026-10-02_code_audit/PLAN.md`.
 
 ## 7. Prompt for first Codex launch
@@ -87,6 +87,6 @@ You are Codex in the NAS_Jetson_Nano project. Reply to the owner in Russian. Fir
 docs/handoff/CODEX_START_2026-10-08.md and everything from its section 1, then run commands
 from section 5 and report status: what is in main index, how does branch
 deepseek/nas-vpnmon-deploy-prep-20261007 differ, are there open requests on the board for nas.
-Do not change anything, commit or push until I confirm the plan for item 1 of the queue.
+Review the current queue before changes; deployment remains separately authorized.
 On VPS — only under systemd-run with MemoryMax=256M and MemorySwapMax=0; do not touch Amnezia.
 ```

@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "max_blob_bytes": 2097152,
+  "root_files": [
+    ".gitattributes",
+    ".gitignore",
+    ".gitleaks.toml",
+    ".gitmodules",
+    "AGENTS.md",
+    "CHANGELOG.md",
+    "CLAUDE.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "README.md",
+    "SECURITY.md",
+    "WORK_PLAN.md",
+    "WORK_PLAN.ru.md",
+    "ds_worker.toml",
+    "requirements-test.txt"
+  ],
+  "exceptions": {
+    "artifacts/article-evidence/EVIDENCE_REPORT.md": {
+      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
+      "allow": [
+        "local_artifact"
+      ]
+    },
+    "artifacts/reports/AUDIT_2026-05-31.md": {
+      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
+      "allow": [
+        "local_artifact"
+      ]
+    },
+    "artifacts/reports/CODE_AUDIT_SBER_2026-09-07.md": {
+      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
+      "allow": [
+        "local_artifact"
+      ]
+    },
+    "artifacts/reports/HABR_GITHUB_ACTIVITY_2026-09-08.md": {
+      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
+      "allow": [
+        "local_artifact"
+      ]
+    },
+    "artifacts/reports/HARDWARE_AUDIT_REPORT.md": {
+      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
+      "allow": [
+        "local_artifact"
+      ]
+    },
+    "artifacts/reports/WORKSTATION_INVENTORY_2026-09-07.md": {
+      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
+      "allow": [
+        "local_artifact"
+      ]
+    },
+    "artifacts/reports/WORKSTATION_STORAGE_UPGRADE_2TB_2026-09-08.md": {
+      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
+      "allow": [
+        "local_artifact"
+      ]
+    },
+    "artifacts/reports/WORKSTATION_UPGRADE_RAM_GPU_2026-09-08.md": {
+      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
+      "allow": [
+        "local_artifact"
+      ]
+    },
+    "artifacts/reports/android audit .md": {
+      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
+      "allow": [
+        "local_artifact"
+      ]
+    },
+    "artifacts/reports/audit prodaction.md": {
+      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
+      "allow": [
+        "local_artifact"
+      ]
+    },
+    "artifacts/reports/audit_report_2026-06-25.md": {
+      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
+      "allow": [
+        "local_artifact"
+      ]
+    },
+    "artifacts/reports/hdd_compression_estimate.json": {
+      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
+      "allow": [
+        "local_artifact"
+      ]
+    },
+    "artifacts/reports/hdd_junk_audit.json": {
+      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
+      "allow": [
+        "local_artifact"
+      ]
+    },
+    "artifacts/reports/stat.md": {
+      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
+      "allow": [
+        "local_artifact"
+      ]
+    },
+    "artifacts/users/ANNA_setup.txt": {
+      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
+      "allow": [
+        "local_artifact"
+      ]
+    },
+    "artifacts/users/IVAN_setup.txt": {
+      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
+      "allow": [
+        "local_artifact"
+      ]
+    },
+    "artifacts/users/OLGA_setup.txt": {
+      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
+      "allow": [
+        "local_artifact"
+      ]
+    },
+    "artifacts/users/ULYANA_setup.txt": {
+      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
+      "allow": [
+        "local_artifact"
+      ]
+    }
+  }
+}

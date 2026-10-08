@@ -151,3 +151,9 @@ python E:\agent_coordination\coord.py post --from nas --to work --kind answer --
 
 🇷🇺 Существующие внешние хранилища секретов остаются на месте: секреты не переносить в проект. Общая координационная доска раздела 8 сохраняется как канал обмена между проектами; публиковать там только сообщения и ссылки на материалы, без секретов.
 🇬🇧 Existing external credential stores remain in place; do not move secrets into the project. The shared coordination board in section 8 remains the cross-project communication channel; post only messages and artifact references there, without secrets.
+
+## 10. Чистота репозитория / Repository hygiene
+
+🇷🇺 Канон: [docs/AGENT_REPOSITORY_HYGIENE.md](docs/AGENT_REPOSITORY_HYGIENE.md). Создавать только необходимые файлы; сначала искать существующий документ. Не оставлять копии исходников и одноразовые отчёты в постоянной структуре. Артефакты размещать по §9; ignored-каталог не считается автоматически удаляемым. Сохранять постоянные аудиты/ADR/контрольные точки и нужные RU/EN-пары. Перед завершением проверить status, итоговый diff и конкретные staging-пути; неизвестные файлы владельца не удалять, широкую очистку без разрешения не выполнять.
+
+🇬🇧 Canonical policy: [docs/AGENT_REPOSITORY_HYGIENE.md](docs/AGENT_REPOSITORY_HYGIENE.md). Create necessary files only; search for existing documentation first. Avoid source copies and disposable reports in the permanent structure. Use §9 artifact locations; ignored folders are not automatically disposable. Preserve durable audits/ADRs/checkpoints and required RU/EN pairs. Before completion review status, the final diff and targeted staging paths; never delete unknown owner files or run broad cleanup without authorization.

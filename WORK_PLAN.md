@@ -1,6 +1,6 @@
 # Work Plan
 
-> Current local checkpoint: [2026-10-06](docs/plans/CHECKPOINT_2026-10-06.md).
+> Current local checkpoint: [2026-10-08](docs/plans/CHECKPOINT_2026-10-08.md).
 > VPS/VPN monitor tasks 1–7 and code-audit stages 16, 17, 22 are implemented and
 > locally verified. Monitor task 8 (deployment) is pending separate owner authorization.
 > Vostro recovery was merged into `main` as `de6df4f`; this does not mean deployment.

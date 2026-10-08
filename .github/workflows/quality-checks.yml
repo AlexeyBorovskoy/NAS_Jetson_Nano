@@ -8,10 +8,22 @@ on:
   workflow_dispatch:
 
 jobs:
+  repo-hygiene:
+    name: Repository Hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check committed tree and policy
+        run: python scripts/quality/repo_hygiene.py --tree HEAD
+
   # ---------------------------------------------------------------------------
   # ShellCheck + bash syntax check
   # ---------------------------------------------------------------------------
   shellcheck:
+    needs: repo-hygiene
     name: ShellCheck
     runs-on: ubuntu-latest
     steps:
@@ -48,6 +60,7 @@ jobs:
   # Docker Compose validation
   # ---------------------------------------------------------------------------
   compose-validate:
+    needs: repo-hygiene
     name: Docker Compose Validate
     runs-on: ubuntu-latest
     steps:
@@ -90,6 +103,7 @@ jobs:
   # Security: secrets scan + Trivy
   # ---------------------------------------------------------------------------
   security:
+    needs: repo-hygiene
     name: Security Scan
     runs-on: ubuntu-latest
     steps:
@@ -154,6 +168,7 @@ jobs:
   # Each directory runs separately: both services name their package `app`.
   # ---------------------------------------------------------------------------
   service-tests:
+    needs: repo-hygiene
     name: Service tests (pytest)
     runs-on: ubuntu-latest
     steps:
@@ -213,6 +228,7 @@ jobs:
   # actionlint: validate GitHub Actions workflow files
   # ---------------------------------------------------------------------------
   actionlint:
+    needs: repo-hygiene
     name: Actionlint
     runs-on: ubuntu-latest
     steps:

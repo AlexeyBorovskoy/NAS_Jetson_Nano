@@ -1,5 +1,7 @@
 # CLAUDE.md — NAS_Jetson_Nano
 
+> Общие правила — `AGENTS.md`; канон чистоты — `docs/AGENT_REPOSITORY_HYGIENE.md`. / Shared rules: `AGENTS.md`; canonical hygiene policy: `docs/AGENT_REPOSITORY_HYGIENE.md`.
+
 > Актуальная контрольная точка: `docs/plans/CHECKPOINT_2026-10-06.ru.md` (EN: `CHECKPOINT_2026-10-06.md`). VPN-монитор, задачи 1–7, и аудит 16/17/22 готовы локально; развёртывание не выполнялось. Исторические сведения ниже сохраняются.
 
 > Этот файл читается Claude Code автоматически при открытии проекта.

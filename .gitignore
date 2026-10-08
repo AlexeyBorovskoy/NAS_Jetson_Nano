@@ -110,3 +110,6 @@ ds_board/
 
 # Local agent worktrees, archives and temporary outputs (owner 2026-10-06)
 /.agent-work/
+
+# Local outputs; existing tracked evidence stays tracked (hygiene policy 2026-10-06)
+/artifacts/

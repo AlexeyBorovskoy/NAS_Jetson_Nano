@@ -16,7 +16,7 @@
 #
 # Правило: ворота либо проходят целиком, либо выкат не делается.
 #
-# Usage:  bash scripts/quality/preflight.sh [--quick] [--images-only]
+# Usage:  bash scripts/quality/preflight.sh [--quick] [--images-only] [--hygiene-only]
 set -uo pipefail
 
 cd "$(dirname "$0")/../.." || exit 2
@@ -28,10 +28,12 @@ QUICK=0
 # Нужен тесту tests/unit/test_immich_pinned_version.py: тот подкладывает дерево-фикстуру
 # и проверяет, что ворота различают плавающий тег Immich (bad) и :latest у прочих (warn).
 IMAGES_ONLY=0
+HYGIENE_ONLY=0
 for arg in "$@"; do
     case "$arg" in
         --quick) QUICK=1 ;;
         --images-only) IMAGES_ONLY=1 ;;
+        --hygiene-only) HYGIENE_ONLY=1 ;;
     esac
 done
 
@@ -94,6 +96,22 @@ if [ "$IMAGES_ONLY" = "1" ]; then
     exit 1
 fi
 
+# Inspect the Git index, not ignored user files or worktree blob contents.
+# Run before expensive tests; a policy change must also be staged.
+head_ "0. Чистота Git index / Repository hygiene"
+if ! { have python || have python3; }; then
+    bad "python unavailable — hygiene gate cannot run"
+    exit 1
+fi
+PY=$(command -v python3 || command -v python)
+if ! "$PY" scripts/quality/repo_hygiene.py --staged; then
+    bad "hygiene gate failed — review staged files and policy"
+    exit 1
+fi
+[ "$HYGIENE_ONLY" != "1" ] || exit 0
+WORK_TMP=.agent-work/tmp
+mkdir -p "$WORK_TMP" || exit 2
+
 # ── 1. Синтаксис shell ─────────────────────────────────────────────────────────
 head_ "1. Синтаксис bash / bash syntax"
 sh_files=$(find scripts services tests systemd -name '*.sh' -type f 2>/dev/null)
@@ -142,13 +160,14 @@ if have vermin; then
     #
     # Проверяются ТОЛЬКО scripts/ — они выполняются на самом Jetson.
     # services/ живут в контейнерах со своим Python (3.9+) и под это правило не подпадают.
-    if vermin --target=3.6- --violations --no-tips scripts/ >/tmp/vermin.$$ 2>&1; then
+    vermin_report=$(mktemp "$WORK_TMP/vermin.XXXXXX") || exit 2
+    if vermin --target=3.6- --violations --no-tips scripts/ >"$vermin_report" 2>&1; then
         ok "scripts/ укладываются в Python 3.6"
     else
         bad "scripts/ требуют Python новее 3.6 — на Jetson упадёт:"
-        grep -E "^!2, 3\.[7-9]|requires !2, 3\.[7-9]|Minimum required" /tmp/vermin.$$ | head -8 | sed 's/^/      /'
+        grep -E "^!2, 3\.[7-9]|requires !2, 3\.[7-9]|Minimum required" "$vermin_report" | head -8 | sed 's/^/      /'
     fi
-    rm -f /tmp/vermin.$$
+    rm -f -- "$vermin_report"
 else
     warn "vermin не установлен — это ГЛАВНАЯ проверка проекта: pip install vermin"
 fi
@@ -324,10 +343,17 @@ PY=$(command -v python3 || command -v python)
 if [ -n "$PY" ] && "$PY" -c "import pytest, fastapi, httpx, pydantic_settings" >/dev/null 2>&1; then
     for SVC_TESTS in tests/llm_gateway tests/nas_api tests/watchdog tests/backup_api tests/stt tests/vpn_monitor; do
         [ -d "$SVC_TESTS" ] || continue
-        tmpd=$(mktemp -d)
-        out=$(IMAGE_OUTPUT_ROOT="$tmpd/images" LLM_USAGE_FILE="$tmpd/usage.json" \
-              "$PY" -m pytest -q -p no:cacheprovider "$SVC_TESTS" 2>&1); rc=$?
-        rm -rf "$tmpd"
+        out=$("$PY" -c '
+import os, pathlib, subprocess, sys, tempfile
+root = pathlib.Path.cwd().resolve()
+tmp = (root / ".agent-work" / "tmp").resolve()
+if root not in tmp.parents:
+    raise SystemExit("Temporary directory escapes project")
+with tempfile.TemporaryDirectory(prefix="preflight-", dir=str(tmp)) as folder:
+    env = dict(os.environ, IMAGE_OUTPUT_ROOT=folder + "/images", LLM_USAGE_FILE=folder + "/usage.json")
+    result = subprocess.call([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", sys.argv[1]], env=env)
+sys.exit(result)
+' "$SVC_TESTS" 2>&1); rc=$?
         summary=$(printf '%s\n' "$out" | tail -1)
         if [ "$rc" -eq 0 ]; then
             ok "$SVC_TESTS: $summary"

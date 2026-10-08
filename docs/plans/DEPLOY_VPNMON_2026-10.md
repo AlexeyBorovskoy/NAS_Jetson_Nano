@@ -21,6 +21,10 @@
 - Before the start and after the finish — rule №13 snapshots (before/after, command in step 2).
 - Nothing irreversible: this runbook deletes no data. A full uninstall of the accounting
   (units, code, directories) is not part of it — see §8.
+- Every command on the VPS runs under a memory cap (owner rule 2026-10-08): wrap it as
+  `ssh … root@VPS 'systemd-run --quiet --scope -p MemoryMax=256M -p MemorySwapMax=0 bash -c "<command>"'`.
+  On 2026-10-04 our own diagnostic read the whole sshd journal into a shell variable and
+  OOM-starved the VPN (CLAUDE.md, «Грабли»). Never load the journal into a variable; stream it with `--since`.
 
 ## 2. What the rollout does
 

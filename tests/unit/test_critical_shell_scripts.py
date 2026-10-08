@@ -5,11 +5,19 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 TMP = ROOT / ".agent-work/tmp"
 TMP.mkdir(parents=True, exist_ok=True)
 BASH = shutil.which("bash")
+
+
+def clean_env(**extra):
+    """A git hook exports GIT_DIR/GIT_INDEX_FILE; a child git must not inherit them."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    env.update(extra)
+    return env
 
 
 @unittest.skipUnless(BASH, "bash unavailable")
@@ -21,7 +29,7 @@ class CriticalShell(unittest.TestCase):
         self.bin = self.root / "bin"
         self.bin.mkdir()
         self.calls = self.root / "copy.calls"
-        self.env = dict(os.environ, PATH=str(self.bin) + os.pathsep + os.environ["PATH"])
+        self.env = clean_env(PATH=str(self.bin) + os.pathsep + os.environ["PATH"])
         startup = self.root / "startup.sh"
         startup.write_text('bin="$TEST_BIN"\nif command -v cygpath >/dev/null; then bin="$(cygpath -u "$bin")"; fi\nexport PATH="$bin:$PATH"\n', encoding="utf-8")
         self.env["TEST_BIN"] = self.bin.as_posix()
@@ -81,12 +89,23 @@ class CriticalShell(unittest.TestCase):
         self.assertNotIn("--remove-source-files", args)
 
     def secrets(self, content, tracked=True):
-        subprocess.run(["git", "init", "-q"], cwd=self.root, check=True, capture_output=True)
+        subprocess.run(["git", "init", "-q"], cwd=self.root, env=self.env, check=True, capture_output=True)
         file = self.root / "settings.conf"
         file.write_text(content, encoding="utf-8")
         if tracked:
-            subprocess.run(["git", "add", "settings.conf"], cwd=self.root, check=True)
+            subprocess.run(["git", "add", "settings.conf"], cwd=self.root, env=self.env, check=True)
         return self.run_shell(ROOT / "scripts/security/check_no_secrets.sh")
+
+    def test_hook_git_variables_do_not_reach_real_repo(self):
+        # 2026-10-07: under the pre-commit hook GIT_DIR/GIT_INDEX_FILE leaked into
+        # `git init`; the real repository got core.bare=true and settings.conf staged.
+        decoy = Path(self.tmp.name) / "decoy.git"
+        hook_env = {"GIT_DIR": decoy.as_posix(), "GIT_INDEX_FILE": (decoy / "index").as_posix()}
+        with mock.patch.dict(os.environ, hook_env):
+            self.setUp()
+            self.secrets("PLAIN=1\n")
+        self.assertFalse(decoy.exists())
+        self.assertTrue((self.root / ".git").is_dir())
 
     def test_synthetic_secret_is_rejected(self):
         result = self.secrets("SERVICE_TOKEN=" + "synthetic" + "0123456789abcdef" + "\n")

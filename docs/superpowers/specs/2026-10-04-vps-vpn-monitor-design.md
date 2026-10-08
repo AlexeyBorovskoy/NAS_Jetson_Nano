@@ -139,7 +139,7 @@ VPS network: ↓ 24.6 GB  ↑ 25.9 GB  ·  conntrack peak 900
 ⚠️ Downtime 07:55–08:27 (32 min): hypervisor initiated shutdown
 ↻ amnezia-awg2, amnezia-xray — started 08:27 (together with the VPS)
 
-AmneziaWG: 21 clients · were online 7 · now 5
+AmneziaWG: 21 clients · with traffic in the day 7 · online now 5
 Through the tunnel per day: ↓ 23.4 GB ↑ 0.9 GB · xray container: 18 MB
 
 Client              day   7 d   30 d   peak
@@ -150,6 +150,9 @@ Silent: >7 d — 3 · >30 d — 2 · >90 d — 0
 Never connected since 05.10: 10 — Name, Name, …
 Collection: 1438 of 1440 min
 ```
+
+"With traffic in the day" — peers with a non-zero increase during the reported day; an exact
+"were online" is not counted: only the peer's last handshake is stored.
 
 - Client rows — everyone who had traffic during the day, in descending order; the rest as summary
   rows.

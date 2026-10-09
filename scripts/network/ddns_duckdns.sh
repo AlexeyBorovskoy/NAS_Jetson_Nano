@@ -4,7 +4,7 @@
 # Setup: https://www.duckdns.org — register, get token, create subdomain.
 #
 # Required env vars (set in /etc/nas_jetson_nano-monitor/ddns.env on VPS):
-#   DUCKDNS_TOKEN=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+#   DUCKDNS_TOKEN=change_me
 #   DUCKDNS_DOMAIN=nas_jetson_nano-home          # subdomain only, without .duckdns.org
 #
 # Optional:

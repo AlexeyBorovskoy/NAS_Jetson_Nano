@@ -1,5 +1,54 @@
 # 21. Логирование и Status API / Logging & Status API
 
+## DEP-1 — закреплённые зависимости, 2026-10-09
+
+🇷🇺 `requirements.txt` задаёт пять точных прямых версий. `requirements.lock`
+фиксирует полный граф (32 пакета с платформенными условиями) и SHA-256 архивов.
+Docker устанавливает только бинарные пакеты из lock с `--require-hashes`.
+Прямые версии и доступные транзитивные версии сохранены из проверенного окружения.
+`passlib[bcrypt]` удалён: во всём NAS API нет его использования, пароли проверяет
+Nextcloud. `python-jose==3.5.0` сохранён: API использует encode/decode и JWTError,
+HS256 разрешён явно. Переход на другую JWT-библиотеку — отдельная миграция с
+проверкой совместимости токенов и обработки ошибок, не механическая замена пина.
+
+Проверено в чистом Windows Python 3.12.15: установка с обязательными хешами,
+`pip check` без конфликтов, NAS API 266 passed. Отдельно скачаны бинарные wheels
+для всех 31 применимых Linux ARM64 зависимостей с проверкой SHA-256; код на ARM64
+этим не запускался. Pip отклонил намеренно неверный хеш в автономной проверке.
+Тесты политики — `tests/unit/test_nas_api_dependency_lock.py` (5 tests OK).
+Живой образ Jetson не пересобран и не развёрнут.
+
+Обновление: изменить прямые версии, перегенерировать lock закреплённым генератором
+`uv==0.12.24`, проверить diff и чистую установку/тесты. Существующий lock хранит
+выбранные транзитивные версии; не удалять его перед обычной перегенерацией.
+См. [официальную документацию uv](https://docs.astral.sh/uv/pip/compile/).
+
+```bash
+uv pip compile services/nas_jetson_nano-api/requirements.txt --universal \
+  --python-version 3.12 --generate-hashes --no-header \
+  --default-index https://pypi.org/simple \
+  -o services/nas_jetson_nano-api/requirements.lock
+python -m pip install --require-hashes --only-binary=:all: \
+  -r services/nas_jetson_nano-api/requirements.lock
+python -m pip check
+python -m pip install pytest==9.1.1 pytest-asyncio==1.4.0
+python -m pytest tests/nas_api -q
+```
+
+Выполнять установку в отдельном окружении внутри `.agent-work/tmp/`, не в системном
+Python. Для Windows/Git Bash направить TEMP/TMP/TMPDIR внутрь проекта. Общий
+`requirements-test.txt` содержит зависимости нескольких сервисов и не заменяет
+проверку чистой установки runtime-lock NAS API. Хеши фиксируют содержимое архива,
+но сами по себе не являются аудитом уязвимостей.
+Откат — прежние Dockerfile/requirements; рабочий образ этим шагом не менялся.
+
+🇬🇧 DEP-1 pins five direct dependencies and a 32-package platform-aware hashed
+lock. Docker requires hashes and binary wheels. Unused passlib/bcrypt is removed;
+python-jose remains for explicit HS256 JWT handling. Clean Python 3.12 installation,
+pip check and 266 NAS API tests passed; all 31 applicable Linux ARM64 wheels were
+downloaded with hash verification. ARM64 execution/deployment remains untested.
+Update with uv 0.12.24 and retest in an isolated project-local environment.
+
 > 🇷🇺 Описание подсистемы структурированного логирования и REST API статуса NAS_Jetson_Nano. Актуализировано: 2026-06-27.
 >
 > 🇬🇧 Structured logging subsystem and Status REST API for NAS_Jetson_Nano. Updated: 2026-06-27.

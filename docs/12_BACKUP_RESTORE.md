@@ -1,5 +1,12 @@
 # 12. Backup / Restore
 
+> 🇷🇺 **Проверка 2026-10-09:** дампы БД свежие и проходят gzip-проверку; службы
+> резервирования завершаются успешно. Полное аварийное восстановление не подтверждено.
+> Результаты и план изолированного учения:
+> [Full DR audit](quality/BACKUP_RESTORE_TESTS.md) (раздел 2026-10-09).
+> 🇬🇧 **2026-10-09 audit:** fresh gzip-valid DB dumps and successful backup jobs;
+> full platform disaster recovery remains untested. See the dated audit and test plan.
+
 > 🇷🇺 **Статус 2026-09-07 (ADR-0009):**  
 > - L0 live: SSD.  
 > - L1 on-site Immich→HDD: скрипт + timer **в git** (`scripts/backup/immich_hdd_second_copy.sh`,  

@@ -3,7 +3,7 @@
 
 Endpoints:
   POST /v1/report/now                       — trigger Telegram report (no auth)
-  POST /v1/actions/containers/{name}/restart — restart Docker container (JWT)
+  POST /v1/actions/containers/{name}/restart — restart Docker container (JWT; отключено в DP-2 → 503)
   POST /v1/actions/backup/now               — trigger DB backup (JWT)
   GET  /v1/actions/history                  — recent action log entries (JWT)
 """
@@ -15,7 +15,6 @@ import logging
 from pathlib import Path
 from typing import Annotated
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -26,23 +25,22 @@ from app.routers.auth import require_auth
 log = logging.getLogger("nas_jetson_nano_api.actions")
 router = APIRouter(tags=["Действия"])
 
-_SOCKET = "/var/run/docker.sock"
-
-
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 async def _docker_post(path: str) -> int:
-    """POST to Docker socket, return HTTP status code."""
-    if not Path(_SOCKET).exists():
-        raise HTTPException(status_code=503, detail="Docker socket not available")
-    try:
-        transport = httpx.AsyncHTTPTransport(uds=_SOCKET)
-        async with httpx.AsyncClient(transport=transport, timeout=30.0) as client:
-            r = await client.post(f"http://docker/{path.lstrip('/')}")
-        return r.status_code
-    except Exception as exc:
-        log.error("docker socket error: %s", exc)
-        raise HTTPException(status_code=503, detail=f"Docker socket error: {exc}")
+    """Управление Docker отключено — DP-2 (2026-10-09).
+
+    До DP-2 функция ходила в `/var/run/docker.sock` и перезапускала контейнеры.
+    Теперь API видит Docker только на чтение (статусный прокси,
+    `app.services.system_info.docker_ps_json`), а любое управляющее действие
+    получает 503. Имя и сигнатура сохранены: тест доступа мокает именно
+    `actions._docker_post`, а роутер вызывает его по имени.
+    """
+    log.warning("docker control request refused (DP-2 read-only): %s", path)
+    raise HTTPException(
+        status_code=503,
+        detail="Docker control disabled: read-only status proxy",
+    )
 
 
 # ── Pydantic models ────────────────────────────────────────────────────────────
@@ -116,12 +114,13 @@ async def trigger_report():
 @router.post(
     "/v1/actions/containers/{name}/restart",
     response_model=RestartResponse,
-    summary="Перезапустить Docker-контейнер",
+    summary="Перезапуск Docker-контейнеров недоступен",
     description=(
-        "Перезапускает указанный контейнер через Docker UNIX socket. "
-        "Разрешены только контейнеры из whitelist (`RESTARTABLE_CONTAINERS`). "
-        "**Требует JWT.** Контейнер продолжает работать — это graceful restart (SIGTERM → SIGKILL). "
-        "\n\nДоступные контейнеры:\n"
+        "API предоставляет только чтение состояния Docker. Авторизованный "
+        "владелец получает **HTTP 503**, контейнер не перезапускается. "
+        "Проверки доступа сохранены: "
+        "член семьи получает 403, имя вне whitelist (`RESTARTABLE_CONTAINERS`) — тоже 403. "
+        "\n\nРанее разрешённые контейнеры (whitelist сохранён):\n"
         "- `homecloud_nextcloud`\n"
         "- `homecloud_immich_server`\n"
         "- `homecloud_immich_microservices`\n"

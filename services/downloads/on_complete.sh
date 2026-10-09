@@ -53,7 +53,7 @@ name_at() {
 
 MV="${DL_MV:-mv}"
 tmp="$FINAL/.incoming.$$.$top"
-if ! $MV -- "$src" "$tmp"; then
+if ! "$MV" -- "$src" "$tmp"; then
   rm -rf -- "$tmp"
   echo "on_complete: не перенёс $src — оставлен на месте" >&2
   exit 1
@@ -68,12 +68,12 @@ try=1
 while [ "$try" -le 100 ]; do
   dst="$(name_at "$try")"
   if [ ! -e "$dst" ]; then
-    $MV -n -- "$tmp" "$dst" 2>/dev/null
+    "$MV" -n -- "$tmp" "$dst" 2>/dev/null
     if [ ! -e "$tmp" ]; then
       # Каталог с таким именем mv не перезаписывает, а ПРИНИМАЕТ внутрь себя — наш
       # объект оказался бы спрятан в чужой папке. Возвращаем себе и берём суффикс.
       if [ -e "$dst/${tmp##*/}" ]; then
-        $MV -n -- "$dst/${tmp##*/}" "$tmp" 2>/dev/null
+        "$MV" -n -- "$dst/${tmp##*/}" "$tmp" 2>/dev/null
         [ -e "$tmp" ] || { echo "on_complete: не вернул $top из чужого каталога $dst" >&2; exit 1; }
       else
         moved=1

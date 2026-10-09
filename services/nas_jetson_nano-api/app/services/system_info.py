@@ -1,5 +1,6 @@
 """
-Системные метрики Jetson: /proc, /sys/class/thermal и Docker Engine API.
+Системные метрики Jetson: /proc, /sys/class/thermal и статус Docker — только
+чтение, через HTTP-прокси (DP-2, 2026-10-09: ни UNIX-сокета, ни вызова CLI).
 
 Вынесено из app/routers/system.py (CQ-02, docs/audit/2026-10-02_code_audit/REPORT.ru.md
 §4, §6): раньше app/routers/talk_bot.py звал эти функции напрямую как приватные
@@ -10,12 +11,13 @@
 """
 from __future__ import annotations
 
-import asyncio
-import json
 import logging
 from pathlib import Path
 
 import httpx
+from fastapi import HTTPException
+
+from app.config import settings
 
 log = logging.getLogger("nas_jetson_nano_api.services.system_info")
 
@@ -75,48 +77,38 @@ def read_thermal() -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Docker helpers (via Docker Engine socket, fallback to CLI; no docker-py dep)
+# Docker status — только чтение через статусный HTTP-прокси (DP-2, 2026-10-09).
+# У процесса API больше нет ни UNIX-сокета, ни вызова CLI.
 # ---------------------------------------------------------------------------
 
-async def docker_ps_json() -> list[dict]:
-    socket_path = "/var/run/docker.sock"
-    if Path(socket_path).exists():
-        try:
-            transport = httpx.AsyncHTTPTransport(uds=socket_path)
-            async with httpx.AsyncClient(transport=transport, timeout=10.0) as client:
-                response = await client.get("http://docker/containers/json", params={"all": "1"})
-            response.raise_for_status()
-            result = []
-            for item in response.json():
-                names = item.get("Names") or []
-                name = names[0].lstrip("/") if names else item.get("Id", "")[:12]
-                result.append({
-                    "name": name,
-                    "status": item.get("Status", ""),
-                    "image": item.get("Image", ""),
-                    "state": item.get("State", ""),
-                })
-            return result
-        except Exception as exc:
-            log.warning("docker socket query failed: %s", exc)
+def _normalize_container(item: dict) -> dict:
+    if not isinstance(item, dict):
+        raise ValueError("Invalid container record")
+    names = item.get("Names", [])
+    if not isinstance(names, list):
+        raise ValueError("Invalid container names")
+    name = names[0] if names else item.get("Id", "")[:12]
+    if not isinstance(name, str) or not name:
+        raise ValueError("Missing container identity")
+    result = {"name": name.lstrip("/"), "status": item.get("Status", ""),
+              "image": item.get("Image", ""), "state": item.get("State", "")}
+    if not all(isinstance(value, str) for value in result.values()):
+        raise ValueError("Invalid container fields")
+    return result
 
-    fmt = '{"name":"{{.Names}}","status":"{{.Status}}","image":"{{.Image}}","state":"{{.State}}"}'
+
+async def docker_ps_json() -> list[dict]:
+    """Read status through the proxy; unavailable evidence is 503, with no fallback."""
+    url = f"{settings.docker_status_url.rstrip('/')}/containers/json"
     try:
-        proc = await asyncio.create_subprocess_exec(
-            "docker", "ps", "-a", "--format", fmt,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL,
-        )
-        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=10)
-        result = []
-        for line in stdout.decode().splitlines():
-            line = line.strip()
-            if line:
-                try:
-                    result.append(json.loads(line))
-                except json.JSONDecodeError:
-                    pass
-        return result
+        async with httpx.AsyncClient(timeout=10.0, trust_env=False,
+                                     follow_redirects=False) as client:
+            response = await client.get(url, params={"all": "1"})
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, list):
+            raise ValueError("Invalid Docker status payload")
+        return [_normalize_container(item) for item in payload]
     except Exception as exc:
-        log.warning("docker ps failed: %s", exc)
-        return []
+        log.warning("docker status unavailable (%s)", type(exc).__name__)
+        raise HTTPException(status_code=503, detail="Docker status unavailable") from exc

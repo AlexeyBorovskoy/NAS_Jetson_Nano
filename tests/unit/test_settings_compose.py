@@ -92,7 +92,7 @@ class SettingsComposeTest(unittest.TestCase):
             ("llm-gateway", gateway_settings(), GATEWAY_DEFAULTS),
         ):
             text = (COMPOSE / ("docker-compose." + service + ".yml")).read_text(encoding="utf-8")
-            fixed = {"EXPECTED_CONTAINERS", "LOCAL_SERVICES"} if service == "nas_jetson_nano-api" else set()
+            fixed = {"EXPECTED_CONTAINERS", "LOCAL_SERVICES", "DOCKER_STATUS_URL"} if service == "nas_jetson_nano-api" else set()
             for key in settings - defaults.keys() - fixed:
                 source = aliases.get(key, key)
                 pattern = r"(?m)^      " + key + r": \$\{" + source + r"(?::-[^}\n]*)?\}$"

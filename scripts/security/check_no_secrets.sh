@@ -1,51 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
-SECRET_ASSIGNMENT_PATTERN='[A-Z0-9_]*(API[_-]?KEY|SECRET|TOKEN|PASSWORD|BEARER)[A-Z0-9_]*[[:space:]]*[:=][[:space:]]*['"'"'"]?[A-Za-z0-9_./+=:@-]{16,}'
-PRIVATE_KEY_PATTERN='-----BEGIN [A-Z ]*PRIVATE KEY-----'
-PLACEHOLDER_PATTERN='(change_me|replace_me|example|mock|REDACTED|ВАШ_|x{8,}|X{8,})'
-# *_FILE / *_PATH указывают на путь к секрету, а не на само значение —
-# тот же паттерн (docker secrets, restic) уже используется в проекте
-# (RESTIC_PASSWORD_FILE=/root/..., password_file: /run/secrets/...).
-# Найдено 2026-08-30: check_no_secrets.sh ловил такие строки как ложные срабатывания
-# на каждом коммите.
-SECRET_FILE_REF_PATTERN='(API[_-]?KEY|SECRET|TOKEN|PASSWORD|BEARER)[A-Z0-9_]*_(FILE|PATH)[[:space:]]*[:=][[:space:]]*['"'"'"]?/'
-# *_URL / *_ENDPOINT со значением http(s):// — это АДРЕС, а не секрет: секретом
-# не может быть публичный URL. Найдено 2026-09-20 на E5: строка
-# IAM_TOKEN_URL = "https://iam.api.cloud.ru/api/v1/auth/token" ловилась из-за
-# слова token В ПУТИ. Родня уже записанному случаю с RESTIC_PASSWORD_FILE, где
-# проверка приняла путь к секрету за сам секрет. Исключение намеренно узкое:
-# значение обязано начинаться с http:// или https://.
-SECRET_URL_REF_PATTERN='(API[_-]?KEY|SECRET|TOKEN|PASSWORD|BEARER)[A-Z0-9_]*_(URL|URI|ENDPOINT)[[:space:]]*[:=][[:space:]]*['"'"'"]?https?://'
-
-# Сканируем только то, что git реально опубликует (tracked-файлы).
-# Untracked/.gitignored (например локальный config/.env с реальными ключами)
-# не являются риском публикации. Если секретный файл случайно git add-нут —
-# он попадёт в список и будет пойман.
-if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  file_list="$(git ls-files)"
+# Markdown is included; value exceptions and redaction live in the Python scanner.
+if command -v python3 >/dev/null 2>&1; then
+  PYTHON=python3
 else
-  file_list="$(find . -type f -not -path './.git/*')"
+  PYTHON=python
 fi
-
-scan_files="$(printf '%s\n' "$file_list" \
-  | grep -Ev '(^|/)\.env\.example$|(^|/)\.gitignore$|\.md$|\.zip$|(^|/)check_no_secrets\.sh$' \
-  || true)"
-
-matches=""
-if [ -n "$scan_files" ]; then
-  matches="$(printf '%s\n' "$scan_files" | tr '\n' '\0' \
-    | xargs -0 grep -InE "$SECRET_ASSIGNMENT_PATTERN|$PRIVATE_KEY_PATTERN" 2>/dev/null || true)"
-fi
-
-matches="$(printf '%s\n' "$matches" | grep -Ev "$PLACEHOLDER_PATTERN" || true)"
-matches="$(printf '%s\n' "$matches" | grep -Ev "$SECRET_FILE_REF_PATTERN" || true)"
-matches="$(printf '%s\n' "$matches" | grep -Ev "$SECRET_URL_REF_PATTERN" || true)"
-
-if [ -n "$matches" ]; then
-  printf '%s\n' "$matches"
-  echo "Potential secret-like strings found. Review before publishing." >&2
-  exit 1
-fi
-
-echo "No obvious secrets found outside allowed files."
+exec "$PYTHON" "$(dirname "${BASH_SOURCE[0]}")/scan_tracked_secrets.py"

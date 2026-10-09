@@ -148,7 +148,7 @@ docker exec -it homecloud_netdata bash
 
 ```bash
 SEND_TELEGRAM="YES"
-TELEGRAM_BOT_TOKEN="your_bot_token_here"
+TELEGRAM_BOT_TOKEN="change_me"
 TELEGRAM_CHAT_ID="your_chat_id_here"
 ```
 
@@ -338,7 +338,7 @@ Find and fill in:
 
 ```bash
 SEND_TELEGRAM="YES"
-TELEGRAM_BOT_TOKEN="your_bot_token_here"
+TELEGRAM_BOT_TOKEN="change_me"
 TELEGRAM_CHAT_ID="your_chat_id_here"
 ```
 

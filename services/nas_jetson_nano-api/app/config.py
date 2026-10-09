@@ -125,6 +125,7 @@ class Settings(BaseSettings):
     backup_cmd: str = "/home/admin/nas_jetson_nano/scripts/backup/backup_databases.sh"
 
     # Whitelist of containers allowed to be restarted via API
+    # (DP-2: перезапуск отключён — список сохранён для проверки доступа: 403/503)
     restartable_containers: str = (
         "homecloud_nextcloud "
         "homecloud_nextcloud_db "
@@ -137,6 +138,12 @@ class Settings(BaseSettings):
         "homecloud_netdata "
         "homecloud_uptime_kuma"
     )
+
+    # DP-2 (2026-10-09): статус Docker — только чтение, по HTTP к статусному
+    # прокси (`docker-status-proxy`, отдаёт лишь `GET /containers/json`).
+    # Ни UNIX-сокета, ни CLI из процесса API: недоступность прокси — это
+    # 503/unknown, а не пустой список, который выглядит как «всё здорово».
+    docker_status_url: str = "http://docker-status-proxy:2375"
 
     # ── Telegram: первый срез бота (качалка + вопросы @бобик) ──────────────────────
     telegram_bot_enabled: bool = False

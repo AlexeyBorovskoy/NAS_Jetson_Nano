@@ -1,5 +1,7 @@
 # NAS_Jetson_Nano
 
+> Текущая точка: [2026-10-09 RU](docs/plans/CHECKPOINT_2026-10-09.ru.md) / [EN](docs/plans/CHECKPOINT_2026-10-09.md). GitVerse CI и тестовое восстановление конфигураций проверены; SEC-2/DEP-1 готовы локально. DP-2/E3 ещё не развёрнуты; полное аварийное восстановление остаётся следующим шагом.
+
 ### _Old hardware should live_ · _Старое железо должно жить_
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)

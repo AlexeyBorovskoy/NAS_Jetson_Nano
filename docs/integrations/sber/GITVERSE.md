@@ -47,13 +47,23 @@ git remote add gitverse git@gitverse.ru:Alexey_Borovskoy/NAS_HOME.git   # once (
 ## CI status
 
 - A first GitVerse CI workflow is defined at `.gitverse/workflows/quality-checks.yml`.
-- It targets GitVerse's documented `ubuntu-latest` cloud runner and runs repository
-  hygiene, `tests/unit`, and `tests/vpn_monitor` with Python 3.12.
-- Workflow syntax and action execution have **not** been verified by a live GitVerse
-  run. The current hygiene gate accepts `.gitverse/workflows/quality-checks.yml` as an
-  ordinary nested repository path; no policy exception is needed.
-- No GitVerse runtime, hosted runner, secret, or remote setting was changed for this
-  initial local configuration step.
+- Live run **263** (API ID **1769716**, job **3468393**) succeeded on 2026-10-09
+  for commit `83590f77389f6f19e59e4e03e65102ef88634c80`, triggered by push to `main`.
+  Start/end: **11:08:18–11:12:08 UTC** (3 min 50 s).
+- Python 3.12 on GitVerse's `ubuntu-latest` cloud runner: repository hygiene
+  **696 entries / 0 violations**, all unit scripts passed, VPN monitor **101 passed**,
+  NAS API **251 passed**, code metrics **0 violations**. The baseline was unchanged.
+- Verified via the [official run API](https://api.gitverse.ru/repos/Alexey_Borovskoy/NAS_HOME/actions/runs/1769716)
+  and job logs; UI entry point: [repository CI/CD](https://gitverse.ru/Alexey_Borovskoy/NAS_HOME/actions).
+- Both mirror branches `main` and `master` point to `83590f7` after this push.
+- GitVerse selects `.gitverse/workflows/` in preference to `.github/workflows/`.
+  This workflow covers the checks listed above; it does not claim parity with
+  GitHub's ShellCheck, Compose validation, or security scanning jobs.
+- Older run 259 (API ID 1760244) failed installing `shellcheck` and `restic`
+  because apt package indexes were unavailable. This workflow updates indexes
+  before installing restic; successful live installation is confirmed in run 263.
+- The new main-copy `.gitverse/**` path is denied to ds-worker in `ds_worker.toml`.
+  No production host, VPN, CI secret, or repository setting was changed.
 
 ## Do not
 

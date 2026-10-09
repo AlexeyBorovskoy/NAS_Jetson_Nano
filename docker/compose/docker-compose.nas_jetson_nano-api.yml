@@ -9,14 +9,17 @@ services:
     container_name: homecloud_nasa_api
     restart: always
     mem_limit: 128m
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      - docker-status-proxy
     ports:
       - "8099:8099"
     volumes:
       # Shared log directory — persists JSON logs on host
       # Пути хоста — из раскладки (docs/35_HOST_LAYOUT.md); на устройстве заданы в config/.env
       - ${NAS_LOG_DIR:-/var/log/nas_jetson_nano-monitor}:/var/log/nas_jetson_nano-monitor
-      # Docker socket — for `docker ps` inside container
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       # Report script — for POST /v1/report/now
       - ${NAS_SBIN_PREFIX:-/usr/local/sbin/nas_jetson_nano}-send-report-telegram.sh:/usr/local/sbin/nas_jetson_nano-send-report-telegram.sh:ro
       - ${NAS_CONF_DIR:-/etc/nas_jetson_nano-monitor}:/etc/nas_jetson_nano-monitor:ro
@@ -26,6 +29,7 @@ services:
       - /mnt/storage/downloads:/dl/ssd:ro
       - /mnt/hdd2tb/Downloads:/dl/hdd:ro
     environment:
+      DOCKER_STATUS_URL: http://docker-status-proxy:2375
       API_LOG_LEVEL: ${NAS_JETSON_NANO_API_LOG_LEVEL:-INFO}
       LOG_MAX_BYTES: ${LOG_MAX_BYTES:-10485760}
       LOG_BACKUP_COUNT: ${LOG_BACKUP_COUNT:-5}
@@ -118,7 +122,24 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - homecloud_internal
+      - docker_status
+
+  docker-status-proxy:
+    build:
+      context: ../../services/docker-status-proxy
+    restart: always
+    mem_limit: 32m
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    # Only this isolated proxy receives the socket. :ro is not an HTTP ACL.
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - docker_status
 
 networks:
+  docker_status:
+    internal: true
   homecloud_internal:
     external: true

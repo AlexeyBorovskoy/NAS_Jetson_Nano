@@ -88,12 +88,13 @@ class CriticalShell(unittest.TestCase):
         self.assertNotIn("--delete", args)
         self.assertNotIn("--remove-source-files", args)
 
-    def secrets(self, content, tracked=True):
+    def secrets(self, content, tracked=True, filename="settings.conf"):
         subprocess.run(["git", "init", "-q"], cwd=self.root, env=self.env, check=True, capture_output=True)
-        file = self.root / "settings.conf"
+        file = self.root / filename
+        file.parent.mkdir(parents=True, exist_ok=True)
         file.write_text(content, encoding="utf-8")
         if tracked:
-            subprocess.run(["git", "add", "settings.conf"], cwd=self.root, env=self.env, check=True)
+            subprocess.run(["git", "add", filename], cwd=self.root, env=self.env, check=True)
         return self.run_shell(ROOT / "scripts/security/check_no_secrets.sh")
 
     def test_hook_git_variables_do_not_reach_real_repo(self):
@@ -118,6 +119,74 @@ class CriticalShell(unittest.TestCase):
 
     def test_untracked_secret_is_excluded(self):
         result = self.secrets("SERVICE_TOKEN=" + "synthetic" + "0123456789abcdef" + "\n", tracked=False)
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    # 2026-10-09: markdown docs are scanned; placeholders stay safe, while real
+    # values must still fail redacted - never skipped by prose words, same-line
+    # exceptions or paths with spaces.
+    def test_tracked_markdown_secret_is_rejected_and_redacted(self):
+        value = "synthetic" + "0123456789abcdef"
+        result = self.secrets("SERVICE_TOKEN=" + value + "\n", filename="README.md")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("SERVICE_TOKEN=", result.stdout)
+        self.assertNotIn(value, result.stdout)
+
+    def test_markdown_placeholder_change_me_is_allowed(self):
+        placeholder = "change" + "_me"
+        result = self.secrets("SERVICE_TOKEN=" + placeholder + "\n", filename="README.md")
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_markdown_placeholder_example_is_allowed(self):
+        placeholder = "exa" + "mple"
+        result = self.secrets("SERVICE_TOKEN=" + placeholder + "\n", filename="README.md")
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_markdown_secret_file_path_is_allowed(self):
+        result = self.secrets("SERVICE_TOKEN_FILE=/run/secrets/service_token\n", filename="README.md")
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_markdown_token_url_is_allowed(self):
+        url = "https://iam.api.cloud.ru" + "/api/v1/auth/token"
+        result = self.secrets("IAM_TOKEN_URL=" + url + "\n", filename="README.md")
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_prose_example_does_not_suppress_markdown_secret(self):
+        value = "synthetic" + "0123456789abcdef"
+        content = "The example below is a mock value, not a real one: SERVICE_TOKEN=" + value + "\n"
+        result = self.secrets(content, filename="README.md")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("SERVICE_TOKEN=", result.stdout)
+
+    def test_safe_file_assignment_does_not_hide_same_line_secret(self):
+        value = "synthetic" + "0123456789abcdef"
+        content = "SERVICE_TOKEN_FILE=/run/secrets/service_token SERVICE_TOKEN=" + value + "\n"
+        result = self.secrets(content, filename="README.md")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("SERVICE_TOKEN=", result.stdout)
+
+    def test_placeholder_does_not_mask_second_candidate_on_line(self):
+        value = "synthetic" + "0123456789abcdef"
+        content = "SERVICE_TOKEN=" + "change" + "_me" + " SERVICE_TOKEN=" + value + "\n"
+        result = self.secrets(content, filename="README.md")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("SERVICE_TOKEN=", result.stdout)
+
+    def test_markdown_private_key_marker_is_rejected(self):
+        body = "synthetic" + "0123456789abcdef"
+        begin = "-----BEGIN RSA PRIVATE " + "KEY-----"
+        end = "-----END RSA PRIVATE " + "KEY-----"
+        result = self.secrets(begin + "\n" + body + "\n" + end + "\n", filename="README.md")
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_markdown_with_spaces_in_path_is_scanned(self):
+        value = "synthetic" + "0123456789abcdef"
+        result = self.secrets("SERVICE_TOKEN=" + value + "\n", filename="docs with spaces/README.md")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("SERVICE_TOKEN=", result.stdout)
+
+    def test_untracked_markdown_secret_is_excluded(self):
+        value = "synthetic" + "0123456789abcdef"
+        result = self.secrets("SERVICE_TOKEN=" + value + "\n", tracked=False, filename="README.md")
         self.assertEqual(result.returncode, 0, result.stdout)
 
 

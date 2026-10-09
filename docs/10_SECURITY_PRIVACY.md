@@ -1,5 +1,45 @@
 # 10. Безопасность и приватность / Security & Privacy
 
+## DP-2 — подготовка ограничения Docker API, 2026-10-09
+
+🇷🇺 Подготовлен локальный вариант NAS API с UID/GID `10001:10001`, без Linux
+capabilities и с `no-new-privileges`. Прямой `docker.sock` в API удалён. Только
+отдельный `services/docker-status-proxy` получает сокет: он допускает исключительно
+GET `/containers/json` (без query или с `all=1`), возвращает только Id/Names/Status/
+Image/State. POST, inspect, logs, images, exec и другие пути не передаются Docker.
+При отказе бэкенда возвращается 503, а не пустой успешный список.
+
+Прокси не публикует порт хоста и подключён только к внутренней сети `docker_status`.
+API также подключён к прежней сети приложений. Монтирование сокета с `:ro` само по
+себе не является запретом Docker POST; запрет реализован проверкой HTTP-маршрута.
+Прокси остаётся привилегированным относительно Docker из-за доступа к сокету:
+это отдельная граница доверия, а не способ сделать сам сокет безопасным.
+
+**Изменение поведения:** перезапуск контейнеров через NAS API отключается (503),
+даже для владельца. Восстановление остаётся задачей существующего хостового watchdog.
+Новый вариант не развёрнут; контейнерный smoke-test на ARM64 ещё требуется.
+
+Перед выкатом владелец проверяет права UID 10001 на каталог логов, API JSONL и его
+ротации, `telegram-state.json` и `downloads-ledger.json`, а также чтение мониторингового
+снимка и каталогов статистики. Не выполнять рекурсивный chown общих каталогов.
+Хостовые report/backup-скрипты и root-only конфигурации могут быть недоступны этому
+UID: проверить операции отдельно, не давать API sudo или Docker-группу для обхода.
+Контейнеры Nextcloud/Immich и их volumes при этой подготовке не изменяются.
+
+Проверки: `python tests/unit/test_docker_status_proxy.py`,
+`python -m pytest tests/nas_api -q`, Compose config с примером окружения.
+Нужны живые проверки `/v1/containers`, health и UID после разрешённого выката.
+Откат — предыдущие Dockerfile/Compose и API-модули; возвращение прямого сокета
+возвращает прежние широкие права и требует осознанного решения, не автоматического fallback.
+
+🇬🇧 Local DP-2 preparation runs NAS API as UID/GID 10001 with dropped capabilities,
+no-new-privileges and no Docker socket. An unpublished proxy on an internal network
+allows only container-list GET, filters output fields and fails with 503. The proxy
+itself remains trusted because it holds the socket. API container restart is disabled;
+host watchdog recovery remains. ARM64 runtime, mounted-file permissions and host-script
+compatibility must be verified before deployment; never restore access via sudo or a
+Docker group automatically. Rollback restores the previous privilege boundary explicitly.
+
 ## 1. Принципы / Principles
 
 🇷🇺

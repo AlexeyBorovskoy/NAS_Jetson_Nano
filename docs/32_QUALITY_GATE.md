@@ -108,7 +108,7 @@ out=$(проверка); rc=$?                        # ✅ код возвра�
 | 3 | Синтаксис Python | `ast.parse` | да |
 | 4 | **Совместимость с Python 3.6** | `vermin --target=3.6-` по `scripts/` | да |
 | 5 | **Значения `.env`** | `check_env_syntax.py` | да |
-| 6 | Секреты | `check_no_secrets.sh` | да |
+| 6 | Секреты, включая tracked Markdown | `check_no_secrets.sh`; исключения для значений placeholders/путей/URL, не для целой строки; вывод скрывает значения | да |
 | 7 | `docker-compose` | `docker compose config --quiet` | да, если есть docker |
 | 8 | **Регрессии семантики** | `tests/unit/test_*.py` | да |
 

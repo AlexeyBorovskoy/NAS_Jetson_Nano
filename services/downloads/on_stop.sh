@@ -19,7 +19,7 @@ if [ -n "$secret" ]; then
   body=$(mktemp); chmod 600 "$body"
   printf '{"jsonrpc":"2.0","id":"stop","method":"aria2.tellStatus","params":["token:%s","%s",["status"]]}' \
     "$secret" "$1" > "$body"
-  status=$(${DL_WGET:-wget} -q -O - --post-file="$body" --header='Content-Type: application/json' \
+  status=$("${DL_WGET:-wget}" -q -O - --post-file="$body" --header='Content-Type: application/json' \
     http://127.0.0.1:6800/jsonrpc 2>/dev/null | sed -n 's/.*"status":"\([a-z]*\)".*/\1/p')
   rm -f "$body"
 fi

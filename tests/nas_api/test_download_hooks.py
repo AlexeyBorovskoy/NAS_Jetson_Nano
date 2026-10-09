@@ -122,7 +122,7 @@ def barrier_mv(tmp_path: Path) -> dict:
     """
     bar = tmp_path / "barrier"
     bar.mkdir()
-    stub = tmp_path / "barrier_mv.sh"
+    stub = tmp_path / "barrier mv.sh"
     stub.write_text(
         "#!/bin/bash\n"
         'd="${NAS_BARRIER_DIR:?}"\n'
@@ -202,12 +202,14 @@ def test_on_complete_taken_name_gets_suffix(tmp_path):
 
 def fake_wget(tmp_path: Path, status: str) -> str:
     """Подмена wget для ответа RPC: хук спрашивает настоящий статус закачки."""
-    path = tmp_path / ("wget-%s.sh" % status)
+    path = tmp_path / ("wget %s.sh" % status)
     path.write_text('#!/bin/bash\necho \'{"jsonrpc":"2.0","id":"stop","result":{"status":"%s"}}\'\n'
                     % status, encoding="utf-8")
     path.chmod(0o755)
-    # Только путь: хук раскрывает $DL_WGET без кавычек, и «C:\Program Files\...bash.exe скрипт»
-    # рвался на пробеле — статус пустел, и тест «unknown → ничего не удаляем» проходил вхолостую.
+    # Имя заглушки со пробелом — нарочно: хук подставляет путь к исполняемому файлу
+    # в кавычках («"${DL_WGET:-wget}" …»), поэтому путь с пробелом обязан остаться одним
+    # словом. Прежде раскрытие без кавычек рвалось на пробеле («C:\Program Files\...bash.exe
+    # скрипт»): статус пустел, и тест «unknown → ничего не удаляем» проходил вхолостую.
     return path.as_posix()
 
 

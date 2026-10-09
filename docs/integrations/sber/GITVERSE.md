@@ -38,8 +38,22 @@ git remote add gitverse git@gitverse.ru:Alexey_Borovskoy/NAS_HOME.git   # once (
 
 ## Remote state
 
+- Read-only verification on 2026-10-09: SSH authentication succeeds as
+  `Alexey_Borovskoy` with key `detecktor-belgorod@gitverse`; `main` and `master`
+  both point to `2cce2ca94b3f012c1089eab1ab499ed5d192253c`.
 - After 2026-09-07 align: **`main`**, **`master`**, and default **HEAD** point to the same tip as GitHub `main` (force-align of `master` authorized by owner).
 - Prefer developing on **`main`**; keep `master` = `main` on mirror.
+
+## CI status
+
+- A first GitVerse CI workflow is defined at `.gitverse/workflows/quality-checks.yml`.
+- It targets GitVerse's documented `ubuntu-latest` cloud runner and runs repository
+  hygiene, `tests/unit`, and `tests/vpn_monitor` with Python 3.12.
+- Workflow syntax and action execution have **not** been verified by a live GitVerse
+  run. The current hygiene gate accepts `.gitverse/workflows/quality-checks.yml` as an
+  ordinary nested repository path; no policy exception is needed.
+- No GitVerse runtime, hosted runner, secret, or remote setting was changed for this
+  initial local configuration step.
 
 ## Do not
 

@@ -43,6 +43,7 @@ deny_read = [
   "//e/Linux mint/virtual_VM/shared/NAS_Jetson_Nano/.gitattributes",
   "//e/Linux mint/virtual_VM/shared/NAS_Jetson_Nano/.githooks/**",
   "//e/Linux mint/virtual_VM/shared/NAS_Jetson_Nano/.github/**",
+  "//e/Linux mint/virtual_VM/shared/NAS_Jetson_Nano/.gitverse/**",
   "//e/Linux mint/virtual_VM/shared/NAS_Jetson_Nano/.gitignore",
   "//e/Linux mint/virtual_VM/shared/NAS_Jetson_Nano/.gitleaks.toml",
   "//e/Linux mint/virtual_VM/shared/NAS_Jetson_Nano/.gitmodules",

@@ -27,6 +27,8 @@ import threading
 import time
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[2]
 API = ROOT / "services" / "nas_jetson_nano-api"
 
@@ -82,6 +84,8 @@ def test_hdd_check_times_out_instead_of_hanging(monkeypatch):
         result = loop.run_until_complete(health._check_hdd_mount(timeout=0.1))
         elapsed = time.monotonic() - start
     finally:
+        loop.run_until_complete(loop.shutdown_default_executor())
+        loop.run_until_complete(asyncio.sleep(0))
         loop.close()
     assert elapsed < 1.0, "проверка HDD не должна ждать зависший диск"
     assert result is not None and "не отвечает" in result
@@ -153,25 +157,43 @@ def test_read_active_alerts_parses_state_file():
         json.dump({
             "dumps": {"active": True, "text": "🔴 бэкапы устарели"},
             "ram": {"active": False, "text": "🟠 мало памяти"},
-            "disk": {"active": True, "text": ""},  # без текста — пропускается
+            "disk": {"active": True, "text": ""},  # без текста — сохраняем ключ
         }, fh)
     health.settings.talk_alert_state_file = state_file
-    assert health._read_active_alerts() == ["🔴 бэкапы устарели"]
+    assert health._read_active_alerts() == ["🔴 бэкапы устарели", "disk"]
 
 
-def test_read_active_alerts_missing_file_is_not_an_alarm():
+def test_read_active_alerts_missing_file_is_unknown():
     health = load_health()
     health.settings.talk_alert_state_file = "/no/such/file-e3-test.json"
-    assert health._read_active_alerts() == []
+    assert health._read_active_alerts() is None
 
 
-def test_read_active_alerts_corrupt_file_is_not_an_alarm():
+def test_read_active_alerts_corrupt_file_is_unknown():
     health = load_health()
     tmp = tempfile.mkdtemp()
     state_file = os.path.join(tmp, "broken.json")
     with open(state_file, "w", encoding="utf-8") as fh:
         fh.write("{не json")
     health.settings.talk_alert_state_file = state_file
+    assert health._read_active_alerts() is None
+
+
+@pytest.mark.parametrize("state", [[], {"disk": []}, {"disk": {"active": "false"}},
+                                   {"disk": {"active": True, "text": 42}}])
+def test_read_active_alerts_invalid_types_are_unknown(monkeypatch, tmp_path, state):
+    health = load_health()
+    path = tmp_path / "state.json"
+    path.write_text(json.dumps(state), encoding="utf-8")
+    monkeypatch.setattr(health.settings, "talk_alert_state_file", str(path))
+    assert health._read_active_alerts() is None
+
+
+def test_read_active_alerts_valid_empty_snapshot(monkeypatch, tmp_path):
+    health = load_health()
+    path = tmp_path / "state.json"
+    path.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(health.settings, "talk_alert_state_file", str(path))
     assert health._read_active_alerts() == []
 
 
@@ -185,14 +207,78 @@ def test_failed_units_check_survives_missing_binary(monkeypatch):
 
     monkeypatch.setattr(health.asyncio, "create_subprocess_exec", boom)
     result = asyncio.run(health._check_failed_units(timeout=1))
-    assert result is None
+    assert result.startswith(health.UNKNOWN_PREFIX)
+
+
+@pytest.mark.parametrize("returncode,stdout,expected", [
+    (1, b"", "unknown"), (1, b"fake.service failed", "unknown"),
+    (0, b"", "healthy"), (0, b"foo.service loaded failed failed\n", "failed"),
+])
+def test_failed_units_checks_exit_status(monkeypatch, returncode, stdout, expected):
+    health = load_health()
+
+    class Process:
+        async def communicate(self):
+            return stdout, None
+
+    proc = Process()
+    proc.returncode = returncode
+    monkeypatch.setattr(health.asyncio, "create_subprocess_exec", _async(proc))
+    result = asyncio.run(health._check_failed_units())
+    if expected == "unknown":
+        assert result.startswith(health.UNKNOWN_PREFIX)
+        assert "fake.service" not in result
+    elif expected == "healthy":
+        assert result is None
+    else:
+        assert result == "systemd: аварийные юниты — foo.service"
+
+
+@pytest.mark.parametrize("ignore_terminate", [False, True])
+def test_failed_units_timeout_reaps_child(monkeypatch, ignore_terminate):
+    health = load_health()
+
+    class Process:
+        returncode = None
+        terminated = False
+        killed = False
+        waits = 0
+
+        async def communicate(self):
+            await asyncio.sleep(30)
+
+        def terminate(self):
+            self.terminated = True
+
+        def kill(self):
+            self.killed = True
+
+        async def wait(self):
+            self.waits += 1
+            if ignore_terminate and not self.killed:
+                await asyncio.sleep(30)
+            self.returncode = -9 if self.killed else -15
+            return self.returncode
+
+    proc = Process()
+    monkeypatch.setattr(health.asyncio, "create_subprocess_exec", _async(proc))
+    monkeypatch.setattr(health, "SYSTEMD_CLEANUP_TIMEOUT", 0.02)
+    start = time.monotonic()
+    result = asyncio.run(health._check_failed_units(timeout=0.02))
+    assert time.monotonic() - start < 1
+    assert result.startswith(health.UNKNOWN_PREFIX)
+    assert proc.terminated and proc.returncode is not None
+    assert proc.killed == ignore_terminate
+    assert proc.waits == (2 if ignore_terminate else 1)
 
 
 # ── сборка ответа ─────────────────────────────────────────────────────────────
 
 def test_build_health_all_clear(monkeypatch):
     health = load_health()
-    monkeypatch.setattr(health.system_info, "docker_ps_json", _async([]))
+    monkeypatch.setattr(health.system_info, "docker_ps_json", _async([
+        {"name": name, "state": "running"}
+        for name in health.settings.expected_containers.split()]))
     monkeypatch.setattr(health.storage_mod, "_disk_info", lambda p: {"mounted": True, "used_pct": 12})
     monkeypatch.setattr(health.storage_mod, "_backup_info", lambda: {"available": True, "dumps": [
         {"db": "nextcloud", "age_hours": 3}, {"db": "immich", "age_hours": 4}]})
@@ -201,6 +287,40 @@ def test_build_health_all_clear(monkeypatch):
     monkeypatch.setattr(health, "_read_active_alerts", lambda: [])
     result = asyncio.run(health.build_health())
     assert result == "✅ Дома всё в порядке — контейнеры, диски и бэкапы штатно."
+
+
+@pytest.mark.parametrize("unavailable", ["docker", "missing", "systemd", "alerts", "ssd", "backups"])
+def test_build_health_unknown_never_reports_all_clear(monkeypatch, unavailable):
+    health = load_health()
+    monkeypatch.setattr(health.settings, "expected_containers", "expected_service")
+    monkeypatch.setattr(health.system_info, "docker_ps_json", _async([
+        {"name": "expected_service", "state": "running"}]))
+    monkeypatch.setattr(health.storage_mod, "disk_info", _async({"mounted": True, "used_pct": 12}))
+    monkeypatch.setattr(health.storage_mod, "backup_info", _async({"available": True, "dumps": [
+        {"db": "nextcloud", "age_hours": 3}, {"db": "immich", "age_hours": 4}]}))
+    monkeypatch.setattr(health, "_check_hdd_mount", _async(None))
+    monkeypatch.setattr(health, "_check_failed_units", _async(None))
+    monkeypatch.setattr(health, "_read_active_alerts", lambda: [])
+    if unavailable == "docker":
+        async def fail():
+            raise OSError("private error detail")
+        monkeypatch.setattr(health.system_info, "docker_ps_json", fail)
+    elif unavailable == "missing":
+        monkeypatch.setattr(health.system_info, "docker_ps_json", _async([]))
+    elif unavailable == "systemd":
+        monkeypatch.setattr(health, "_check_failed_units", _async(health.UNKNOWN_PREFIX + "systemd"))
+    elif unavailable == "alerts":
+        monkeypatch.setattr(health, "_read_active_alerts", lambda: None)
+    elif unavailable == "ssd":
+        monkeypatch.setattr(health.storage_mod, "disk_info", _async({"mounted": False, "error": "timeout"}))
+    else:
+        monkeypatch.setattr(health.storage_mod, "backup_info", _async({"available": False, "dumps": []}))
+    result = asyncio.run(health.build_health())
+    assert result.startswith("❔ Не удалось проверить:")
+    assert "✅" not in result and "Не в порядке" not in result
+    assert "private error detail" not in result
+    if unavailable == "missing":
+        assert "expected_service" in result and "отсутствуют" in result
 
 
 def test_build_health_lists_every_kind_of_problem_once(monkeypatch):
@@ -213,7 +333,8 @@ def test_build_health_lists_every_kind_of_problem_once(monkeypatch):
         {"db": "nextcloud", "age_hours": None}]})
     monkeypatch.setattr(health, "_check_hdd_mount", _async("HDD /mnt/hdd2tb не смонтирован"))
     monkeypatch.setattr(health, "_check_failed_units", _async("systemd: аварийные юниты — foo.service"))
-    monkeypatch.setattr(health, "_read_active_alerts", lambda: ["🟠 квота GigaChat кончается"])
+    monkeypatch.setattr(health, "_read_active_alerts", lambda: [
+        "🟠 квота GigaChat кончается", "HDD /mnt/hdd2tb не смонтирован"])
     result = asyncio.run(health.build_health())
     assert result.startswith("⚠️ Не в порядке:")
     assert "homecloud_nextcloud" in result

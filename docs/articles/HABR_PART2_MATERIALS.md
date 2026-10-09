@@ -47,8 +47,45 @@
 | 2026-09-26 | Торренты на паузе не начинались: aria2 отдаёт `totalLength=0`, хотя длины файлов внутри торрента известны — код ждал размера, который не мог прийти | `total_size()` считает по сумме длин файлов вместо поля ответа aria2; коммит `db458f7` | сообщение коммита `db458f7` |
 | 2026-09-26 | Классификатор прав агента заблокировал правку конфигурации на устройстве через `sudo` — команду выполнил владелец сам. Попутно найдено: PowerShell 5.1 портит кавычки при передаче многострочного скрипта в `ssh` | обход — передавать скрипт файлом (`cmd /c "ssh ... bash -s < file"`), а не инлайн-командой | нет отдельного документа — зафиксировано только здесь |
 | 2026-10-01 | Закрыт риск плавающих контейнерных образов: 22 Jetson/VPS `image:` закреплены registry digest; gate теперь блокирует любой новый образ без `sha256` | 13 уникальных manifest reference разрешились в реестрах; 7 позитивных/негативных тестов gate; Compose validation и полный preflight | `docs/plans/DP1_DEP2_IMAGE_PINNING_2026-10-01.md` |
+| 2026-10-04 / 2026-10-08 | VPS OOM: шесть запущенных из SSH-сессии процессов `bash` по ~1.6 ГБ убиты ядром; причина найдена в чтении целого журнала без `--since` и повторном grep. Подкачка 512 МБ восстановлена, правило для команд через `systemd-run` с лимитом памяти добавлено | события и разбор — checkpoint §2–3; live-проверка `swapoff` + `swapon -a`; правило MemoryMax=256M и MemorySwapMax=0 | `docs/plans/CHECKPOINT_2026-10-08.ru.md` §2–3 |
+| 2026-10-08 | Исправлен дефект pre-commit hook: тест наследовал `GIT_DIR`/`GIT_INDEX_FILE` и менял состояние настоящего репозитория; добавлен регрессионный тест | `69d93f7`; 8 тестов проходят обычно и под имитацией хука; CI зелёный в Quality Checks, Security Check и Compose | `docs/plans/CHECKPOINT_2026-10-08.ru.md` §4–5 |
+| 2026-10-08 | Добавлен repository hygiene gate; синтетические Git-процессы изолируют наследуемые `GIT_*` | `d180977`; 18 hygiene-тестов и настоящий pre-commit hook прошли | `docs/plans/CHECKPOINT_2026-10-08.ru.md`, §«Интеграция Codex» |
+| 2026-10-09 | Интеграция GitVerse подготовлена | `dce1727`; это не доказательство успешного запуска CI. Отдельный hook fix `69d93f7` опубликован в GitVerse (`main`/`master`), CI зелёный по checkpoint | `docs/plans/CHECKPOINT_2026-10-08.ru.md` §4; текущее состояние GitVerse CI проверить отдельно |
+| 2026-10-09 | Readiness-пакет: 101 тест, CI зелёный | `2cce2ca`; относится к этому коммиту и не доказывает выкат | Git history / CI run |
+| 2026-10-09 | VPS health snapshot: за предыдущие 24 часа OOM не наблюдалось; доступная память 1.45 GB, свободное место 21 GB; Amnezia healthy | Снимок от 2026-10-09 — краткосрочное наблюдение, не долгосрочная гарантия; перед статьёй привязать к сохранённому источнику | checkpoint / health evidence |
+| 2026-10-09 | Экономика агента: одна инвентаризационная задача DeepSeek стоила $0.0586 | запись `nas` от 2026-10-08; один кейс, он не доказывает «в 80 раз быстрее» или общую стоимость/экономию | `ds_board` task inventory; сверить первичный вывод перед публикацией |
+| 2026-10-09 | Владелец подтвердил повторную активацию Cloud.ru grant: 4 000 бонусов до 6 ноября | Подтверждение владельца, не независимая проверка проекта/SKU. Официальные исключения: Foundation Models, Container Apps, GPU/ML Inference, Marketplace ([условия гранта](https://cloud.ru/docs/billing/ug/topics/concepts__start_grant)). Эксперимент-предложение: потолок 500 бонусов, 3 500 оставить резервом; не разрешение расходовать | владелец; перед созданием ресурсов подтвердить eligibility конкретного SKU в калькуляторе/кабинете |
 
 ## Чего не хватает для статьи (собрать по ходу)
+
+### E3 — локальная проверка 2026-10-09
+
+- Статус: код и тесты проверены локально; новая версия не развёрнута на Jetson.
+- `home_health.py` разделяет подтверждённые проблемы и неизвестные проверки.
+  Отсутствующий ожидаемый контейнер, отказ systemd, недоступные бэкапы,
+  ошибка/таймаут чтения диска и отсутствующий/повреждённый снимок алертов
+  больше не дают ответ «всё в порядке». Пустой корректный снимок алертов допустим.
+- Проверки контейнеров, хранения и очистка дочернего процесса вынесены в
+  `app/services/home_health_checks.py`; terminate/kill/wait ограничены временем.
+- Доказательства: `python -m pytest tests/nas_api -q` — **251 passed**
+  (Windows: Git Bash в PATH); отдельно `test_bobik_health.py` — **29 passed**,
+  без предупреждения о незавершённой задаче. Проверки owner-only входят в полный набор.
+  `scripts/quality/code_metrics.py --check docs/audit/2026-10-02_code_audit/baseline.json`
+  — нарушений нет, baseline не изменён.
+- Общий `bash scripts/quality/preflight.sh` завершился успешно: 28 регрессионных
+  тестовых скриптов; gateway 56, NAS API 251, watchdog 44, backup API 24
+  (1 skipped), STT 17, VPN monitor 101 passed. Локально пропущены ShellCheck
+  и проверка Docker Compose из-за отсутствия инструментов; Git index hygiene
+  проверяет индекс, новые файлы этим запуском не были добавлены в индекс.
+- Объяснения GigaChat в этом шаге нет; отчёт формируется по проверкам без действий LLM.
+- DeepSeek `nas-e3-finalize-20261009` не принят: исполнитель исчерпал лимит;
+  архитектурное разделение и итоговая проверка выполнены ведущим Codex.
+  `ds-worker report --since 2026-10-09 --json` показывает для этой попытки
+  **$0.146133**, cache hit **97.06%**, автоматических повторов **0**.
+  Это цена конкретной неуспешной попытки, а не общая цена реализации.
+- Следующее доказательство: после отдельного разрешения на развёртывание —
+  обезличенный ответ реального бота. Откат кода — предыдущая версия этих модулей;
+  настройки служб и VPN данным шагом не менялись.
 
 - [ ] Замеры «до/после» по памяти и скорости API (этап G6) — без них про производительность не пишем.
 - [ ] Скриншоты семейного бота в работе, без имён и ID (закачка, «бобик, закачки», память разговора).
@@ -67,6 +104,12 @@
       Считать по тарифу DeepSeek — `total_cost_usd` из вывода Claude Code завышен примерно в 80 раз.
       **Не закрыто 2026-09-26**: известен только один пробный цикл (одна задача), не месячная сводка —
       DeepSeek принят в проект в тот же день.
+- [ ] Проверить детали `d180977` (hygiene, 18 проверок), `dce1727` (GitVerse integration) и `2cce2ca` (readiness, 101 тест, CI green) по diff и CI; отдельно установить точный статус GitVerse CI. Подготовка CI не равна успешному запуску.
+- [ ] Для OOM-сюжета сверить формулировку по checkpoint §2–3 и сохранить причинную связь точной: ошибка была в команде Claude, а исправленные правила/подкачка — последующие меры. Снимок «OOM не наблюдалось за 24 часа» подтверждает только это окно наблюдения.
+- [ ] Проверить актуальное состояние GitVerse CI отдельно от результата checkpoint по commit `69d93f7`; не приписывать `dce1727` запуск CI.
+- [ ] E3: сверить `build_health` и owner-only `_health_report`, покрытие неизвестных сигналов и наличие необязательного GigaChat-объяснения. LLM не должен выполнять действия; фиксировать только фактически реализованное поведение.
+- [ ] Cloud.ru grant: калькулятором подтвердить eligibility Object Storage SKU до создания ресурсов. Предпочтительный эксперимент — backup/restore минимального зашифрованного набора конфигурации; вторичный вариант — изолированная CPU-only watchdog VM после расчёта. Официальные исключения включают Foundation Models, Container Apps, GPU/ML Inference и Marketplace ([условия](https://cloud.ru/docs/billing/ug/topics/concepts__start_grant)). Потолок 500 бонусов и резерв 3 500 — только предложение, не разрешение; без production off-site семейных данных, автоматического платного fallback и пополнения рублями.
+- [ ] Автор финального текста — владелец: проверить применимые правила конкурса об использовании ИИ и написать публикационный текст самостоятельно.
 
 ---
 
@@ -76,3 +119,10 @@ carries the measurement date, the command or commit that proves it, and a link t
 the details. Retracted diagnoses are kept on purpose: they are the most useful part for readers. No secrets,
 tokens or family identifiers here. The open list at the end names what is still missing before the article
 can be written.
+
+Queue updated 2026-10-09: retain the six-case narrative spine; verify candidate additions
+(hygiene fixes, GitVerse CI preparation, E3 evidence/unknown-signal handling, and measured agent
+economics) before using them. The owner confirmed 4,000 Cloud.ru bonus credits through 6 November.
+Check SKU eligibility first: official terms exclude Foundation Models, Container Apps, GPU/ML
+Inference, and Marketplace. A 500-credit Object Storage test cap is a proposal, not authorization.
+The owner writes the final article under contest AI-use rules.

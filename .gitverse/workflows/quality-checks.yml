@@ -1,0 +1,54 @@
+name: Quality Checks
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  quality-checks:
+    name: Hygiene, unit, NAS API, and VPN monitor tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Check committed tree and policy
+        run: python scripts/quality/repo_hygiene.py --tree HEAD
+
+      - name: Install test dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install -r requirements-test.txt
+
+      - name: Install restic
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y restic
+
+      - name: Unit tests
+        run: |
+          set -euo pipefail
+          for test_file in tests/unit/test_*.py; do
+            python "$test_file"
+          done
+
+      - name: VPN monitor tests
+        run: python -m pytest -q tests/vpn_monitor
+
+      - name: NAS API tests
+        run: python -m pytest -q tests/nas_api
+
+      - name: Code metrics ratchet
+        run: python scripts/quality/code_metrics.py --check docs/audit/2026-10-02_code_audit/baseline.json

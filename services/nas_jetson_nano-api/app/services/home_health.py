@@ -101,6 +101,38 @@ def _read_active_alerts() -> list[str] | None:
     return checks.read_active_alerts(settings.talk_alert_state_file)
 
 
+def _categorize_problem(result: str | None, problems: list[str], unknown: list[str]) -> None:
+    """Раскладывает результат одной проверки в `problems` или `unknown`.
+
+    Вынесено из `build_health` под храповик метрик (docs/audit/2026-10-02_code_audit/
+    PLAN.ru.md): пустой результат — неполадки нет, строка с `UNKNOWN_PREFIX` — сама
+    проверка не удалась, остальное — настоящая неполадка. Поведение не менялось.
+    """
+    if not result:
+        return
+    if result.startswith(UNKNOWN_PREFIX):
+        unknown.append(result[len(UNKNOWN_PREFIX):])
+    else:
+        problems.append(result)
+
+
+async def _backup_section_details() -> list[str]:
+    """Строки «база — возраст, размер» для раздела о дампах; пустой список — раздела нет.
+
+    Вынесено из `build_health` под храповик метрик. Порядок короткого замыкания
+    прежний: `disk_info` вызывается, только если задан `BACKUP_METADATA_FILE`,
+    `backup_info` — только если SSD смонтирован.
+    """
+    if (not os.environ.get('BACKUP_METADATA_FILE')
+            or not (await storage_mod.disk_info(storage_mod.STORAGE_ROOT)).get('mounted')):
+        return []
+    backups = await storage_mod.backup_info()
+    if not (backups.get('available') and backups.get('source') == 'host-metadata'):
+        return []
+    return ["%s — %sч назад, %s МБ" % (d['db'], d['age_hours'], d['size_mb'])
+           for d in backups['dumps'] if d.get('age_hours') is not None]
+
+
 async def build_health() -> str:
     """Короткий человеческий ответ: что не в порядке, или одна строка, если всё
     хорошо. Каждая проверка — best-effort и не роняет остальные."""
@@ -112,19 +144,8 @@ async def build_health() -> str:
     problems.extend(disk_problems)
     unknown.extend(disk_unknown)
 
-    hdd_problem = await _check_hdd_mount()
-    if hdd_problem:
-        if hdd_problem.startswith(UNKNOWN_PREFIX):
-            unknown.append(hdd_problem[len(UNKNOWN_PREFIX):])
-        else:
-            problems.append(hdd_problem)
-
-    unit_problem = await _check_failed_units()
-    if unit_problem:
-        if unit_problem.startswith(UNKNOWN_PREFIX):
-            unknown.append(unit_problem[len(UNKNOWN_PREFIX):])
-        else:
-            problems.append(unit_problem)
+    _categorize_problem(await _check_hdd_mount(), problems, unknown)
+    _categorize_problem(await _check_failed_units(), problems, unknown)
 
     alerts = _read_active_alerts()
     if alerts is None:
@@ -140,13 +161,7 @@ async def build_health() -> str:
         sections.append("⚠️ Не в порядке:\n" + "\n".join("- %s" % p for p in seen))
     if unknown:
         sections.append("❔ Не удалось проверить:\n" + "\n".join("- %s" % p for p in dict.fromkeys(unknown)))
-    # Surface successful backup observations even when another probe is unknown.
-    backups = {}
-    if os.environ.get('BACKUP_METADATA_FILE') and (await storage_mod.disk_info(storage_mod.STORAGE_ROOT)).get('mounted'):
-        backups = await storage_mod.backup_info()
-    if backups.get('available') and backups.get('source') == 'host-metadata':
-        details = ["%s — %sч назад, %s МБ" % (d['db'], d['age_hours'], d['size_mb'])
-                   for d in backups['dumps'] if d.get('age_hours') is not None]
-        if details:
-            sections.append("📦 Дампы БД (наличие и возраст):\n" + "\n".join('- ' + d for d in details))
+    details = await _backup_section_details()
+    if details:
+        sections.append("📦 Дампы БД (наличие и возраст):\n" + "\n".join('- ' + d for d in details))
     return "\n\n".join(sections)

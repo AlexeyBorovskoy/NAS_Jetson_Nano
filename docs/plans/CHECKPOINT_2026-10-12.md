@@ -76,6 +76,20 @@ re-run. Codex's evaluation tools are not committed: corrupted context and the ra
 | Collections (FAM-1) | to the shared group | Recorded in the plan |
 | Calendar (FAM-2) | Google and Yandex | FAM-2 rewritten: read-only via the secret iCal address (Google) and CalDAV/export (Yandex) |
 
+## Where we stopped (2026-10-12, session limit)
+
+Owner's decisions after the push: **calendar — the bot both reads and creates entries** (Yandex — CalDAV with an
+app password; Google — Calendar API, one-time OAuth consent, token in `config/.env`); **family passwords will be
+regenerated later together**, git history is not rewritten; **delete the unneeded files**.
+
+| What | State | Next step |
+|---|---|---|
+| Deleting 60 unneeded tracked files (duplicate screenshots, Part 1 drafts, obsolete plans/reports, photos with personal data) | DeepSeek card `nas-repo-cleanup-apply-20261012`, worktree `.agent-work/worktrees/nas-ds-nas-repo-cleanup-apply-20261012`; list — `ds_board/inputs/cleanup-delete-list-20261012.txt` | Review the diff and `CLEANUP_APPLIED.md`, bring into `main`, commit, push |
+| Refactor of `home_health.py`/`backup_metadata.py` for the ratchet (GitHub "Quality Checks" is red only because of it) | Sonnet subagent, worktree `.claude/worktrees/agent-a161441e4fb9f9a19`, branch `worktree-agent-a161441e4fb9f9a19` | Check behaviour is unchanged and tests are green, bring in, push; Jetson rollout — on the owner's word |
+| Local cleanup | The owner approved deleting `.agent-work/archives/cleanup-claude-kilo-2026-10-06` (230 MB), but the agent's safety hook blocks recursive deletes — **delete manually** | Unmerged branches — save patches and delete; merged — `git branch -d`; locked `tmp*` — admin `takeown` |
+| FAM-2 in the plan | Recorded here | Rewrite FAM-2 in the plan: read + create entries |
+| Passwords (SEC-3) | Memos outside git, scanner catches them | Generate and change together with the owner |
+
 ## Not done / pending
 
 - Changing the family passwords (SEC-3) and the git history decision — the owner's (REL-1 deployed, see above).

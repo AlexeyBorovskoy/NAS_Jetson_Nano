@@ -212,7 +212,7 @@ services/llm-gateway/app/
 | Доступ / Access | Tailscale вместо проброса через VPS / Tailscale instead of forwarding through the VPS | `TAILSCALE_ACCESS_PLAN.md` |
 | Наблюдаемость / Observability | `GET /v1/metrics/history` в SQLite → timeseries; Prometheus `/metrics` для Grafana / `GET /v1/metrics/history` into SQLite → timeseries; Prometheus `/metrics` for Grafana | API roadmap «Будущие идеи v1.x» / API roadmap "Future ideas v1.x" |
 | API-hardening | Rate limiting (slowapi), unit-тесты (pytest + httpx), `/v1/actions/.../update` / Rate limiting (slowapi), unit tests (pytest + httpx), `/v1/actions/.../update` | API roadmap |
-| Мобильное / Mobile | доработка `API_MOBILE_PLAN.md` / refining `API_MOBILE_PLAN.md` | план / plan |
+| Мобильное / Mobile | доработка `NAS_Jetson_Nano_API_ROADMAP.md` / refining `NAS_Jetson_Nano_API_ROADMAP.md` | план / plan |
 | Публикация / Publication | статьи Habr / Hackaday (WIP в `docs/articles/`) / Habr / Hackaday articles (WIP in `docs/articles/`) | идёт / in progress |
 
 ---

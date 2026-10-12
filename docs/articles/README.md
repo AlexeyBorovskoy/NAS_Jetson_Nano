@@ -15,17 +15,12 @@
 | [DEVTO_PUBLICATION_PLAN_2026-10.md](DEVTO_PUBLICATION_PLAN_2026-10.md) | EN | DEV.to editorial and publication plan | approved 2026-10-02; article pending |
 | [DEVTO_PUBLICATION_PLAN_2026-10.ru.md](DEVTO_PUBLICATION_PLAN_2026-10.ru.md) | RU | Принятый план публикации DEV.to | принят 2026-10-02; статья не написана |
 | publication_status.md | RU/EN | Publication checklist and links | active |
-| GITHUB_PUBLICATION_CHECKLIST.md | RU/EN | Pre-publish checklist | active |
 | GITHUB_PAGES_IMAGE_AUDIT.md | EN | Screenshot audit | active |
 
 ## Article versions history
 
 | File | Notes |
 |---|---|
-| habr_draft.md | Initial draft |
-| habr_v2.md | First public revision |
-| habr_v3.md | Bilingual revision |
-| habr_v4.md | Personal conversational style rewrite |
 | habr_final_edited.md | **CODEX editorial pass** — canonical source for habr_article_ru.md |
 | habr_article_ru.md | **Publication version** for GitHub Pages and Habr |
 

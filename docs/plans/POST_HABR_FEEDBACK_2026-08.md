@@ -51,10 +51,10 @@
 > 🇬🇧 Priority: security and stability first, then reviving GPU/ML.
 >
 > 📌 **Этот раздел описывает фазы «что нужно сделать». Порядок и зависимости между ними
-> задаёт сквозной план — [`ROADMAP_STEP2_2026-08.md`](ROADMAP_STEP2_2026-08.md)**, где те же
+> задавал сквозной план `ROADMAP_STEP2_2026-08.md` (удалён 2026-10-12, преемник — [`DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`](DEVELOPMENT_PLAN_2026-09_SBER_ERA.md))**, где те же
 > работы разложены по волнам с критериями приёмки и материалом для Части 2 статьи.
 > 🇬🇧 This section lists *what* to do; the sequencing lives in
-> [`ROADMAP_STEP2_2026-08.md`](ROADMAP_STEP2_2026-08.md).
+> `ROADMAP_STEP2_2026-08.md` (removed 2026-10-12; successor: [`DEVELOPMENT_PLAN_2026-09_SBER_ERA.md`](DEVELOPMENT_PLAN_2026-09_SBER_ERA.md)).
 >
 > **Статус фаз на 2026-08-10 / Phase status as of 2026-08-10:**
 >

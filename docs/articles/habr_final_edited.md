@@ -209,9 +209,9 @@ EXTERNAL      ✅ Nextcloud VPS  ✅ Immich VPS
 
 Параллельно поднял **Beszel Hub** на VPS — исторические графики CPU/RAM/Disk по обоим серверам. Особенно полезно когда нужно понять, что происходило часом раньше.
 
-![Beszel Hub — обзор: Jetson Nano и VPS, оба онлайн](screenshots/beszel_systems_overview.png)
+![Beszel Hub — обзор: Jetson Nano и VPS, оба онлайн](../assets/screenshots/article/redacted/01_beszel_systems_overview.png)
 
-![Beszel Hub — метрики Jetson: CPU ~15%, RAM 2.3 GB, контейнеры](screenshots/beszel_jetson_metrics.png)
+![Beszel Hub — метрики Jetson: CPU ~15%, RAM 2.3 GB, контейнеры](../assets/screenshots/article/redacted/02_beszel_jetson_metrics.png)
 
 ### Шаг 3 — Автоматические тесты инфраструктуры
 
@@ -248,11 +248,11 @@ nginx на VPS добавил HTTPS-блоки на alt-портах. Прило
 
 На момент исторического снимка с телефона было загружено **6 697 фотографий и видео**. По результатам отдельной проверки 16 июля 2026 года в базе Immich было **6 622 изображения и 357 видео — всего 6 979 активных объектов**. Эти значения не являются текущими без нового замера.
 
-![Immich Android — исторический снимок на дату публикации: 6697 из 6719 загружено](screenshots/android_immich_backup_stats.jpg)
+![Immich Android — исторический снимок на дату публикации: 6697 из 6719 загружено](../assets/screenshots/article/redacted/06_android_clients_card_redacted.png)
 
 Контакты синхронизировал через DAVx⁵ — 2 151 запись, CalDAV и CardDAV:
 
-![DAVx⁵ — синхронизация CalDAV и CardDAV настроена](screenshots/android_davx5_caldav.jpg)
+![DAVx⁵ — синхронизация CalDAV и CardDAV настроена](../assets/screenshots/article/redacted/06_android_clients_card_redacted.png)
 
 ### Шаг 6 — Семейный чат и раздача доступов
 
@@ -260,9 +260,9 @@ Nextcloud Talk — мессенджер, встроенный прямо в Next
 
 Каждому члену семьи сделал персональную памятку на одну страницу: URL, логин, шаги настройки на Android — без технических терминов.
 
-![Nextcloud Talk — групповой семейный чат](screenshots/nextcloud_talk.png)
+![Nextcloud Talk — групповой семейный чат](../assets/screenshots/article/redacted/05_nextcloud_talk_redacted.png)
 
-![Nextcloud — дашборд с файлами, контактами и чатом](screenshots/nextcloud_dashboard.png)
+![Nextcloud — дашборд с файлами, контактами и чатом](../assets/screenshots/article/redacted/04_nextcloud_dashboard_redacted.png)
 
 ### Шаг 7 — REST API поверх всего стека
 
@@ -311,7 +311,7 @@ Swagger UI обязателен.
 
 ## Что получилось в итоге
 
-![Immich — семейный фотоархив; исторический снимок на дату публикации (6.1 GiB, 228 GB свободно)](screenshots/immich_web.png)
+![Immich — семейный фотоархив; исторический снимок на дату публикации (6.1 GiB, 228 GB свободно)](../assets/screenshots/article/redacted/07_immich_web_redacted.png)
 
 **Цифры:**
 - 13 Docker-контейнеров запущены; 12 имеют статус healthy, у Portainer healthcheck не задан

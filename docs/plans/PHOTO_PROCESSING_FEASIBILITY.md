@@ -146,4 +146,4 @@
 - `docs/08_LLM_GATEWAY_DEEPSEEK.md` — шлюз, провайдеры, что умеют картинки
 - `docs/plans/TALK_AI_ROADMAP.md` — бот и позывной `@бобик`
 - `docs/plans/VOSTRO_ML_NODE_ONBOARDING.md` — схема туннеля до машины вне дома
-- `docs/plans/ROADMAP_STEP2_2026-08.md` — куда это встраивается
+- `docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md` — куда это встраивается

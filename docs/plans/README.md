@@ -22,7 +22,6 @@ docs/plans/
 
 | Документ | Назначение |
 |---|---|
-| `GITHUB_PROJECT_PROMOTION_WORKPLAN.md` | подробный план GitHub-упаковки, релизов, issue templates, roadmap, контента и community-процессов |
 | `OLD_HARDWARE_PROJECT_PROMOTION_PLAN.md` | продуктовая концепция «оживим старое железо», позиционирование, аудитории, MVP и публичная матрица совместимости |
 | `VPS_INTEGRATION_PLAN.md` | реализованный внешний доступ через VPS reverse SSH tunnel |
 | `STORAGE_INCIDENT_2026-06-23.md` | live-инцидент USB storage: симптомы, безопасное восстановление, guardrails |
@@ -33,7 +32,6 @@ docs/plans/
 | `DEPLOY_W1_GIGA_CUTOVER.md` | runbook device cutover Giga (только после «деплой») |
 | `DEPLOY_FULL_SBER_CUTOVER.md` | полный cutover W1+W2+W3 на Jetson |
 | `OFFLINE_SBER_READY_PACK.md` | что уже готово offline без Jetson |
-| `STATUS_2026-09-07.md` | снимок статуса на 2026-09-07 |
 | `AUTH_PROBE_*.md` / `CLOUDRU_*.md` | live probes (без секретов) |
 
 ## 3. Главный вывод

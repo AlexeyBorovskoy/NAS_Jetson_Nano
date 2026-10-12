@@ -155,9 +155,9 @@ mandatory** — a database on microSD will not survive.
 
 **Куда идём / Where next**
 [`31_MASTER_PLAN`](docs/31_MASTER_PLAN.md) — **сводный план**: роли узлов, сеть, покупки ·
-[`30_NEXT_LEAP`](docs/30_NEXT_LEAP.md) — следующий рывок: память, ответы и голос дома ·
+[`DEVELOPMENT_PLAN_2026-09_SBER_ERA`](docs/plans/DEVELOPMENT_PLAN_2026-09_SBER_ERA.md) — сводная очередь работ A–H ·
 [`29_COMPUTE_AND_LLM_ROADMAP`](docs/29_COMPUTE_AND_LLM_ROADMAP.md) — вычисления, Kaggle, локальные модели ·
-[`ROADMAP_STEP2`](docs/plans/ROADMAP_STEP2_2026-08.md) ·
+[`DEVELOPMENT_PLAN_2026-10_OWNER_GOALS`](docs/plans/DEVELOPMENT_PLAN_2026-10_OWNER_GOALS.md) — план по целям владельца (P0–P3) ·
 [`POST_HABR_FEEDBACK`](docs/plans/POST_HABR_FEEDBACK_2026-08.md) — разбор критики читателей
 
 **Как это делалось / How it was built**

@@ -5,9 +5,17 @@ Description=NAS_Jetson_Nano — alert after an unclean boot (D2)
 # и Restart=on-failure даст ему следующую попытку.
 After=network-online.target nas_jetson_nano-tg-socks.service
 Wants=network-online.target
+# Ограничение числа попыток: 5 раз за 10 минут, дальше юнит сдаётся,
+# и факт остаётся в журнале (Storage=persistent с 2026-08-23).
+# С systemd 230 эти ключи живут в [Unit], не в [Service].
+StartLimitBurst=5
+StartLimitIntervalSec=600
 
 [Service]
-Type=oneshot
+# Не oneshot: systemd 237 (Ubuntu 18.04 на Jetson) отвергает oneshot с
+# Restart=on-failure — юнит получал "Loaded: error (Invalid argument)" и алерт
+# не срабатывал с 2026-09-20 по 2026-10-12 (три аппаратных сброса без алерта).
+Type=simple
 Environment=NAS_JETSON_NANO_PROJECT_DIR=/home/admin/nasa
 # Состояние (последний обработанный boot_id) — чтобы алерт не повторялся при
 # каждом перезапуске юнита. Путь скрипт берёт из раскладки: NAS_STATE_DIR,
@@ -23,10 +31,6 @@ ExecStart=/usr/bin/python3 /home/admin/nasa/scripts/monitoring/nas_jetson_nano-b
 # Telegram может быть недоступен в первые секунды после загрузки — повторяем.
 Restart=on-failure
 RestartSec=60
-# Ограничение числа попыток: 5 раз за 10 минут, дальше юнит сдаётся,
-# и факт остаётся в журнале (Storage=persistent с 2026-08-23).
-StartLimitBurst=5
-StartLimitIntervalSec=600
 
 [Install]
 WantedBy=multi-user.target

@@ -1,5 +1,21 @@
 # Work Plan
 
+> **Update 2026-10-12 — improvement plan from the owner's article outline:**
+> [DEVELOPMENT_PLAN_2026-10_OWNER_GOALS.md](docs/plans/DEVELOPMENT_PLAN_2026-10_OWNER_GOALS.md)
+> (part A — reliability, part B — new features, article, documentation; queue P0–P4).
+> Checkpoint — [2026-10-12](docs/plans/CHECKPOINT_2026-10-12.md). **P0, before any new feature:**
+> SEC-3 — four family members' passwords in the public repository (`artifacts/users/`): rotate, remove,
+> decide on history rewrite; REL-1 — the reboot alert (D2) has not worked since 09-20: `Type=oneshot` +
+> `Restart=` is rejected by systemd 237 (unit fixed in git, awaiting rollout); REL-2 — three hardware
+> resets of the Jetson without an alert (09-29, 10-06, 10-11), revisit D1 (UPS); GIT-1 — the API code in
+> the container equals the uncommitted working tree (sha256 check 10-12), git is not a superset of the device.
+
+> Update 2026-10-10: E3/DP-2/DEP-1 deployed on Jetson ARM64; API healthy/UID10001,
+> container endpoint 200, Docker restart 503, forbidden proxy requests 403.
+> Owner confirmed actual Telegram delivery. Backup stat metadata now shows fresh
+> Nextcloud/Immich dumps; unavailable host systemd remains unknown. Restore is not proven.
+> [Validation and rollback](docs/21_LOGGING_API.md); dated local statuses below are historical.
+
 > Current local checkpoint: [2026-10-09](docs/plans/CHECKPOINT_2026-10-09.md).
 > VPS/VPN monitor tasks 1–7 and code-audit stages 16, 17, 22 are implemented and
 > locally verified. Monitor task 8 (deployment) is pending separate owner authorization.
@@ -63,7 +79,7 @@ outside the preparation deadline. Historical entries below retain their dated ev
 | 2.2 | ✅ **API-2/3 (2026-09-30):** API HEAD requests use checked manual redirects; the Jetson `NAS-DL-EGRESS` barrier rejects aria2 IPv4 traffic to `10/8`, `172.16/12`, `192.168/16`, `127/8` and `169.254/16` and is refreshed every 2 min | C | M | [live evidence](docs/plans/API23_EGRESS_DEPLOY_2026-09-30.md): private redirect not followed; container→`192.168.0.1` rejected with counter hit; public control passed |
 | 2.3 | ✅ **SH-1 (2026-10-01):** `cloudru_iam_token_example.sh` passes the HTTP response to fixed Python code through stdin instead of interpolating it into a heredoc | D | S | a fake response containing `'''` and a file-write expression remains JSON data and cannot execute code |
 | 2.4 | ✅ **CI-1 / SEC-1 (2026-10-01):** Trivy action is pinned to the immutable SHA for `v0.36.0`; gitleaks checks full Git history using the repository config, without `--no-git` or a fail-open fallback | C | S | static policy tests enforce the SHA/history contract; CI creates and removes a synthetic secret in a temporary repository and requires gitleaks to find it in history |
-| 2.5 | **DP-2 (2026-10-09): locally prepared, not deployed.** API UID 10001, no socket/CLI fallback; isolated container-list GET proxy; API restart disabled | D (specified API changes) + C (proxy/security/review) | M | NAS API 266 passed; 8 proxy/policy tests; Compose config valid; [rollout boundaries](docs/10_SECURITY_PRIVACY.md). Mounted permissions and ARM64 smoke-test required |
+| 2.5 | **DP-2 — deployed on the Jetson 2026-10-10 (per Codex's record; code is in the working tree, not in git — GIT-1).** Original 2026-10-09 entry: locally prepared. API UID 10001, no socket/CLI fallback; isolated container-list GET proxy; API restart disabled | D (specified API changes) + C (proxy/security/review) | M | NAS API 266 passed; 8 proxy/policy tests; Compose config valid; [rollout boundaries](docs/10_SECURITY_PRIVACY.md). Mounted permissions and ARM64 smoke-test required |
 | 2.6 | ✅ **DP-1 / DEP-2 (2026-10-01):** all 22 external Jetson/VPS Compose image references are immutable `tag@sha256`; pins reuse measured live content, and the digest gate is blocking for both Compose trees | D (inventory) + C | S | [evidence](docs/plans/DP1_DEP2_IMAGE_PINNING_2026-10-01.md): registry manifests resolve; 7 gate tests; every Compose file renders; full gate green |
 | 2.7 | ✅ **DEP-1 (2026-10-09), local:** 5 direct pins, universal hashed lock, mandatory binary/hash Docker install; unused passlib removed, python-jose retained | D (auth review) + C (lock/review) | S/M | Clean Python 3.12: 266 passed, pip check OK; wrong hash rejected; 31 ARM64 wheels verified. [Procedure](docs/21_LOGGING_API.md); not deployed to Jetson |
 | 2.8 | **SH-2 / HK-2:** a shared `tg_send()` in `scripts/lib/` — token not in argv; temp file on the VPS via `mktemp` | D + C | M | grep check: no `bot${TELEGRAM_BOT_TOKEN}` in argv |
@@ -101,6 +117,33 @@ technical fact freeze. Publishing to an external platform remains an owner actio
 |---|---|---|---|---|
 | 4.1 | **ART-HABR-2:** prepare the updated evidence queue for the new Habr Part 2; retain the six-case spine and verify every date, metric, incident, commit, and architecture claim; prepare only redacted screenshots. The owner writes the final article under contest AI-use rules | C + O (owner writes final text and publishes) | M | [`HABR_PART2_ARTICLE_PLAN_2026-09.md`](docs/articles/HABR_PART2_ARTICLE_PLAN_2026-09.md) DoD is complete; facts trace to [`HABR_PART2_MATERIALS.md`](docs/articles/HABR_PART2_MATERIALS.md); secret/identifier scan and image-redaction checklist pass |
 | 4.2 | **ART-DEV-1:** plan approved 2026-10-02 — [DEVTO_PUBLICATION_PLAN_2026-10.md](docs/articles/DEVTO_PUBLICATION_PLAN_2026-10.md); start with a fact table, then reconcile with Habr and write a separate English article: seven sections, three stories, 2,000–2,500 words; date August snapshots and do not treat Hackaday as a ready DEV.to draft | C + O (final edit and publish) | M | approved-plan DoD complete; claims have source, date and status; live state and plans distinguished; links, redacted images and preview checked; `publication_status.md` records the actual URL only after owner publication |
+
+## Planned C++ experiment — CPP-1
+
+Owner request dated 2026-10-10. Planned; no measurements yet. Schedule after current
+reliability work; this experiment does not block the second article.
+
+1. Profile CPU, memory and latency of an owned task on Jetson Nano, separating
+   computation from disk/network/API waits. If there is no computational bottleneck,
+   record that finding without requiring a rewrite.
+2. Select one small computational component and implement equivalent Python/C++
+   versions using synthetic public/project-own data. Set the required benefit and
+   acceptable maintenance effort before comparison.
+3. Verify matching results, edge cases, failures and ARM64 builds; check C++ with
+   sanitizers on a supported test environment.
+4. Compare execution time, p50/p95, peak RSS and CPU on the same device and inputs.
+   Record versions, compiler options, warmup, repetitions and variation; assess code
+   size, dependencies, build complexity and maintenance effort.
+5. Decide from measurements: retain Python, use an existing native library, or
+   propose migrating only the selected component. Preserve a reproducible method
+   for the article, including negative results.
+
+DeepSeek implements permitted synthetic tasks; the lead selects scope, checks safety
+and independently accepts results. Keep artifacts inside the project. Acceptance:
+equivalent correctness, reproducible measurements and a justified decision.
+Load testing on the live Jetson requires a separately agreed window; do not replace
+running services with this experiment. Rollback: stop the experiment, retaining
+the original Python implementation and operational configuration.
 
 ## Owner decisions
 

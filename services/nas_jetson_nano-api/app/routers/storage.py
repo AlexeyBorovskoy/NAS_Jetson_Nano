@@ -62,6 +62,10 @@ async def backup_info() -> dict:
 
 
 def _backup_info() -> dict:
+    snapshot = os.environ.get('BACKUP_METADATA_FILE', '')
+    if snapshot:
+        from app.services.backup_metadata import read_snapshot
+        return read_snapshot(snapshot)
     if not BACKUP_DIR.exists():
         return {"available": False, "dumps": []}
     dumps = []

@@ -29,6 +29,24 @@ from pathlib import Path
 
 import pytest
 
+
+def test_host_metadata_backups_shown_when_systemd_unknown(monkeypatch):
+    health = load_health()
+    monkeypatch.setenv('BACKUP_METADATA_FILE', '/synthetic/backups.json')
+    monkeypatch.setattr(health.system_info, 'docker_ps_json', _async([]))
+    monkeypatch.setattr(health.storage_mod, 'disk_info', _async({'mounted': True, 'used_pct': 20}))
+    monkeypatch.setattr(health.storage_mod, 'backup_info', _async({
+        'available': True, 'source': 'host-metadata', 'dumps': [
+            {'db': 'nextcloud', 'age_hours': 7, 'size_mb': 2.6},
+            {'db': 'immich', 'age_hours': 7, 'size_mb': 19.1}]}))
+    monkeypatch.setattr(health, '_check_hdd_mount', _async(None))
+    monkeypatch.setattr(health, '_check_failed_units', _async(health.UNKNOWN_PREFIX + 'systemd'))
+    monkeypatch.setattr(health, '_read_active_alerts', lambda: [])
+    result = asyncio.run(health.build_health())
+    assert 'Дампы БД (наличие и возраст)' in result
+    assert 'nextcloud — 7ч назад, 2.6 МБ' in result
+    assert 'Не удалось проверить' in result and 'systemd' in result
+
 ROOT = Path(__file__).resolve().parents[2]
 API = ROOT / "services" / "nas_jetson_nano-api"
 

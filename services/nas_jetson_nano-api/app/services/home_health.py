@@ -140,4 +140,13 @@ async def build_health() -> str:
         sections.append("⚠️ Не в порядке:\n" + "\n".join("- %s" % p for p in seen))
     if unknown:
         sections.append("❔ Не удалось проверить:\n" + "\n".join("- %s" % p for p in dict.fromkeys(unknown)))
+    # Surface successful backup observations even when another probe is unknown.
+    backups = {}
+    if os.environ.get('BACKUP_METADATA_FILE') and (await storage_mod.disk_info(storage_mod.STORAGE_ROOT)).get('mounted'):
+        backups = await storage_mod.backup_info()
+    if backups.get('available') and backups.get('source') == 'host-metadata':
+        details = ["%s — %sч назад, %s МБ" % (d['db'], d['age_hours'], d['size_mb'])
+                   for d in backups['dumps'] if d.get('age_hours') is not None]
+        if details:
+            sections.append("📦 Дампы БД (наличие и возраст):\n" + "\n".join('- ' + d for d in details))
     return "\n\n".join(sections)

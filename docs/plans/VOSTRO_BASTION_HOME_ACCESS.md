@@ -4,6 +4,40 @@
 
 ## Goal
 
+Уточнение владельца 2026-10-10: Vostro — общий стенд для различных тестовых
+решений в корпоративной сети, а не рабочий компьютер пользователя.
+Существующие службы соседних проектов и HOST_CONTRACT сохраняют силу.
+
+### Проверка и исправление — 2026-10-10
+
+Из домашней Deco-сети проверены Windows→VPS→Vostro и Windows→VPS→Jetson.
+На Jetson основной VPS `95.163.176.103` не отвечал, резервный `193.8.215.130`
+работал. Для `vostro-bastion` установлен ProxyCommand
+`/home/admin/.ssh/nas-vostro-proxy.sh` из `scripts/network/ssh_vostro_proxy.sh`:
+TCP-проба каждого адреса ограничена 6 с; затем SSH проверяет существующий ключ
+VPS под `HostKeyAlias=95.163.176.103`, `StrictHostKeyChecking=yes`.
+Добавлен явный `vps-nas-alt`. Jetson→Vostro успешно проверен командой hostname.
+Пробы TCP не гарантируют успешного SSH handshake; при обрыве установленного
+соединения требуется новое подключение. Обратные туннели и Amnezia не менялись.
+Откат: вернуть `~/.ssh/config.d/vostro-bastion.before-fallback-20261010` на Jetson;
+копию сохранить, пока исправление используется.
+
+На Vostro восстановлена `systemd-backlight@leds:dell::kbd_backlight.service`
+(Result=success после записи допустимой яркости и restart). Драйвер после этого
+снова показывает 3 при max=2: устранение причины в драйвере не доказано, повторение
+после перезагрузки остаётся риском. Для casper-md5check добавлен drop-in
+`10-installed-system.conf` с ConditionPathExists=/cdrom/md5sum.txt: без ISO
+проверка корректно пропускается. Изменения записаны в HOST_CONTRACT с откатом.
+
+**Уточнённое решение владельца 2026-10-10: Mac исключён только из NAS.** Соседний
+проект вправе его использовать. NAS ошибочно остановил и отключил его
+belgorod-mac-ollama-tunnel.service и belgorod-local-llm-warm.timer; после уточнения
+обоим возвращены enabled и запуск. Исправление записано в HOST_CONTRACT.
+Владелец подтвердил, что Mac выключен или вне рабочей сети: URLError и ошибки
+mDNS ожидаются до его возвращения. Запущенный туннель не доказывает доступность
+модели. Новый провайдер не подключался; конфигурация моделей, ключи и алиас сохранены.
+Все четыре боевых gateway/bot службы и nas-offsite-tunnel после исправления active.
+
 Use personal **Dell Vostro 15** (`192.168.75.153`, corp LAN) as the **only jump host**
 into resources that this laptop can already reach (DNS/TCP from Vostro).
 

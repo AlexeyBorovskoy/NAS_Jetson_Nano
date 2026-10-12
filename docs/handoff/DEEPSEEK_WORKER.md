@@ -42,6 +42,108 @@ ds-worker review <task_id> --accept    # или --rework "замечания" / 
 
 `--accept` — единственный путь к DONE, и ставит его только ведущий.
 
+### OpenRouter: дополнительное мнение — 2026-10-10
+
+По запросу владельца проверены [Decision Model Rankings](https://openrouter.ai/rankings/decisions)
+и существующая интеграция. Рейтинг отражает число запросов классификации/оценки,
+не качество разработки. [Описание Decisions API](https://openrouter.ai/blog/insights/what-is-jev/)
+показывает отдельный формат: заданные варианты ответа и вероятности вместо текста.
+Его нельзя подключить как обычную chat-модель в `second-opinion`.
+
+Авторизация действующим ключом подтверждена (`GET /api/v1/key`); значение ключа
+не выводилось и остаётся во внешнем хранилище. Живой `GET /api/v1/models`
+вернул 458 моделей, без найденных decision-моделей. Однако последующий прямой
+вызов владельца подтвердил Decisions API: отсутствие модели в этом каталоге
+не является доказательством недоступности отдельного endpoint.
+
+Владелец запустил `.agent-work/tmp/openrouter_decisions_check.py` и предоставил
+ответ 2026-10-10: фактическая модель `inception/mercury-decide-20260930`,
+`choice=documentation`, вероятность этой категории 0,9999303,
+`confidence=0,9998955`; usage: 100 входных / 1 выходной токен, cost=0.
+Запрос — один синтетический пример улучшения публичного README. Подключение
+подтверждено выводом владельца; это не независимый повторный вызов ведущего
+и не измерение качества модели на выборке. Confidence не заменяет проверку.
+
+В `ds_worker.toml` задан `openrouter/free`: в проверенном каталоге prompt/completion
+имеют цену 0. Это бесплатный маршрутизатор, конкретная модель может меняться;
+он подходит для пробного второго мнения, не сравнения фиксированных моделей.
+Платного fallback в этом списке нет. Разрешён только `data_class=public`;
+закрытые материалы, реальные журналы, конфиги, секреты и неопубликованный код
+не отправлять. DeepSeek остаётся исполнителем, решения принимает ведущий.
+
+Живая проба 2026-10-10: ответ через `openrouter/free` получен, 218 входных /
+650 выходных токенов, 35,875 с; учёт `ds-worker` — $0. Запрос содержал только
+три синтетических примера, без файлов проекта. Ответ оборвался на лимите
+токенов: связь подтверждена, полнота результата и качество классификатора
+не приняты. Текущий helper сохраняет текст и имя маршрута, а не фиксированный
+идентификатор фактически выбранной модели; для сравнения моделей этого недостаточно.
+Локальные запрос/ответ — `.agent-work/tmp/openrouter-public-second-opinion*`;
+метрика — `ds_board/metrics.jsonl`. Это обычный chat-вызов, не Decisions API.
+
+```powershell
+ds-worker second-opinion --data-class public --prompt-file .agent-work/tmp/public-question.txt --max-tokens 650 --out .agent-work/tmp/openrouter-opinion.txt
+```
+
+Перед вызовом ведущий проверяет файл запроса. Ответ — рекомендация, не разрешение
+выполнить действие и не подтверждение исправности. Соблюдать установленный владельцем
+предел 50 запросов/сутки; автоматический вызов на каждой задаче не включён.
+
+Кандидаты применения: предварительная классификация публичных задач;
+проверка, что вывод соответствует предоставленным открытым фактам;
+оценка ясности публичных инструкций. Класс данных, точные пороги свежести,
+разбор структурных ошибок CLI, права команд и DONE остаются детерминированными
+правилами/решением ведущего.
+
+### Decisions API: размеченная синтетическая проверка — 2026-10-10
+
+В 14:18 МСК выполнена проверка 25 русскоязычных вымышленных задач:
+по 5 documentation/implementation/tests/architecture/ambiguous.
+DeepSeek подготовил черновик, ведущий проверил всю разметку и уточнил два
+примера **до** вызова API. Никаких реальных задач, конфигов или исходников нет.
+Эталонные метки и пояснения в запрос не включаются.
+
+Пять последовательных запросов по пять вопросов, перемешивание seed=42;
+модель запроса `inception/mercury-decide:free`, фактическая во всех ответах
+`inception/mercury-decide-20260930`. Платных fallback и автоматических повторов нет.
+
+Результат: **25/25 верно**, каждая категория **5/5**, 25 валидных ответов,
+HTTP/форматных отказов 0. Заранее заданный advisory-порог: confidence≥0,90
+и отрыв от второго варианта≥0,20; ambiguous всегда передаётся ведущему.
+20 рекомендаций прошли порог, 5 неоднозначных задач переданы ведущему;
+ошибок среди рекомендаций и уверенных пропусков ambiguous на этой выборке 0.
+Это рекомендации, а не выдача прав или автоматический запуск работ.
+
+Стоимость API по пяти ответам **$0**, 2127 входных / 25 выходных токенов.
+Задержки пакетов: 5,156 / 2,235 / 2,750 / 2,812 / 2,203 с;
+медиана **2,750 с на пакет**, сумма **15,156 с**. DeepSeek: одна попытка
+подготовки данных **$0,017529**, cache 56,08%, автоповторов 0.
+Его отчёт нарушил тип `test_results`; ведущий принял только независимо
+проверенный JSON-набор через `--accept-manual`, не заявление о тестах.
+
+Ведущий написал оценщик, 8 unit-тестов прошли; результаты отдельно пересчитаны
+из сохранённого JSON без вызова модели. Проверены SHA набора, все ID/метки,
+пять нулевых стоимостей и передача ambiguous ведущему.
+
+```powershell
+# Только валидация, без сети:
+python scripts/quality/evaluate_decisions.py
+python -m pytest tests/unit/test_decisions_evaluation.py -q
+# Повторный эксперимент расходует квоту; нужен новый каталог результата:
+python scripts/quality/evaluate_decisions.py --live --out .agent-work/tmp/decisions-next-run
+```
+
+Набор: `tests/fixtures/decisions_tasks.json`; оценщик:
+`scripts/quality/evaluate_decisions.py`. Сырые метаданные ответов/CSV:
+`.agent-work/tmp/decisions-evaluation-20261010/results.json`, `cases.csv`.
+SHA-256 набора: `4d29c0baf77e633a6748e1c484c4a8d52bbc638254ba032fab3669fbbdf7cd7b`.
+
+**Граница:** маленький синтетический smoke-тест, не оценка качества на реальных
+задачах. Пять задач разделяют контекст каждого запроса; независимых повторов,
+отложенной выборки и проверки калибровки нет. Порог на результатах не подбирался.
+Автоматическое распределение задач не включено. Следующий шаг при расширении —
+отдельная более сложная публичная выборка с пограничными формулировками и
+проверкой устойчивости, затем решение ведущего о применении только рекомендаций.
+
 ### Правила использования (полная копия регламента, обязательны)
 
 Роли:
@@ -141,6 +243,23 @@ Claude остаются для работы с суждением (Sonnet/Opus) 
 
 ## 🇬🇧 English
 
+OpenRouter update (2026-10-10): authentication verified; project configuration
+pins the free router `openrouter/free` for optional second opinions on public
+data. DeepSeek remains the executor; the lead owns permissions and acceptance.
+The live catalog returned 458 models without matching decision models; however,
+the owner's subsequent direct Decisions call succeeded with
+`inception/mercury-decide-20260930`: documentation, 100 input/1 output tokens,
+reported cost 0. One synthetic case verifies connectivity, not classifier quality.
+Subsequent balanced synthetic evaluation: 25/25 correct across five classes,
+five zero-cost batches (2127 input/25 output tokens), batch median 2.750 s.
+The fixed advisory threshold admits 20 recommendations and escalates all five
+ambiguous tasks. Dataset preparation by DeepSeek cost $0.017529; lead reviewed
+labels before inference and independently recomputed results. Eight evaluator
+unit tests passed. Small shared-context smoke test; no holdout, calibration,
+production routing or permission automation is claimed.
+The rankings page measures
+usage, not coding quality. Free chat routing is not the Decisions API.
+
 Owner's policy of 2026-09-25, "Claude leads, DeepSeek is the cheap worker", handed over by project
 `work` on 2026-09-26 and **adopted in full**: the rules below are a complete copy, the decision is
 `docs/decisions/ADR-0012-deepseek-worker.md`, the core is the submodule `tools/deepseek-worker`.
@@ -221,3 +340,57 @@ verified:** the main checkout's `CLAUDE.md` was refused. Side finding, confirmed
 `sd-wear`, `ssd-recovery` hardcode `/home/admin/nas_jetson_nano/...`, `boot-alert` uses
 `/home/admin/nasa/...` — the defect class that broke SSD recovery on 2026-09-08…19; harmless on the
 live `nasa-*` units today, it will bite during the Part B migration.
+
+
+### NAS/Spektr: эксперимент с семантикой здоровья, 2026-10-10
+
+> Восстановлено 2026-10-12 (Claude): исходный русский текст Codex был сохранён как `?????`
+> (запись из PowerShell без UTF-8) и утрачен. Раздел написан заново по уцелевшим числам,
+> английскому резюме ниже и `results.json`; формулировки — не исходные.
+
+Публичный синтетический набор по мотивам семантики Spektr — 12 случаев:
+3 healthy, 3 fault, 6 unknown. Каждый случай — ряд из 96 значений с шагом 15 минут
+(сутки) и короткий контекст: NAS endpoint, ночные нули, timeout и неоднозначные паузы.
+Пропуски данных передаются как null. Это эксперимент NAS по мотивам Spektr, а не
+повторение прикладных тестов Spektr; совместного прогона не было.
+
+Проверялась бесплатная модель Decisions через OpenRouter — без DeepSeek, без fallback и
+без платных моделей; пороги заданы заранее и не подстраивались под результат.
+Итог `inception/mercury-decide-20260930`: **4/12 верно (33,3 %)**, 12 валидных
+ответов, HTTP/транспортных ошибок 0. Recall healthy 1/3, fault 0/3, unknown 3/6.
+Один ложный healthy; две неподтверждённые неисправности (fault), в том числе timeout,
+признанный неисправностью. Timeout→fault прошёл с confidence **0,93347**
+и margin **0,91859** — то есть через неизменённые пороги 0,90/0,20. Рекомендацией
+прошёл только этот один ответ, и он ошибочен; остальные 11 эскалированы ведущему.
+
+Стоимость API — **$0**, 3462 input / 12 output токенов. Задержки трёх пакетов
+1,671 / 1,079 / 1,015 с, медиана 1,079 с. Живой E3 не вызывался, данные E3 в OpenRouter
+не отправлялись. E3 по-прежнему строит статус детерминированно по собранным фактам, без LLM.
+
+Код: `scripts/quality/evaluate_health_semantics.py`; 9 тестов в
+`tests/unit/test_health_semantics_evaluation.py`, вместе с тестами Decisions — 17 passed.
+Отчёт хранит ID случаев, модель, SHA набора и параметры порогов.
+Данные/результаты: `.agent-work/tmp/health-semantics-20261010/fixtures.json`,
+`results.json`. SHA-256:
+`02522e253a7272ed0a261269679366425a36f21db31e83e1d872f89e7a2c6365`.
+Повтор без сети: `python scripts/quality/evaluate_health_semantics.py`.
+Живой вызов — только с `--live` и записью в `--out`.
+Вывод: модель не допускается как источник статуса E3.
+
+> ⚠️ **Отзыв 2026-10-12 (Claude).** Порча кодировки задела не только этот раздел:
+> русский контекст случаев в `scripts/quality/evaluate_health_semantics.py` и в
+> `fixtures.json` тоже сохранён как `?????` (в скрипте 12 таких строк и ни одной
+> кириллической буквы). Модель получала ряды чисел и вопросительные знаки вместо описания.
+> Значит, 4/12 — оценка поведения на нечитаемом контексте, **а не точности понимания**.
+> Вывод «не источник статуса» остаётся в силе (уверенность 0,933 на нечитаемом входе его
+> только подкрепляет), но цифру точности нельзя цитировать до повтора на исправленных данных.
+> В `tests/fixtures/decisions_tasks_boundary.json` есть 4 такие строки — результат 24/25
+> на граничном наборе тоже перепроверить.
+
+EN: 12 public synthetic health-evidence cases inspired by Spektr; free Decisions
+scored 4/12. Timeout incorrectly became a confirmed fault at confidence 0.933,
+passing unchanged thresholds. API $0, 17 evaluator tests passed. No live E3
+or joint Spektr execution; deterministic evidence remains the source of truth.
+**Revoked 2026-10-12:** the Russian case context in the evaluator and fixtures was saved
+as `?????`, so the model saw numbers and question marks; 4/12 does not measure semantic
+accuracy. Re-run on repaired data before quoting it; re-check the 24/25 boundary result too.

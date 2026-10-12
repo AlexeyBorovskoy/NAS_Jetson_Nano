@@ -128,3 +128,11 @@ def test_successful_telegram_delivery_is_reported(tmp_path, capsys):
             mock.patch.object(mod, "docker", return_value=action):
         assert mod.main() == 0
     assert "алерт доставлен" in capsys.readouterr().out
+
+
+if __name__ == "__main__":
+    # Ворота запускают tests/unit как "python файл"; без этого блока функции
+    # pytest не выполнялись бы вовсе и файл засчитывался бы пройденным.
+    import sys
+    import pytest
+    sys.exit(pytest.main([__file__, "-q"]))

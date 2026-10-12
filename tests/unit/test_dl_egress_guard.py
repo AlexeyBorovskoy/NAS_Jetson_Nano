@@ -29,3 +29,11 @@ def test_watchdog_service_refreshes_guard_before_container_recovery():
     guard_pos = service.index("dl_egress_guard.sh")
     watchdog_pos = service.index("nas_jetson_nano-container-watchdog.py")
     assert guard_pos < watchdog_pos
+
+
+if __name__ == "__main__":
+    # Ворота запускают tests/unit как "python файл"; без этого блока функции
+    # pytest не выполнялись бы вовсе и файл засчитывался бы пройденным.
+    import sys
+    import pytest
+    sys.exit(pytest.main([__file__, "-q"]))

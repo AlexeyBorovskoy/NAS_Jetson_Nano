@@ -60,16 +60,16 @@ Separately: from Wi-Fi `192.168.0.14` the Jetson did not answer ARP on 2026-10-1
 
 | Pr. | ID | Task | Who | Effort | Benefit | Acceptance |
 |---|---|---|---|---|---|---|
-| P0 | **SEC-3** | ✅ 2026-10-12: memos removed from the tree, the scanner catches text passwords. **Remaining:** change 4 passwords (Nextcloud/Immich) and give the family new memos; rewrite history only if the owner decides (cost: 357 commits, 277 citations in 59 documents) | O (family) + C | S | High | Old passwords don't log in; the scanner catches a synthetic "Пароль: …" in `.txt` (test exists) |
+| P0 | **SEC-3** | ✅ 2026-10-12: memos removed from the tree, the scanner catches text passwords. **2026-10-12, second session — the owner: "remove the passwords from the repository":** a search across all 4 552 history objects — the values are only in four `artifacts/users/*_setup.txt`; the history rewrite is prepared (plan, scope, checks); the rehearsal in a mirror copy was **stopped by the owner** — neither the repository nor GitHub/GitVerse changed. **Remaining:** the owner's decision on when to continue; a request to GitHub support (2 PRs hold the old commits); change the 4 passwords (Nextcloud/Immich) — after publication they were publicly accessible for 3.5 months | O (decision, family) + C | S | High | The old passwords do not log in; no object on GitHub or GitVerse contains them; the scanner catches a synthetic "Пароль: …" in `.txt` (test exists) |
 | P0 | **REL-1** | ✅ 2026-10-12: D2 unit fixed (`Type=simple`, `StartLimit*` in `[Unit]`), gate check, deployed with sudo, the live run delivered the alert | C + D (test) + O (sudo) | S | High | Done; after the next reboot the alert arrives on its own |
 | P0 | **REL-2** | ✅ 2026-10-12: the three power-offs were the owner's; D1 (UPS) is not revisited | O + C | S | — | Recorded |
 | P1 | **REL-10** | Safe shutdown: before cutting power — `sudo poweroff` or an owner-only bot command ("бобик, выключи NAS" with confirmation). A hard power-off with `ntfs-3g` mounted can leave the volume dirty — a risk to the only copy of the archive | S + D (tests) + C | S | High | After a command shutdown the journal has shutdown lines from `systemd[1]`, D2 does not fire |
-| P0 | **GIT-1** | ✅ 2026-10-12: deployed snapshot committed as `0136af1`, `?????` restored (from numbers and the EN summary, marked as such), gate fixed. **Remaining:** refactor `home_health.py` and `backup_metadata.read_snapshot` (cc 27) for the ratchet + rollout; Codex's evaluation tools — restore the Russian context, simplify functions, re-run the experiment, commit | S (refactor) + D (tests) + C | M | High | Full `preflight.sh` green without `NAS_METRICS_ALLOW`; container hashes = `HEAD` |
+| P0 | **GIT-1** | ✅ 2026-10-12: deployed snapshot committed as `0136af1`, `?????` restored (from numbers and the EN summary, marked as such), gate fixed. ✅ 2026-10-12, second session: refactor of `home_health.py` and `backup_metadata.read_snapshot` for the ratchet — `694cd0e`, full `preflight.sh` green without `NAS_METRICS_ALLOW`, `tests/nas_api` 283. Codex's evaluation tools — **cancelled by the owner** ("do not run"), moved to `.agent-work/archives/codex-eval-tools-2026-10-12/` (outside git). **Remaining:** rollout of the refactor to the Jetson — on the owner's word | S (refactor) + C | S | High | Container hashes = `HEAD` |
 | P1 | **REL-9** | E3: take mount state not from `st_dev` inside the container but from a host snapshot (cron already writes dump metadata every 5 min — add `mountpoint` and size for `/mnt/storage`, `/mnt/hdd2tb`); no snapshot or older than 15 min — "unknown" | S + D (tests) | S | High | Test: a directory on the root device → not "mounted"; REL-4 drill "SSD did not come up" → the bot tells the truth |
 | P1 | **REL-3** | An alert on units in `failed` **and** with a load error (`LOAD=error`) — it would have caught REL-1 on the very first day (D4 of the A–H plan) | S (per the lead's design) + D (tests) | S | High | A broken test unit → a message to the owner |
 | P1 | **FAM-1** | "On this day" once a day: Immich `GET /memories` → an album to the shared family group (owner's decision 2026-10-12); on request "бобик, что было в этот день" ("bobik, what happened on this day") | S + D (tests) | S | High for the family | The collection arrived at 09:00 MSK; an empty day — silence, not an error |
 | P1 | **FAM-2** | Calendar: the family lives in **Google and Yandex calendars** (owner's decision 2026-10-12). The bot reads them read-only — Google via the secret iCal address (no OAuth), Yandex via CalDAV or the export link; a morning summary and reminders in the shared group; the links are secrets kept in `config/.env` | S + D | S–M | Medium | An event created in Google or Yandex calendar → a reminder in the group |
-| P1 | **FAM-3** | Face recognition: enable the hypervisor on the workstation (admin + reboot), ML per runbook D4, in Immich — the workstation's address via a reverse tunnel; batch indexing while the workstation is on | O (hypervisor) + C | M | High | Faces on ~7.7k assets; with the workstation off Immich works without ML |
+| P1 | **FAM-3** | 🔴 **Mandatory for the article** (owner 2026-10-12; the queue — right after SEC-3/CPP-1). Face recognition: enable the hypervisor on the workstation (admin + reboot), ML per runbook D4, in Immich — the workstation's address via a reverse tunnel; batch indexing while the workstation is on | O (hypervisor) + C | M | High | Faces on ~7.7k assets; with the workstation off Immich works without ML |
 | P2 | **REL-4** | Fault injection by scenarios: power cut, SSD pulled, HDD pulled, WAN loss, VPS unreachable, workstation off, Telegram unreachable. For each — expected behaviour, time measurement, alert | C + O (window, physical actions) | M | High (and for the article) | A table "scenario → what we saw → recovery time → alert" |
 | P2 | **REL-5** | Load: parallel photo upload to Immich, a Samba stream, N simultaneous questions to the bot, API p50/p95; in a window, without replacing production services | C + S | M | Medium | A report with the numbers and the limit at which the Jetson starts to fail |
 | P2 | **REL-6** | Full DR on a dedicated stand (already in the plan, criteria — `docs/quality/BACKUP_RESTORE_TESTS.md`) | C + O (stand) | L | High | Both databases and the applications raised on the stand, RPO/RTO measured |
@@ -77,8 +77,8 @@ Separately: from Wi-Fi `192.168.0.14` the Jetson did not answer ARP on 2026-10-1
 | P2 | **REL-8** | Speed baseline: a table of measurements with dates (network, disks, bot response, Immich), repeated quarterly | D (collection from documents) + C (measurements) | S | Medium | The table in `docs/` |
 | P2 | **ACC-1** | Corporate access: SSH login by key only (C9, carefully — the only path), verifying recovery of the chain after a drop and a reboot | C + O | S–M | Medium | `sshd -T` → `passwordauthentication no`; the chain came up by itself after a restart |
 | P2 | **ARCH-1** | Extensibility: SD-2 (paths in units), `deploy.sh` with SHA verification (F2), a window for Part B (F1) | D + C | M | Medium | No `/home/admin` in `systemd/*`; deployment verifies versions |
-| P2 | **CPP-1** | Python/C++ experiment per the 2026-10-10 plan | D + C | M | For the article | Measurements and a decision, including a negative one |
-| P3 | **FAM-4** | Photo bank: finish the H1 inventory strictly one directory at a time; the pilot — **one** directory as an Immich external library (read-only, parallelism 1), measure preview space and time; decision H2 by the numbers | C (ntfs-3g — lead only) + O | L | High | The pilot numbers; decision H2 recorded |
+| P2 | **CPP-1** | ✅ Step 1 (2026-10-12, `001eafc`): a live 5-minute measurement — no computational bottleneck in our code (our Python 1.7% of a core, API p50 2.5 ms); the core goes to `dockerd` 36%, Nextcloud under Talk polling 30%, netdata 21%; the constraint is memory. [Report](../quality/CPP1_BOTTLENECKS_2026-10-12.md). **Next:** step 2 (a demonstrative Python/C++ comparison on synthetic data) — the owner's decision; three changes to the infrastructure — in REL-5 | D + C | M | For the article | Measurements and a decision, including a negative one |
+| P1 | **FAM-4** | 🔴 **Mandatory for the article** (owner 2026-10-12, raised from P3; after FAM-3). Photo bank: finish the H1 inventory strictly one directory at a time; the pilot — **one** directory as an Immich external library (read-only, parallelism 1), measure preview space and time; decision H2 by the numbers | C (ntfs-3g — lead only) + O | L | High | The pilot numbers; decision H2 recorded |
 | P3 | **FAM-5** | Bot-orchestrator: a single intent layer → tools (photos, calendar, downloads, health); a classifier in Russian (E1) | S + D | L | High | The bot picks the tool without keywords in 9 of 10 test phrases |
 | P3 | **AI-1** | Models: keep GigaChat + DeepSeek + the local one; check OpenRouter availability from Russia without VPN; update `docs/29` (IP block, Pro/Ultra quotas) | D | S | Low–medium | The document updated with a measurement date |
 | P3 | **AI-2** | GPU: the workstation is primary; Kaggle — open data only (benchmarks, training an intent classifier on synthetic data) | C | S | Low | The rule recorded in `docs/29` |
@@ -92,6 +92,11 @@ Separately: from Wi-Fi `192.168.0.14` the Jetson did not answer ARP on 2026-10-1
 notice. P2 — in maintenance windows; REL-4 and REL-5 give both reliability and article chapters. P3 after P1.
 The smart home (⏸, formerly P4) was deferred by the owner on 2026-10-12 — the research is kept for when he decides.
 **Done on 2026-10-12:** REL-1, REL-2, most of GIT-1 and SEC-3 (except changing the passwords).
+**2026-10-12, second session — article publication priority (owner):** GIT-1 (the refactor), DOC-3 and CPP-1 step 1
+are done; SEC-3 — the history is being prepared for a rewrite. Next, in order: **FAM-3 (faces) → FAM-4 (photo bank)** —
+mandatory for the article; then REL-9/REL-10/REL-3 → REL-4 (fault injection, the owner's window) →
+REL-5/REL-8 → FAM-1/FAM-2. The owner writes the article text (Habr rule #4); before publication — history
+without passwords, CI green, README up to date (DOC-1).
 
 ## 4. The article, part 2 — what is done and what lies ahead
 
@@ -106,8 +111,8 @@ the owner's draft (2026-10-11); the article draft based on the draft (2026-10-12
 |---|---|---|---|
 | Point A — "real tests and results" | Audits, test counts, drills, the 123 s watchdog, DP-2 (403/503), VPS blocks | A fault-injection table, load, full DR | REL-4, REL-5, REL-6 |
 | "The scheme of accepting testers" | The quality gate, agent roles (diagrams in the pack) | A fresh screenshot of a gate run and GitVerse CI | — |
-| Move to C++ | Plan only | CPP-1 measurements | CPP-1 |
-| Features B1–B5 | The bot, downloads, voice — live | Collections, calendar, faces — after P1 | FAM-1…3 |
+| Move to C++ | ✅ Step 1 measurement (2026-10-12): no bottleneck in our code, the resources go to the infrastructure | Step 2 — the owner's decision | CPP-1 |
+| Features B1–B5 | The bot, downloads, voice — live | **Faces and the photo bank are mandatory** (owner 2026-10-12); collections, calendar | FAM-3, FAM-4, FAM-1, FAM-2 |
 | Smart home | The 2026-10-12 research | The owner's decision on HOME-0/1 | HOME-0 |
 | Honest stories | 12 cards | New ones: the alert that could not fire (REL-1); three silent resets (REL-2) | REL-1, REL-2 |
 
@@ -122,20 +127,20 @@ The draft is material for the owner to rewrite, not text for publication.
 | DOC-0 | Local cleanup: 28 DeepSeek working copies deleted (uncommitted content — in `.agent-work/archives/worktrees-2026-10-12/`, 419 KB; two branches with unique commits kept, patches saved), 37 merged `deepseek/*` branches deleted, temporary builds and caches deleted — `.agent-work` 914 → 234 MB | ✅ 2026-10-12 |
 | DOC-1 | Entry documents (README, `docs/index.md`, `00_OVERVIEW`, `PROJECT_CONTEXT`) are partially stale — per the `STALE_DOCS_REPORT` | P1, D + C |
 | DOC-2 | EN/RU pairs: of 290 documents, 15 are paired, 166 bilingual in one file, 109 monolingual. Translation — as a series of DeepSeek cards **after** DOC-3 (fewer files — cheaper) | P2, D; agree the budget (shared account) |
-| DOC-3 | Cleanup of tracked files per the `CLEANUP_CANDIDATES` list (≈ 50 to delete, 13 to delete with link fixes, ≈ 55 — the lead's decision; screenshot duplicates in 2–6 places) | Awaiting the owner's confirmation |
+| DOC-3 | Cleanup of tracked files: 60 deleted per the agreed list (screenshot duplicates, unredacted screenshots and photos with personal data, Part 1 drafts, obsolete plans), links fixed in the active documents, history untouched | ✅ 2026-10-12, `efcfb0c` (the DeepSeek worker hit the `git rm` ban, the lead did it) |
 | DOC-4 | `CLAUDE.md`: move the August "Operational state" section into the checkpoints, leave a dated table of the current state | P2, C |
 | DOC-5 | The rest of the local cleanup: the 2026-10-06 archive (230 MB, 13 zip files of old agent working copies) — the owner's decision; hundreds of empty `tmp*` in `.agent-work/tmp` with locked permissions — `takeown` from an administrator; 6 unmerged branches `fix/*`, `quality/*`, `worktree-agent-*` — to sort out | Awaiting the owner |
 
 ## 6. Owner decisions
 
-1. **SEC-3:** ✅ "delete" (2026-10-12) — removed from the tree. **Open:** when to change the family passwords; whether to rewrite history (cost — section 0, item 3; recommendation: change the passwords and leave history alone).
+1. **SEC-3:** ✅ "delete" (2026-10-12) — removed from the tree. ✅ "Remove the passwords from the repository" (2026-10-12, second session) — the rewrite is prepared, the rehearsal was stopped by the owner; continue on the owner's word. **Open:** when to change the family passwords (the rewrite does not undo the 3.5 months they were public).
 2. **REL-2 / D1:** ✅ the owner cut the power; no UPS needed.
 3. **REL-1:** ✅ sudo granted, deployed on 2026-10-12.
-4. **FAM-3:** enable the hypervisor on the workstation (admin + reboot) — open.
+4. **FAM-3/FAM-4:** ✅ faces and the photo bank are mandatory for the article (2026-10-12). ✅ The workstation hypervisor is on (measured 2026-10-12: `HypervisorPresent=True`, WSL 2, Docker Desktop installed). **Open:** Docker Desktop does not start; on 2026-10-12 the workstation is away from home (another network `kv-20`, a gateway with a different MAC) — the tunnel to the Jetson only via the VPS, while ADR-0010 keeps previews at home; an Immich API key.
 5. **FAM-1:** ✅ to the shared group.
 6. **FAM-2:** ✅ Google and Yandex calendars.
 7. **HOME-0/1:** ✅ smart home deferred ("not relevant now").
-8. **DOC-3 / DOC-5:** confirm the list of tracked files to delete; delete the 2026-10-06 archive? — open.
+8. **DOC-3 / DOC-5:** ✅ delete the superfluous files (2026-10-12) — DOC-3 done; the 2026-10-06 archive the owner deletes by hand (the agent's hook forbids recursive deletion). Codex's evaluation tools — ✅ "do not run" (2026-10-12).
 9. **DOC-2:** budget for the document-translation series (DeepSeek, shared account with Belgorod) — open. Article drafts are not put into the repository (owner's decision 2026-10-12); pushing commits to GitHub and GitVerse allowed on 2026-10-12.
 
 ## 7. Risks and rollback

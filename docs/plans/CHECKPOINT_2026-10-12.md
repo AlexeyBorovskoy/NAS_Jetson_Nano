@@ -90,6 +90,22 @@ regenerated later together**, git history is not rewritten; **delete the unneede
 | FAM-2 in the plan | Recorded here | Rewrite FAM-2 in the plan: read + create entries |
 | Passwords (SEC-3) | Memos outside git, scanner catches them | Generate and change together with the owner |
 
+## Second session on 2026-10-12 — article publication priority
+
+The owner's instructions to the lead: remove the passwords from the repository, delete the superfluous files himself,
+finish the refactor, do not run Codex's evaluation tools, measure the bottlenecks for C++; faces and the photo bank
+are mandatory for the article — after this step.
+
+| What | Result |
+|---|---|
+| Refactor (GIT-1) | `694cd0e`: Sonnet's work checked line by line (a move without behaviour change), finished by the lead (−4 lines of code in `home_health.py`); the ratchet without exceptions, `tests/nas_api` 283, the full `preflight.sh` green. Not deployed to the Jetson |
+| Cleanup (DOC-3) | `efcfb0c`: 60 files deleted, links fixed in 9 active documents; both Android screenshots of Part 1 point to the redacted card `06_android_clients_card` (checked by eye). The DeepSeek card was cancelled: the environment rejected every `git rm` |
+| Codex's evaluation tools | Cancelled by the owner; the files — in `.agent-work/archives/codex-eval-tools-2026-10-12/` (outside git) |
+| CPP-1 step 1 | `001eafc`: a live 5-minute measurement — our Python 1.7% of a core, API p50 2.5 ms; `dockerd` 36%, Nextcloud under Talk polling 30%, netdata 21% of a core; the constraint is memory. [Report](../quality/CPP1_BOTTLENECKS_2026-10-12.md) |
+| Passwords (SEC-3) | A search across all 4 552 history objects (all branches, remote branches, tags): the values only in four `artifacts/users/*_setup.txt`, the first commit `a8d1990` (2026-06-28), 361 commits of `main` affected, 40 branches, 4 tags. The rewrite is prepared for a separate mirror copy; the rehearsal was **stopped by the owner** — neither the repository nor GitHub/GitVerse changed. On GitHub the old commits will remain reachable via 2 PRs and by hash until GitHub support removes them |
+
+The Jetson directly (`192.168.0.50`) did not answer; the work went via `jetson-via-vps`; uptime 17 h. **Cause found:** the workstation is away from home — Wi-Fi `kv-20`, its gateway `192.168.0.1` has MAC `90:72:82:…`, while the Jetson's gateway has `5c:62:8b:…` (EC220); only the subnet matches. This also explains "the Jetson did not answer ARP" from the morning measurement. The workstation hypervisor is on (`HypervisorPresent=True`); Docker Desktop, started from the session, did not come up within 3 min.
+
 ## Not done / pending
 
 - Changing the family passwords (SEC-3) and the git history decision — the owner's (REL-1 deployed, see above).

@@ -120,8 +120,9 @@ technical fact freeze. Publishing to an external platform remains an owner actio
 
 ## Planned C++ experiment — CPP-1
 
-Owner request dated 2026-10-10. Planned; no measurements yet. Schedule after current
-reliability work; this experiment does not block the second article.
+Owner request dated 2026-10-10. Status: **step 1 done 2026-10-12** — no computational bottleneck
+in our code ([report](docs/quality/CPP1_BOTTLENECKS_2026-10-12.md)); step 2 — the owner's decision.
+Schedule after current reliability work; this experiment does not block the second article.
 
 1. Profile CPU, memory and latency of an owned task on Jetson Nano, separating
    computation from disk/network/API waits. If there is no computational bottleneck,

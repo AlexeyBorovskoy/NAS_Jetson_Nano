@@ -4,11 +4,11 @@
 > [DEVELOPMENT_PLAN_2026-10_OWNER_GOALS.md](docs/plans/DEVELOPMENT_PLAN_2026-10_OWNER_GOALS.md)
 > (part A — reliability, part B — new features, article, documentation; queue P0–P4).
 > Checkpoint — [2026-10-12](docs/plans/CHECKPOINT_2026-10-12.md). **P0, before any new feature:**
-> SEC-3 — four family members' passwords in the public repository (`artifacts/users/`): rotate, remove,
-> decide on history rewrite; REL-1 — the reboot alert (D2) has not worked since 09-20: `Type=oneshot` +
-> `Restart=` is rejected by systemd 237 (unit fixed in git, awaiting rollout); REL-2 — three hardware
-> resets of the Jetson without an alert (09-29, 10-06, 10-11), revisit D1 (UPS); GIT-1 — the API code in
-> the container equals the uncommitted working tree (sha256 check 10-12), git is not a superset of the device.
+> SEC-3 — four family members' passwords were in the public repository: memos removed (`2eb8664`), the scanner
+> catches "Пароль: …"; **the passwords still have to be changed**, history — by the owner's decision. ✅ REL-1 —
+> the D2 alert was fixed and deployed on 10-12, the owner received the message. ✅ REL-2 — the three power-offs
+> were the owner's, no UPS needed; new REL-10 — safe shutdown. ✅ GIT-1 — the deployed code is committed
+> (`0136af1`); remaining — refactor for the ratchet with a rollout. Smart home deferred by the owner.
 
 > Update 2026-10-10: E3/DP-2/DEP-1 deployed on Jetson ARM64; API healthy/UID10001,
 > container endpoint 200, Docker restart 503, forbidden proxy requests 403.

@@ -19,9 +19,9 @@ Worker per rule #16: **C** — Claude (the lead), **S** — a Sonnet subagent, *
 
 | # | Finding | Confirmed by | What follows |
 |---|---|---|---|
-| 1 | 🔴 **Three hardware resets of the Jetson in two weeks**, not one of them noticed. Gaps: 2026-09-29 ≈ 8 h, 2026-10-06 ≈ 2.5 h, 2026-10-11 ≈ 9 h (≈13:14–22:30 MSK). Plus the known ones of 2026-08-17 and 2026-09-18 | `journalctl --list-boots`: the three previous boots have not a single shutdown line from `systemd[1]` and no `Journal stopped`; the current one — `PMC reset source: TEGRA_POWER_ON_RESET`. End times accurate to ±5 min (journal flush to disk) | A power loss or a hang with a manual restart — the journal cannot tell them apart. The owner's answer is needed: were there power outages? Decision D1 (UPS) was taken as "deferred" when there were two resets; now there are five |
-| 2 | 🔴 **The reboot alert (D2) has not worked since 2026-09-20** | `systemctl status`: `Loaded: error (Reason: Invalid argument)`; the only unit on the device with a load error. In git it is the only unit with `Type=oneshot` + `Restart=on-failure` — a combination systemd 237 (Ubuntu 18.04) rejects | During the 2026-09-20 deployment the script was checked (`--test`), not the unit's load. Final confirmation — `sudo systemd-analyze verify` |
-| 3 | 🔴 **The passwords of four family members are in the public repository** | `artifacts/users/*_setup.txt` tracked since 2026-06-28–29, present in `origin/main` and `gitverse/main`; the values are 14–16 characters long, not placeholders (checked by mask, values were not printed). Found by DeepSeek during a cleanup inventory | The services are closed from outside (VPN and home only), which limits the damage but does not cancel the password change. Deleting them from the current version does not remove the passwords from history |
+| 1 | ✅ **Three Jetson power-offs without a clean shutdown (2026-09-29 ≈ 8 h, 2026-10-06 ≈ 2.5 h, 2026-10-11 ≈ 9 h) — the owner cut the power himself** (owner's answer, 2026-10-12) | `journalctl --list-boots`: no shutdown lines from `systemd[1]` and no `Journal stopped`; current boot — `TEGRA_POWER_ON_RESET` | No power outage; D1 (UPS) stays deferred. Risk — a hard power-off with the NTFS archive mounted → REL-10. The 2026-08-17 and 2026-09-18 resets remain "power or PMIC watchdog", indistinguishable |
+| 2 | ✅ **The reboot alert (D2) did not work from 2026-09-20 — fixed and deployed on 2026-10-12** | It was `Loaded: error (Invalid argument)`: systemd 237 rejects `Type=oneshot` + `Restart=on-failure`. Deployed with sudo by the owner's permission: `systemd-analyze verify` clean, `LoadState=loaded`, live run `Result=success`, the alert about the 2026-10-11 boot reached the owner in Telegram | Old unit kept as `/etc/systemd/system/…boot-alert.service.bak.1791793669`; gate check — `test_systemd237_units.py` |
+| 3 | 🟠 **Four family members' passwords were in the public repository** (since 2026-06-28/29) | Found by DeepSeek during the cleanup inventory; values are not placeholders (checked by mask). **2026-10-12 (owner: "delete"):** memos removed from the repository (`2eb8664`), the owner keeps copies in `docs/local/family-setup/` (outside git); the secret scanner now catches "Пароль: …" — all 18 memo lines | The passwords remain in git history → **they must be changed** (SEC-3). Rewriting history would change 357 commits and break 277 hash citations in 59 documents — owner's decision |
 | 4 | 🟠 **The device is ahead of git** — confirmed by measurement | sha256 of three API files in the container = the working tree (Codex's uncommitted code of 2026-10-10), ≠ `HEAD` | The working tree is the only copy of the deployed code (as in the 2026-10-10 checkpoint) |
 | 4a | ✅ **GIT-1 mostly closed on 2026-10-12** (Codex unavailable — done by the lead) | `0136af1`: the deployed code matches the device (sha256 after line-ending normalisation); `396ca11`: the gate passes with a declared ratchet exception | Remaining: refactor `home_health.py`/`backup_metadata.py` for the ratchet with a new rollout, and Codex's evaluation tools (not committed) |
 | 4b | 🟠 **The gate silently skipped tests** | `preflight.sh` runs `tests/unit` as `python file`; 4 pytest-style files without `__main__` executed nothing — `test_container_watchdog.py` and `test_dl_egress_guard.py` since 2026-09-30 | Fixed in `396ca11` + check `test_unit_tests_runnable.py` |
@@ -54,20 +54,21 @@ Separately: from Wi-Fi `192.168.0.14` the Jetson did not answer ARP on 2026-10-1
 | **B5. Family calendar and schedule** | Nextcloud Calendar + DAVx⁵ on the phones; the bot does not know the calendar | `caldav` in the bot container: reminders and "what do we have tomorrow?". Syncing with Google/Yandex Calendar — only if the family lives by them, and after our own check | FAM-2 |
 | **B6. Free models** | GigaChat (free for individuals: Lite 250 + Pro 40 + Max 25 + Ultra 50 million tokens over 12 months), DeepSeek (cents), the local qwen3.5:4b; OpenRouter — second opinion only | There are no free ChatGPT/Claude/Gemini APIs, or they are unavailable from Russia; Cloud.ru FM has no free tier ("free until 31.10" was a 2025 promotion); OpenRouter likely blocks Russian IPs since 2026-06-27 (secondary sources) — verify ourselves. The current set does not need changing | AI-1 |
 | **B7. GPU** | Workstation RTX 3050 Ti 4 GB; Kaggle experience; the Cloud.ru grant excludes GPU | Kaggle (~30 h/week), Colab — open data and tests only; family photos — on the workstation only. No free GPU changes the architecture | AI-2 |
-| **B8. Smart home** | Nowhere | **Not on this Jetson**: RAM is taken by family services; Frigate dropped JetPack 4 support (PR #16670, 2025-02-18), and nothing newer than JetPack 4.6 will come to the Nano. Put it on a separate device: an old Inspiron N5110 (₽0, 2nd-generation i3/i5, 4–8 GB — enough for Home Assistant and Zigbee) or an N100 mini-PC (≈ 22k ₽, needed for video) | HOME-0…4 |
+| **B8. Smart home** | Nowhere | **Not on this Jetson**: RAM is taken by family services; Frigate dropped JetPack 4 support (PR #16670, 2025-02-18), and nothing newer than JetPack 4.6 will come to the Nano. Put it on a separate device: an old Inspiron N5110 (₽0, 2nd-generation i3/i5, 4–8 GB — enough for Home Assistant and Zigbee) or an N100 mini-PC (≈ 22k ₽, needed for video) | HOME-0…4 — ⏸ deferred by the owner on 2026-10-12 ("not relevant now") |
 
 ## 3. Consolidated queue
 
 | Pr. | ID | Task | Who | Effort | Benefit | Acceptance |
 |---|---|---|---|---|---|---|
-| P0 | **SEC-3** | Family passwords: change 4 passwords (Nextcloud/Immich), notes — to `docs/local/` (outside git), remove from the tree, widen the scanner to `.txt` and «Пароль:» ("Password:") (defect history exists); then purge the history (`filter-repo`) and force-push to GitHub and GitVerse | O (the change, the family, force-push permission) + C | M | High | Old passwords no longer log in; the scanner catches a synthetic «Пароль: …» ("Password: …") in a `.txt`; `git log --all -- artifacts/users` is empty after the purge |
-| P0 | **REL-1** | Alert D2: remove `Restart=` with `Type=oneshot` (retries — in the script itself) and move `StartLimit*` into `[Unit]`; a gate check "oneshot without Restart"; deployment | C (the edit) + D (the test) + O (sudo) | S | High | `systemd-analyze verify` without errors; `systemctl start` → a Telegram message; after the next boot — the alert arrived |
-| P0 | **REL-2** | Reset analysis: the owner — whether there were power outages on 2026-09-29, 2026-10-06, 2026-10-11; if yes — revisit D1 (UPS); if no — look for a hang (temperature, USB power, `ramoops`) | O + C | S | High | Recorded: the cause of each reset or "unknown" with what was checked |
+| P0 | **SEC-3** | ✅ 2026-10-12: memos removed from the tree, the scanner catches text passwords. **Remaining:** change 4 passwords (Nextcloud/Immich) and give the family new memos; rewrite history only if the owner decides (cost: 357 commits, 277 citations in 59 documents) | O (family) + C | S | High | Old passwords don't log in; the scanner catches a synthetic "Пароль: …" in `.txt` (test exists) |
+| P0 | **REL-1** | ✅ 2026-10-12: D2 unit fixed (`Type=simple`, `StartLimit*` in `[Unit]`), gate check, deployed with sudo, the live run delivered the alert | C + D (test) + O (sudo) | S | High | Done; after the next reboot the alert arrives on its own |
+| P0 | **REL-2** | ✅ 2026-10-12: the three power-offs were the owner's; D1 (UPS) is not revisited | O + C | S | — | Recorded |
+| P1 | **REL-10** | Safe shutdown: before cutting power — `sudo poweroff` or an owner-only bot command ("бобик, выключи NAS" with confirmation). A hard power-off with `ntfs-3g` mounted can leave the volume dirty — a risk to the only copy of the archive | S + D (tests) + C | S | High | After a command shutdown the journal has shutdown lines from `systemd[1]`, D2 does not fire |
 | P0 | **GIT-1** | ✅ 2026-10-12: deployed snapshot committed as `0136af1`, `?????` restored (from numbers and the EN summary, marked as such), gate fixed. **Remaining:** refactor `home_health.py` and `backup_metadata.read_snapshot` (cc 27) for the ratchet + rollout; Codex's evaluation tools — restore the Russian context, simplify functions, re-run the experiment, commit | S (refactor) + D (tests) + C | M | High | Full `preflight.sh` green without `NAS_METRICS_ALLOW`; container hashes = `HEAD` |
 | P1 | **REL-9** | E3: take mount state not from `st_dev` inside the container but from a host snapshot (cron already writes dump metadata every 5 min — add `mountpoint` and size for `/mnt/storage`, `/mnt/hdd2tb`); no snapshot or older than 15 min — "unknown" | S + D (tests) | S | High | Test: a directory on the root device → not "mounted"; REL-4 drill "SSD did not come up" → the bot tells the truth |
 | P1 | **REL-3** | An alert on units in `failed` **and** with a load error (`LOAD=error`) — it would have caught REL-1 on the very first day (D4 of the A–H plan) | S (per the lead's design) + D (tests) | S | High | A broken test unit → a message to the owner |
-| P1 | **FAM-1** | "On this day" once a day: Immich `GET /memories` → an album to the group; on request "бобик, что было в этот день" ("bobik, what happened on this day") | S + D (tests) | S | High for the family | The collection arrived at 09:00 MSK; an empty day — silence, not an error |
-| P1 | **FAM-2** | Calendar: the bot reads Nextcloud Calendar (`caldav`), a morning summary of the day and reminders; events are added from the phone via DAVx⁵ | S + D | S–M | Medium | An event from the phone → a reminder in the group |
+| P1 | **FAM-1** | "On this day" once a day: Immich `GET /memories` → an album to the shared family group (owner's decision 2026-10-12); on request "бобик, что было в этот день" ("bobik, what happened on this day") | S + D (tests) | S | High for the family | The collection arrived at 09:00 MSK; an empty day — silence, not an error |
+| P1 | **FAM-2** | Calendar: the family lives in **Google and Yandex calendars** (owner's decision 2026-10-12). The bot reads them read-only — Google via the secret iCal address (no OAuth), Yandex via CalDAV or the export link; a morning summary and reminders in the shared group; the links are secrets kept in `config/.env` | S + D | S–M | Medium | An event created in Google or Yandex calendar → a reminder in the group |
 | P1 | **FAM-3** | Face recognition: enable the hypervisor on the workstation (admin + reboot), ML per runbook D4, in Immich — the workstation's address via a reverse tunnel; batch indexing while the workstation is on | O (hypervisor) + C | M | High | Faces on ~7.7k assets; with the workstation off Immich works without ML |
 | P2 | **REL-4** | Fault injection by scenarios: power cut, SSD pulled, HDD pulled, WAN loss, VPS unreachable, workstation off, Telegram unreachable. For each — expected behaviour, time measurement, alert | C + O (window, physical actions) | M | High (and for the article) | A table "scenario → what we saw → recovery time → alert" |
 | P2 | **REL-5** | Load: parallel photo upload to Immich, a Samba stream, N simultaneous questions to the bot, API p50/p95; in a window, without replacing production services | C + S | M | Medium | A report with the numbers and the limit at which the Jetson starts to fail |
@@ -81,15 +82,16 @@ Separately: from Wi-Fi `192.168.0.14` the Jetson did not answer ARP on 2026-10-1
 | P3 | **FAM-5** | Bot-orchestrator: a single intent layer → tools (photos, calendar, downloads, health); a classifier in Russian (E1) | S + D | L | High | The bot picks the tool without keywords in 9 of 10 test phrases |
 | P3 | **AI-1** | Models: keep GigaChat + DeepSeek + the local one; check OpenRouter availability from Russia without VPN; update `docs/29` (IP block, Pro/Ultra quotas) | D | S | Low–medium | The document updated with a measurement date |
 | P3 | **AI-2** | GPU: the workstation is primary; Kaggle — open data only (benchmarks, training an intent classifier on synthetic data) | C | S | Low | The rule recorded in `docs/29` |
-| P4 | **HOME-0** | Reconnaissance (₽0): the meter's model (photo), what of Yandex is already at home, whether an open port is needed for Alice (cloud mode `yandex_smart_home`) | O + S | S | — | A list of devices and the answer about the port |
-| P4 | **HOME-1** | Hub on a separate device: Home Assistant (Container) + Zigbee2MQTT on the Inspiron N5110 + a Zigbee coordinator (≈ 3.7–6k ₽) + lamps | O (purchase) + C | M | Medium | The lamp turns on from HA and on a schedule |
-| P4 | **HOME-2** | Alice: HA devices → Alice, speaker control | C | M | Medium | «Алиса, включи свет» ("Alice, turn on the light") works |
-| P4 | **HOME-3** | Meter without touching the sealed unit: PZEM-004T + ESPHome at the input of one's own panel | O (electrician) + C | M | Medium | Hourly consumption in HA |
-| P4 | **HOME-4** | Video: Frigate on a separate mini-PC with its own disk (1080p ≈ 20–40 GB per day per camera); **not** on the HDD with the archive | O (purchase) + C | L | Under question | The owner's decision after HOME-1 |
+| ⏸ | **HOME-0** | Reconnaissance (₽0): the meter's model (photo), what of Yandex is already at home, whether an open port is needed for Alice (cloud mode `yandex_smart_home`) | O + S | S | — | A list of devices and the answer about the port |
+| ⏸ | **HOME-1** | Hub on a separate device: Home Assistant (Container) + Zigbee2MQTT on the Inspiron N5110 + a Zigbee coordinator (≈ 3.7–6k ₽) + lamps | O (purchase) + C | M | Medium | The lamp turns on from HA and on a schedule |
+| ⏸ | **HOME-2** | Alice: HA devices → Alice, speaker control | C | M | Medium | «Алиса, включи свет» ("Alice, turn on the light") works |
+| ⏸ | **HOME-3** | Meter without touching the sealed unit: PZEM-004T + ESPHome at the input of one's own panel | O (electrician) + C | M | Medium | Hourly consumption in HA |
+| ⏸ | **HOME-4** | Video: Frigate on a separate mini-PC with its own disk (1080p ≈ 20–40 GB per day per camera); **not** on the HDD with the archive | O (purchase) + C | L | Under question | The owner's decision after HOME-1 |
 
 **Order.** P0 — before any new features (a week). P1 — in parallel, this is what the family will
 notice. P2 — in maintenance windows; REL-4 and REL-5 give both reliability and article chapters. P3 after P1.
-P4 — a separate line of work after HOME-0, does not touch the Jetson.
+The smart home (⏸, formerly P4) was deferred by the owner on 2026-10-12 — the research is kept for when he decides.
+**Done on 2026-10-12:** REL-1, REL-2, most of GIT-1 and SEC-3 (except changing the passwords).
 
 ## 4. The article, part 2 — what is done and what lies ahead
 
@@ -126,15 +128,15 @@ The draft is material for the owner to rewrite, not text for publication.
 
 ## 6. Owner decisions
 
-1. **SEC-3:** when to change the family passwords and whether you allow purging the history with a force-push to GitHub and GitVerse.
-2. **REL-2 / D1:** were there power outages on 2026-09-29, 2026-10-06, 2026-10-11; are we revisiting the UPS.
-3. **REL-1:** permission to deploy the fixed unit (sudo on the Jetson).
-4. **FAM-3:** enable the hypervisor on the workstation (admin + reboot).
-5. **FAM-1:** collections to the shared group or to each person personally.
-6. **FAM-2:** which calendar the family lives by (Nextcloud / Google / Yandex).
-7. **HOME-0/1:** bring the Inspiron back to life for the smart home or buy a mini-PC; budget for the coordinator and lamps.
-8. **DOC-3 / DOC-5:** confirm the deletion list; delete the 2026-10-06 archive?
-9. **DOC-2:** budget for the document-translation series (DeepSeek, shared account with Belgorod).
+1. **SEC-3:** ✅ "delete" (2026-10-12) — removed from the tree. **Open:** when to change the family passwords; whether to rewrite history (cost — section 0, item 3; recommendation: change the passwords and leave history alone).
+2. **REL-2 / D1:** ✅ the owner cut the power; no UPS needed.
+3. **REL-1:** ✅ sudo granted, deployed on 2026-10-12.
+4. **FAM-3:** enable the hypervisor on the workstation (admin + reboot) — open.
+5. **FAM-1:** ✅ to the shared group.
+6. **FAM-2:** ✅ Google and Yandex calendars.
+7. **HOME-0/1:** ✅ smart home deferred ("not relevant now").
+8. **DOC-3 / DOC-5:** confirm the list of tracked files to delete; delete the 2026-10-06 archive? — open.
+9. **DOC-2:** budget for the document-translation series (DeepSeek, shared account with Belgorod) — open. Article drafts are not put into the repository (owner's decision 2026-10-12); pushing commits to GitHub and GitVerse allowed on 2026-10-12.
 
 ## 7. Risks and rollback
 

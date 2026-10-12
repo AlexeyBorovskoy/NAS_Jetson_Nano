@@ -106,6 +106,12 @@ are mandatory for the article — after this step.
 
 The Jetson directly (`192.168.0.50`) did not answer; the work went via `jetson-via-vps`; uptime 17 h. **Cause found:** the workstation is away from home — Wi-Fi `kv-20`, its gateway `192.168.0.1` has MAC `90:72:82:…`, while the Jetson's gateway has `5c:62:8b:…` (EC220); only the subnet matches. This also explains "the Jetson did not answer ARP" from the morning measurement. The workstation hypervisor is on (`HypervisorPresent=True`); Docker Desktop, started from the session, did not come up within 3 min.
 
+**FAM-4, finishing the archive walk (read-only, one directory at a time, the `diskstats` watchdog never fired):** the 6 directories not walked on 2026-09-20 and one partially walked — 176,895 files in 194 s, 0 errors: photos 67,199 (35.3 GB), RAW 354 (5.4 GB), video 760 (68.1 GB). The whole archive is now walked: ≈ 440k files, ≈ 150–158k photo files. Many are work images (reference sheets, signs, scans) — connect selected directories to Immich, not the whole disk. Pilot candidates (≈ 2.3k assets, ≈ 8 GB) and preconditions — `docs/local/PHOTO_ARCHIVE_INVENTORY_2026-10-12.md` (outside git: directory names).
+
+**FAM-3 (faces):** the workstation services `vmcompute` and `hns` are disabled (Start=4) → WSL 2 and Docker Desktop fail with `HCS_E_SERVICE_NOT_AVAILABLE`; the VMP/Hyper-V/WSL features are enabled, the workstation is not domain-joined — an elevated PowerShell is needed.
+
+**Owner's decision (2026-10-12, evening):** FAM-3/FAM-4 continue once the workstation is on the home network. Until then the device is not changed.
+
 ## Not done / pending
 
 - Changing the family passwords (SEC-3) and the git history decision — the owner's (REL-1 deployed, see above).

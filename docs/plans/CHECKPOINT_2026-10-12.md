@@ -112,6 +112,21 @@ The Jetson directly (`192.168.0.50`) did not answer; the work went via `jetson-v
 
 **Owner's decision (2026-10-12, evening):** FAM-3/FAM-4 continue once the workstation is on the home network. Until then the device is not changed.
 
+## Stop point, evening 2026-10-12 (the owner is switching the computer off)
+
+| What | State | Next step |
+|---|---|---|
+| git | Local `main` is 7 commits ahead of `origin`/`gitverse` (`d6ee89f`): the refactor, the 60-file cleanup, CPP-1, docs. **Not pushed** | Push on the owner's word; after the push GitHub "Quality Checks" CI should turn green (the ratchet passes with no exceptions) |
+| SEC-3, passwords in history | Scope known (4 files, `a8d1990`, 361 `main` commits, 40 branches, 4 tags); the rewrite rehearsal was **stopped by the owner**. A local mirror `.agent-work/rewrite/rehearsal-1.git` — pre-filter, with the old history, on this disk only | The owner's decision; change the 4 passwords in any case |
+| FAM-3, faces | Blocker found: the workstation's `vmcompute` and `hns` services are disabled. The workstation was away from home (network `kv-20`) | At home: elevated PowerShell — `Set-Service vmcompute -StartupType Manual; Set-Service hns -StartupType Manual; Start-Service vmcompute, hns; wsl -d Ubuntu-22.04 -e uname -r` → Docker Desktop → ML per `IMMICH_ML_STATION_RUNBOOK.md` |
+| FAM-4, photo bank | The archive is fully walked; pilot candidates (≈ 2.3k assets, ≈ 8 GB) and preconditions — `docs/local/PHOTO_ARCHIVE_INVENTORY_2026-10-12.md` | The owner's permission to edit the Immich compose and recreate two containers (≈ 2 min without photos) |
+| Jetson | Not changed this session (read-only measurements only). The API container runs `0136af1`; the refactor is not deployed | Deploy the refactor on the owner's word |
+| Working tree | `ds_worker.toml` uncommitted (free OpenRouter model for second opinions) — untouched | Decide: commit or drop |
+
+**On the next start:** first make sure the workstation is at home (`netsh wlan show interfaces`: Deco `mash`/`borovskoy`,
+or the `192.168.0.1` gateway has MAC `5c:62:8b:…`), then the admin commands for FAM-3 and the owner's decisions on
+pushing and the FAM-4 pilot. Article order: FAM-3 → FAM-4 → REL-9/10/3 → REL-4 → REL-5/8 → FAM-1/2.
+
 ## Not done / pending
 
 - Changing the family passwords (SEC-3) and the git history decision — the owner's (REL-1 deployed, see above).

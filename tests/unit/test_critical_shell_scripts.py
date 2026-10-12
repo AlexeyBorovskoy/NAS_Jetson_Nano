@@ -121,6 +121,21 @@ class CriticalShell(unittest.TestCase):
         result = self.secrets("SERVICE_TOKEN=" + "synthetic" + "0123456789abcdef" + "\n", tracked=False)
         self.assertEqual(result.returncode, 0, result.stdout)
 
+    # 2026-10-12: family setup memos (artifacts/users/*.txt) kept 14-16 char
+    # passwords as "Пароль: ..." in the public repo since 2026-06-28; the
+    # NAME=value rule never saw them (Cyrillic marker, value shorter than 16).
+    def test_human_text_password_is_rejected_and_redacted(self):
+        value = "Syn" + "th3tic" + "Pw1x"
+        result = self.secrets("  Логин: user   Пароль: " + value + "\n", filename="memo.txt")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("password-like text", result.stdout)
+        self.assertNotIn(value, result.stdout)
+
+    def test_human_text_password_reference_is_allowed(self):
+        content = "Пароль: см. памятку у владельца\npassword: ${NEXTCLOUD_ADMIN_PASSWORD}\n"
+        result = self.secrets(content, filename="memo.txt")
+        self.assertEqual(result.returncode, 0, result.stdout)
+
     # 2026-10-09: markdown docs are scanned; placeholders stay safe, while real
     # values must still fail redacted - never skipped by prose words, same-line
     # exceptions or paths with spaces.

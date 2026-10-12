@@ -103,30 +103,6 @@
       "allow": [
         "local_artifact"
       ]
-    },
-    "artifacts/users/ANNA_setup.txt": {
-      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
-      "allow": [
-        "local_artifact"
-      ]
-    },
-    "artifacts/users/IVAN_setup.txt": {
-      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
-      "allow": [
-        "local_artifact"
-      ]
-    },
-    "artifacts/users/OLGA_setup.txt": {
-      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
-      "allow": [
-        "local_artifact"
-      ]
-    },
-    "artifacts/users/ULYANA_setup.txt": {
-      "reason": "Existing tracked project material at 5c48980; retained as an exact-path baseline, not approval for new artifacts.",
-      "allow": [
-        "local_artifact"
-      ]
     }
   }
 }

@@ -11,6 +11,15 @@ assignment = re.compile(
     r"\s*[:=]\s*['\"]?(?P<value>[A-Za-z0-9_./+=:@-]{16,})"
 )
 private_key = re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")
+# Пароль, записанный человеческим текстом ("Пароль: ...", "password - ...").
+# История: памятки семьи artifacts/users/*.txt с паролями по 14-16 символов
+# лежали в публичном репо с 2026-06-28 по 2026-10-12 — правило assignment
+# выше их не видело (кириллица в имени, значение короче 16).
+human_password = re.compile(
+    r"(?i)(?:пароль|password|passwd)\s*(?:[:=]|—|-)\s*[`'\"]?(?P<value>[A-Za-z0-9_!@#%^&*.+=-]{8,})"
+)
+credential_letters = re.compile(r"[A-Za-z]")
+credential_digits = re.compile(r"\d")
 placeholder = re.compile(
     r"(?:(?:change_me|replace_me|example|mock|REDACTED)(?:[_-][A-Za-z0-9_-]+)?|ВАШ_[A-Za-z0-9_]*|x{8,}|X{8,})\Z"
 )
@@ -66,6 +75,12 @@ for path in files:
             name, value = match.group("name", "value")
             if not allowed(name, value):
                 print(f"{path}:{number}: {name}=[REDACTED]")
+                failed = True
+        for match in human_password.finditer(line):
+            value = match.group("value")
+            if (credential_letters.search(value) and credential_digits.search(value)
+                    and not placeholder.fullmatch(value)):
+                print(f"{path}:{number}: password-like text [REDACTED]")
                 failed = True
 if failed:
     print("Potential secret-like strings found. Review before publishing.", file=sys.stderr)

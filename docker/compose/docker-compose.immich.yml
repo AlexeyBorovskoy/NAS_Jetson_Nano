@@ -63,6 +63,12 @@ services:
       TZ: ${TZ}
     volumes:
       - ${IMMICH_UPLOAD_LOCATION}:/usr/src/app/upload
+      # FAM-4 photobank (owner 2026-10-13): the whole 2 TB archive, read-only, at the same path as on the host,
+      # so that external-library import paths are real host paths and adding a folder is an API call, not a
+      # recreate. Pitfalls: (1) if the HDD is not mounted when the container starts, Docker binds the empty
+      # mount point and the library goes offline until a rescan; (2) Immich now holds the ntfs-3g mount — after
+      # a ntfs-3g restart recreate these containers too (CLAUDE.md, ntfs-3g pitfalls).
+      - /mnt/hdd2tb:/mnt/hdd2tb:ro
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:2283/api/server/ping || exit 1"]
       interval: 30s
@@ -95,6 +101,7 @@ services:
       TZ: ${TZ}
     volumes:
       - ${IMMICH_UPLOAD_LOCATION}:/usr/src/app/upload
+      - /mnt/hdd2tb:/mnt/hdd2tb:ro
     healthcheck:
       # The v2.7.5 image has no pgrep (procps): the old check could never pass, and the
       # container watchdog (OPS-1) restarted the container every few minutes once it was

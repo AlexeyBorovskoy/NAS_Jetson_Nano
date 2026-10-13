@@ -229,7 +229,7 @@
   ни в `fuser /dev/sdb1`: ссылку хранит **суперблок fuseblk**, живой до тех пор, пока на монтирование
   ссылается хоть один mount namespace. Считаются они так: `grep -l hdd2tb /proc/[0-9]*/mounts | wc -l`
   (в инциденте — 279 процессов при пустом `mount` на хосте). **Порядок восстановления:** убить `ntfs-3g` →
-  `umount -l` → **остановить контейнеры-держатели** (`nasa_api`, `downloads`, `samba`, `nextcloud`) →
+  `umount -l` → **остановить контейнеры-держатели** (`nasa_api`, `downloads`, `samba`, `nextcloud`, с 13.10 — и `immich_server`, `immich_microservices`: фотобанк FAM-4 смонтирован в них `ro`) →
   `mount /mnt/hdd2tb` → поднять их обратно **только** через `up -d --force-recreate`. Проверять не статусом
   контейнера, а изнутри: `docker exec <c> ls /mnt/hdd2tb`.
 - После временных замеров (`python3 -m http.server`) **гасить процесс** — иначе остаётся открытый порт на всю LAN (найден и закрыт при аудите 2026-08-10).

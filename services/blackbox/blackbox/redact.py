@@ -4,7 +4,8 @@
 
 - `mask_secrets` — токены, ключи, пароли, строки вида `<tenant>:<keyId>` —
   **всегда**, во всех контейнерах. Образцы ключевых слов — те же, что у
-  `scripts/security/check_no_secrets.sh` (assignment/human_password): token,
+  `scripts/security/check_no_secrets.sh` (assignment/human_password): token
+  и любое поле "*_token" (id_token, access_token, refresh_token, ...),
   secret, password/passwd, api[_-]?key, x-api-key, client_secret, Bearer,
   Authorization.
 - `mask_family_text` — подряд идущие русские слова (от трёх) у контейнеров
@@ -18,12 +19,15 @@ import re
 HIDDEN = "<скрыто>"
 TEXT_HIDDEN = "<текст скрыт>"
 
-# Имена ключей секретов. Порядок не важен для корректности (см. разбор в
-# отчёте задачи): более длинные варианты ("x-api-key") всё равно находятся
-# на своей стартовой позиции раньше, чем короткие ("token") — подстрокой
-# внутри другого слова ("id_token") они перекрываются уже проверкой разделителя.
+# Имена ключей секретов. Длинные/обобщённые варианты — раньше коротких:
+# `[\w-]*_token` ловит ЛЮБОЕ поле, оканчивающееся на "_token" (id_token,
+# access_token, refresh_token, session_token, ...) — грабли проекта 20.09
+# ответа OAuth были не только про id_token, а про всё семейство полей "*_token".
+# Бэктрекинг жадного `[\w-]*` сам находит границу (напр. "access"+"_token"),
+# поэтому отдельных алиасов на каждое поле не нужно. Голый "token" — ниже,
+# для form/query стиля без подчёркивания (`token=...`).
 _KEY_ALTS = (
-    r"x-api-key|api[_-]?key|client[_-]?secret|id[_-]?token|"
+    r"x-api-key|api[_-]?key|client[_-]?secret|[\w-]*_token|"
     r"token|secret|password|passwd"
 )
 
@@ -32,7 +36,7 @@ _KV_RE = re.compile(
     r"(?i)(" + _KEY_ALTS + r")(\s*[:=]\s*)([\"']?)[^\s&\"',]+(\3)"
 )
 
-# "key":"value" (JSON-журналы, в т.ч. грабли 20.09 — id_token).
+# "key":"value" (JSON-журналы, в т.ч. грабли 20.09 — все поля "*_token").
 _JSON_KV_RE = re.compile(
     r'(?i)"(' + _KEY_ALTS + r')"\s*:\s*"([^"]*)"'
 )

@@ -32,6 +32,11 @@ AUTH_LINE = joined("Authorization: ", BEARER, " ", JWT_LIKE)
 PASSWORD_LINE = joined(PASSWORD_KEY, "=", "TESTVALUE", " user=admin")
 API_KEY_LINE = joined("x-api", "-key: ", "k_", "ABCDEF01", "23456789")
 ID_TOKEN_LINE = joined('"id_', TOKEN_KEY, '":"', JWT_LIKE, '"')
+# Круг ревью 1 (грабли 20.09 — ответ OAuth несёт не только id_token, а всё
+# семейство полей "*_token"): access_token/refresh_token в тех же двух формах.
+ACCESS_TOKEN_LINE = joined('"access_', TOKEN_KEY, '":"', JWT_LIKE, '"')
+REFRESH_TOKEN_JSON_LINE = joined('"refresh_', TOKEN_KEY, '":"', JWT_LIKE, '"')
+REFRESH_TOKEN_KV_LINE = joined("GET /x?refresh_", TOKEN_KEY, "=", "xyz789ghi", " HTTP/1.1")
 HEALTHCHECK_LINE = "GET /healthcheck HTTP/1.1 200"
 
 FAMILY_PHRASE = "мама купи хлеба пожалуйста"           # 4 русских слова подряд
@@ -73,6 +78,29 @@ def test_mask_secrets_hides_id_token():
     assert JWT_LIKE not in out
     assert HIDDEN in out
     assert joined("id_", TOKEN_KEY) in out     # имя поля остаётся на месте
+
+
+def test_mask_secrets_hides_access_token_json():
+    """Круг ревью 1: access_token — тоже поле "*_token", значение скрывается."""
+    out = mask_secrets(ACCESS_TOKEN_LINE)
+    assert JWT_LIKE not in out
+    assert HIDDEN in out
+    assert joined("access_", TOKEN_KEY) in out   # имя поля остаётся на месте
+
+
+def test_mask_secrets_hides_refresh_token_json():
+    """Круг ревью 1: refresh_token в JSON-форме — значение скрывается."""
+    out = mask_secrets(REFRESH_TOKEN_JSON_LINE)
+    assert JWT_LIKE not in out
+    assert HIDDEN in out
+    assert joined("refresh_", TOKEN_KEY) in out
+
+
+def test_mask_secrets_hides_refresh_token_in_query():
+    """Круг ревью 1: refresh_token в форме key=value (без JSON) — значение скрывается."""
+    out = mask_secrets(REFRESH_TOKEN_KV_LINE)
+    assert joined("refresh_", TOKEN_KEY, "=", HIDDEN) in out
+    assert "xyz789ghi" not in out
 
 
 def test_mask_secrets_leaves_healthcheck_line_intact():

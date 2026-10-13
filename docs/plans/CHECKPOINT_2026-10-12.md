@@ -127,6 +127,10 @@ The Jetson directly (`192.168.0.50`) did not answer; the work went via `jetson-v
 or the `192.168.0.1` gateway has MAC `5c:62:8b:…`), then the admin commands for FAM-3 and the owner's decisions on
 pushing and the FAM-4 pilot. Article order: FAM-3 → FAM-4 → REL-9/10/3 → REL-4 → REL-5/8 → FAM-1/2.
 
+**FAM-4 pilot (2026-10-13 03:16–03:50 UTC, owner's permission):** two archive directories attached to Immich read-only (binds in `docker-compose.immich.yml` **on the device**, backup `…bak.1791861274`; not in git — the device is ahead of git until the pilot decision). 2,296 assets (2,044 JPG, 231 NEF, other), 8.3 GB, in 31 min, 0 errors; previews +892 MB on the SSD (≈ 0.39 MB/asset → the whole photo archive ≈ 60 GB, ≈ 34 h of processing); NEF previews from the embedded JPEG (`extractEmbedded=true` kept), NEF+JPG pairs show twice in the timeline (stacks via the API); 4 cores at 100%, swap up to 930 MB, microservices near the 512 MB limit. Job and ML settings restored from the pre-pilot copy. Side finding: the microservices `pgrep` healthcheck could never pass (no `pgrep` in the 2.7.5 image) — after the recreate the OPS-1 watchdog restarted the container at 03:20:50 and alerted the owner; fixed on the device and in git (`36c6b84`). The Jetson rebooted 2026-10-12 18:01→20:36 UTC without a clean shutdown (the owner cut power along with the computer); the D2 alert fired on its own — first live run; disk letters swapped (REL-11).
+
+**OBS-1 "black box":** design approved by the owner section by section on 2026-10-13, the spec is under review.
+
 ## Not done / pending
 
 - Changing the family passwords (SEC-3) and the git history decision — the owner's (REL-1 deployed, see above).

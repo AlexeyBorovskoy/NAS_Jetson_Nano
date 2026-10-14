@@ -43,7 +43,7 @@ services:
     image: ghcr.io/immich-app/immich-server:v2.7.5@sha256:c15bff75068effb03f4355997d03dc7e0fc58720c2b54ad6f7f10d1bc57efaa5
     container_name: homecloud_immich_server
     restart: always
-    mem_limit: 1024m
+    mem_limit: 768m    # API only since the worker split (b85a1aa)
     depends_on:
       immich-db:
         condition: service_healthy
@@ -87,7 +87,7 @@ services:
     container_name: homecloud_immich_microservices
     command: ['start.sh', 'microservices']
     restart: always
-    mem_limit: 512m
+    mem_limit: 1024m   # all jobs run here now; 512m OOM-killed on the first library scan (2026-10-14)
     depends_on:
       immich-db:
         condition: service_healthy

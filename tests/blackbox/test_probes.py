@@ -4,7 +4,9 @@
 Ни один настоящий процесс и ни один сокет не используется: Popen и run подменяются
 параметрами интерфейса, /proc/net/tcp — файл в tmp_path. Работает на Windows и Linux.
 """
-from blackbox.sources.probes import MountProbe, probe_gateway, probe_tunnel, probes_event
+from blackbox.sources.probes import (
+    MountProbe, probe_dns, probe_gateway, probe_tunnel, probes_event,
+)
 
 PROBE_TIMEOUT_S = 5
 
@@ -241,3 +243,30 @@ def test_probes_event_any_changed_probe_gives_event():
     prev = _probe_state()
     events = probes_event(_probe_state(tunnel=False), prev)
     assert len(events) == 1
+
+
+# ── probes_event: контракт event несёт ts/source (круг ревью 1, R7) ─────────
+
+
+def test_probes_event_carries_ts_and_source():
+    prev = _probe_state()
+    events = probes_event(_probe_state(dns=False), prev, now=1791861274)
+    assert len(events) == 1
+    assert events[0]["ts"] == 1791861274
+    assert events[0]["source"] == "probe"
+
+
+# ── probe_dns: проба в дочернем процессе (круг ревью 1, R8) ──────────────────
+
+
+def test_probe_dns_true_when_getent_succeeds():
+    run = _FakeRun(returncode=0)
+    assert probe_dns(run=run) is True
+    cmd = run.calls[-1]
+    assert any(part.endswith("timeout") for part in cmd)
+    assert "getent" in cmd
+
+
+def test_probe_dns_false_when_getent_fails():
+    run = _FakeRun(returncode=1)
+    assert probe_dns(run=run) is False

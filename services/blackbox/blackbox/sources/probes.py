@@ -17,6 +17,7 @@ import os
 import socket
 import struct
 import subprocess
+import time
 
 #: Состояние TCP-соединения ESTABLISHED, как оно печатается в /proc/net/tcp.
 _TCP_ESTABLISHED = "01"
@@ -122,17 +123,17 @@ def probe_gateway(run):
     return completed.returncode == 0
 
 
-def probe_dns(name="api.telegram.org", timeout=3):
-    """True, если имя `name` разрешается за `timeout` секунд."""
-    old_timeout = socket.getdefaulttimeout()
-    socket.setdefaulttimeout(timeout)
-    try:
-        socket.getaddrinfo(name, None)
-        return True
-    except socket.error:
-        return False
-    finally:
-        socket.setdefaulttimeout(old_timeout)
+def probe_dns(name="api.telegram.org", timeout=3, run=subprocess.run):
+    """True, если имя `name` разрешается за `timeout` секунд.
+
+    R8: `socket.setdefaulttimeout` не ограничивает системный резолвер внутри
+    `getaddrinfo` — зависший DNS повесил бы сборщик навсегда. Поэтому проба —
+    в дочернем процессе с таймаутом (`timeout <N> getent hosts <name>`), как
+    и монтирования; `run` подменяется в тестах.
+    """
+    completed = run(["timeout", str(timeout), "getent", "hosts", name],
+                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return completed.returncode == 0
 
 
 def probe_tcp(host, port, timeout=3):
@@ -182,13 +183,16 @@ def probe_tunnel(proc_root, vps_hosts):
 
 # ── Событие при смене состояния пробы ────────────────────────────────────────
 
-def probes_event(results, prev):
+def probes_event(results, prev, now=None):
     """Список событий `<имя>_down`/`<имя>_up` только для проб, сменивших состояние.
 
     `results`/`prev` — `{"gateway": bool, "dns": bool, "tunnel": bool,
     "tg_proxy": bool, ...}`; проба без записи в `prev` (первый опрос) событий
-    не даёт — отсутствует база для сравнения.
+    не даёт — отсутствует база для сравнения. R7: каждое событие несёт полный
+    контракт `event` (план, «Контракты данных») — `ts`/`source` включительно,
+    а не только `kind`/`subject`/`severity`/`detail`.
     """
+    ts = int(now) if now is not None else int(time.time())
     events = []
     for name, value in results.items():
         was = prev.get(name)
@@ -197,6 +201,8 @@ def probes_event(results, prev):
         suffix = "down" if value is False else "up"
         severity = "warn" if value is False else "info"
         events.append({
+            "ts": ts,
+            "source": "probe",
             "kind": name + "_" + suffix,
             "subject": name,
             "severity": severity,

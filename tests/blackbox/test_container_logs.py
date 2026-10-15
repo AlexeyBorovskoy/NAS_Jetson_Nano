@@ -170,3 +170,49 @@ def test_tail_lines_returns_last_lines(tmp_path):
     _write(path, texts)
 
     assert tail_lines(path, n=2) == ["entry four\n", "entry five\n"]
+
+
+def test_tail_lines_bounded_memory_for_large_file(tmp_path):
+    """Правка круга 1 ревью (КРИТИЧНОЕ): файл в несколько МБ — tail_lines
+    читает блоками с конца (`_read_tail_bytes`), а не целиком через
+    `fh.readlines()` (OOM-ловушка ровно в момент аварии контейнера, когда
+    журнал может весить сотни МБ при пределе сборщика 64 МБ). Возвращены
+    ровно последние n строк и на многотысячном файле (несколько МБ,
+    десятки блоков по умолчанию)."""
+    path = str(tmp_path / "big.log")
+    total_lines = 50000
+    texts = ["line %06d\n" % i for i in range(total_lines)]
+    _write(path, texts)
+    assert os.path.getsize(path) > 2 * 1024 * 1024  # действительно «несколько МБ»
+
+    assert tail_lines(path, n=5) == texts[-5:]
+
+
+def test_tail_lines_handles_line_split_across_block_boundary(tmp_path):
+    """Правка круга 1 ревью (КРИТИЧНОЕ): строка, которую граница блока
+    режет ровно посередине, — не теряется и не дублируется. `block_size`
+    задан заведомо меньше одной физической строки, чтобы граница блока
+    обязательно прошла внутри какой-то строки."""
+    path = str(tmp_path / "boundary.log")
+    texts = ["aaa\n", "bbb\n", "ccc\n", "ddd\n", "eee\n"]
+    _write(path, texts)
+
+    assert tail_lines(path, n=3, block_size=10) == texts[-3:]
+
+
+def test_tail_lines_file_shorter_than_one_block(tmp_path):
+    """Правка круга 1 ревью (КРИТИЧНОЕ): файл короче одного блока читается
+    весь, без ошибки — ровно как раньше, просто без лишнего чтения."""
+    path = str(tmp_path / "short.log")
+    texts = ["only one\n", "and two\n"]
+    _write(path, texts)
+
+    assert tail_lines(path, n=10) == texts
+
+
+def test_tail_lines_missing_file_returns_empty(tmp_path):
+    """Правка круга 1 ревью (ВАЖНОЕ 2): файл исчез между вызовами
+    (ротация/удаление под ногами) — [], как и LogTailer.read_new, без
+    исключения наружу."""
+    path = str(tmp_path / "gone.log")
+    assert tail_lines(path, n=5) == []

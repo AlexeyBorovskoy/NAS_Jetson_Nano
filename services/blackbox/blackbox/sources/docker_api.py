@@ -82,6 +82,10 @@ class DockerClient(object):
         Обрыв соединения (исключение семейства `OSError`) -> генератор
         завершается сам (`StopIteration`), наружу ничего не летит;
         переподключение — дело вызывающего (раздел задания).
+
+        Битая/оборванная JSON-строка внутри потока (правка круга 1 ревью,
+        ВАЖНОЕ 1) — пропускается, а не роняет весь генератор: одна мусорная
+        строка не должна лишить сборщик всех последующих событий.
         """
         conn, response = self._request("GET", "/events?since=%d" % since_ts)
         try:
@@ -89,7 +93,11 @@ class DockerClient(object):
                 line = raw_line.strip()
                 if not line:
                     continue
-                yield json.loads(line)
+                try:
+                    event = json.loads(line)
+                except ValueError:
+                    continue
+                yield event
         except OSError:
             return
         finally:
@@ -130,6 +138,12 @@ def _severity_for(kind, detail):
     if kind == "oom":
         return "crit"
     if kind == "die":
+        # Осознанно (правка круга 1 ревью, МЕЛКОЕ): die без поля exitCode
+        # вовсе (detail.get(...) -> None) здесь тоже даёт crit, потому что
+        # None не входит в (0, 143). Docker всегда присылает exitCode у die —
+        # его отсутствие само по себе аномалия сильнее, чем обычный ненулевой
+        # код, поэтому понижать её до warn/info не стал: громкий crit на
+        # странице безопаснее тихого info.
         exit_code = detail.get("exitCode")
         if exit_code not in (0, 143):
             return "crit"

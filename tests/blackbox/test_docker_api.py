@@ -255,3 +255,20 @@ def test_event_start_stop_restart_are_info():
 def test_event_exec_start_is_ignored():
     """Строка таблицы: exec_start — остальное, None."""
     assert event_from_docker(_raw_event("exec_start")) is None
+
+
+def test_events_skips_malformed_line_without_stopping():
+    """Правка круга 1 ревью (ВАЖНОЕ 1): поток «валидная, мусор, валидная» —
+    битая строка пропускается, генератор не обрывается ею (обрыв — только
+    по настоящему разрыву соединения, см. test_events_yields_three_then_stops_on_break)."""
+    raws = [_raw_event("start"), _raw_event("restart")]
+    lines = [json.dumps(raws[0]), "это не JSON вовсе {{{", json.dumps(raws[1])]
+    stream = _EventStream(lines)
+    opener = _FakeOpener(stream)
+    client = DockerClient(SOCK, opener=opener)
+
+    gen = client.events(TS)
+    assert next(gen) == raws[0]
+    assert next(gen) == raws[1]
+    with pytest.raises(StopIteration):
+        next(gen)

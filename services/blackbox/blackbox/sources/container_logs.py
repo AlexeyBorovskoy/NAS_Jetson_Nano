@@ -95,10 +95,56 @@ def split_health(lines):
     return kept, health_count
 
 
-def tail_lines(path, n=200):
-    """Последние `n` строк `"log"` файла `json-file` (для событий die/oom/unhealthy)."""
-    with open(path, "rb") as fh:
-        lines = fh.readlines()
-    tail = lines[-n:] if n > 0 else []
+def _read_tail_bytes(fh, n, block_size):
+    """Байты с конца файла, достаточные для `n` физических строк (или весь файл).
+
+    Читает блоками по `block_size` от конца к началу, а не файл целиком —
+    правка круга 1 ревью (КРИТИЧНОЕ): `json-file` на аварии контейнера может
+    весить сотни МБ при пределе сборщика 64 МБ, и старое `fh.readlines()`
+    было OOM-ловушкой ровно в момент, когда нужны последние строки.
+    Память — O(размера накопленного хвоста), не O(размера файла).
+
+    Условие остановки — `newline_count > n` (на одну границу БОЛЬШЕ, чем
+    строк нужно), не `>= n`: если прочитанный хвост начинается не ровно на
+    границе строки, его первый элемент после `split(b"\\n")` — обрубок
+    предыдущей строки, а не нужная строка. `_extract_log_field` такой обрубок
+    не распарсит и тихо выбросит как `None`, и результат окажется короче `n`
+    без единой ошибки (ровно так и проявился этот дефект на обзоре). Лишняя
+    граница гарантирует, что обрубок окажется за пределами взятых `n`
+    последних элементов, а `pos == 0` (дошли до начала файла) — тот же самый
+    случай, но без обрубка вовсе: там граница не нужна, начало файла само
+    по себе чистая граница.
+    """
+    fh.seek(0, os.SEEK_END)
+    pos = fh.tell()
+    data = b""
+    newline_count = 0
+    while pos > 0 and newline_count <= n:
+        step = min(block_size, pos)
+        pos -= step
+        fh.seek(pos)
+        data = fh.read(step) + data
+        newline_count = data.count(b"\n")
+    return data
+
+
+def tail_lines(path, n=200, block_size=64 << 10):
+    """Последние `n` строк `"log"` файла `json-file` (для событий die/oom/unhealthy).
+
+    Файл, исчезнувший между вызовами (ротация/удаление под ногами) -> `[]`,
+    как и `LogTailer.read_new` — не бросает исключение (правка круга 1,
+    ВАЖНОЕ 2).
+    """
+    if n <= 0:
+        return []
+    try:
+        with open(path, "rb") as fh:
+            data = _read_tail_bytes(fh, n, block_size)
+    except OSError:
+        return []
+    lines = data.split(b"\n")
+    if data.endswith(b"\n"):
+        lines.pop()  # пустая строка после последнего "\n"
+    tail = lines[-n:]
     return [value for value in (_extract_log_field(line) for line in tail)
             if value is not None]

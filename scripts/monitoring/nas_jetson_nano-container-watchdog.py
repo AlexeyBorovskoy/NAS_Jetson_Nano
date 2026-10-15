@@ -19,6 +19,16 @@
 Алерт владельцу — тем же каналом, что D2 (boot-alert): Telegram через SOCKS.
 Не доставился — не страшно: действие уже выполнено и записано в journal.
 Python 3.6 (хост Jetson).
+
+OPS-2 (инцидент 13-14.10.2026, CLAUDE.md «Грабли»): два параллельных обхода
+внешней библиотеки Immich повесили `ntfs-3g` на /mnt/hdd2tb. Сторож увидел
+Nextcloud `unhealthy` и сделал `docker restart` — контейнер держал bind на
+мёртвом монтировании и не поднялся, Nextcloud лежал 10 часов. Теперь перед
+любым действием сторож один раз пробует /mnt/hdd2tb (дочерним процессом с
+таймаутом — в своём процессе к пути не обращаться, он сам может зависнуть) и,
+если точка не отвечает или не смонтирована, НЕ трогает контейнеры-держатели
+(с bind-монтированием из /mnt/hdd2tb) и шлёт отдельный алерт с подсказкой на
+scripts/storage/hdd_hang_recover.sh — восстановление делает человек руками.
 """
 import importlib.util
 import json
@@ -34,6 +44,10 @@ PAUSE_DIR = "/etc/nas-watchdog.pause.d"
 START_COOLDOWN = 120
 UNHEALTHY_COOLDOWN = 900
 MAX_ACTIONS_PER_HOUR = 6
+HDD_MOUNT = "/mnt/hdd2tb"
+HDD_PROBE_TIMEOUT = 10
+HDD_ALERT_COOLDOWN = 3600
+HDD_RECOVER_HINT = "scripts/storage/hdd_hang_recover.sh"
 
 
 def _load_boot_alert():
@@ -58,13 +72,81 @@ def list_containers():
     for c in json.loads(raw or "[]"):
         health = ((c.get("State") or {}).get("Health") or {}).get("Status", "")
         labels = (c.get("Config") or {}).get("Labels") or {}
+        mounts = [m.get("Source", "") for m in (c.get("Mounts") or [])
+                 if m.get("Type") == "bind" and m.get("Source")]
         out.append({"name": c["Name"].lstrip("/"),
                     "status": (c.get("State") or {}).get("Status", ""),
                     "health": health,
                     "policy": ((c.get("HostConfig") or {}).get("RestartPolicy") or {}).get("Name", ""),
                     "maintenance": str(labels.get("nas.watchdog.maintenance", "")).lower()
-                    in ("1", "true", "yes", "on")})
+                    in ("1", "true", "yes", "on"),
+                    "mounts": mounts})
     return out
+
+
+def holds_hdd(container, mount=HDD_MOUNT):
+    """True, если у контейнера есть bind-источник mount или подкаталог под ним
+    (OPS-2): такой контейнер нельзя start/restart-ить на мёртвом fuseblk."""
+    prefix = mount.rstrip("/") + "/"
+    for src in container.get("mounts", []):
+        if src == mount or src.startswith(prefix):
+            return True
+    return False
+
+
+def _mount_present(mount, mounts_path):
+    """Точка смонтирована хоть чем-нибудь — читаем /proc/mounts текстом, не
+    трогая саму точку (её fuseblk может быть мёртв)."""
+    try:
+        with open(mounts_path, encoding="utf-8") as fh:
+            for line in fh:
+                parts = line.split()
+                if len(parts) >= 2 and parts[1] == mount:
+                    return True
+    except OSError:
+        return False
+    return False
+
+
+def hdd_probe(mount=HDD_MOUNT, timeout=HDD_PROBE_TIMEOUT, run=subprocess.run,
+             mounts_path="/proc/mounts"):
+    """"absent" — точки нет в /proc/mounts; "ok" — `stat -f` ответил за timeout
+    секунд; "hung" — таймаут или ошибка. Проба — только в дочернем процессе
+    (`timeout` снаружи и собственный timeout= у subprocess.run — двойная
+    страховка на случай, если сам ntfs-3g не реагирует даже на SIGTERM)."""
+    if not _mount_present(mount, mounts_path):
+        return "absent"
+    try:
+        r = run(["timeout", str(timeout), "stat", "-f", mount],
+               stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+               universal_newlines=True, timeout=timeout + 5)
+    except Exception:
+        return "hung"
+    return "ok" if r.returncode == 0 else "hung"
+
+
+def hdd_alert_text(status):
+    where = "не смонтирован" if status == "absent" else "не отвечает"
+    return ("⛔ HDD %s %s — держателей не перезапускаю; восстановление вручную: %s"
+            % (HDD_MOUNT, where, HDD_RECOVER_HINT))
+
+
+def hdd_status_note(state, status, now, cooldown=HDD_ALERT_COOLDOWN):
+    """Решает, нужен ли алерт о состоянии /mnt/hdd2tb, и обновляет state["_hdd"].
+    Проблема репортится не чаще раза в cooldown секунд; восстановление после
+    проблемы — всегда одним алертом сразу, без ожидания cooldown."""
+    prev = state.get("_hdd") or {}
+    prev_status, last_alert = prev.get("status", "ok"), prev.get("last_alert", 0)
+    if status == "ok":
+        state["_hdd"] = {"status": "ok", "last_alert": last_alert}
+        if prev_status != "ok":
+            return "✅ HDD %s снова отвечает" % HDD_MOUNT
+        return None
+    if prev_status == "ok" or now - last_alert >= cooldown:
+        state["_hdd"] = {"status": status, "last_alert": now}
+        return hdd_alert_text(status)
+    state["_hdd"] = {"status": status, "last_alert": last_alert}
+    return None
 
 
 def is_paused(c):
@@ -107,6 +189,36 @@ def save_state(path, state):
     os.replace(tmp, path)
 
 
+def process_container(c, state, now, notes):
+    """Применяет decide() к одному контейнеру: start/restart через docker или
+    алерт give_up. Вынесено из main() отдельной функцией (OPS-2), чтобы HDD-
+    проверка держателей в main() не разбухала вместе с этой веткой."""
+    name = c["name"]
+    hist = [t for t in state.get(name, []) if now - t < 86400]
+    action = decide(c, hist, now)
+    if action is None:
+        state[name] = hist
+        return
+    if action == "give_up":
+        if not state.get("_gave_up_" + name):
+            notes.append("⛔ %s: %s, уже %d попыток за час — больше не трогаю, нужен человек"
+                         % (name, c["status"] + ("/" + c["health"] if c["health"] else ""),
+                            MAX_ACTIONS_PER_HOUR))
+            state["_gave_up_" + name] = now
+        state[name] = hist
+        return
+    r = docker(action, name)
+    hist.append(now)
+    state[name] = hist
+    state.pop("_gave_up_" + name, None)
+    ok = r.returncode == 0
+    line = "%s %s: был %s%s → docker %s %s" % (
+        "🔁" if ok else "❌", name, c["status"],
+        "/" + c["health"] if c["health"] else "", action, "OK" if ok else "ОШИБКА: " + r.stderr.strip()[:200])
+    print("watchdog: " + line)
+    notes.append(line)
+
+
 def main():
     if os.path.exists(PAUSE_FILE):
         print("watchdog: пауза (%s) — ничего не трогаю" % PAUSE_FILE)
@@ -116,33 +228,18 @@ def main():
     state = load_state(state_file)
     now = int(time.time())
     notes = []
+    hdd_status = hdd_probe()
+    hdd_note = hdd_status_note(state, hdd_status, now)
+    if hdd_note:
+        notes.append(hdd_note)
     for c in list_containers():
         if is_paused(c):
             print("watchdog: обслуживание %s — пропускаю" % c["name"])
             continue
-        hist = [t for t in state.get(c["name"], []) if now - t < 86400]
-        action = decide(c, hist, now)
-        if action is None:
-            state[c["name"]] = hist
+        if hdd_status != "ok" and holds_hdd(c):
+            print("watchdog: %s держит /mnt/hdd2tb (%s) — не трогаю" % (c["name"], hdd_status))
             continue
-        if action == "give_up":
-            if not state.get("_gave_up_" + c["name"]):
-                notes.append("⛔ %s: %s, уже %d попыток за час — больше не трогаю, нужен человек"
-                             % (c["name"], c["status"] + ("/" + c["health"] if c["health"] else ""),
-                                MAX_ACTIONS_PER_HOUR))
-                state["_gave_up_" + c["name"]] = now
-            state[c["name"]] = hist
-            continue
-        r = docker(action, c["name"])
-        hist.append(now)
-        state[c["name"]] = hist
-        state.pop("_gave_up_" + c["name"], None)
-        ok = r.returncode == 0
-        line = "%s %s: был %s%s → docker %s %s" % (
-            "🔁" if ok else "❌", c["name"], c["status"],
-            "/" + c["health"] if c["health"] else "", action, "OK" if ok else "ОШИБКА: " + r.stderr.strip()[:200])
-        print("watchdog: " + line)
-        notes.append(line)
+        process_container(c, state, now, notes)
     save_state(state_file, state)
     if notes:
         token = ba.read_env(ba.ENV_FILE, "TELEGRAM_BOT_TOKEN")

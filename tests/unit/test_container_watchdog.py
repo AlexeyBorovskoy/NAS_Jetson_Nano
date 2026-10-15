@@ -1,8 +1,9 @@
-"""OPS-1: deterministic tests for the local Docker recovery watchdog."""
+"""OPS-1/OPS-2: deterministic tests for the local Docker recovery watchdog."""
 from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -18,13 +19,15 @@ def load():
     return module
 
 
-def container(status="running", health="healthy", policy="always", maintenance=False):
+def container(status="running", health="healthy", policy="always", maintenance=False,
+             mounts=()):
     return {
         "name": "homecloud_demo",
         "status": status,
         "health": health,
         "policy": policy,
         "maintenance": maintenance,
+        "mounts": list(mounts),
     }
 
 
@@ -104,6 +107,7 @@ def test_failed_telegram_delivery_is_reported(tmp_path, capsys):
     )
     action = mock.Mock(returncode=0, stderr="")
     with mock.patch.object(mod, "_load_boot_alert", return_value=alert), \
+            mock.patch.object(mod, "hdd_probe", return_value="ok"), \
             mock.patch.object(mod, "list_containers",
                               return_value=[container(status="exited", health="")]), \
             mock.patch.object(mod, "docker", return_value=action):
@@ -123,11 +127,112 @@ def test_successful_telegram_delivery_is_reported(tmp_path, capsys):
     )
     action = mock.Mock(returncode=0, stderr="")
     with mock.patch.object(mod, "_load_boot_alert", return_value=alert), \
+            mock.patch.object(mod, "hdd_probe", return_value="ok"), \
             mock.patch.object(mod, "list_containers",
                               return_value=[container(status="exited", health="")]), \
             mock.patch.object(mod, "docker", return_value=action):
         assert mod.main() == 0
     assert "алерт доставлен" in capsys.readouterr().out
+
+
+# ── OPS-2: /mnt/hdd2tb — не трогать держателей на мёртвом fuseblk ─────────────
+
+def test_hdd_probe_three_outcomes(tmp_path):
+    mod = load()
+    mounts_file = tmp_path / "mounts"
+
+    mounts_file.write_text("", encoding="utf-8")
+    assert mod.hdd_probe(mount="/mnt/hdd2tb", mounts_path=str(mounts_file)) == "absent"
+
+    mounts_file.write_text("/dev/sdb1 /mnt/hdd2tb fuseblk rw 0 0\n", encoding="utf-8")
+    ok_run = mock.Mock(return_value=mock.Mock(returncode=0))
+    assert mod.hdd_probe(mount="/mnt/hdd2tb", mounts_path=str(mounts_file),
+                         run=ok_run) == "ok"
+
+    bad_run = mock.Mock(return_value=mock.Mock(returncode=1))
+    assert mod.hdd_probe(mount="/mnt/hdd2tb", mounts_path=str(mounts_file),
+                         run=bad_run) == "hung"
+
+    hung_run = mock.Mock(side_effect=subprocess.TimeoutExpired(cmd="stat", timeout=10))
+    assert mod.hdd_probe(mount="/mnt/hdd2tb", mounts_path=str(mounts_file),
+                         run=hung_run) == "hung"
+
+
+def test_holds_hdd_matches_exact_source_and_subpaths_only():
+    mod = load()
+    assert mod.holds_hdd(container(mounts=("/mnt/hdd2tb",)))
+    assert mod.holds_hdd(container(mounts=("/mnt/hdd2tb/Downloads",)))
+    assert not mod.holds_hdd(container(mounts=("/mnt/storage",)))
+    assert not mod.holds_hdd(container(mounts=("/mnt/hdd2tb-other",)))
+    assert not mod.holds_hdd(container(mounts=()))
+
+
+def test_hdd_status_note_cooldown_and_recovery():
+    mod = load()
+    state = {}
+    first = mod.hdd_status_note(state, "hung", 1000)
+    assert first is not None and "hdd_hang_recover.sh" in first
+
+    # repeat 30 min later — silence
+    assert mod.hdd_status_note(state, "hung", 1000 + 1800) is None
+
+    # repeat 61 min after the FIRST alert — alerts again
+    second = mod.hdd_status_note(state, "hung", 1000 + 3660)
+    assert second is not None and "hdd_hang_recover.sh" in second
+
+    # recovery — always reported immediately, regardless of cooldown
+    recovered = mod.hdd_status_note(state, "ok", 1000 + 3700)
+    assert recovered is not None and "снова отвечает" in recovered
+
+    # staying ok afterwards is silent
+    assert mod.hdd_status_note(state, "ok", 1000 + 4000) is None
+
+
+def test_hdd_status_note_absent_text():
+    mod = load()
+    note = mod.hdd_status_note({}, "absent", 1000)
+    assert note is not None and "не смонтирован" in note
+
+
+def test_hung_hdd_blocks_holder_restart_and_alerts(tmp_path):
+    mod = load()
+    mod.PAUSE_FILE = str(tmp_path / "not-paused")
+    alert = SimpleNamespace(
+        LAYOUT={"NAS_STATE_DIR": str(tmp_path)},
+        ENV_FILE=str(tmp_path / "env"),
+        read_env=mock.Mock(return_value="configured"),
+        resolve_owner_chat_id=mock.Mock(return_value="123"),
+        send_with_retries=mock.Mock(return_value=(True, None)),
+    )
+    holder = container(status="exited", health="", mounts=("/mnt/hdd2tb",))
+    with mock.patch.object(mod, "_load_boot_alert", return_value=alert), \
+            mock.patch.object(mod, "hdd_probe", return_value="hung"), \
+            mock.patch.object(mod, "list_containers", return_value=[holder]), \
+            mock.patch.object(mod, "docker") as docker_mock:
+        assert mod.main() == 0
+    docker_mock.assert_not_called()
+    sent_text = alert.send_with_retries.call_args[0][2]
+    assert "hdd_hang_recover.sh" in sent_text
+
+
+def test_hung_hdd_does_not_block_non_holder_container(tmp_path):
+    mod = load()
+    mod.PAUSE_FILE = str(tmp_path / "not-paused")
+    alert = SimpleNamespace(
+        LAYOUT={"NAS_STATE_DIR": str(tmp_path)},
+        ENV_FILE=str(tmp_path / "env"),
+        read_env=mock.Mock(return_value="configured"),
+        resolve_owner_chat_id=mock.Mock(return_value="123"),
+        send_with_retries=mock.Mock(return_value=(True, None)),
+    )
+    plain = container(status="exited", health="", mounts=())
+    action = mock.Mock(returncode=0, stderr="")
+    with mock.patch.object(mod, "_load_boot_alert", return_value=alert), \
+            mock.patch.object(mod, "hdd_probe", return_value="hung"), \
+            mock.patch.object(mod, "list_containers", return_value=[plain]), \
+            mock.patch.object(mod, "docker", return_value=action) as docker_mock:
+        assert mod.main() == 0
+    docker_mock.assert_called_once_with("start", "homecloud_demo")
 
 
 if __name__ == "__main__":

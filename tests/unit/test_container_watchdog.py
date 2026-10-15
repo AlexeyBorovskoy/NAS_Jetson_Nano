@@ -1,19 +1,32 @@
-"""OPS-1/OPS-2: deterministic tests for the local Docker recovery watchdog."""
+"""OPS-1/OPS-2: deterministic tests for the local Docker recovery watchdog.
+
+HDD-guard logic itself (hdd_probe/holds_hdd/hdd_status_note) moved to its own
+module (scripts/monitoring/hdd_guard.py, review round 1, 2026-10-15) and is
+unit-tested there (tests/unit/test_hdd_guard.py). Here we only check the
+wiring: the watchdog loads that module via _load_hdd_guard() and must not
+start/restart a holder while the mount is unhealthy."""
 from __future__ import annotations
 
 import importlib.util
 import json
-import subprocess
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts/monitoring/nas_jetson_nano-container-watchdog.py"
+HDD_GUARD_SCRIPT = ROOT / "scripts/monitoring/hdd_guard.py"
 
 
 def load():
     spec = importlib.util.spec_from_file_location("container_watchdog", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def load_hdd_guard():
+    spec = importlib.util.spec_from_file_location("hdd_guard_for_watchdog_test", HDD_GUARD_SCRIPT)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -92,6 +105,7 @@ def test_systemd_timer_and_installer_contract():
 
 def test_failed_telegram_delivery_is_reported(tmp_path, capsys):
     mod = load()
+    hg = load_hdd_guard()
     mod.PAUSE_FILE = str(tmp_path / "not-paused")
     alert = SimpleNamespace(
         LAYOUT={"NAS_STATE_DIR": str(tmp_path)},
@@ -107,7 +121,8 @@ def test_failed_telegram_delivery_is_reported(tmp_path, capsys):
     )
     action = mock.Mock(returncode=0, stderr="")
     with mock.patch.object(mod, "_load_boot_alert", return_value=alert), \
-            mock.patch.object(mod, "hdd_probe", return_value="ok"), \
+            mock.patch.object(mod, "_load_hdd_guard", return_value=hg), \
+            mock.patch.object(hg, "hdd_probe", return_value="ok"), \
             mock.patch.object(mod, "list_containers",
                               return_value=[container(status="exited", health="")]), \
             mock.patch.object(mod, "docker", return_value=action):
@@ -117,6 +132,7 @@ def test_failed_telegram_delivery_is_reported(tmp_path, capsys):
 
 def test_successful_telegram_delivery_is_reported(tmp_path, capsys):
     mod = load()
+    hg = load_hdd_guard()
     mod.PAUSE_FILE = str(tmp_path / "not-paused")
     alert = SimpleNamespace(
         LAYOUT={"NAS_STATE_DIR": str(tmp_path)},
@@ -127,7 +143,8 @@ def test_successful_telegram_delivery_is_reported(tmp_path, capsys):
     )
     action = mock.Mock(returncode=0, stderr="")
     with mock.patch.object(mod, "_load_boot_alert", return_value=alert), \
-            mock.patch.object(mod, "hdd_probe", return_value="ok"), \
+            mock.patch.object(mod, "_load_hdd_guard", return_value=hg), \
+            mock.patch.object(hg, "hdd_probe", return_value="ok"), \
             mock.patch.object(mod, "list_containers",
                               return_value=[container(status="exited", health="")]), \
             mock.patch.object(mod, "docker", return_value=action):
@@ -135,67 +152,14 @@ def test_successful_telegram_delivery_is_reported(tmp_path, capsys):
     assert "алерт доставлен" in capsys.readouterr().out
 
 
-# ── OPS-2: /mnt/hdd2tb — не трогать держателей на мёртвом fuseblk ─────────────
-
-def test_hdd_probe_three_outcomes(tmp_path):
-    mod = load()
-    mounts_file = tmp_path / "mounts"
-
-    mounts_file.write_text("", encoding="utf-8")
-    assert mod.hdd_probe(mount="/mnt/hdd2tb", mounts_path=str(mounts_file)) == "absent"
-
-    mounts_file.write_text("/dev/sdb1 /mnt/hdd2tb fuseblk rw 0 0\n", encoding="utf-8")
-    ok_run = mock.Mock(return_value=mock.Mock(returncode=0))
-    assert mod.hdd_probe(mount="/mnt/hdd2tb", mounts_path=str(mounts_file),
-                         run=ok_run) == "ok"
-
-    bad_run = mock.Mock(return_value=mock.Mock(returncode=1))
-    assert mod.hdd_probe(mount="/mnt/hdd2tb", mounts_path=str(mounts_file),
-                         run=bad_run) == "hung"
-
-    hung_run = mock.Mock(side_effect=subprocess.TimeoutExpired(cmd="stat", timeout=10))
-    assert mod.hdd_probe(mount="/mnt/hdd2tb", mounts_path=str(mounts_file),
-                         run=hung_run) == "hung"
-
-
-def test_holds_hdd_matches_exact_source_and_subpaths_only():
-    mod = load()
-    assert mod.holds_hdd(container(mounts=("/mnt/hdd2tb",)))
-    assert mod.holds_hdd(container(mounts=("/mnt/hdd2tb/Downloads",)))
-    assert not mod.holds_hdd(container(mounts=("/mnt/storage",)))
-    assert not mod.holds_hdd(container(mounts=("/mnt/hdd2tb-other",)))
-    assert not mod.holds_hdd(container(mounts=()))
-
-
-def test_hdd_status_note_cooldown_and_recovery():
-    mod = load()
-    state = {}
-    first = mod.hdd_status_note(state, "hung", 1000)
-    assert first is not None and "hdd_hang_recover.sh" in first
-
-    # repeat 30 min later — silence
-    assert mod.hdd_status_note(state, "hung", 1000 + 1800) is None
-
-    # repeat 61 min after the FIRST alert — alerts again
-    second = mod.hdd_status_note(state, "hung", 1000 + 3660)
-    assert second is not None and "hdd_hang_recover.sh" in second
-
-    # recovery — always reported immediately, regardless of cooldown
-    recovered = mod.hdd_status_note(state, "ok", 1000 + 3700)
-    assert recovered is not None and "снова отвечает" in recovered
-
-    # staying ok afterwards is silent
-    assert mod.hdd_status_note(state, "ok", 1000 + 4000) is None
-
-
-def test_hdd_status_note_absent_text():
-    mod = load()
-    note = mod.hdd_status_note({}, "absent", 1000)
-    assert note is not None and "не смонтирован" in note
-
+# ── OPS-2: /mnt/hdd2tb — сторож не трогает держателей при hung/absent ────────
+# hdd_probe подменён (трогает /proc и subprocess), holds_hdd/hdd_status_note —
+# настоящие из hdd_guard.py: это проверка СВЯЗКИ двух модулей, не повтор их
+# собственных unit-тестов (они в test_hdd_guard.py).
 
 def test_hung_hdd_blocks_holder_restart_and_alerts(tmp_path):
     mod = load()
+    hg = load_hdd_guard()
     mod.PAUSE_FILE = str(tmp_path / "not-paused")
     alert = SimpleNamespace(
         LAYOUT={"NAS_STATE_DIR": str(tmp_path)},
@@ -206,7 +170,8 @@ def test_hung_hdd_blocks_holder_restart_and_alerts(tmp_path):
     )
     holder = container(status="exited", health="", mounts=("/mnt/hdd2tb",))
     with mock.patch.object(mod, "_load_boot_alert", return_value=alert), \
-            mock.patch.object(mod, "hdd_probe", return_value="hung"), \
+            mock.patch.object(mod, "_load_hdd_guard", return_value=hg), \
+            mock.patch.object(hg, "hdd_probe", return_value="hung"), \
             mock.patch.object(mod, "list_containers", return_value=[holder]), \
             mock.patch.object(mod, "docker") as docker_mock:
         assert mod.main() == 0
@@ -217,6 +182,7 @@ def test_hung_hdd_blocks_holder_restart_and_alerts(tmp_path):
 
 def test_hung_hdd_does_not_block_non_holder_container(tmp_path):
     mod = load()
+    hg = load_hdd_guard()
     mod.PAUSE_FILE = str(tmp_path / "not-paused")
     alert = SimpleNamespace(
         LAYOUT={"NAS_STATE_DIR": str(tmp_path)},
@@ -228,7 +194,8 @@ def test_hung_hdd_does_not_block_non_holder_container(tmp_path):
     plain = container(status="exited", health="", mounts=())
     action = mock.Mock(returncode=0, stderr="")
     with mock.patch.object(mod, "_load_boot_alert", return_value=alert), \
-            mock.patch.object(mod, "hdd_probe", return_value="hung"), \
+            mock.patch.object(mod, "_load_hdd_guard", return_value=hg), \
+            mock.patch.object(hg, "hdd_probe", return_value="hung"), \
             mock.patch.object(mod, "list_containers", return_value=[plain]), \
             mock.patch.object(mod, "docker", return_value=action) as docker_mock:
         assert mod.main() == 0

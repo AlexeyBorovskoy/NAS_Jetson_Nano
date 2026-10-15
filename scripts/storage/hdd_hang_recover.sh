@@ -69,23 +69,6 @@ exec > >(tee -a "$LOG") 2>&1
 log() { printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"; }
 die() { log "ERROR: $*"; exit 1; }
 
-# ── держатели и их путь внутри контейнера ───────────────────────────────────
-# держатели и их путь внутри контейнера — из docker/compose/*.yml на момент
-# написания (immich.yml, nextcloud.yml, samba.yml, nas_jetson_nano-api.yml,
-# downloads.yml). Если список держателей поменяется — обновить эту таблицу.
-holder_path_inside() {
-    case "$1" in
-        homecloud_immich_server|homecloud_immich_microservices)
-            printf '%s' "$MOUNT" ;;
-        homecloud_nextcloud|homecloud_samba|homecloud_nasa_api)
-            printf '%s' "$MOUNT" ;;
-        homecloud_downloads)
-            printf '/downloads/hdd' ;;
-        *)
-            printf '' ;;
-    esac
-}
-
 # ── read-only диагностика (выполняется и в dry-run, и в --apply) ────────────
 diskstats_source() {
     # findmnt на неподключённой точке молча возвращает ненулевой код без вывода
@@ -127,26 +110,46 @@ confirm_hang() {
     return 1
 }
 
-find_holders() {
-    # Контейнеры с bind-источником $MOUNT или подкаталогом под ним — тот же
-    # критерий, что holds_hdd() в nas_jetson_nano-container-watchdog.py.
-    # Docker недоступен — падаем громко (set -e): считать это "держателей нет"
-    # было бы опаснее, чем остановить скрипт.
-    local names
-    names=$(docker ps -a --format '{{.Names}}')
-    for name in $names; do
-        holder_mounts "$name"
-    done
+holder_bind_mounts() {
+    # "Source<TAB>Destination" на строку, по одной на bind-монтирование —
+    # источник правды для (а) «держатель ли это» и (б) пути внутри контейнера
+    # для проверки fuseblk (пункт ревью: не хардкодить таблицу путей).
+    # Пробелы и кириллица в путях переживают TAB-разделение через `read`
+    # (пункт ревью), в отличие от word-splitting по пробелу.
+    local out rc=0
+    out=$(docker inspect "$1" \
+        --format '{{range .Mounts}}{{if eq .Type "bind"}}{{.Source}}{{"\t"}}{{.Destination}}{{"\n"}}{{end}}{{end}}') || rc=$?
+    if [ "$rc" -ne 0 ]; then
+        die "docker inspect $1 вернул код $rc — не могу прочитать монтирования"
+    fi
+    printf '%s' "$out"
 }
 
-holder_mounts() {
-    local mounts src
-    mounts=$(docker inspect "$1" \
-        --format '{{range .Mounts}}{{if eq .Type "bind"}}{{.Source}}{{"\n"}}{{end}}{{end}}')
-    for src in $mounts; do
+holder_destination() {
+    # Печатает Destination первого bind-монтирования с Source == $MOUNT или
+    # подкаталогом под ним; код возврата 1, если держателем не является.
+    local src dest
+    while IFS=$'\t' read -r src dest; do
+        [ -n "$src" ] || continue
         case "$src" in
-            "$MOUNT"|"$MOUNT"/*) printf '%s\n' "$1"; return ;;
+            "$MOUNT"|"$MOUNT"/*) printf '%s' "$dest"; return 0 ;;
         esac
+    done <<< "$(holder_bind_mounts "$1")"
+    return 1
+}
+
+find_holders() {
+    # Docker недоступен — падаем громко (set -e): считать это "держателей нет"
+    # было бы опаснее, чем остановить скрипт.
+    local names name rc=0
+    names=$(docker ps -a --format '{{.Names}}') || rc=$?
+    if [ "$rc" -ne 0 ]; then
+        die "docker ps -a вернул код $rc — не могу найти держателей"
+    fi
+    for name in $names; do
+        if holder_destination "$name" >/dev/null; then
+            printf '%s\n' "$name"
+        fi
     done
 }
 
@@ -176,18 +179,24 @@ resume_watchdog() {
 }
 
 kill_ntfs3g_and_unmount() {
-    log "Шаг 3: убиваю ntfs-3g для $MOUNT, отмонтирую"
-    local pid
-    pid=""
+    # Осиротевший `stat`/`mount.ntfs-3g` может застрять в непрерываемом
+    # D-state внутри ядра на мёртвом fuseblk — его не снимет ни SIGTERM, ни
+    # SIGKILL, пока не освободится само монтирование. Это ожидаемо: после
+    # umount -l он исчезнет сам, дожидаться здесь не нужно.
+    log "Шаг 3: завершаю ntfs-3g для $MOUNT, отмонтирую"
+    local pids pid
+    pids=""
     # pgrep без совпадения — обычный исход (демон уже умер сам), не ошибка.
     if found=$(pgrep -f "ntfs-3g.*${MOUNT}"); then
-        pid="$found"
+        pids="$found"
     fi
-    if [ -n "$pid" ]; then
-        log "kill -9 ntfs-3g (pid $pid)"
-        if ! kill -9 "$pid"; then
-            log "kill -9 $pid не сработал (возможно, процесс уже умер) — продолжаю"
-        fi
+    if [ -n "$pids" ]; then
+        for pid in $pids; do
+            log "kill -9 ntfs-3g (pid $pid)"
+            if ! kill -9 "$pid"; then
+                log "kill -9 $pid не сработал (возможно, процесс уже умер, либо застрял в D-state) — продолжаю"
+            fi
+        done
         sleep 1
     else
         log "процесс ntfs-3g для $MOUNT не найден (возможно, уже умер сам)"
@@ -200,10 +209,14 @@ kill_ntfs3g_and_unmount() {
 
 stop_holders() {
     log "Шаг 4: останавливаю держателей: $1"
-    local h
+    local h rc
     for h in $1; do
         log "docker stop $h"
-        docker stop "$h" >/dev/null
+        rc=0
+        docker stop "$h" >/dev/null || rc=$?
+        if [ "$rc" -ne 0 ]; then
+            die "docker stop $h вернул код $rc"
+        fi
     done
 }
 
@@ -236,7 +249,7 @@ check_clear_and_empty() {
     fi
     leftover=$(ls -A "$MOUNT")
     if [ -n "$leftover" ]; then
-        die "$MOUNT не пуст после отмонтирования — не продолжаю (ожидался chattr +i на пустой каталог SD)"
+        die "$MOUNT не пуст после отмонтирования — не продолжаю (похоже на незавершённый umount или оставшийся держатель)"
     fi
     log "держателей не осталось, $MOUNT пуст — можно монтировать"
 }
@@ -250,13 +263,14 @@ do_mount() {
 }
 
 start_holder() {
-    local name project wdir files svc envf
+    local name out rc=0 project wdir files svc envf
     name="$1"
-    project=$(docker inspect "$name" --format '{{index .Config.Labels "com.docker.compose.project"}}')
-    wdir=$(docker inspect "$name" --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}')
-    files=$(docker inspect "$name" --format '{{index .Config.Labels "com.docker.compose.project.config_files"}}')
-    svc=$(docker inspect "$name" --format '{{index .Config.Labels "com.docker.compose.service"}}')
-    envf=$(docker inspect "$name" --format '{{index .Config.Labels "com.docker.compose.project.environment_file"}}')
+    out=$(docker inspect "$name" --format \
+        '{{index .Config.Labels "com.docker.compose.project"}}{{"\t"}}{{index .Config.Labels "com.docker.compose.project.working_dir"}}{{"\t"}}{{index .Config.Labels "com.docker.compose.project.config_files"}}{{"\t"}}{{index .Config.Labels "com.docker.compose.service"}}{{"\t"}}{{index .Config.Labels "com.docker.compose.project.environment_file"}}') || rc=$?
+    if [ "$rc" -ne 0 ]; then
+        die "docker inspect $name вернул код $rc — не могу прочитать метки compose"
+    fi
+    IFS=$'\t' read -r project wdir files svc envf <<< "$out"
     if [ -z "$envf" ]; then
         envf="$NAS_ENV_FILE"
     fi
@@ -290,12 +304,11 @@ verify_fuseblk_inside() {
 verify_holders() {
     local h path
     for h in $1; do
-        path=$(holder_path_inside "$h")
-        if [ -z "$path" ]; then
-            log "нет известного пути для $h — проверь вручную: docker exec $h mount | grep hdd2tb"
-            continue
+        if path=$(holder_destination "$h"); then
+            verify_fuseblk_inside "$h" "$path"
+        else
+            log "у $h нет bind-монтирования под $MOUNT — проверять нечего"
         fi
-        verify_fuseblk_inside "$h" "$path"
     done
 }
 

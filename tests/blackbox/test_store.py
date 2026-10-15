@@ -482,3 +482,82 @@ def test_prune_hot_under_cap_deletes_nothing(tmp_path):
     assert prune_hot(str(hot), 1024 * 1024, keep_days=7) == []
     assert (hot / _utc_day_name(T0 - 86400) / "metrics.db").exists()
     assert (hot / _utc_day_name(T0 - 86400) / "procs.db").exists()
+
+
+# ── круг 1 ревью ─────────────────────────────────────────────────────────────
+
+def test_prune_hot_never_touches_today_with_keep_days_zero_or_negative(tmp_path):
+    """КРИТИЧНОЕ, круг 1 ревью: ревьюер воспроизвёл удаление metrics.db
+    сегодняшнего дня при keep_days=0 — защита «сегодня — никогда» держалась
+    только на пороге возраста (`age >= keep_days`), который при keep_days<=0
+    пускал и сегодня (возраст 0). Теперь сегодня исключён по имени, безусловно.
+    """
+    today_start = int(time.time()) // 86400 * 86400
+    hot = _build_hot(tmp_path, [today_start])
+    today = _utc_day_name(today_start)
+
+    for keep_days in (0, -1):
+        assert prune_hot(str(hot), 1024, keep_days=keep_days) == []
+        assert (hot / today / "metrics.db").exists()
+        assert (hot / today / "procs.db").exists()
+
+
+def test_prune_hot_removes_wal_and_shm_siblings(tmp_path):
+    """Мелкое, круг 1 ревью: удаление metrics.db/procs.db уносит и их
+    sqlite-спутники -wal/-shm, если они есть; удалённый список по-прежнему
+    называет только основные файлы."""
+    today_start = int(time.time()) // 86400 * 86400
+    old_day = today_start - 10 * 86400
+    hot = _build_hot(tmp_path, [today_start, old_day])
+    old_name = _utc_day_name(old_day)
+
+    for filename in ("metrics.db", "procs.db"):
+        (hot / old_name / (filename + "-wal")).write_bytes(b"\x00" * 1024)
+        (hot / old_name / (filename + "-shm")).write_bytes(b"\x00" * 1024)
+
+    deleted = prune_hot(str(hot), 1024, keep_days=7)
+
+    for filename in ("metrics.db", "procs.db"):
+        assert not (hot / old_name / filename).exists()
+        assert not (hot / old_name / (filename + "-wal")).exists()
+        assert not (hot / old_name / (filename + "-shm")).exists()
+    assert deleted and all(not p.endswith(("-wal", "-shm")) for p in deleted)
+
+
+def test_write_heartbeat_dir_fsync_failure_returns_false_file_still_written(
+        tmp_path, monkeypatch):
+    """ВАЖНОЕ, круг 1 ревью: `_fsync_dir` раньше глушил `OSError` молча — на
+    Linux это прячет настоящие ошибки (ENOSPC, права). Подставной `os.fsync`
+    (только для fd каталога — fsync самого heartbeat-файла идёт как обычно)
+    на принудительной POSIX-ветке: write_heartbeat вернул False, файл при
+    этом уже записан и читаем целиком, временного файла не осталось."""
+    monkeypatch.setattr(os, "name", "posix")
+    path = tmp_path / "heartbeat"
+    directory = str(tmp_path)
+    fake_fd = -4242
+    real_open, real_close, real_fsync = os.open, os.close, os.fsync
+
+    def fake_open(p, flags, *a, **kw):
+        if p == directory and flags == os.O_RDONLY:
+            return fake_fd
+        return real_open(p, flags, *a, **kw)
+
+    def fake_close(fd):
+        if fd != fake_fd:
+            real_close(fd)
+
+    def fake_fsync(fd):
+        if fd == fake_fd:
+            raise OSError("имитация ENOSPC на fsync каталога")
+        real_fsync(fd)
+
+    monkeypatch.setattr(os, "open", fake_open)
+    monkeypatch.setattr(os, "close", fake_close)
+    monkeypatch.setattr(os, "fsync", fake_fsync)
+
+    ok = write_heartbeat(str(path), "boot-xyz", T0, {"vin_mv": 5080})
+
+    assert ok is False
+    assert read_heartbeat(str(path)) == {
+        "boot_id": "boot-xyz", "ts": T0, "power": {"vin_mv": 5080}}
+    assert os.listdir(str(tmp_path)) == ["heartbeat"]

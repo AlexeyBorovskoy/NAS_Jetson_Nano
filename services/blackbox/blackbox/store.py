@@ -377,26 +377,37 @@ class Catalog(object):
 # ── heartbeat: временный файл + fsync + os.replace ──────────────────────────
 
 def _fsync_dir(directory):
-    """`fsync` каталога (переживает `os.replace`); недоступно — не роняет вызов.
+    """`fsync` каталога (переживает `os.replace`) -> `True`/`False` (успех).
 
-    На Windows (тестовый хост) `fsync` каталога не поддерживается — там это
-    не требование продукта (целевой хост — Jetson, Linux), а крах из-за этого
-    не должен прятать настоящую ошибку записи heartbeat.
+    Круг 1 ревью: раньше `OSError` молча глушился — на Linux это прячет
+    настоящие ошибки (`ENOSPC`, права). Теперь отказ возвращается вызывающей
+    стороне, а не теряется; сборщик (задача 7) решает, заводить ли событие.
+    На не-POSIX (Windows, тестовый хост) каталог не fsync-ится вовсе —
+    `os.name != "posix"` -> `True` без попытки: это свойство платформы, не
+    отказ (целевой хост — Jetson, Linux/POSIX).
     """
+    if os.name != "posix":
+        return True
     try:
         fd = os.open(directory, os.O_RDONLY)
     except OSError:
-        return
+        return False
     try:
         os.fsync(fd)
+        return True
     except OSError:
-        pass
+        return False
     finally:
         os.close(fd)
 
 
 def write_heartbeat(path, boot_id, ts, power):
-    """Пишет `{"boot_id","ts","power"}` в `path` атомарно, без `.tmp`-хвоста."""
+    """Пишет `{"boot_id","ts","power"}` в `path` атомарно, без `.tmp`-хвоста.
+
+    Возвращает `True`/`False` — удался ли `fsync` каталога после
+    `os.replace` (круг 1 ревью). Сам файл при этом уже записан и цел в обоих
+    случаях; `False` — сигнал вызывающей стороне, не повод отбросить запись.
+    """
     directory = os.path.dirname(path) or "."
     if not os.path.isdir(directory):
         os.makedirs(directory)
@@ -408,7 +419,7 @@ def write_heartbeat(path, boot_id, ts, power):
         fh.flush()
         os.fsync(fh.fileno())
     os.replace(tmp_path, path)
-    _fsync_dir(directory)
+    return _fsync_dir(directory)
 
 
 def read_heartbeat(path):
@@ -470,6 +481,11 @@ def hot_size_bytes(hot_root):
     return total
 
 
+def _today_name():
+    """Имя сегодняшнего дня (`"ГГГГ-ММ-ДД"`, UTC) — порог безусловной защиты."""
+    return time.strftime("%Y-%m-%d", time.gmtime())
+
+
 def _day_age(day_name):
     """Возраст суток `day_name` (ГГГГ-ММ-ДД, UTC) от сегодняшних суток UTC."""
     today_start = int(time.time()) // 86400 * 86400
@@ -478,14 +494,21 @@ def _day_age(day_name):
 
 
 def _eligible_days(hot_root, keep_days):
-    """Имена дней `hot_root` с возрастом `>= keep_days` (сегодня — никогда)."""
+    """Имена дней `hot_root` с возрастом `>= keep_days`.
+
+    Круг 1 ревью: сегодняшний день исключён БЕЗУСЛОВНО, именем (`_today_name`),
+    а не порогом возраста — иначе `keep_days <= 0` пускал его в удаление
+    (возраст сегодня = 0, `0 >= 0`/`0 >= -1` истинны). Проверено ревьюером:
+    `prune_hot(..., keep_days=0)` удалял `metrics.db` сегодняшнего дня.
+    """
     try:
         names = os.listdir(hot_root)
     except OSError:
         return []
+    today = _today_name()
     ages = {}
     for name in names:
-        if not os.path.isdir(os.path.join(hot_root, name)):
+        if name == today or not os.path.isdir(os.path.join(hot_root, name)):
             continue
         try:
             age = _day_age(name)
@@ -496,11 +519,22 @@ def _eligible_days(hot_root, keep_days):
     return sorted(ages, key=ages.get, reverse=True)  # сначала самые старые
 
 
+def _remove_with_wal_shm(path):
+    """Удаляет `path` и его sqlite-спутники `-wal`/`-shm`, если они есть."""
+    os.remove(path)
+    for suffix in ("-wal", "-shm"):
+        sidecar = path + suffix
+        if os.path.isfile(sidecar):
+            os.remove(sidecar)
+
+
 def prune_hot(hot_root, cap_bytes, keep_days=7):
     """Удаляет сначала старые `metrics.db`, потом `procs.db` у дней старше
-    `keep_days` суток, пока `hot_size_bytes` не станет `<= cap_bytes` или
-    удалять больше нечего; `containers/`, `journal.log*` и сегодняшний день —
-    никогда. Возвращает список удалённых путей в порядке удаления.
+    `keep_days` суток (с их `-wal`/`-shm`, если есть), пока `hot_size_bytes`
+    не станет `<= cap_bytes` или удалять больше нечего; `containers/`,
+    `journal.log*` и сегодняшний день — никогда, независимо от `keep_days`
+    (в т.ч. `keep_days <= 0`, круг 1 ревью). Возвращает список удалённых
+    основных путей (без `-wal`/`-shm`) в порядке удаления.
     """
     deleted = []
     if hot_size_bytes(hot_root) <= cap_bytes:
@@ -512,6 +546,6 @@ def prune_hot(hot_root, cap_bytes, keep_days=7):
                 return deleted
             path = os.path.join(hot_root, day, filename)
             if os.path.isfile(path):
-                os.remove(path)
+                _remove_with_wal_shm(path)
                 deleted.append(path)
     return deleted

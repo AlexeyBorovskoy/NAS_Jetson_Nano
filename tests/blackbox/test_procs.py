@@ -196,3 +196,66 @@ def test_is_anomaly_calm_is_false():
     """Строка таблицы: спокойный замер — False."""
     assert is_anomaly(sample=smp(), prev_sample=smp(ts=TS - 60),
                       d_count=0, cfg=Config()) is False
+
+
+# --- крайние случаи (задача 6, дополнение) ----------------------------------
+
+def test_read_procs_comm_with_spaces_and_parentheses(tmp_path):
+    """Край: comm с пробелами и скобками — поля stat берутся после последней ')'.
+
+    Наивный `find(')')` сдвинул бы поля и дал чужие ticks/start/rss.
+    """
+    proc_root = tmp_path / "proc"
+    mk_proc(proc_root, 5150, comm="my (weird) proc", utime=5, stime=7,
+            start=4242, rss_pages=256)                 # 256 страниц × 4 КиБ = 1 МиБ
+    resolve = container_of(proc_root, {})
+    records = read_procs(proc_root=proc_root, container_of=resolve)
+    assert len(records) == 1
+    assert records[0]["comm"] == "my (weird) proc"
+    assert records[0]["ticks"] == 12
+    assert records[0]["start"] == 4242
+    assert records[0]["rss_mb"] == 1.0
+
+
+def test_read_procs_skips_vanished_and_malformed_process(tmp_path):
+    """Край: каталог без stat (процесс исчез) и обрезанный stat — пропущены."""
+    proc_root = tmp_path / "proc"
+    mk_proc(proc_root, 6001, comm="alive")
+    (proc_root / "6002").mkdir(parents=True)           # каталог остался, файлов нет
+    mk_proc(proc_root, 6003, comm="truncated")
+    (proc_root / "6003" / "stat").write_bytes(b"6003 (trunc)")   # полей нет
+    resolve = container_of(proc_root, {})
+    records = read_procs(proc_root=proc_root, container_of=resolve)
+    assert [r["pid"] for r in records] == [6001]
+
+
+def test_snapshot_invalid_interval_gives_zero_not_exception():
+    """Край: dt_s/hz недопустимы — cpu_pct 0, строка остаётся, исключения нет."""
+    prev_raw = [raw(7001, ticks=100)]
+    cur_raw = [raw(7001, ticks=400)]
+    for dt_s, hz in ((0, HZ), (-60.0, HZ), (DT, 0), (None, HZ)):
+        rows = snapshot(prev_raw=prev_raw, cur_raw=cur_raw, dt_s=dt_s, hz=hz, ts=TS)
+        assert len(rows) == 1
+        assert rows[0]["cpu_pct"] == 0
+
+
+def test_container_of_docker_scope_and_unmapped_id(tmp_path):
+    """Край: форма `docker-<id>.scope` распознаётся; несопоставленный ид — host."""
+    proc_root = tmp_path / "proc"
+    other_id = "ffeeddccbbaa99887766554433221100" + "0123456789abcdef0123456789abcdef"
+    scope = "0::/system.slice/docker-%s.scope\n" % DOCKER_ID
+    mk_proc(proc_root, 8101, comm="svc", cgroup=scope)
+    mk_proc(proc_root, 8102, comm="outsider",
+            cgroup="0::/system.slice/docker-%s.scope\n" % other_id)
+    resolve = container_of(proc_root, {DOCKER_ID: "homecloud_stt"})
+    assert resolve(8101) == "homecloud_stt"
+    assert resolve(8102) == "host"
+
+
+def test_snapshot_negative_tick_delta_is_zero():
+    """Край: тики уменьшились при том же start — CPU 0, не отрицательный."""
+    prev_raw = [raw(7001, ticks=500)]
+    cur_raw = [raw(7001, ticks=100)]
+    rows = snapshot(prev_raw=prev_raw, cur_raw=cur_raw, dt_s=DT, hz=HZ, ts=TS)
+    assert len(rows) == 1
+    assert rows[0]["cpu_pct"] == 0

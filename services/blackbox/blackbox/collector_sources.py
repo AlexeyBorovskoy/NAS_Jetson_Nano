@@ -50,7 +50,8 @@ class DefaultSources(object):
         self.mount_probe = (mount_probe if mount_probe is not None
                             else probes.MountProbe(cfg.hdd_mount))
         self.log_state = log_state if log_state is not None else {}
-        self._tailer = container_logs.LogTailer(self.log_state)
+        self._tailer = container_logs.LogTailer(
+            self.log_state, initial_tail_bytes=16 << 10)
 
     # задача 2: секундный замер
     def read_fast_sample(self, cfg, prev_cpu, ts):

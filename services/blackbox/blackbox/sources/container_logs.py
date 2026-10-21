@@ -54,29 +54,133 @@ def _extract_log_field(line):
 
 
 class LogTailer(object):
-    """Дочитывание файлов `json-file` всех контейнеров с запомненной позиции."""
+    """Read JSON log files with a bounded initial tail."""
 
-    def __init__(self, state):
+    INITIAL_GAP = "[blackbox: initial log backlog omitted: {bytes} bytes]\n"
+    OVERSIZED_GAP = "[blackbox: oversized log record omitted]\n"
+
+    def __init__(self, state, initial_tail_bytes=None):
         self._state = state
+        self._initial_tail_bytes = initial_tail_bytes
 
     def read_new(self, name, path, max_bytes=4 << 20):
-        """Новые строки `"log"` с прошлой позиции (не более `max_bytes` за вызов)."""
+        """Read complete JSON records using at most `max_bytes`."""
+        if max_bytes <= 0:
+            return []
         try:
             stat = os.stat(path)
         except OSError:
             return []
-        cursor = self._state.get(name)
-        offset = _resolve_offset(cursor, stat)
+        previous = self._state.get(name)
+        offset, reset = self._cursor_offset(previous, stat)
+        bounded = self._initial_tail_bytes is not None
+        cursor = self._make_cursor(previous, stat, offset, bounded)
+        if reset:
+            if "discarding" in cursor:
+                cursor["discarding"] = False
+                cursor["discard_reason"] = ""
+                cursor["pending_bytes"] = 0
+            self._start_at_tail(cursor, stat.st_size)
         with open(path, "rb") as fh:
-            fh.seek(offset)
+            fh.seek(cursor["offset"])
             chunk = fh.read(max_bytes)
+        values = self._consume(cursor, chunk, max_bytes)
+        if bounded or "size" in cursor:
+            cursor["size"] = stat.st_size
+        self._state[name] = cursor
+        return values
+
+    @staticmethod
+    def _cursor_offset(cursor, stat):
+        if cursor is None or cursor.get("inode") != stat.st_ino:
+            return 0, True
+        offset = cursor.get("offset", 0)
+        prior_size = cursor.get("size", offset)
+        if (not isinstance(offset, int) or offset < 0 or
+                not isinstance(prior_size, int) or stat.st_size < max(offset, prior_size)):
+            return 0, True
+        return offset, False
+
+    @staticmethod
+    def _make_cursor(previous, stat, offset, bounded):
+        cursor = dict(previous) if isinstance(previous, dict) else {}
+        cursor.update({"inode": stat.st_ino, "offset": offset})
+        if bounded or any(key in cursor for key in (
+                "discarded", "oversized", "discarding", "discard_reason")):
+            LogTailer._ensure_budget_fields(cursor)
+            cursor.setdefault("size", stat.st_size)
+        return cursor
+
+    @staticmethod
+    def _ensure_budget_fields(cursor):
+        cursor.setdefault("discarded", 0)
+        cursor.setdefault("oversized", 0)
+        cursor.setdefault("discarding", False)
+        cursor.setdefault("discard_reason", "")
+        cursor.setdefault("pending_bytes", 0)
+        cursor.setdefault("size", 0)
+
+    def _start_at_tail(self, cursor, size):
+        budget = self._initial_tail_bytes
+        if not isinstance(budget, int) or budget <= 0 or size <= budget:
+            return
+        self._ensure_budget_fields(cursor)
+        skipped = size - budget
+        cursor["offset"] = skipped
+        cursor["discarded"] += skipped
+        cursor["pending_bytes"] = skipped
+        cursor["discarding"] = True
+        cursor["discard_reason"] = "initial"
+
+    def _consume(self, cursor, chunk, max_bytes):
+        if cursor.get("discarding", False):
+            return self._consume_discard(cursor, chunk, max_bytes)
+        if not chunk:
+            return []
+        if b"\n" not in chunk and len(chunk) == max_bytes:
+            self._ensure_budget_fields(cursor)
+            self._advance(cursor, len(chunk))
+            cursor["discarded"] += len(chunk)
+            cursor["oversized"] += 1
+            cursor["discarding"] = True
+            cursor["discard_reason"] = "oversized"
+            cursor["pending_bytes"] = 0
+            return [self.OVERSIZED_GAP]
         lines, consumed = _split_complete_lines(chunk)
-        self._state[name] = {"inode": stat.st_ino, "offset": offset + consumed}
+        self._advance(cursor, consumed)
         return [value for value in (_extract_log_field(line) for line in lines)
                 if value is not None]
 
+    def _consume_discard(self, cursor, chunk, max_bytes):
+        if not chunk:
+            return []
+        boundary = chunk.find(b"\n")
+        if boundary < 0:
+            self._advance(cursor, len(chunk))
+            cursor["discarded"] += len(chunk)
+            if cursor["discard_reason"] == "initial":
+                cursor["pending_bytes"] += len(chunk)
+            return []
+        discarded = boundary + 1
+        self._advance(cursor, discarded)
+        cursor["discarded"] += discarded
+        reason = cursor["discard_reason"]
+        cursor["discarding"] = False
+        cursor["discard_reason"] = ""
+        values = []
+        if reason == "initial":
+            values.append(self.INITIAL_GAP.format(
+                bytes=cursor["pending_bytes"] + discarded))
+            cursor["pending_bytes"] = 0
+        remainder = chunk[discarded:]
+        if remainder:
+            values.extend(self._consume(cursor, remainder, max_bytes))
+        return values
 
-# ── split_health / tail_lines ───────────────────────────────────────────────
+    @staticmethod
+    def _advance(cursor, count):
+        cursor["offset"] += count
+
 
 #: Пути проверок здоровья (раздел 4.1, цикл logs) — считаются, а не хранятся строками.
 _HEALTH_PATHS = ("/health", "/healthcheck", "/status.php")

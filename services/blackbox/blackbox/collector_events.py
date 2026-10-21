@@ -45,7 +45,10 @@ _SENSITIVE_FLAG_RE = re.compile(
     r"(?i)((?:^|\s)--?(?:password|passwd|pass|token|secret|api[-_]?key)"
     r"(?:=|\s))\S.*$")
 #: Учётные данные в URL: `scheme://user:password@host`.
-_URL_CRED_RE = re.compile(r"(?i)([a-z][a-z0-9+.\-]*://)[^/\s@]+@")
+# Match the fixed delimiter, keeping the scheme outside the replacement.
+# Starting an unbounded scheme at every letter is quadratic on long log tokens.
+# Also mask malformed/unknown schemes conservatively rather than exposing auth.
+_URL_CRED_RE = re.compile(r"(://)[^/\s@]+@")
 
 
 def _safe(call, default=None):

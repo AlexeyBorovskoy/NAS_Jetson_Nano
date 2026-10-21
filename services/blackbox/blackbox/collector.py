@@ -26,9 +26,10 @@ import os
 import signal
 import threading
 import time
+from collections import deque
 from os.path import ismount
 
-from blackbox.collector_events import (LOG_READ_MAX_BYTES, EventPump,
+from blackbox.collector_events import (EventPump,
                                        _event_producer, attach_tail,
                                        collector_event, container_id,
                                        docker_event, json_log_path,
@@ -49,6 +50,7 @@ PROCS_ANOMALY_S = 10
 HEARTBEAT_S = 10
 HEARTBEAT_FALLBACK_S = 60
 LOGS_S = 60
+LOG_READ_BUDGET_BYTES = 16 << 10
 JOURNAL_S = 300
 PROBES_S = 60
 ROLLUP_S = 60
@@ -110,10 +112,13 @@ class Collector(object):
     """Расписание циклов; запись и перенос делегированы `Storage`."""
 
     def __init__(self, cfg, clock=time.time, sleep=time.sleep, sources=None,
-                 stop=None):
+                 stop=None, monotonic=None):
         self.cfg = cfg
         self._clock = clock
         self._sleep = sleep
+        self._monotonic = (monotonic if monotonic is not None else
+                           (time.monotonic if clock is time.time and
+                            sleep is time.sleep else clock))
         self._stop = stop
         self._start = float(clock())
         self._last = dict((name, self._start) for name in _PERIODIC)
@@ -125,6 +130,7 @@ class Collector(object):
         self._roll = {"samples": [], "disk": {}, "rio": 0, "wio": 0,
                       "health": {}}
         self._aux = {"logs": {}, "journal": None, "ids": {}, "probe_prev": {}}
+        self._pending_log_containers = deque()
         self.sources = (sources if sources is not None
                         else DefaultSources(cfg, log_state=self._aux["logs"]))
         self.store = Storage(cfg, self._start, ismount=ismount,
@@ -246,29 +252,38 @@ class Collector(object):
     # ── журналы ──
 
     def tick_logs(self, now):
-        """Журналы контейнеров: дочитывание, счётчики здоровья, gzip дня."""
-        if self.store.mode != "ssd" or not self._due("logs", now, LOGS_S):
+        """Обрабатывает не более одного контейнера за итерацию главного цикла."""
+        if self.store.mode != "ssd":
             return
-        for container in self._containers()[:200]:
-            name, cid = container.get("name"), container.get("id")
+        if not self._pending_log_containers:
+            if not self._due("logs", now, LOGS_S):
+                return
+            self._pending_log_containers.extend(self._containers()[:200])
+        if not self._pending_log_containers:
+            return
+
+        container = self._pending_log_containers.popleft()
+        self._read_log_container(container, now)
+        _guard(lambda: self.store.save_cursor(
+            "logs", json.dumps(self._aux["logs"], sort_keys=True), now))
+
+    def _read_log_container(self, container, now):
+        """Одна ограниченная порция логов с сохранением privacy-порядка."""
+        name, cid = container.get("name"), container.get("id")
+        if name:
             self._aux["ids"][name] = cid
-            path = json_log_path(self.cfg, cid)
-            if not name or path is None:
-                continue
+        path = json_log_path(self.cfg, cid) if name else None
+        if name and path is not None:
             lines = _guard(lambda: self.sources.read_new(
-                name, path, LOG_READ_MAX_BYTES), _FAIL)
-            if lines is _FAIL:
-                continue
-            split = _guard(lambda: self.sources.split_health(lines), _FAIL)
-            if split is _FAIL:
-                continue
-            kept, health = split
-            if health:
-                self._roll["health"][name] = (
-                    self._roll["health"].get(name, 0) + health)
-            self.store.persist_logs(name, kept, now)
-        self.store.save_cursor("logs", json.dumps(self._aux["logs"],
-                                                  sort_keys=True), now)
+                name, path, LOG_READ_BUDGET_BYTES), _FAIL)
+            if lines is not _FAIL:
+                split = _guard(lambda: self.sources.split_health(lines), _FAIL)
+                if split is not _FAIL:
+                    kept, health = split
+                    if health:
+                        self._roll["health"][name] = (
+                            self._roll["health"].get(name, 0) + health)
+                    self.store.persist_logs(name, kept, now)
 
     def _containers(self):
         """Список контейнеров Docker или пусто (Docker недоступен — не падаем)."""
@@ -384,11 +399,13 @@ class Collector(object):
         """Главный цикл до остановки; по завершении — сброс буферов."""
         self._pump.start(self._start)
         while not self._stopped():
+            tick_started = self._monotonic()
             now = self._clock()
             self._iterate(now)
             if self._stopped():
                 break
-            self._sleep(FAST_S)
+            elapsed = max(0.0, self._monotonic() - tick_started)
+            self._sleep(max(0.0, FAST_S - elapsed))
         self._finish(self._clock())
 
     def _finish(self, now):
@@ -400,9 +417,11 @@ class Collector(object):
 
 # ── точка входа пакета ──────────────────────────────────────────────────────
 
-def run(cfg, clock=time.time, sleep=time.sleep, sources=None, stop=None):
+def run(cfg, clock=time.time, sleep=time.sleep, sources=None, stop=None,
+        monotonic=None):
     """Создаёт сборщик и крутит главный цикл до остановки (план задачи 7)."""
-    Collector(cfg, clock=clock, sleep=sleep, sources=sources, stop=stop).run()
+    Collector(cfg, clock=clock, sleep=sleep, sources=sources, stop=stop,
+              monotonic=monotonic).run()
 
 
 def main(argv=None):

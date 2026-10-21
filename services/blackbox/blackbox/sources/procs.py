@@ -162,7 +162,7 @@ def snapshot(prev_raw, cur_raw, dt_s, hz, ts, top_n=10):
     rate = None
     if dt is not None and hz_value is not None and dt > 0 and hz_value > 0:
         rate = 100.0 / (hz_value * dt)
-    prev_by_pid = {rec.get("pid"): rec for rec in prev_raw}
+    prev_by_pid = {rec.get("pid"): rec for rec in (prev_raw or [])}
     rows = []
     for rec in cur_raw:
         pid = rec.get("pid")

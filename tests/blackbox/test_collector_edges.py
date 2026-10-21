@@ -35,7 +35,9 @@ class _Recorder(object):
 
 
 class _FakeLogTailer(object):
-    def __init__(self, state): self.state, self.calls = state, []
+    def __init__(self, state, initial_tail_bytes=None):
+        self.state, self.calls = state, []
+        self.initial_tail_bytes = initial_tail_bytes
     def read_new(self, name, path, max_bytes):
         self.calls.append((name, path, max_bytes)); return []
 

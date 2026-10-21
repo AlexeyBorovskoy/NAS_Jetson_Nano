@@ -239,6 +239,25 @@ def test_snapshot_invalid_interval_gives_zero_not_exception():
         assert rows[0]["cpu_pct"] == 0
 
 
+def test_snapshot_first_call_accepts_missing_previous_raw():
+    """Первый снимок не имеет baseline: строки RSS есть, CPU равен нулю."""
+    first_raw = [raw(7101, ticks=100, rss_mb=8),
+                 raw(7102, ticks=150, rss_mb=20)]
+    first = snapshot(prev_raw=None, cur_raw=first_raw, dt_s=None,
+                     hz=HZ, ts=123, top_n=1)
+    assert len(first) >= 1
+    assert any(row["pid"] == 7102 and row["rss_mb"] == 20 for row in first)
+    assert all(row["cpu_pct"] == 0 for row in first)
+
+    next_raw = [raw(7101, ticks=110, rss_mb=8),
+                raw(7102, ticks=250, rss_mb=20)]
+    following = snapshot(prev_raw=first_raw, cur_raw=next_raw, dt_s=1,
+                         hz=HZ, ts=124)
+    assert len(following) == 2
+    assert following[1]["pid"] == 7102
+    assert following[1]["cpu_pct"] == 100
+
+
 def test_container_of_docker_scope_and_unmapped_id(tmp_path):
     """Край: форма `docker-<id>.scope` распознаётся; несопоставленный ид — host."""
     proc_root = tmp_path / "proc"

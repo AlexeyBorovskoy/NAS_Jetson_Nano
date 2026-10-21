@@ -23,11 +23,13 @@ TEXT_HIDDEN = "<текст скрыт>"
 # `[\w-]*_token` ловит ЛЮБОЕ поле, оканчивающееся на "_token" (id_token,
 # access_token, refresh_token, session_token, ...) — грабли проекта 20.09
 # ответа OAuth были не только про id_token, а про всё семейство полей "*_token".
-# Бэктрекинг жадного `[\w-]*` сам находит границу (напр. "access"+"_token"),
-# поэтому отдельных алиасов на каждое поле не нужно. Голый "token" — ниже,
+# Поиск префикса начинается только на границе идентификатора: иначе длинное
+# слово без `_token` повторно сканируется с каждой позиции (квадратичное время).
+# Жадный префикс всё так же включает целиком ключ, например `access_token`.
+# Голый "token" — ниже,
 # для form/query стиля без подчёркивания (`token=...`).
 _KEY_ALTS = (
-    r"x-api-key|api[_-]?key|client[_-]?secret|[\w-]*_token|"
+    r"x-api-key|api[_-]?key|client[_-]?secret|(?<![\w-])[\w-]*_token|"
     r"token|secret|password|passwd"
 )
 
@@ -58,7 +60,6 @@ _TENANT_KEY_RE = re.compile(r"\b[0-9A-Za-z]{8,}:[0-9A-Za-z+/]{24,}\b")
 # ("ошибка: диск" с порогом {3,} иначе ложно считался бы тремя словами — проверено
 # при реализации задачи 1), а слово либо целиком русское, либо нет.
 _CHUNK_RE = re.compile(r"\S+|\s+")
-_NON_CYR_EDGE_RE = re.compile(r"^[^А-Яа-яЁё]+|[^А-Яа-яЁё]+$")
 
 
 def _json_kv_repl(match):
@@ -86,8 +87,19 @@ def mask_secrets(line):
 
 def _is_cyr_word(chunk):
     """Лексема без пробелов — русское слово, если ядро (без краевой пунктуации/цифр) есть и целиком буквы."""
-    core = _NON_CYR_EDGE_RE.sub("", chunk)
+    # A suffix regex such as `[^cyr]+$` retries at every ASCII position when
+    # the token ends in Cyrillic. Trim each edge once instead.
+    start, end = 0, len(chunk)
+    while start < end and not _is_cyr_letter(chunk[start]):
+        start += 1
+    while end > start and not _is_cyr_letter(chunk[end - 1]):
+        end -= 1
+    core = chunk[start:end]
     return bool(core) and core.isalpha()
+
+
+def _is_cyr_letter(value):
+    return "А" <= value <= "я" or value in "Ёё"
 
 
 def _scan_cyr_run(chunks, flags, start):

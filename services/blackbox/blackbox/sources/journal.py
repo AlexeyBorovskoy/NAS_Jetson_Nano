@@ -57,6 +57,11 @@ def journal_since(cursor, run=subprocess.run):
     `subprocess.run`/`subprocess.CompletedProcess` (`stdout`, `returncode`).
     """
     cmd = _journal_command(cursor)
-    completed = run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                     universal_newlines=True)
+    try:
+        completed = run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                        universal_newlines=True, timeout=10)
+    except (OSError, subprocess.TimeoutExpired):
+        return [], cursor
+    if completed.returncode != 0:
+        return [], cursor
     return _split_cursor(completed.stdout, cursor)

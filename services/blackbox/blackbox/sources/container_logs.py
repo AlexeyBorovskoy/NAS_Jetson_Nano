@@ -19,6 +19,8 @@ import json
 import os
 import re
 
+TAIL_READ_MAX_BYTES = 1 << 20
+
 
 def _resolve_offset(cursor, stat):
     """Смещение чтения: 0 при смене inode или усечении, иначе прежнее смещение."""
@@ -119,8 +121,8 @@ def _read_tail_bytes(fh, n, block_size):
     pos = fh.tell()
     data = b""
     newline_count = 0
-    while pos > 0 and newline_count <= n:
-        step = min(block_size, pos)
+    while pos > 0 and newline_count <= n and len(data) < TAIL_READ_MAX_BYTES:
+        step = min(block_size, pos, TAIL_READ_MAX_BYTES - len(data))
         pos -= step
         fh.seek(pos)
         data = fh.read(step) + data

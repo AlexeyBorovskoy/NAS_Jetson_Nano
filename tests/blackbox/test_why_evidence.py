@@ -20,6 +20,7 @@ TDD: пакета services/blackbox ещё нет, поэтому файл об�
 """
 
 import json
+import hashlib
 import os
 import shutil
 import tarfile
@@ -96,7 +97,7 @@ def _pack_archive(hot, day, path):
 
 def _archive_row(week, path, first_day, last_day):
     """Строка таблицы archive в catalog.db (контракт задачи 3)."""
-    return {"week": week, "path": str(path), "sha256": "a" * 64,
+    return {"week": week, "path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
             "first_day": first_day, "last_day": last_day,
             "created": OCT1, "verified": True}
 

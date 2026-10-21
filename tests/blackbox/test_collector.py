@@ -678,7 +678,9 @@ def test_collector_logs_cycle_writes_gz_keeping_health_out(monkeypatch, tmp_path
     path = h.ssd / "hot" / DAY / "containers" / (CONTAINER + ".log.gz")
     with gzip.open(str(path), "rt", encoding="utf-8") as fh:
         text = fh.read()
-    assert text == CHAT_LINE                   # проверка здоровья в файл не попала
+    stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(T0 + 60))
+    # Preserve the exact message body and explicitly label its observation time.
+    assert text == "%s collector %s(observed): %s" % (stamp, CONTAINER, CHAT_LINE)
     assert HEALTH_LINE not in text
 
 

@@ -1,0 +1,10 @@
+[Unit]
+Description=NAS blackbox archive eligibility check
+
+[Timer]
+OnCalendar=*-*-* 05:30:00 UTC
+Persistent=true
+Unit=nas_jetson_nano-blackbox-archive.service
+
+[Install]
+WantedBy=timers.target

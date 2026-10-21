@@ -2,20 +2,20 @@
 """D2 — алерт владельцу в Telegram после аварийной загрузки Jetson.
 
 ЗАЧЕМ. ИБП отложен, копии архива 1,4 ТБ нет и не будет — риски приняты
-владельцем 2026-09-19 (CLAUDE.md, решения D1/D3). Единственная оставшаяся
+владельцем 2026-09-19 (решения D1/D3). Единственная оставшаяся
 защита от провала питания — узнать о нём СРАЗУ, а не задним числом. Именно
 так и было 2026-08-17: Jetson перезагрузился аппаратно, и заметили это
 только разбирая логи через несколько дней.
 
-ЧТО СЧИТАЕТСЯ "нештатной" загрузкой. Смотрим на согласии с CLAUDE.md
-(раздел «Грабли», точка про три признака): штатная остановка ВСЕГДА
+ЧТО СЧИТАЕТСЯ "нештатной" загрузкой. По согласованному правилу D2:
+штатная остановка ВСЕГДА
 оставляет парную запись `shutdown` в `last -x` непосредственно перед
 записью `reboot` этой загрузки. Если такой записи нет — молчать нельзя
 («Штатная — молчит» относится только к ДОКАЗАННО штатной остановке;
 неопределённость — это НЕ штатность, и на ней тоже нужно говорить,
 честно называя её неопределённостью). Ramoops и `dmesg PMC reset source`
 идут в сообщение как дополнительные признаки, но НЕ решают дилемму
-"провал питания или PMIC-watchdog" — CLAUDE.md прямо фиксирует, что этими
+"провал питания или PMIC-watchdog" — этими
 данными они неразличимы, и врать про причину нельзя (правило проекта
 "не выдумывать причину").
 
@@ -47,6 +47,11 @@ import re
 import subprocess
 import sys
 import time
+
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
+import blackbox_alerts  # noqa: E402
 
 # Раскладка хоста — единая точка правды (scripts/lib/layout.sh, NAS-STO-001).
 for _lib in (os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib"),
@@ -92,8 +97,8 @@ _RECORD_RE = re.compile(r"^(reboot|shutdown)\s+system\s+(boot|down)\b")
 def classify_shutdown(last_x_text):
     """Штатная остановка = запись `shutdown`/`system down` непосредственно
     ПЕРЕД записью `reboot`/`system boot` этой загрузки (записи в `last -x`
-    идут от новых к старым). Регрессия 2026-08-17 (CLAUDE.md, точка 23.08
-    §3.1): после `reboot` этой загрузки шла сразу ЕЩЁ ОДНА `reboot` —
+    идут от новых к старым). После `reboot` этой загрузки шла сразу ЕЩЁ
+    ОДНА `reboot` —
     записи `shutdown` между ними не было вовсе.
 
     Возвращает ("orderly"|"abnormal"|"unknown", текст-объяснение).
@@ -119,7 +124,7 @@ _PANIC_RE = re.compile(r"Kernel panic|Oops[: ]|BUG:|Call trace", re.I)
 
 def classify_ramoops(content):
     """Паника ядра оставила бы трассу в ramoops (буфер в ОЗУ, переживает
-    сброс) — один из трёх согласованных признаков (CLAUDE.md, точка 23.08).
+    сброс) — один из трёх согласованных признаков.
     Пустой/отсутствующий файл НЕ противоречит гипотезе об аппаратном
     сбросе; непустой файл с явными маркерами паники говорит скорее о
     программном сбое ядра — но и это не точный диагноз, только сигнал."""
@@ -139,8 +144,8 @@ _PMC_RE = re.compile(r"PMC reset source:\s*(\S+)")
 
 def parse_pmc_reset_source(dmesg_text):
     """У Tegra `TEGRA_POWER_ON_RESET` — ОДНО И ТО ЖЕ значение и при провале
-    питания, и при срабатывании PMIC-watchdog (CLAUDE.md: "различить их
-    этими данными нельзя"). Функция только достаёт значение, не решает,
+    питания, и при срабатывании PMIC-watchdog: "различить их этими данными
+    нельзя". Функция только достаёт значение, не решает,
     какая из причин это была."""
     m = _PMC_RE.search(dmesg_text or "")
     if not m:
@@ -157,7 +162,7 @@ def build_alert_text(boot_time_str, shutdown_status, shutdown_detail,
         u"⚠️ Jetson загрузился без подтверждённого штатного выключения.",
         u"Загрузка: %s" % boot_time_str,
         u"",
-        u"Признаки (CLAUDE.md, все три сразу, ни один не решает вопрос в одиночку):",
+        u"Признаки (все три сразу, ни один не решает вопрос в одиночку):",
         u"• last -x: %s" % shutdown_detail,
         u"• ramoops (%s): %s" % (RAMOOPS_PRIMARY, ramoops_detail),
         u"• dmesg: %s" % pmc_detail,
@@ -375,6 +380,19 @@ def gather_signals(last_x_text, ramoops_content, dmesg_text, boot_time_str):
 
 # ── main ─────────────────────────────────────────────────────────────────────
 
+def test_alert_channel(token, chat_id, owner_login, proxy):
+    if not token or not chat_id:
+        sys.stderr.write("нет TELEGRAM_BOT_TOKEN или владельца %r в TELEGRAM_USERS\n" % owner_login)
+        return 1
+    ok, err = send_with_retries(
+        token, chat_id,
+        u"\U0001f9ea Проверка канала алерта после аварийной загрузки (D2). "
+        u"Это тест, делать ничего не нужно.",
+        proxy=proxy, attempts=3, delay_sec=5)
+    print("тест: %s" % ("отправлен" if ok else "ошибка: %s" % err))
+    return 0 if ok else 1
+
+
 def main():
     args = sys.argv[1:]
     force = "--force" in args
@@ -387,17 +405,7 @@ def main():
     chat_id = resolve_owner_chat_id(users, owner_login)
 
     if test_mode:
-        if not token or not chat_id:
-            sys.stderr.write("нет TELEGRAM_BOT_TOKEN или владельца %r в TELEGRAM_USERS\n"
-                             % owner_login)
-            return 1
-        ok, err = send_with_retries(
-            token, chat_id,
-            u"\U0001f9ea Проверка канала алерта после аварийной загрузки (D2). "
-            u"Это тест, делать ничего не нужно.",
-            proxy=proxy, attempts=3, delay_sec=5)
-        print("тест: %s" % ("отправлен" if ok else "ошибка: %s" % err))
-        return 0 if ok else 1
+        return test_alert_channel(token, chat_id, owner_login, proxy)
 
     boot_id = get_boot_id()
     state = load_state(STATE_FILE)
@@ -411,6 +419,8 @@ def main():
         save_state(STATE_FILE, mark_resolved(boot_id, alerted=False))
         print("штатная остановка (%s) — алерт не нужен" % signals["shutdown_detail"])
         return 0
+
+    signals["text"] = blackbox_alerts.append_nas_why(signals["text"])
 
     print("нештатная загрузка: %s" % signals["shutdown_detail"])
 

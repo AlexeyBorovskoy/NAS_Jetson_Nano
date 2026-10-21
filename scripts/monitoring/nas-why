@@ -1,0 +1,37 @@
+#!/usr/bin/env python3
+"""Bounded nas-why entrypoint; evidence reads happen only in a worker."""
+import os
+import sys
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+PACKAGE_CANDIDATES = (
+    os.path.join(HERE, "..", "..", "services", "blackbox"),
+    "/usr/local/lib/nas_jetson_nano",
+    "/usr/local/lib/nas_jetson_nano/blackbox",
+)
+
+
+def _package_dir():
+    for candidate in PACKAGE_CANDIDATES:
+        path = os.path.abspath(candidate)
+        if os.path.isfile(os.path.join(path, "blackbox", "__init__.py")):
+            return path
+        if os.path.basename(path) == "blackbox" and os.path.isfile(
+                os.path.join(path, "__init__.py")):
+            return os.path.dirname(path)
+    return None
+
+
+def main():
+    package = _package_dir()
+    if package is None:
+        print("unknown: blackbox package unavailable")
+        return 0
+    if package not in sys.path:
+        sys.path.insert(0, package)
+    from blackbox.why.supervisor import main as supervise
+    return supervise()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

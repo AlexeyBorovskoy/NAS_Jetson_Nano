@@ -167,7 +167,8 @@ def main():
     state_file = os.path.join(ba.LAYOUT["NAS_STATE_DIR"], "container-watchdog.json")
     state = load_state(state_file)
     now = int(time.time())
-    notes = []
+    blackbox = _load_module("blackbox_alerts", "blackbox_alerts.py")
+    notes = blackbox.blackbox_heartbeat_notes(state, now, getattr(ba, "get_boot_id", lambda: None)())
     hdd_status = hg.hdd_probe()
     hdd_note = hg.hdd_status_note(state, hdd_status, now)
     if hdd_note:

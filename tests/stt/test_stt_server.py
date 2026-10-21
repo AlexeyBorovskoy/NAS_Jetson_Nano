@@ -290,7 +290,9 @@ def test_stt_rejects_audio_longer_than_max_seconds(http_server, model, monkeypat
 
 def test_unknown_path_returns_404(http_server):
     assert request(http_server, "GET", "/nope")[0] == 404
-    assert request(http_server, "POST", "/nope", body=b"x")[0] == 404
+    # Unknown routes reject before reading a body; unread bytes can cause a
+    # Windows TCP reset while the client reads the otherwise valid 404.
+    assert request(http_server, "POST", "/nope", body=b"")[0] == 404
 
 
 def test_recognizer_failure_returns_500_and_server_survives(http_server, monkeypatch):

@@ -31,6 +31,9 @@ class Config(object):
         "dev_root": "/dev",
         "docker_sock": "/var/run/docker.sock",
         "docker_root": "/var/lib/docker",
+        #: Адреса VPS для пробы туннеля. Пусто — статус туннеля неизвестен:
+        #: сборщик не читает `.env` и не подставляет адреса сам (решение ведущего).
+        "vps_hosts": (),
         "ssd_root": "/mnt/storage/blackbox",
         "fallback_root": "/var/lib/nas-blackbox/fallback",
         "hdd_archive_root": "/mnt/hdd2tb/backups/blackbox",

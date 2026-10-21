@@ -48,6 +48,8 @@ def _write_ina3221(sys_root, channels):
     Поле "in_voltage" → in_voltage<N>_input и так далее. Порядок каналов задаёт
     вызывающий: соответствие обязано браться по rail_name_<N>, а не по номеру.
     """
+    if os.name == "nt":
+        pytest.skip("Linux sysfs fixture contains ':'; exercised by Linux tests")
     device = os.path.join(sys_root, "bus", "i2c", "drivers", "ina3221x", "6-0040", "iio:device0")
     for number, (rail_name, fields) in enumerate(channels):
         _write(os.path.join(device, "rail_name_%d" % number), rail_name + "\n")

@@ -1,5 +1,8 @@
-"""`nas-why`: сбор доказательств и правила вердиктов (раздел 6 спецификации).
+"""Pure verdict rules for the NAS blackbox evidence contract."""
+from .rules import (Evidence, evaluate, rule_container, rule_disk_hang,
+                    rule_memory, rule_network, rule_thermal, rule_unclean_boot,
+                    rule_usb)
 
-Модули (`evidence.py`, `rules.py`, `cli.py`) появляются в следующих задачах плана
-OBS-1; пакет создан здесь, чтобы `blackbox.why` был импортируемым с первой задачи.
-"""
+__all__ = ["Evidence", "evaluate", "rule_container", "rule_disk_hang",
+           "rule_memory", "rule_network", "rule_thermal", "rule_unclean_boot",
+           "rule_usb"]

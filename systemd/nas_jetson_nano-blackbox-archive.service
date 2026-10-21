@@ -1,0 +1,19 @@
+[Unit]
+Description=NAS blackbox verified weekly archive
+After=local-fs.target docker.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/nas-layout.env
+ExecStart=/usr/bin/python3 "${NAS_PROJECT_DIR}/scripts/monitoring/nas_jetson_nano-blackbox-archive.py"
+TimeoutStartSec=3600
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=-/mnt/storage/blackbox /var/lib/nas-blackbox /mnt/hdd2tb
+NoNewPrivileges=yes
+PrivateTmp=yes
+UMask=0027
+MemoryLimit=256M
+CPUQuota=30%
+Nice=19
+IOSchedulingClass=idle

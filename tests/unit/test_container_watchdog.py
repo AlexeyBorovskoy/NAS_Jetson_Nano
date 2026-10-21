@@ -32,6 +32,24 @@ def load_hdd_guard():
     return module
 
 
+def quiet_blackbox_alerts(note=None):
+    return SimpleNamespace(
+        blackbox_heartbeat_notes=mock.Mock(return_value=[note] if note else []),
+        blackbox_service_active=mock.Mock(return_value=False),
+    )
+
+
+def patch_blackbox_alerts(mod, alerts):
+    original = mod._load_module
+
+    def load_module(name, filename):
+        if filename == "blackbox_alerts.py":
+            return alerts
+        return original(name, filename)
+
+    return mock.patch.object(mod, "_load_module", side_effect=load_module)
+
+
 def container(status="running", health="healthy", policy="always", maintenance=False,
              mounts=()):
     return {
@@ -122,6 +140,7 @@ def test_failed_telegram_delivery_is_reported(tmp_path, capsys):
     action = mock.Mock(returncode=0, stderr="")
     with mock.patch.object(mod, "_load_boot_alert", return_value=alert), \
             mock.patch.object(mod, "_load_hdd_guard", return_value=hg), \
+            patch_blackbox_alerts(mod, quiet_blackbox_alerts()), \
             mock.patch.object(hg, "hdd_probe", return_value="ok"), \
             mock.patch.object(mod, "list_containers",
                               return_value=[container(status="exited", health="")]), \
@@ -144,12 +163,34 @@ def test_successful_telegram_delivery_is_reported(tmp_path, capsys):
     action = mock.Mock(returncode=0, stderr="")
     with mock.patch.object(mod, "_load_boot_alert", return_value=alert), \
             mock.patch.object(mod, "_load_hdd_guard", return_value=hg), \
+            patch_blackbox_alerts(mod, quiet_blackbox_alerts()), \
             mock.patch.object(hg, "hdd_probe", return_value="ok"), \
             mock.patch.object(mod, "list_containers",
                               return_value=[container(status="exited", health="")]), \
             mock.patch.object(mod, "docker", return_value=action):
         assert mod.main() == 0
     assert "алерт доставлен" in capsys.readouterr().out
+
+
+def test_blackbox_heartbeat_note_is_added_to_watchdog_alert(tmp_path):
+    mod = load()
+    hg = load_hdd_guard()
+    mod.PAUSE_FILE = str(tmp_path / "not-paused")
+    alert = SimpleNamespace(
+        LAYOUT={"NAS_STATE_DIR": str(tmp_path)}, ENV_FILE=str(tmp_path / "env"),
+        read_env=mock.Mock(return_value="configured"),
+        resolve_owner_chat_id=mock.Mock(return_value="123"),
+        send_with_retries=mock.Mock(return_value=(True, None)),
+    )
+    blackbox = quiet_blackbox_alerts("чёрный ящик молчит")
+    with mock.patch.object(mod, "_load_boot_alert", return_value=alert), \
+            mock.patch.object(mod, "_load_hdd_guard", return_value=hg), \
+            patch_blackbox_alerts(mod, blackbox), \
+            mock.patch.object(hg, "hdd_probe", return_value="ok"), \
+            mock.patch.object(mod, "list_containers", return_value=[]):
+        assert mod.main() == 0
+    sent = alert.send_with_retries.call_args[0][2]
+    assert "чёрный ящик молчит" in sent
 
 
 # ── OPS-2: /mnt/hdd2tb — сторож не трогает держателей при hung/absent ────────
@@ -171,6 +212,7 @@ def test_hung_hdd_blocks_holder_restart_and_alerts(tmp_path):
     holder = container(status="exited", health="", mounts=("/mnt/hdd2tb",))
     with mock.patch.object(mod, "_load_boot_alert", return_value=alert), \
             mock.patch.object(mod, "_load_hdd_guard", return_value=hg), \
+            patch_blackbox_alerts(mod, quiet_blackbox_alerts()), \
             mock.patch.object(hg, "hdd_probe", return_value="hung"), \
             mock.patch.object(mod, "list_containers", return_value=[holder]), \
             mock.patch.object(mod, "docker") as docker_mock:
@@ -195,6 +237,7 @@ def test_hung_hdd_does_not_block_non_holder_container(tmp_path):
     action = mock.Mock(returncode=0, stderr="")
     with mock.patch.object(mod, "_load_boot_alert", return_value=alert), \
             mock.patch.object(mod, "_load_hdd_guard", return_value=hg), \
+            patch_blackbox_alerts(mod, quiet_blackbox_alerts()), \
             mock.patch.object(hg, "hdd_probe", return_value="hung"), \
             mock.patch.object(mod, "list_containers", return_value=[plain]), \
             mock.patch.object(mod, "docker", return_value=action) as docker_mock:

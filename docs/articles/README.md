@@ -8,7 +8,7 @@
 
 | File | Language | Purpose | Status |
 |---|---|---|---|
-| habr_article_ru.md | RU | Черновик статьи для Habr / Habr article draft | draft / черновик |
+| habr_article_ru.md | RU | Локальная версия опубликованной первой части / Local copy of published Part 1 | опубликована 2026-07-25 / published 2026-07-25 |
 | habr_ready.md | RU | Habr article — clean paste for Markdown editor | ready |
 | habr_wysiwyg.html | RU | Habr article — HTML for WYSIWYG editor paste | ready |
 | hackaday_project_en.md | EN | Hackaday.io project page | draft |
@@ -21,8 +21,8 @@
 
 | File | Notes |
 |---|---|
-| habr_final_edited.md | **CODEX editorial pass** — canonical source for habr_article_ru.md |
-| habr_article_ru.md | **Publication version** for GitHub Pages and Habr |
+| habr_final_edited.md | **CODEX editorial pass** — byte-identical to the local publication copy `habr_article_ru.md` |
+| habr_article_ru.md | **Local publication copy of Habr Part 1**, already published; Part 2 is a separate plan and working prototype |
 
 ## Reddit posts
 
@@ -39,7 +39,7 @@ See [reddit/](reddit/) folder:
 
 - Habr — Часть 1 / Part 1: **опубликовано / published** → https://habr.com/ru/articles/1062914/ (2026-07-25, 13K / 9 comments as of 2026-09-08)
 - Habr — Часть 2 plan: [`HABR_PART2_ARTICLE_PLAN_2026-09.md`](HABR_PART2_ARTICLE_PLAN_2026-09.md)
-- Habr — Часть 2 / Part 2: в подготовке / in preparation (Шаг 2 — см. `docs/plans/POST_HABR_FEEDBACK_2026-08.md`)
+- Habr — Часть 2 / Part 2: расширенный прототип готов к авторской переработке; финальный авторский текст и публикация ещё не готовы / extended prototype exists; final author-written text and publication are pending (см. `HABR_PART2_LONG_PROTOTYPE_2026-10-10.md` и `HABR_PART2_EDITOR_NOTES_2026-10-10.md`). Обновление 22.10: установлен `b21b81c`; двухчасовой observer идёт 07:35–09:35 UTC, результат открыт; цель SSD ≤60 МБ/сутки не подтверждена. / October 22 update: `b21b81c` is installed; the 7,200-second OBS observer is running 07:35–09:35 UTC with result open; the ≤60 MB/day SSD target remains unverified.
 - GitHub Pages: https://alexeyborovskoy.github.io/NAS_Jetson_Nano/articles/habr_article_ru.html
 - Подробнее / Details: [publication_status.md](publication_status.md)
 - DEV.to: план принят 2026-10-02, статья не написана и не опубликована / plan approved, article not written or published → [RU](DEVTO_PUBLICATION_PLAN_2026-10.ru.md) · [EN](DEVTO_PUBLICATION_PLAN_2026-10.md)

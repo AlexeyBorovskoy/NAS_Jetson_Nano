@@ -51,9 +51,43 @@ sudo dmesg | grep -i -E "error|reset|fail|i/o" | tail -20
 | Диск / Disk | Мост / Bridge | SMART | Чем закрыт контроль |
 |---|---|---|---|
 | USB SSD 250 ГБ | JMS583 `152d:a583` | ⛔ **невозможен** | `nasa-jms583-health.timer` + USB-монитор |
-| USB HDD 2 ТБ | RTL9201 `0bda:9201` | ✅ **`-d sat` работает полностью** | `nasa-talk-alert` (атрибуты каждые 15 мин) + `nasa-hdd2tb-selftest.timer` (короткий самотест еженедельно) |
+| USB HDD 2 ТБ | RTL9201 `0bda:9201` | ⚠️ `-d sat`: атрибуты доступны; ATA Status неполный, код 4 (21.10.2026) | `nasa-talk-alert` (атрибуты каждые 15 мин) + `nasa-hdd2tb-selftest.timer` (короткий самотест еженедельно) |
 
-**Замер 2026-08-22 по HDD** (`smartctl -d sat /dev/sdb`):
+**Обновление 2026-10-21 / Update:** установлен выбор HDD через общий
+`NAS_SMART_HDD_DEVICE` из `/etc/nas-smart-hdd.env` (root:root, 0600).
+`nasa-hdd2tb-selftest.service` и `nasa-talk-alert.py` используют один whole-disk
+`/dev/disk/by-id/`; соответствие архивному монтированию проверено. Буквенные
+`/dev/sdX` меняются между загрузками — исторические команды ниже не копировать
+без проверки диска. Read-only замер: переназначенные/ожидающие/неисправимые
+секторы — 0/0/0, 43 °C, 3991 ч. `PASSED` получен по атрибутам, при этом
+`smartctl` вернул 4: `Incomplete response, ATA output registers missing`.
+Это ограничение чтения SMART, не доказательство полного здоровья HDD.
+Самотест при установке не запускался; прежний failed юнита сохранён.
+Таймер активен, файл расписания не изменён. Проверки и откат — в
+[контрольной точке](plans/CHECKPOINT_2026-10-20.ru.md#smart-установлен--2110).
+
+🇬🇧 The deployed unit and monitor share a validated whole-disk by-id from the
+root-only environment file. Attribute reads work, but ATA Status is incomplete
+(exit 4); the attribute-based PASSED is not a full health confirmation. No new
+self-test was started, the historical failed state remains, and the active
+timer's schedule file is unchanged.
+
+**Диагностика 21.10 / Diagnosis:** `sat`, `sat,12`, `sat,16` дают одинаковый
+код 4. На SMART RETURN STATUS с CK_COND USB/SAT-тракт возвращает SCSI GOOD
+без sense и ATA-регистров. Прямой Linux SG_IO, без smartctl, подтвердил
+`sb_len_wr=0` для CDB12/CDB16: причина не в парсере smartctl 6.6. Наиболее
+вероятна SAT-реализация RTL9201; для отделения firmware от драйвера/ядра нужно
+другое подключение, здесь оно не проверялось. Отдельное чтение атрибутов и
+журнала самотестов успешно (код 0). Переход на `sat,12` не помогает;
+quirk/драйвер и firmware не менялись. Это соответствует
+[разбору разработчика smartmontools](https://sourceforge.net/p/smartmontools/mailman/smartmontools-support/thread/56E32872.8070409@t-online.de/).
+
+🇬🇧 SAT12 and SAT16 both return no ATA output registers. Direct SG_IO confirms
+empty sense before smartctl parsing; the bridge SAT implementation is the leading
+explanation, with kernel/driver versus firmware separation still requiring another
+connection. Attribute and self-test-log reads work; no configuration was changed.
+
+**Исторический замер 2026-08-22 по HDD** (`smartctl -d sat /dev/sdb`; адрес на ту дату):
 
 ```
 WDC WD20EADS-00W4B0, S/N WD-WCAVY6366163
@@ -502,3 +536,58 @@ approaching a free-tier limit triggers a separate, configurable-threshold warnin
 categories the poll could actually match to a consumption row — an unmatched category is treated as
 "no data", never as zero. The device uses its own IAM key pair in `config/.env`, separate from the
 owner's workstation key.
+
+## 19. OBS-1: проверка полноты наблюдений / Observation completeness
+
+🇷🇺 **Обновление 22.10, 10:35 МСК:** установлен проверенный `b21b81c`
+(низкопамятный XZ preset 0 и пропуск неизменившегося курсора SQLite; частоты и
+схема БД сохранены). Двухчасовой observer на 7200 секунд идёт **07:35–09:35 UTC**;
+результат пока не предрешён. Целевой SSD ≤60 МБ/сутки остаётся открытым:
+двухчасовой интервал не подтверждает суточный бюджет. [Детали и критерии](plans/CHECKPOINT_2026-10-20.ru.md).
+
+🇷🇺 **22.10.2026:** OBS-1 установлен с отдельным разрешением на sudo.
+Час 21.10 14:11:59–15:11:59 UTC принят: CPU 2,604%, VmHWM 20,875 МиБ,
+3491 fast / 59 minute / 82 process snapshots, heartbeat ≤11 с, рестартов 0.
+Длительная приёмка остаётся открытой: ночной VmHWM 43,89 МиБ >40 МиБ,
+cgroup peak 64 МиБ, счётчик записи процесса 632 МБ за 16 ч 37 мин.
+Размер дерева 45,5 МБ не подтверждает бюджет SSD ≤60 МБ/сутки.
+Результаты и откат — в [текущей контрольной точке](plans/CHECKPOINT_2026-10-20.ru.md).
+
+```sh
+systemctl show nas_jetson_nano-blackbox.service -p ActiveState -p MainPID -p NRestarts -p Result
+sudo nas-why --boot -1 --short
+```
+
+`active` и свежий heartbeat проверяются вместе с ростом секундных замеров,
+минутных сводок и отдельных снимков процессов. При первой приёмке рабочий
+процесс скрывал зависание на логах и ошибку первого process snapshot.
+Теперь периодическое дочитывание логов ограничено 16 КиБ одного контейнера за итерацию;
+пропуски старого хвоста и oversized-записей отмечаются явно. Время обработки
+учитывается в секундном расписании. RSS проверяется также по `VmHWM`, память
+cgroup — по пиковому счётчику, чтобы не пропустить короткий скачок.
+
+Первый `nas-why --boot -1` честно возвращает `unknown`, если предыстории нет.
+Искусственный обрыв питания для проверки не нужен. Изолированная синтетическая
+SSD→HDD архивация проверена; плановая служба 22.10 05:30 UTC завершилась
+успешно, следующий таймер — 23.10 05:30 UTC. Это не доказывает создание
+недельного архива, если подходящей недели не было. Сырые журналы остаются
+на устройстве; агрегаты проверки хранятся локально в ignored-каталоге проекта.
+Во внешние LLM эти данные не передаются.
+
+🇬🇧 **October 22, 10:35 MSK update:** verified commit `b21b81c` is installed
+(lower-memory XZ preset 0 and skipping an unchanged SQLite cursor; sampling
+intervals and schema are unchanged). The 7,200-second observer is running
+**07:35–09:35 UTC**; its result is not predetermined. The SSD target of
+≤60 MB/day remains open; a two-hour interval cannot establish a daily budget.
+See the [checkpoint](plans/CHECKPOINT_2026-10-20.md) for details and criteria.
+
+🇬🇧 OBS-1 was installed October 21 with explicit sudo authorization. The
+14:11:59–15:11:59 UTC hour passed: CPU 2.604%, VmHWM 20.875 MiB, 3491 fast,
+59 minute and 82 process snapshots, heartbeat ≤11 s, no restarts. Overnight
+VmHWM subsequently reached 43.89 MiB (>40 MiB target), cgroup peak 64 MiB;
+process writes reached 632 MB over 16 h 37 min. The 60 MB/day SSD budget and
+longer-term acceptance remain open. Check growing
+fast/minute/process records together with heartbeat, restart count, CPU and
+reported memory peaks. Initial backlog/oversized-log omissions are explicit;
+first-boot diagnosis can remain unknown. Synthetic archive acceptance passed
+before timer activation; no power interruption was induced.

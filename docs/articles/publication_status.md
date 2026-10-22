@@ -1,6 +1,6 @@
 # Статус публикаций / Publication status
 
-> Проверено / Verified: 2026-09-08
+> Проверено / Verified: 2026-10-22 (Part 2 materials and OBS status); Habr publication metrics remain the dated 2026-09-08 snapshot.
 > DEV.to: план обновлён 2026-10-02 / plan updated 2026-10-02; other entries retain their dated evidence.
 
 ## Habr — Часть 1 (запуск) / Part 1 (launch)
@@ -14,10 +14,13 @@
 
 ## Habr — Часть 2 (развитие) / Part 2 (evolution)
 
-- 🇷🇺 **Статус: план готов.** Не «ML на Vostro», а **Sber-era**: Jetson SoR, GigaChat-first gateway, Cloud.ru FM, Immich→HDD, честные бэкапы.
-- 🇬🇧 **Status: plan ready.** Sber-era architecture story — not Vostro ML as canon.
+- 🇷🇺 **Статус: план и рабочий прототип.** Текущая ось — шесть инцидентов и проверка утверждений; Sber-era служит контекстом. «ML на Vostro» каноном не является.
+- 🇬🇧 **Status: plan and working prototype.** Six incidents and evidence checks are the current narrative; Sber-era is context, Vostro ML is not the architecture canon.
 - План / Plan: [`HABR_PART2_ARTICLE_PLAN_2026-09.md`](HABR_PART2_ARTICLE_PLAN_2026-09.md)
-- 🇷🇺 Черновик текста ещё не начат. 🇬🇧 Full draft not started.
+- 🇷🇺 Есть расширенный рабочий прототип от 10.10 и редакторские заметки; финальный авторский текст ещё не готов и не опубликован. 🇬🇧 An extended working prototype and editorial notes exist (2026-10-10); the final author-written text is not ready or published.
+- 🇷🇺 Дополнение 22.10 до ресурсной правки: часовая приёмка OBS-1 21.10 14:11:59–15:11:59 UTC принята; в последующем срезе VmHWM превысил цель 40 МиБ, cgroup peak достиг 64 МиБ, а дневной SSD-бюджет ≤60 МБ не подтверждён. `process write_bytes` — счётчик процесса, не измерение NAND. Исторический срез и границы вывода — в `HABR_PART2_MATERIALS.md` и контрольной точке.
+- 🇷🇺 Обновление 22.10, 10:35 МСК: установлен `b21b81c`; двухчасовой observer на 7200 секунд идёт 07:35–09:35 UTC, результат не предрешён. Цель SSD ≤60 МБ/сутки остаётся открытой и этим окном не подтверждается.
+- 🇬🇧 October 22 update, 10:35 MSK: `b21b81c` is installed; the 7,200-second observer is running 07:35–09:35 UTC, with no outcome assumed. The ≤60 MB/day SSD target remains open and cannot be established by this interval.
 
 ## GitHub Pages
 

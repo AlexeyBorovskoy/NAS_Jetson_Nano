@@ -4,8 +4,12 @@ Documentation=man:smartctl(8)
 
 [Service]
 Type=oneshot
+EnvironmentFile=/etc/nas-smart-hdd.env
 # Короткий тест: около 2 минут, только чтение. Длинный (490 мин) — вручную:
-#   sudo smartctl -t long -d sat /dev/sdb
-ExecStart=/usr/sbin/smartctl -t short -d sat /dev/sdb
+#   sudo smartctl -t long -d sat ${NAS_SMART_HDD_DEVICE}
+# NAS_SMART_HDD_DEVICE задаётся в /etc/nas-smart-hdd.env и должен указывать на
+# весь диск по устойчивому пути /dev/disk/by-id/..., а не на раздел.
+ExecStartPre=/usr/bin/test -b ${NAS_SMART_HDD_DEVICE}
+ExecStart=/usr/sbin/smartctl -t short -d sat ${NAS_SMART_HDD_DEVICE}
 Nice=15
 IOSchedulingClass=idle

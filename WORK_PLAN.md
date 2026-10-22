@@ -1,5 +1,31 @@
 # Work Plan
 
+> **2026-10-22:** [current checkpoint, October 21–22 addenda](docs/plans/CHECKPOINT_2026-10-20.md).
+> Watchdog HDD guard deployed October 19; nightly missing-thumbnail generation
+> disabled October 20 after recurring OOM. SMART switched to shared stable by-id
+> October 21; installed unit/monitor verified, 14 tests passed. USB ATA Status is
+> incomplete (exit 4); no self-test started, historical failed state retained.
+> USB/SAT diagnostics confirmed empty sense even through direct SG_IO; the
+> smartctl parser is excluded, bridge implementation is the leading explanation.
+> Access was confirmed using documented `jetson-via-vps-alt`;
+> the primary address times out. Checked October 22 09:47 MSK: no new OOM/restarts
+> since October 21 midnight MSK; Immich healthy, restart count 1820 unchanged;
+> three successful backup jobs, copies 2.25–3.65 hours old.
+> CUDA ML passed a synthetic test; family faces/TIFF/PSD require direct home LAN.
+> OBS-1 is installed on Jetson; initial acceptance found heartbeat delays during
+> log processing and missing process snapshots. After fixes, 32 target checks
+> passed; October 21 14:11:59–15:11:59 UTC hour accepted: CPU 2.604% of one core,
+> RSS peak 20.875 MiB, 3491 fast / 59 minute / 82 process snapshots, no restarts.
+> **OBS-1 resource update, October 22:** commit `b21b81c` is installed. The
+> 7,200-second observer is running from 07:35 to 09:35 UTC; its outcome is not
+> predetermined. The 60 MB/day SSD budget remains open and is not established
+> by the two-hour interval. The earlier VmHWM and write-counter observations
+> remain historical evidence, not a diagnosis.
+> Next block: review the completed observer, then the separate home-LAN
+> heavy-format/face pilot.
+> The saved sudo credential was used only locally on Jetson for the owner-authorized SMART installation.
+> Separate sudo authorization for OBS-1 was also granted; the credential stays on host.
+
 > **Update 2026-10-12 — improvement plan from the owner's article outline:**
 > [DEVELOPMENT_PLAN_2026-10_OWNER_GOALS.md](docs/plans/DEVELOPMENT_PLAN_2026-10_OWNER_GOALS.md)
 > (part A — reliability, part B — new features, article, documentation; queue P0–P4).

@@ -1,5 +1,13 @@
 # Follow-up plan for the owner's article draft — 2026-10
 
+> **October 22 update:** entries below retain their October 12–13 snapshot.
+> SMART by-id is deployed; the OBS hour passed, but memory/write budgets
+> still need work. Station CUDA ML passed synthetic checks; the hypervisor
+> blocker is resolved, family pilots require direct home LAN. Do not send
+> family images through VPS/WAN. Two quiet overnight windows followed
+> disabling thumbnail retries; the heavy-job cause remains unproven.
+> [Evidence and next steps](CHECKPOINT_2026-10-20.md).
+
 [Русский](DEVELOPMENT_PLAN_2026-10_OWNER_GOALS.ru.md) · [Work plan](../../WORK_PLAN.md) ·
 [Combined plan A–H](DEVELOPMENT_PLAN_2026-09_SBER_ERA.md) · [Checkpoint 2026-10-12](CHECKPOINT_2026-10-12.md)
 

@@ -1,11 +1,54 @@
 # Immich ML on the ROG workstation — launch runbook (D4, option B)
 
-> Date: 2026-09-26. Status: **kit ready, waiting on enabling the hypervisor on
-> the workstation** (owner's admin step, see §2). Nothing on the device or the
-> workstation was touched while preparing this — read-only checks and files in
-> git only. Russian version — `IMMICH_ML_STATION_RUNBOOK.ru.md`. Decision and
+> Updated: 2026-10-20. Status: **local ML worker verified with a synthetic image;
+> the family pilot requires a direct home LAN connection**. Docker Desktop and
+> CUDA work; the former hypervisor blocker is resolved.
+> Russian version — `IMMICH_ML_STATION_RUNBOOK.ru.md`. Decision and
 > numbers — `D4_IMMICH_ML_DECISION.md`; original pilot plan —
 > `IMMICH_ML_ROG_FREE_PILOT.md`.
+
+### Verification on October 20, 2026
+
+Only `immich_ml_rog` was started from the pinned v2.7.5 CUDA Compose image,
+bound to `127.0.0.1:3003`. No tunnel was started and the NAS ML URL was not
+changed. `/ping` responds, the container is healthy and NVIDIA GPU access works;
+both `buffalo_l` detection and recognition models use `CUDAExecutionProvider`.
+A synthetic gray 512×512 PNG completed the full `/predict` pipeline: zero faces,
+21.434 seconds cold (including model downloads), 0.269 seconds warm. This verifies
+operation, not family recognition quality or archive throughput. Container RSS
+after warmup was approximately 1.59 GiB.
+
+Direct TCP access from the workstation to the home Jetson currently fails.
+Do not transfer family images or previews through VPS/WAN. Before §3, confirm
+direct home LAN access; a working `jetson-via-vps` profile is insufficient.
+The ML worker handles recognition/embeddings; **it does not offload NAS TIFF/PSD
+thumbnail generation**. Heavy originals need a separate controlled pilot that
+preserves the source files. Local evidence files:
+`.agent-work/tmp/immich-ml-synthetic-smoke-20261020.json` and
+`.agent-work/tmp/immich-ml-synthetic-smoke-warm-20261020.json`.
+
+Rollback of this local launch: `docker stop immich_ml_rog`; model cache and
+originals remain intact. No NAS configuration rollback is needed.
+
+### Next small step: heavy formats and faces
+
+After confirming the home route, record restart/OOM and queue baselines first.
+Copy one failing TIFF and one PSD into an isolated ignored workstation directory,
+using home LAN only. Record original/copy SHA-256, size, dimensions and page/layer
+count; actual names and hashes belong in the local report only. Process copies
+sequentially with memory/time limits and a separate output directory. Record wall
+time, peak RSS, exit code, parameters and preview readability, then verify the
+original hash again. Do not select a bulk converter or replace Immich database
+records/previews before these measurements. Asset association and rollback need
+a separate verified step.
+
+Next, test one family asset using the pinned official API's targeted
+`refresh-faces` operation. The general `facialRecognition` queue can affect the
+entire archive and is not a one-file pilot. Before expanding, inspect the faces
+in the UI, ML availability, workstation memory and NAS counters. Restore the
+previous ML URL after the session using the existing rollback procedure.
+Do not combine the first pilot with bulk processing, failed-queue deletion or
+re-enabling nightly thumbnails. Preserve originals and photo history.
 
 ## 1. What this is
 
@@ -37,7 +80,8 @@ Nothing in this runbook runs until every item below is closed:
    # then reboot
    ```
    Check: `(Get-ComputerInfo).HyperVisorPresent` → `True`. This is the single
-   administrative blocker the owner has deferred since 2026-09-12 (`D4` §4).
+   administrative blocker the owner has deferred since 2026-09-12 (`D4` §4),
+   resolved during the October 20 verification.
 2. **Docker Desktop is running**, with GPU support enabled (WSL2 backend;
    the NVIDIA Container Toolkit ships with current Docker Desktop).
 3. **NVIDIA driver ≥ 545** (for CUDA 12.3,

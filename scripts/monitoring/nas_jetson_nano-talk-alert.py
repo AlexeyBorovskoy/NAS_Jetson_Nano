@@ -166,9 +166,13 @@ def check_swap():
     return "swap", None
 
 
-HDD_DEV = "/dev/sdb"
+HDD_DEV = read_env("/etc/nas-smart-hdd.env", "NAS_SMART_HDD_DEVICE", "")
 HDD_FATAL_ATTRS = ("Reallocated_Sector_Ct", "Current_Pending_Sector", "Offline_Uncorrectable")
 HDD_TEMP_MAX = 50
+
+
+def stable_hdd_target(device):
+    return device.startswith("/dev/disk/by-id/") and "-part" not in os.path.basename(device)
 
 
 def check_hdd_smart():
@@ -181,6 +185,13 @@ def check_hdd_smart():
 
     Диск не будим: `-n standby` возвращает управление, если он спит.
     """
+    # Буква /dev/sdX плавает между загрузками, а -part указывает на раздел:
+    # проверять по ним нельзя. Стабильная цель — только /dev/disk/by-id/...,
+    # заданная в /etc/nas-smart-hdd.env; отката на sd-букву нет намеренно.
+    if not stable_hdd_target(HDD_DEV):
+        return "hdd_smart", ("🟠 SMART HDD не проверяется: цель "
+                             "/dev/disk/by-id/... не настроена "
+                             "(NAS_SMART_HDD_DEVICE).")
     try:
         out = subprocess.run(["smartctl", "-H", "-A", "-l", "selftest",
                               "-n", "standby", "-d", "sat", HDD_DEV],

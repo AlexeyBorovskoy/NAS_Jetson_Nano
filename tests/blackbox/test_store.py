@@ -20,6 +20,7 @@ import time
 
 import pytest
 
+import blackbox.store as store_module
 from blackbox.store import (
     Catalog,
     DayStore,
@@ -290,6 +291,43 @@ def test_catalog_cursor_unknown_is_none_and_roundtrip(tmp_path):
     assert cat.get_cursor("journal") == "s=def456; i=43"
 
 
+def test_catalog_cursor_identical_value_skips_wal_write_and_changed_value_persists(
+        tmp_path):
+    path = tmp_path / "catalog.db"
+    cat = Catalog(str(path))
+    assert cat.set_cursor("logs", '{"container":1}') is True
+    changes = cat._conn.total_changes
+    wal_path = str(path) + "-wal"
+    wal_size = os.path.getsize(wal_path)
+
+    for _ in range(100):
+        assert cat.set_cursor("logs", '{"container":1}') is False
+
+    assert cat._conn.total_changes == changes
+    assert os.path.getsize(wal_path) == wal_size
+    assert cat.set_cursor("logs", '{"container":2}') is True
+    assert cat._conn.total_changes == changes + 1
+    cat.close()
+
+    reopened = Catalog(str(path))
+    assert reopened.get_cursor("logs") == '{"container":2}'
+    reopened.close()
+
+
+def test_catalog_cursor_failed_update_preserves_previous_value(tmp_path):
+    cat = Catalog(str(tmp_path / "catalog.db"))
+    cat.set_cursor("journal", "old")
+    cat._conn.execute(
+        "CREATE TRIGGER reject_cursor BEFORE INSERT ON cursor "
+        "BEGIN SELECT RAISE(ABORT, 'synthetic cursor refusal'); END")
+
+    with pytest.raises(sqlite3.IntegrityError):
+        cat.set_cursor("journal", "new")
+
+    assert cat.get_cursor("journal") == "old"
+    cat.close()
+
+
 def test_catalog_archive_lookup_by_day(tmp_path):
     """archive_for_day ищет архив по дню внутри first_day..last_day —
     на этом стоит сбор доказательств nas-why (задача 11)."""
@@ -401,6 +439,29 @@ def test_close_day_compresses_journal_and_removes_source(tmp_path):
     assert sorted(p.name for p in day_dir.iterdir()) == ["journal.log.xz"]
     with lzma.open(str(day_dir / "journal.log.xz"), "rt", encoding="utf-8") as fh:
         assert fh.read() == original
+
+
+def test_close_day_compression_failure_preserves_source_and_previous_archive(
+        tmp_path, monkeypatch):
+    day = "2026-10-12"
+    day_dir = tmp_path / "hot" / day
+    day_dir.mkdir(parents=True)
+    source = day_dir / "journal.log"
+    source.write_bytes(b"synthetic journal content\n")
+    archive = day_dir / "journal.log.xz"
+    archive.write_bytes(b"previous verified archive")
+
+    def fail_open(filename, mode="r", *args, **kwargs):
+        if mode == "wb":
+            raise OSError("synthetic compression failure")
+        return lzma.open(filename, mode, *args, **kwargs)
+
+    monkeypatch.setattr(store_module.lzma, "open", fail_open)
+    with pytest.raises(OSError, match="synthetic compression failure"):
+        close_day(str(tmp_path / "hot"), day)
+
+    assert source.read_bytes() == b"synthetic journal content\n"
+    assert archive.read_bytes() == b"previous verified archive"
 
 
 # ── hot_size_bytes / prune_hot ───────────────────────────────────────────────

@@ -342,11 +342,16 @@ class Catalog(object):
         return None if row is None else row[0]
 
     def set_cursor(self, name, value):
-        """Сохраняет (перезаписывает) значение курсора `name`."""
+        """Сохраняет изменённое значение курсора; одинаковое не переписывает WAL."""
+        row = self._conn.execute(
+            "SELECT value FROM cursor WHERE name = ?", (name,)).fetchone()
+        if row is not None and row[0] == value:
+            return False
         with self._conn:
             self._conn.execute(
                 "INSERT OR REPLACE INTO cursor (name, value) VALUES (?,?)",
                 (name, value))
+        return True
 
     def add_archive(self, row):
         """Пишет строку `archive` (одна запись на неделю, PK — `week`)."""
@@ -464,7 +469,7 @@ def close_day(hot_root, day):
     dst = src + ".xz"
     tmp_dst = dst + ".tmp"
     with open(src, "rb") as raw_in:
-        with lzma.open(tmp_dst, "wb") as compressed:
+        with lzma.open(tmp_dst, "wb", preset=0) as compressed:
             shutil.copyfileobj(raw_in, compressed)
     os.replace(tmp_dst, dst)
     os.remove(src)

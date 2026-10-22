@@ -1,8 +1,63 @@
-# Cloud.ru Object Storage + budget (offline prep)
+# Cloud.ru Object Storage + budget (synthetic validation)
 
 > No secrets in this file. Create resources in https://console.cloud.ru/  
 > Project (2026-09-07): `10dd738e-6389-4b75-9570-852df04c0165`  
 > SA: `home-nas-api` (`8f07c1f7-202a-4bfa-a66d-2550f2b2fa11`)
+
+## October 22 synthetic test execution
+
+The earlier read-only inspection below is historical. The owner subsequently
+authorized synthetic tests on the existing Cloud VM. An isolated virtualenv and
+Restic 0.19.1 were installed only inside the task's own directory. No sudo,
+services, ports, new cloud resources, or Object Storage uploads were used. The
+existing VM was reused; this does not verify actual grant spending or balance.
+The previously reported forecast of about 3,100 credits for the VM and 900
+remaining for other consumption is unchanged and is still a forecast, not a
+verified account balance. No family files were used.
+
+| Trial | Observed result | Scope limit |
+|---|---|---|
+| OBS blackbox on Ubuntu 24.04 x86_64 / Python 3.12.3 | 323 passed, 0 skipped; pytest time 17.12 s | Separate Linux Cloud run; not target Jetson ARM acceptance |
+| Local Restic 0.19.1 restore fixture | 36 generated files / 2,098,538 bytes; init, backup, `check --read-data`, full restore all exit 0; names, sizes, SHA-256 and file modes matched. Partial restore selected one file and was detected as incomplete; full restore took 0.721 s | Tiny local-only fixture, not production RTO/DR and not an S3 test |
+| TIFF/PSD decoder matrix | 10 fixtures: 6 valid TIFF (raw, deflate, LZW, 16-bit, multipage, 2048-sized), 2 valid PSD (raw/RLE), 2 truncated negatives. Pillow 12.0.0 passed 10/10. libvips 8.18.7 passed 6 valid TIFF and 2 malformed rejections; its binary build does not support the 2 valid PSD inputs | Do not report this as 20/20 or as a fix for family PSD compatibility |
+
+Image child limits: 768 MiB address space, 15 CPU seconds, 25 seconds wall time,
+two libvips threads; cgroup limit 2 CPU / 4 GiB. No timeout or crash occurred,
+inputs remained unchanged, and an independent 16-bit pixel value 257 was confirmed.
+This synthetic matrix does not establish compatibility with private family images.
+
+### Repeat on the prepared Linux VM
+
+Use a fresh private output directory for every run; the harnesses refuse to reuse
+existing output paths. Python 3.10+ is required. The prepared environment contains
+pytest 8.4.2, Pillow 12.0.0, pyvips 3.0.0, pyvips-binary 8.18.7 and Restic 0.19.1.
+The optional binary package supplies the tested libvips build. The Ubuntu image
+has no ensurepip; setup used a venv without pip and a SHA-256-verified PyPI pip
+wheel to bootstrap inside that venv, without sudo or system package changes.
+Run the following after the three harnesses have been copied into the exported
+source package. No private keys or cloud credentials belong in that package.
+
+```bash
+TEST_ROOT="$HOME/nasa/.agent-work/tmp/cloud-ci-20261022"
+TASK_DIR="$(mktemp -d "$TEST_ROOT/recheck.XXXXXX")"
+mkdir -p "$TASK_DIR/tmp"
+export TMPDIR="$TASK_DIR/tmp" NAS_TEST_TMP="$TASK_DIR/tmp" VIPS_CONCURRENCY=2
+cd "$TEST_ROOT/src"
+"$TEST_ROOT/bin/restic" version
+nice -n 15 "$TEST_ROOT/venv/bin/python" -m pytest tests/blackbox --basetemp="$TASK_DIR/pytest"
+nice -n 15 "$TEST_ROOT/venv/bin/python" tests/cloud/generate_images.py "$TASK_DIR/images"
+"$TEST_ROOT/venv/bin/python" tests/cloud/probe_image_decoders.py "$TASK_DIR/images" "$TASK_DIR/image-results"
+nice -n 15 "$TEST_ROOT/venv/bin/python" tests/cloud/restic_restore_trial.py "$TASK_DIR/restic-trial" "$TEST_ROOT/bin/restic"
+```
+
+These commands create synthetic outputs only beneath `TASK_DIR`; they do not
+upload data or access production repositories. With the recorded libvips binary,
+the decoder probe is expected to exit **2** for the two known valid-PSD compatibility
+gaps. Treat that as the expected result only when the JSON reports no hard failures,
+no timeout/crash/MemoryError, and unchanged inputs; negative fixtures count as passed
+only when rejected normally. Exit 0 means every decoder case passed; exit 1 means
+a hard failure. Check package availability for the selected platform before relying
+on the optional libvips wheel.
 
 ## A. Budget / grant
 
@@ -15,7 +70,8 @@ remaining lifetime, leaving roughly **900 for all other consumption**. These
 are a forecast and an operator report, not a fresh account balance or proof of
 bonus debits. The earlier 500/3,500 split below is historical.
 
-NAS access was verified read-only on October 22 using a dedicated key and a
+The following records the historical read-only inspection performed before
+the authorized synthetic run. NAS access was verified read-only on October 22 using a dedicated key and a
 pinned ED25519 host key. The non-root `nas` account runs on Ubuntu 24.04.4 LTS
 x86_64; effective parent-cgroup limits are **2 vCPU / 4 GiB RAM**. Podman is
 available; no container was started. The agreed scope is

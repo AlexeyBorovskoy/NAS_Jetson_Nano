@@ -2,9 +2,13 @@
 
 Status October 22, 2026: **installed; two-hour resource acceptance passed; daily SSD budget remains open**.
 The installed runtime is the originally accepted commit `b21b81c13e61d5254d7f73c724c6c8ab3e8be307`.
-After rebase, local commit `32c04a7c3443b6207a8f79490ec247dea1450556` is its equivalent;
-this local hash does not replace the installed commit. All 39 runtime files plus one
-dependency match the original accepted manifest; the manifest was not regenerated.
+The feature was linearly rebased and integrated/pushed to GitHub `main` and
+GitVerse `main`/`master` as `d5984adc2ec8edcaa4f77c26aeaf427b274944a5` on October 22;
+five GitHub workflows succeeded. The rebased runtime commit
+`32c04a7c3443b6207a8f79490ec247dea1450556` is equivalent to the originally accepted
+`b21b81c13e61d5254d7f73c724c6c8ab3e8be307`, which is the version installed on Jetson.
+The new local hash does not replace the installed commit. All 39 runtime files plus
+one dependency match the original accepted manifest; the manifest was not regenerated.
 
 The two-hour observer completed with `accepted=true`, Result=success / exit 0:
 121 samples / 7,200.053 s, CPU 2.5665%, VmHWM peak 22.3008 MiB, cgroup peak
@@ -23,7 +27,7 @@ hits followed by reclaim. See the [checkpoint](CHECKPOINT_2026-10-20.md) for the
 dated cache/RSS snapshot and conditional storage-geometry estimate.
 
 Zero normal-operation SD writes are also unverified; `fallback=0` does not measure that.
-Linear integration is prepared, but no merge or push has occurred. Sudo was explicitly authorized.
+Sudo was explicitly authorized.
 
 Live acceptance found quadratic long-log redaction and oversized read batches,
 then sleep-after-work sampling drift. Completeness checks also found missing
@@ -36,8 +40,11 @@ skipped; Linux blackbox: 323 passed separately. Twelve Compose configurations
 validated without a daemon. ShellCheck and a Docker daemon were unavailable in
 the validation environment. Actual Python 3.6.9 / SQLite 3.22 passed 32 synthetic
 assertions and a separate lossless 8 MiB `RLIMIT_AS=64 MiB` check. These are
-separate checks, not one combined runtime suite. Earlier read-only DB, boot/snapshot
-and installed-unit checks remain recorded in the checkpoint.
+separate checks, not one combined runtime suite. Separately, Cloud validation on
+Ubuntu 24.04 x86_64 / Python 3.12.3 passed the Linux blackbox suite 323/323 in
+17.12 s (zero skips). This is additional Linux evidence, not the Python 3.6 Jetson
+ARM target check. Earlier read-only DB, boot/snapshot and installed-unit checks
+remain recorded in the [checkpoint](CHECKPOINT_2026-10-20.md).
 
 Boot service is enabled and successfully exited. Isolated synthetic SSD→HDD
 archive, immutable retry and copy-failure checks passed before archive-timer

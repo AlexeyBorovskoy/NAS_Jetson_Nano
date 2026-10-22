@@ -31,6 +31,12 @@
 > face pilot.
 > The saved sudo credential was used only locally on Jetson for the owner-authorized SMART installation.
 > Separate sudo authorization for OBS-1 was also granted; the credential stays on host.
+> **Cloud synthetic validation, October 22:** on Ubuntu 24.04 x86_64 / Python 3.12.3,
+> the separate Linux OBS suite passed 323/323 (17.12 s). Local Restic 0.19.1 restore
+> and generated TIFF/PSD decoder probes passed their stated synthetic checks; valid
+> PSD remains unsupported by this libvips build. No S3 upload or family files were
+> used. This is not Jetson ARM acceptance, production DR/RTO, or verified grant
+> spending. Details and reproducible commands: [Cloud checklist](docs/integrations/sber/S3_AND_BUDGET_CHECKLIST.md).
 
 > **Update 2026-10-12 — improvement plan from the owner's article outline:**
 > [DEVELOPMENT_PLAN_2026-10_OWNER_GOALS.md](docs/plans/DEVELOPMENT_PLAN_2026-10_OWNER_GOALS.md)

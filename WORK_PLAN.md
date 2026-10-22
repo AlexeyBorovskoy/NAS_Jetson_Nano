@@ -16,13 +16,19 @@
 > log processing and missing process snapshots. After fixes, 32 target checks
 > passed; October 21 14:11:59–15:11:59 UTC hour accepted: CPU 2.604% of one core,
 > RSS peak 20.875 MiB, 3491 fast / 59 minute / 82 process snapshots, no restarts.
-> **OBS-1 resource update, October 22:** commit `b21b81c` is installed. The
-> 7,200-second observer is running from 07:35 to 09:35 UTC; its outcome is not
-> predetermined. The 60 MB/day SSD budget remains open and is not established
-> by the two-hour interval. The earlier VmHWM and write-counter observations
-> remain historical evidence, not a diagnosis.
-> Next block: review the completed observer, then the separate home-LAN
-> heavy-format/face pilot.
+> **OBS-1 resource acceptance, October 22:** commit `b21b81c` is installed. The
+> two-hour observer completed 121 samples / 7,200.053 seconds (07:35:16 to 09:35:16 UTC),
+> `accepted=true`, Result=success / exit 0. CPU averaged 2.5665% of one core; VmHWM
+> peaked at 22.3008 MiB and cgroup memory at 35.9883 MiB; heartbeat age maxed at 11 s.
+> Added: 6,984 fast, 119 minute, 158 process snapshots. PID 1200 and restart count 0
+> stayed unchanged; cgroup `failcnt` delta was 0.
+> The two-hour deltas were process `write_bytes` +59,826,176 B and SSD-partition
+> writes +181,403,648 B; the latter includes other writers and is not NAND wear.
+> They do not establish the <=60 MB/day target and must not be extrapolated as a day.
+> A separate 24-hour observer started 08:48:22 UTC October 22, targeting October 23
+> 08:48:22 UTC; it is still running and has no result. Midnight rollover is not yet
+> validated. Next block: review that observer, then the separate home-LAN heavy-format/
+> face pilot.
 > The saved sudo credential was used only locally on Jetson for the owner-authorized SMART installation.
 > Separate sudo authorization for OBS-1 was also granted; the credential stays on host.
 

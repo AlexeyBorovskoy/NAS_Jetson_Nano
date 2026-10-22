@@ -19,8 +19,8 @@
 - План / Plan: [`HABR_PART2_ARTICLE_PLAN_2026-09.md`](HABR_PART2_ARTICLE_PLAN_2026-09.md)
 - 🇷🇺 Есть расширенный рабочий прототип от 10.10 и редакторские заметки; финальный авторский текст ещё не готов и не опубликован. 🇬🇧 An extended working prototype and editorial notes exist (2026-10-10); the final author-written text is not ready or published.
 - 🇷🇺 Дополнение 22.10 до ресурсной правки: часовая приёмка OBS-1 21.10 14:11:59–15:11:59 UTC принята; в последующем срезе VmHWM превысил цель 40 МиБ, cgroup peak достиг 64 МиБ, а дневной SSD-бюджет ≤60 МБ не подтверждён. `process write_bytes` — счётчик процесса, не измерение NAND. Исторический срез и границы вывода — в `HABR_PART2_MATERIALS.md` и контрольной точке.
-- 🇷🇺 Обновление 22.10, 10:35 МСК: установлен `b21b81c`; двухчасовой observer на 7200 секунд идёт 07:35–09:35 UTC, результат не предрешён. Цель SSD ≤60 МБ/сутки остаётся открытой и этим окном не подтверждается.
-- 🇬🇧 October 22 update, 10:35 MSK: `b21b81c` is installed; the 7,200-second observer is running 07:35–09:35 UTC, with no outcome assumed. The ≤60 MB/day SSD target remains open and cannot be established by this interval.
+- 🇷🇺 Обновление 22.10: двухчасовая OBS-приёмка завершена `accepted=true` / success (121 замер, 7200,053 с; CPU 2,5665%, VmHWM peak 22,3008 МиБ, cgroup peak 35,9883 МиБ, heartbeat max 11 с, рестартов 0). Дельты `write_bytes` процесса и раздела SSD составили 59 826 176 Б и 181 403 648 Б за два часа; счётчик раздела включает других писателей, ни одна дельта не равна NAND или суточному замеру. Суточная цель ≤60 МБ не подтверждена. 24-часовой observer идёт до 23.10 около 08:48 UTC.
+- 🇬🇧 October 22 update: the two-hour OBS acceptance completed successfully (121 samples / 7,200.053 s; CPU 2.5665%, VmHWM peak 22.3008 MiB, cgroup peak 35.9883 MiB, heartbeat max 11 s, no restarts). Process and SSD-partition write-counter deltas were 59,826,176 B and 181,403,648 B over two hours; the partition counter includes other writers. Neither is NAND wear or a daily measurement. The ≤60 MB/day target remains unverified; the 24-hour observer is running until about 08:48 UTC Oct 23.
 
 ## GitHub Pages
 

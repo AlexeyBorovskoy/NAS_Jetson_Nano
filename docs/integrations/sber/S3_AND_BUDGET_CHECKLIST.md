@@ -6,6 +6,63 @@
 
 ## A. Budget / grant
 
+### October 22 update: reuse the owner's existing shared VM
+
+The owner again reports 4,000 Test Evolution credits expiring November 6. The
+neighboring `atc` project confirms an existing CPU VM and plans its deletion on
+**November 5**. Its operator estimates about **3,100 credits** for the VM's
+remaining lifetime, leaving roughly **900 for all other consumption**. These
+are a forecast and an operator report, not a fresh account balance or proof of
+bonus debits. The earlier 500/3,500 split below is historical.
+
+NAS access was verified read-only on October 22 using a dedicated key and a
+pinned ED25519 host key. The non-root `nas` account runs on Ubuntu 24.04.4 LTS
+x86_64; effective parent-cgroup limits are **2 vCPU / 4 GiB RAM**. Podman is
+available; no container was started. The agreed scope is
+a separate user without sudo and **15 GiB disk by policy, without an enforced filesystem quota**, rootless
+containers and loopback-only services. The neighboring project's applications,
+network, nginx, SSH and firewall must remain untouched. No family data,
+production NAS backups, field logs or other projects' closed code may be copied
+there. User lingering is off according to the operator, so persistent user
+services require a separate agreement. No software, service or remote file was
+installed or changed during inspection.
+
+| Priority | Project work | Concrete outcome before November 5 |
+|---|---|---|
+| 1 | OBS-1, REL-4/REL-5: Linux CI and isolated failure scenarios | Reproducible tests of log rotation, bounded memory, interrupted writes, recovery and diagnostics using synthetic data |
+| 2 | REL-6 / ADR-0009: backup/restore rehearsal | Restore a synthetic dataset from a separate encrypted test prefix, verify hashes and record recovery time; this is not full ARM64/hardware or family-data DR |
+| 3 | D3: external monitoring prototype | Outbound probes of approved endpoints, bounded timeouts and synthetic alert tests; no new inbound ports or permanent dependency on the expiring VM |
+| 4 | FAM-4: decoder preparation | Public or generated TIFF/PSD fixtures with time/RSS limits; the real family-file pilot remains on home LAN |
+
+Using idle capacity within this fixed-size VM adds no additional VM SKU hours.
+A proposed **NAS incremental envelope of at most 100 credits**, taken from the
+remaining shared reserve, is a planning proposal, not authorization for new
+resources or object uploads. Most synthetic CI can run without creating another
+billable cloud resource. Object Storage free allowances are shared and must be
+checked; do not assume a fresh allowance for a new prefix.
+
+For comparison only, the published Compute tariff (version 261014, 22% VAT)
+prices a standard 4 vCPU / 16 GB VM at 7.9788 RUB/hour, a 50 GB SSD at
+0.793 RUB/hour and one public IP at 0.2074 RUB/hour. Their sum is
+**8.9792 RUB/hour**, or about **3,017 RUB for 336 hours**. This supports the
+operator's approximate reservation; it is not an account-specific quote.
+[Current Compute tariff](https://cdn.cloud.ru/docs/legal/tariffs/evolution/current-version/evolution-compute.pdf).
+
+Current billing supports a budget with optional **resource suspension**, in
+addition to notifications. Its scope and calendar-month periods need checking
+against other projects and both October/November consumption; it is not an
+automatic grant-expiry deadline. No billing setting was changed.
+[Create a budget](https://cloud.ru/docs/billing/ug/topics/guides__budget_add).
+Stopping a VM alone leaves disks and IP billable; export NAS results by November
+3, remove its own workloads by November 4, and coordinate the operator's November
+5 cleanup. Never delete another project's VM or data without its authorization.
+[VM billing](https://cloud.ru/docs/virtual-machines/ug/topics/pricing).
+
+GPU, Foundation Models, ML Inference, Container Apps and Marketplace remain
+excluded from this grant. No new paid resources, payment changes or production
+uploads were made in this assessment. The transfer of the owner's local family
+folder is separately deferred until home LAN and is not an S3/cloud experiment.
+
 - **Owner decision 2026-10-09:** 4,000 Cloud.ru bonus credits through 6 November are owner-confirmed. This is not independent cabinet verification. Confirm this project's eligibility for the exact SKU in the calculator before creating resources. Official exclusions include Foundation Models, Container Apps, GPU/ML Inference, and Marketplace ([grant terms](https://cloud.ru/docs/billing/ug/topics/concepts__start_grant)); do not propose FM/RAG or Container Apps as grant-funded experiments.
 - **Original experiment proposal:** backup/restore of a minimal encrypted configuration set in Object Storage, with a proposed 500-credit ceiling and 3,500 reserved. The owner subsequently authorized the tiny synthetic trial documented below; this is not authorization to spend 500 credits. The old S3 tenant/key blocker was resolved on 2026-09-20 (see `CLOUD_RU.md`); the old Jetson restic HTTP 400 did not reproduce in the 2026-10-09 trial. Secondary option: isolated CPU-only watchdog VM, only after calculator confirmation. No production off-site backup of family data is authorized.
 - No automatic paid fallback and no ruble top-up. Do not incur charges until covered SKU, budget behavior, and explicit experiment authorization are confirmed.

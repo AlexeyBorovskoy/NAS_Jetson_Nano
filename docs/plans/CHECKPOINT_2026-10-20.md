@@ -2,6 +2,18 @@
 
 [Русский](CHECKPOINT_2026-10-20.ru.md) · [Previous checkpoint](CHECKPOINT_2026-10-19.md)
 
+## OBS-1 two-hour acceptance — October 22
+
+The two-hour observer completed with `accepted=true`, Result=success / exit 0:
+121 samples / 7,200.053 s, CPU 2.5665%, VmHWM peak 22.3008 MiB, cgroup peak
+35.9883 MiB, heartbeat age max 11 s. It added 6,984 fast, 119 minute, and 158
+process snapshots; PID/restarts stayed unchanged, with `failcnt` delta 0. The
+process `write_bytes` delta was 59,826,176 B; the SSD partition counter delta was
+181,403,648 B and includes other writers. Neither delta establishes the ≤60 MB/day
+target or measures NAND writes; do not extrapolate the two-hour window. The separate
+24-hour observer began October 22 08:48:22 UTC and is expected to end October 23
+around 08:48:22 UTC. Its result and UTC-midnight transition are pending.
+
 ## OBS-1 resource fix — October 22, 10:35 MSK
 
 Verified commit **`b21b81c13e61d5254d7f73c724c6c8ab3e8be307`** is installed:
@@ -12,12 +24,45 @@ round-trip under `RLIMIT_AS=64 MiB` passed on Python 3.6.9. Source, installer
 state and manifest are preserved in `.agent-work/archives/obs1-resource-before-20261022/`;
 only the collector changed. SMART, VPS/VPN and family containers were untouched.
 
-The two-hour observer `nas-obs1-resources-20261022T073511.service` started
-October 22 at **07:35:11 UTC / 10:35:11 MSK**; its first sample was at 07:35:16
-UTC. It is configured for 121 samples at 60-second intervals and at least 7,200
-seconds, ending around **09:35 UTC / 12:35 MSK**. Memory, CPU, completeness,
-restart stability and cgroup fail-count growth are being checked. The outcome
-is not predetermined; this interval does not establish the daily SSD budget.
+The two-hour observer `nas-obs1-resources-20261022T073511.service` ran from
+**07:35:16 to 09:35:16 UTC** and completed successfully: 121 samples / 7,200.053 s,
+`accepted=true`, observer Result=success / exit 0. CPU averaged **2.5665% of one
+core**; VmHWM peak was **22.3008 MiB**, cgroup peak **35.9883 MiB**, and maximum
+heartbeat age **11 s**. It added **6,984 fast**, **119 minute**, and **158 process
+snapshots**; PID 1200 and restart count 0 stayed unchanged, with cgroup `failcnt`
+delta 0.
+
+Over those two hours, process `write_bytes` increased **59,826,176 B** and the SSD
+partition counter **181,403,648 B**. The partition counter includes other writers
+and is not NAND wear. Neither two-hour delta establishes the **≤60 MB/day** target;
+do not extrapolate it to a day.
+
+At October 22 07:18 UTC, pre-fix `memory.stat` showed **32.046875 MiB cache**
+and **15.734375 MiB anonymous RSS**. Separate reads gave `memory.failcnt=2106`
+and `under_oom=0` from `memory.oom_control`; the latter describes that moment only.
+This is a current snapshot, not a breakdown of the historical maximum. A 64 MiB
+cgroup peak does not establish a Python leak or OOM: file cache is accounted too,
+and failcnt records limit hits followed by reclaim
+([kernel documentation](https://www.kernel.org/doc/Documentation/cgroup-v1/memory.txt)).
+XZ memory cost is reproducible, but the earlier VmHWM timestamp was not recorded.
+
+The SSD filesystem block and SQLite page are both **4096 bytes**; heartbeat
+size is **141 logical / 4096 allocated bytes**. Assuming one WAL page per
+nonempty metric flush plus one new heartbeat block every 10 seconds gives a
+conditional lower estimate of **70,778,880 bytes/day** (70.8 MB), before
+checkpoints, other tables, metadata or NAND amplification. This is a calculation
+under stated assumptions, not a measured day. Repeated cursor writes were not
+the only cause. Keeping the ≤60 MB/day target needs separate storage work while
+preserving the agreed ten-second unsynced-data-loss window.
+
+The additional read-only observer `nas-obs1-soak24-20261022.service` started
+**October 22 08:48:22 UTC / 11:48:22 MSK**: 289 samples every 300 seconds,
+at least 86,400 seconds, expected to finish **October 23 around 08:48 UTC / 11:48 MSK**.
+It crosses UTC midnight without subtracting counters from different daily DBs.
+PID/boot identity and counter monotonicity are checked. Whole SSD partition writes
+include other writers and are not NAND bytes. The run is in progress; no result is assumed. Observer
+limits: Nice19, CPUQuota5%, MemoryMax64M, RuntimeMaxSec87000; only a temporary
+diagnostic unit was added.
 
 Before deployment, isolated process measurements showed:
 
@@ -96,7 +141,7 @@ containers, originals and SMART were unchanged. Earlier entries retain history.
   `nasa-hdd2tb-selftest.service`, deliberately not reset. MemAvailable 1680 MiB;
   SD root 43% used, SSD 20%. This is a state snapshot, not a load test.
 
-Next: (1) review the two-hour observer after it completes; the ≤60 MB/day SSD
+Next: (1) review the 24-hour observer after it completes; the ≤60 MB/day SSD
 target remains open until separately confirmed over a full day; (2) separate
 copied TIFF/PSD and one-asset family ML pilots on direct home LAN; (3) targeted
 commits for outstanding SMART/docs and preparation for linear OBS integration;

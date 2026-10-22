@@ -539,11 +539,14 @@ owner's workstation key.
 
 ## 19. OBS-1: проверка полноты наблюдений / Observation completeness
 
-🇷🇺 **Обновление 22.10, 10:35 МСК:** установлен проверенный `b21b81c`
-(низкопамятный XZ preset 0 и пропуск неизменившегося курсора SQLite; частоты и
-схема БД сохранены). Двухчасовой observer на 7200 секунд идёт **07:35–09:35 UTC**;
-результат пока не предрешён. Целевой SSD ≤60 МБ/сутки остаётся открытым:
-двухчасовой интервал не подтверждает суточный бюджет. [Детали и критерии](plans/CHECKPOINT_2026-10-20.ru.md).
+🇷🇺 **Итог приёмки ресурсов 22.10:** двухчасовой observer завершился `success`,
+`accepted=true`: 121 замер / 7200,053 с (07:35:16–09:35:16 UTC), CPU 2,5665%,
+VmHWM peak 22,3008 МиБ, cgroup peak 35,9883 МиБ, heartbeat max 11 с; PID и restart
+count стабильны, `failcnt` delta 0. Дельты за два часа: `write_bytes` процесса
++59 826 176 Б, счётчик раздела SSD +181 403 648 Б (включает других писателей,
+не NAND). Цель ≤60 МБ/сутки не подтверждена; дельты нельзя экстраполировать.
+24-часовой observer запущен 22.10 08:48:22 UTC, завершение ожидается около
+23.10 08:48:22 UTC; результат и проверка смены даты ожидаются. [Детали и критерии](plans/CHECKPOINT_2026-10-20.ru.md).
 
 🇷🇺 **22.10.2026:** OBS-1 установлен с отдельным разрешением на sudo.
 Час 21.10 14:11:59–15:11:59 UTC принят: CPU 2,604%, VmHWM 20,875 МиБ,
@@ -576,9 +579,12 @@ SSD→HDD архивация проверена; плановая служба 2
 
 🇬🇧 **October 22, 10:35 MSK update:** verified commit `b21b81c` is installed
 (lower-memory XZ preset 0 and skipping an unchanged SQLite cursor; sampling
-intervals and schema are unchanged). The 7,200-second observer is running
-**07:35–09:35 UTC**; its result is not predetermined. The SSD target of
-≤60 MB/day remains open; a two-hour interval cannot establish a daily budget.
+intervals and schema are unchanged). The 7,200-second observer completed with accepted=true / success.
+**07:35:16–09:35:16 UTC**; CPU 2.5665%, VmHWM peak 22.3008 MiB, cgroup peak 35.9883 MiB,
+heartbeat max 11 s; PID/restarts stable, failcnt delta 0. Two-hour process writes +59,826,176 B;
+SSD partition counter +181,403,648 B includes other writers and is not NAND. The ≤60 MB/day
+target remains unverified; do not extrapolate. Separate 24-hour observer runs 08:48:22 UTC Oct 22
+to about 08:48:22 UTC Oct 23; result and UTC-date transition check are pending.
 See the [checkpoint](plans/CHECKPOINT_2026-10-20.md) for details and criteria.
 
 🇬🇧 OBS-1 was installed October 21 with explicit sudo authorization. The

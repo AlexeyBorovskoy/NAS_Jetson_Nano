@@ -1,17 +1,48 @@
 # OBS-1 deployment and acceptance
 
-October 21 validation: 301 Linux tests, full preflight and metrics passed.
-Windows: 296 tests, 5 platform skips. ShellCheck is unavailable locally.
-Not installed on Jetson: SSH proxy unavailable; sudo still needs verification.
+Status October 22, 2026: **installed, hour acceptance passed; longer-term budget open**.
+October 21 14:11:59–15:11:59 UTC: CPU 2.604%, VmHWM 20.875 MiB, cgroup peak
+28.0195 MiB, heartbeat ≤11 s; 3491 fast / 59 minute / 82 process snapshots;
+PID 4991, no restarts. Observer succeeded: 61 samples over 3600.058 s.
+The same process was running October 22 morning, current RSS 24.06 MiB, but
+VmHWM **43.89 MiB** exceeded the 40 MiB target; cgroup peak **64 MiB**. Process
+write_bytes **632,123,392 bytes** over 16 h 37 min, file tree **45,500,462 bytes**:
+the SSD ≤60 MB/day budget remains unverified. These metrics differ; physical
+NAND writes and the peak cause are unknown. Next block: memory/writes; the
+accepted hour does not establish the longer-term budget.
+Zero normal-operation SD writes are also unverified; `fallback=0` does not measure that.
+Runtime source is locally committed as `2f4edaa`; all 39 installed source hashes
+are checked separately. Device Git HEAD was preserved with its prior edits;
+no `git pull`/checkout was used. The owner explicitly authorized sudo.
 
-Final review fixed startup without SSD: its `ReadWritePaths` directory is optional,
-while SD state remains required, as supported by
+Live acceptance found quadratic long-log redaction and oversized read batches,
+then sleep-after-work sampling drift. Completeness checks also found missing
+process snapshots: a guarded `snapshot(None, ...)` TypeError prevented baseline
+updates. These issues are fixed, and actual process/power/temperature rows now
+grow. Active state or heartbeat alone does not prove observation completeness.
+
+Full preflight and metrics ratchet pass without exceptions; the sole full-run
+warning is unavailable local ShellCheck. Windows blackbox: 314 passed, 5 skipped.
+Linux blackbox/container-watchdog: 329 passed before the final one-line fix,
+followed by 16 targeted process tests. Actual Python 3.6.9 / SQLite 3.22 passed
+32 synthetic assertions. All three databases passed read-only quick checks;
+current boot/snapshot linkage and four installed units were verified. Hour
+acceptance also checks distinct process snapshots and reported memory peaks.
+
+Boot service is enabled and successfully exited. Isolated synthetic SSD→HDD
+archive, immutable retry and copy-failure checks passed before archive-timer
+activation; scheduled invocation succeeded October 22 05:30 UTC; next trigger is October 23 05:30 UTC.
+Service success alone does not prove an archive was created when no week was eligible. First previous-boot diagnosis
+honestly returns unknown because pre-install history is absent. Reboot, power
+interruption and actual delivery of the new D2 section were not induced;
+stale-heartbeat/cooldown checks were synthetic without sending messages.
+Daily write volume and thresholds need subsequent observation.
+
+Startup without SSD uses an optional SSD `ReadWritePaths` entry; SD state remains
+required, as supported by
 [systemd 237](https://github.com/systemd/systemd/blob/v237/man/systemd.exec.xml#L821-L827).
-Keep the HDD mountpoint directory present even when its disk is disconnected.
-
-Updated October 20, 2026. **Not installed on Jetson.** Local tests are not device
-acceptance. Installation requires working sudo/root; password discovery or sudo
-bypass is outside this procedure. RU: `DEPLOY_OBS1_BLACKBOX.ru.md`.
+Keep the HDD mountpoint directory present when disconnected.
+RU: `DEPLOY_OBS1_BLACKBOX.ru.md`.
 
 ## Change and purpose
 
@@ -56,12 +87,11 @@ OPS-1 settings. Never write beneath an unmounted SSD. The installer does not
 touch HDD directories; the isolated archive worker creates them after checking
 the real mount. Keep runtime observations local, out of external model inputs.
 
-After package and capacity verification:
+After package and capacity verification, enable boot and collector first:
 
 ```sh
 sudo systemctl enable --now nas_jetson_nano-blackbox-boot.service
 sudo systemctl enable --now nas_jetson_nano-blackbox.service
-sudo systemctl enable --now nas_jetson_nano-blackbox-archive.timer
 systemctl show nas_jetson_nano-blackbox.service -p ActiveState -p ActiveEnterTimestamp
 stat scripts/monitoring/nas_jetson_nano-blackbox.py services/blackbox/blackbox/collector.py
 ```
@@ -70,22 +100,46 @@ Active-enter time must follow executable-code updates; restart deliberately
 after updates and check import/process errors too. A timestamp alone does not
 prove which modules were loaded. Initial installation cannot reconstruct missing
 historical evidence. Backups are under `.agent-work/archives/blackbox-install-*`.
+Enable the archive timer only after the isolated synthetic archive acceptance
+passes:
+
+```sh
+sudo systemctl enable --now nas_jetson_nano-blackbox-archive.timer
+```
 
 ## Acceptance
 
-Observe one hour: current-boot heartbeat, growing records, no collector restarts,
-measured CPU/RSS and SD/SSD writes. Check snapshot/boot-catalog association and
-retry idempotence. `sudo nas-why --boot -1 --short` must produce at most six
-lines and report unknown when evidence is unavailable; first installation may
-have no previous boot record.
+The October 21 14:11:59–15:11:59 UTC hour passed every criterion below
+(`accepted=true`, observer exit 0), after all 32 target smoke assertions. Earlier
+13:37/14:01 runs were interrupted and do not count. The October 22 overnight
+snapshot exceeded target VmHWM and showed substantial process writes;
+longer-term budget work remains open. For a repeated hour after fixes, require fast-sample delta
+greater than 3000, at least 55 minute rows and 55 distinct process snapshots,
+mean CPU at most 5%, `/proc` VmHWM at most 40 MiB, cgroup peak at most 64 MiB,
+unchanged PID/restart count and a current-boot heartbeat no older than 120 s.
+Record a result only after all thresholds pass across a complete hour. A recent
+read-only quick check already found the three databases healthy and the current
+boot/snapshot association valid. Do not induce a reboot or power loss for this
+acceptance. The first
+`sudo nas-why --boot -1 --short` result was `unknown` because historical
+evidence was absent; it is not a root-cause diagnosis.
 
-Test archiving on a separate synthetic week and separate HDD test directory,
-including hash verification and preserving SSD sources on failure/busy HDD.
-A controlled three-minute collector stop should cause one OPS-1 alert, with
-an hourly cooldown. A harmless container restart checks its event/redacted tail.
-These production-affecting actions are separate controlled steps. Tune thresholds
-after a week; validate a real crash explanation when an actual event occurs,
-without inducing a power loss.
+The isolated synthetic archive acceptance already passed: separate SSD/HDD test
+destinations, hash and manifest verification, immutable retry and source
+preservation on copy failure. It used synthetic data only; production records
+were not archived by this test. Do not induce a collector stop, reboot, power
+loss or notification for this acceptance, and do not restart family containers.
+No such field event is claimed as verified. Tune thresholds after a week and
+assess a real crash only if one naturally occurs.
+
+The existing watchdog hook, HDD guard and SMART monitoring were preserved.
+Source/system backups remain available for rollback.
+
+Periodic log reads are limited to one container and 16 KiB per iteration. The
+pending queue has at most 200 containers and is not reset on the next due time.
+Initial-backlog and oversized-record omissions have explicit gap markers and
+byte counters. Event tails are a separate path: at most 200 lines / 1 MiB read,
+with at most 16 KiB retained after redaction.
 
 All archive/runtime CLI HDD operations use isolated workers. Parents have bounded
 poll deadlines and do not block while reaping D-state. Live-worker markers prevent

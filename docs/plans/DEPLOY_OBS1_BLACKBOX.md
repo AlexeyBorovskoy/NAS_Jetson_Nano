@@ -1,19 +1,29 @@
 # OBS-1 deployment and acceptance
 
-Status October 22, 2026: **installed, hour acceptance passed; longer-term budget open**.
-October 21 14:11:59–15:11:59 UTC: CPU 2.604%, VmHWM 20.875 MiB, cgroup peak
-28.0195 MiB, heartbeat ≤11 s; 3491 fast / 59 minute / 82 process snapshots;
-PID 4991, no restarts. Observer succeeded: 61 samples over 3600.058 s.
-The same process was running October 22 morning, current RSS 24.06 MiB, but
-VmHWM **43.89 MiB** exceeded the 40 MiB target; cgroup peak **64 MiB**. Process
-write_bytes **632,123,392 bytes** over 16 h 37 min, file tree **45,500,462 bytes**:
-the SSD ≤60 MB/day budget remains unverified. These metrics differ; physical
-NAND writes and the peak cause are unknown. Next block: memory/writes; the
-accepted hour does not establish the longer-term budget.
+Status October 22, 2026: **installed; two-hour resource acceptance passed; daily SSD budget remains open**.
+The installed runtime is the originally accepted commit `b21b81c13e61d5254d7f73c724c6c8ab3e8be307`.
+After rebase, local commit `32c04a7c3443b6207a8f79490ec247dea1450556` is its equivalent;
+this local hash does not replace the installed commit. All 39 runtime files plus one
+dependency match the original accepted manifest; the manifest was not regenerated.
+
+The two-hour observer completed with `accepted=true`, Result=success / exit 0:
+121 samples / 7,200.053 s, CPU 2.5665%, VmHWM peak 22.3008 MiB, cgroup peak
+35.9883 MiB, heartbeat age max 11 s; 6,984 fast, 119 minute and 158 process
+snapshots were added. PID/restart count stayed unchanged; cgroup `failcnt` delta
+was 0. The ≤60 MB/day SSD target remains unverified. Over only these two hours,
+process `write_bytes` rose 59,826,176 B and the SSD partition counter 181,403,648 B;
+the latter includes other writers, and neither is a NAND-write measurement. Do not
+extrapolate these deltas to a day.
+
+A separate 24-hour observer started October 22 at 08:48:22 UTC and targets October
+23 around 08:48:22 UTC. Its result and UTC-midnight transition check are pending.
+Earlier cgroup peak / `memory.failcnt` observations do not by themselves establish
+OOM or a Python leak: cgroup memory includes file cache, and failcnt records limit
+hits followed by reclaim. See the [checkpoint](CHECKPOINT_2026-10-20.md) for the
+dated cache/RSS snapshot and conditional storage-geometry estimate.
+
 Zero normal-operation SD writes are also unverified; `fallback=0` does not measure that.
-Runtime source is locally committed as `2f4edaa`; all 39 installed source hashes
-are checked separately. Device Git HEAD was preserved with its prior edits;
-no `git pull`/checkout was used. The owner explicitly authorized sudo.
+Linear integration is prepared, but no merge or push has occurred. Sudo was explicitly authorized.
 
 Live acceptance found quadratic long-log redaction and oversized read batches,
 then sleep-after-work sampling drift. Completeness checks also found missing
@@ -21,13 +31,13 @@ process snapshots: a guarded `snapshot(None, ...)` TypeError prevented baseline
 updates. These issues are fixed, and actual process/power/temperature rows now
 grow. Active state or heartbeat alone does not prove observation completeness.
 
-Full preflight and metrics ratchet pass without exceptions; the sole full-run
-warning is unavailable local ShellCheck. Windows blackbox: 314 passed, 5 skipped.
-Linux blackbox/container-watchdog: 329 passed before the final one-line fix,
-followed by 16 targeted process tests. Actual Python 3.6.9 / SQLite 3.22 passed
-32 synthetic assertions. All three databases passed read-only quick checks;
-current boot/snapshot linkage and four installed units were verified. Hour
-acceptance also checks distinct process snapshots and reported memory peaks.
+Combined preflight reported 38 regressions. Windows blackbox: 317 passed / 6
+skipped; Linux blackbox: 323 passed separately. Twelve Compose configurations
+validated without a daemon. ShellCheck and a Docker daemon were unavailable in
+the validation environment. Actual Python 3.6.9 / SQLite 3.22 passed 32 synthetic
+assertions and a separate lossless 8 MiB `RLIMIT_AS=64 MiB` check. These are
+separate checks, not one combined runtime suite. Earlier read-only DB, boot/snapshot
+and installed-unit checks remain recorded in the checkpoint.
 
 Boot service is enabled and successfully exited. Isolated synthetic SSD→HDD
 archive, immutable retry and copy-failure checks passed before archive-timer

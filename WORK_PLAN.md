@@ -1,6 +1,12 @@
 # Work Plan
 
-> **2026-10-22:** [current checkpoint, October 21–22 addenda](docs/plans/CHECKPOINT_2026-10-20.md).
+> **2026-10-23:** [current checkpoint and October 24 handoff](docs/plans/CHECKPOINT_2026-10-23.md).
+> Home VPN cause is unresolved: the controlled UDP probe passed, while the phone
+> handshake and Deco UI remain untested. Tomorrow: synchronized phone checks over
+> EC220/Deco/cellular and reading the final 24-hour OBS-1 result.
+> Before November 2, separately verify a replacement Cloud.ru FM model; migration is pending.
+
+> **Historical October 22 snapshot:** [OBS/SMART/Cloud details](docs/plans/CHECKPOINT_2026-10-20.md).
 > Watchdog HDD guard deployed October 19; nightly missing-thumbnail generation
 > disabled October 20 after recurring OOM. SMART switched to shared stable by-id
 > October 21; installed unit/monitor verified, 14 tests passed. USB ATA Status is

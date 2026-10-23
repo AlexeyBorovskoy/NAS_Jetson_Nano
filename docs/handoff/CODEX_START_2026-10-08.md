@@ -1,12 +1,16 @@
 # Codex start in NAS_Jetson_Nano — handoff from 2026-10-08
 
+> Updated October 23: the [current checkpoint](../plans/CHECKPOINT_2026-10-23.md)
+> records status and the October 24 test sequence. Older SHAs and queues below are history;
+> do not execute them instead of the current plan. Keep credentials and raw network data out.
+
 Russian version: [CODEX_START_2026-10-08.ru.md](CODEX_START_2026-10-08.ru.md). Document replaces outdated
 `docs/prompts/CODEX_BOOTSTRAP_PROMPT.md` (30.08) for current startup. No secrets here — only paths.
 
 ## 1. Read before first action (in order)
 
 1. `AGENTS.md` — shared agent rules (version from working copy, with §9 "Artifacts" and §10 "Cleanliness").
-2. [`docs/plans/CHECKPOINT_2026-10-08.md`](../plans/CHECKPOINT_2026-10-08.md) — where the project is now.
+2. [`docs/plans/CHECKPOINT_2026-10-23.md`](../plans/CHECKPOINT_2026-10-23.md) — current status and October 24 checks.
 3. `CLAUDE.md` — operational state, component table, Pitfalls and Hard Rules №1–18.
    Written for Claude but **project knowledge canon** for Codex too: recorded defects and prohibitions.
 4. `docs/32_QUALITY_GATE.md` — gates; `docs/AGENT_REPOSITORY_HYGIENE.md` — cleanliness (in index).

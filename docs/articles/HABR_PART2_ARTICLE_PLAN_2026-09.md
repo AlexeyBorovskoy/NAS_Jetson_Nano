@@ -1,5 +1,13 @@
 # Habr Part 2 article plan (2026-09, ред. 2) / План статьи Habr — Часть 2 (редакция 2)
 
+> **Фактура 23.10 / Evidence update:** [контрольная точка / checkpoint](../plans/CHECKPOINT_2026-10-23.ru.md).
+> RU: причина домашнего отказа VPN не установлена; обычный UDP прошёл повтор с контролем,
+> но телефонный handshake, обратный путь и Deco не проверены. Итог суточного OBS-1
+> сегодня не прочитан; замена модели Cloud.ru FM до 02.11 ещё не выполнена.
+> EN: home VPN cause remains unknown; controlled ordinary UDP passed, but phone handshake,
+> return traffic, and Deco remain untested. The daily OBS-1 result was not read today;
+> Cloud.ru FM migration before November 2 is pending. These are not completed fixes.
+
 > 🇬🇧 **Status:** writing plan, restructured 2026-09-26 around a new spine (see §3).
 > 🇷🇺 **Статус:** план к написанию, переформирован 2026-09-26 вокруг новой оси (см. §3).
 >

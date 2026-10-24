@@ -221,6 +221,66 @@ working by the owner on Vostro. VPN stayed up throughout — `amnezia-xray` and
 `amnezia-awg2` were never restarted (rule #13 in `CLAUDE.md`). Details —
 [`CHECKPOINT_2026-08-25.md`](plans/CHECKPOINT_2026-08-25.md).
 
+## 3.6. Домашний провайдер против VPN: что режется и что работает (2026-10-24) / Home ISP vs the VPN: what is filtered and what works (2026-10-24)
+
+> 🇷🇺 Измерено из домашнего Wi-Fi 24.10; подробности и границы выводов — в
+> [`CHECKPOINT_2026-10-24.ru.md`](plans/CHECKPOINT_2026-10-24.ru.md).
+>
+> 🇬🇧 Measured from the home Wi-Fi on 2026-10-24; details and limits of the
+> conclusions are in [`CHECKPOINT_2026-10-24.md`](plans/CHECKPOINT_2026-10-24.md).
+
+| Путь / Path | Дома / At home | LTE |
+|---|---|---|
+| AmneziaWG 2.0, `193.8.215.130:40568/udp` | ❌ рукопожатие есть, вниз большие потери / handshake ok, heavy downstream loss | ✅ |
+| AmneziaWG 3.1 (пилот / pilot), `:7843/udp` | ❌ то же самое / same | ✅ |
+| XRay Reality, `:443`, `fp=chrome` | ❌ обрыв на ClientHello или около 16 КБ / cut at ClientHello or ~16 KB | ✅ |
+| **XRay Reality, `:443`, `fp=firefox`** | ✅ | ✅ |
+| `95.163.176.103` (любой порт / any port) | ❌ полный блок / fully blocked | — |
+| `45.159.144.217` (AS203273) | ❌ рукопожатие TCP есть, данных нет / TCP handshake only, no data | — |
+
+🇷🇺 **Вывод.** Провайдер режет XRay по отпечатку TLS-клиента, а не по адресу:
+обычный TLS через `193.8.215.130:443` из дома качает 444 КБ за 0,8 с. Поэтому
+рабочий путь для дома — XRay с `fp=firefox`. Это клиентская настройка, сервер
+её не требует. UDP от этого адреса к дому теряется независимо от версии
+AmneziaWG, так что 3.1 дома не помогает. Клиентам выдаётся адрес по имени
+**`vpn.borovskoy.dynv6.net`** (A → `193.8.215.130`, TTL 60): при блокировке
+адреса меняется одна запись DNS, а не ключи.
+
+🇬🇧 **Conclusion.** The ISP filters XRay by the client's TLS fingerprint, not by
+address: plain TLS through `193.8.215.130:443` downloads 444 KB in 0.8 s from
+home. The working home path is therefore XRay with `fp=firefox` — a client-side
+setting, not a server one. UDP from that address towards home is lossy whatever
+the AmneziaWG version, so 3.1 does not help at home. Clients get the address by
+name, **`vpn.borovskoy.dynv6.net`** (A → `193.8.215.130`, TTL 60): if the address
+is blocked, one DNS record changes instead of every key.
+
+## 3.7. Пилот AmneziaWG 3.1 рядом с 2.0 / AmneziaWG 3.1 pilot next to 2.0 (2026-10-24)
+
+🇷🇺 Поставлен вручную вторым контейнером: приложение Amnezia ставит 3.1 только
+вместо 2.0 и удаляет всех пользователей. 2.0 не затронут. Пилот оставлен до
+перевыпуска ключей владельцем.
+
+🇬🇧 Installed by hand as a second container — the Amnezia app only installs 3.1
+in place of 2.0 and drops every user. 2.0 is untouched. The pilot stays until
+the owner reissues keys.
+
+| Параметр / Parameter | Значение / Value |
+|---|---|
+| Контейнер / Container | `amnezia-awg3`, образ / image `amneziavpn/amneziawg-go:3.1.20260828` (`sha256:cbafc02b…`), `--cap-add NET_ADMIN --device /dev/net/tun`, без / no `--privileged`, `--memory 128m` |
+| Сеть / Network | `amnezia-awg3-net`, мост / bridge `amn3`, `172.29.173.0/24`; VPN `10.8.3.0/24` |
+| Порт / Port | `7843/udp` (ufw + 10 сервисных портов NAS только с / service ports only from `172.29.173.0/24`) |
+| Конфиг / Config | `/opt/amnezia-awg3/{awg,clients,start.sh}`, права / mode 700 |
+| Параметры 3.1 / 3.1 params | как в приложении / as the app: `S1–S4=12`, `H1–H4=1..4`, `HeaderProtectionKey`, `ContentPaddingAddition`, диапазоны таймингов / timing ranges, `RandomTrailers`/`DisableCookies=on`, `I1` только у клиента / client only, MTU 1280 |
+| Откат / Rollback | `docker rm -f amnezia-awg3; docker network rm amnezia-awg3-net; ufw delete …; rm -rf /opt/amnezia-awg3` |
+
+🇷🇺 Ключи 2.0 к серверу 3.1 не подходят: `HeaderProtectionKey` общий для обеих
+сторон. Пир добавляется живьём (`awg set awg0 peer … preshared-key /dev/stdin
+allowed-ips …`), без `syncconf` и перезапуска.
+
+🇬🇧 2.0 keys do not work with the 3.1 server: `HeaderProtectionKey` is shared by
+both sides. Peers are added live (`awg set awg0 peer … preshared-key /dev/stdin
+allowed-ips …`), without `syncconf` or a restart.
+
 ## 4. DNS внутри сети / Internal DNS
 
 🇷🇺 Минимально: доступ по IP. Расширенно:

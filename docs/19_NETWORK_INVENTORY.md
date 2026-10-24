@@ -4,7 +4,7 @@
 >
 > 🇷🇺 Документ фиксирует сетевую топологию тестового стенда NAS_Jetson_Nano. Публичная версия: реальные пароли Wi-Fi, серийные номера, MAC-адреса и учётные данные хранятся только в `config/.env` (gitignored).
 >
-> Updated / Обновлено: **2026-09-12** (mesh Deco перестроен, замеры пересняты).
+> Updated / Обновлено: **2026-09-12** (mesh Deco перестроен, замеры пересняты); **2026-10-24** — доступность адресов VPS из дома и рабочий путь VPN (XRay `fp=firefox`), сентябрьские замеры ниже не повторялись.
 
 ## 1а. Current measured state / Текущее измеренное состояние (2026-09-12)
 
@@ -41,18 +41,37 @@ pre-mesh network and were removed rather than kept alongside.
 ⚠️ **EC220 продолжает раздавать собственный Wi-Fi** параллельно с mesh и делит с ним
 эфир. Решение не принято. / The EC220 still broadcasts its own Wi-Fi alongside the mesh.
 
-### 🔴 Смена внешнего IP (2026-08-07)
+### Историческая смена внешнего IP (2026-08-07) и проверка 23–24.10
 
-Прежний адрес VPS `193.8.215.130` **заблокирован российскими ISP** — per-IP stateful-блок:
-новые потоки (TCP и UDP, любой порт) дропаются, уже установленные продолжают работать.
-Рабочий адрес — **`95.163.176.103`**; дополнительно поднят IPv6 `2a12:5940:665a::2/48`.
+В диагностике 07.08 недоступность `193.8.215.130` описывалась как per-IP stateful-блок,
+после чего использовался `95.163.176.103`; дополнительно был поднят IPv6 `2a12:5940:665a::2/48`.
+Это историческое состояние, его нельзя выдавать за текущую общую блокировку всех портов.
 
-Практическое следствие для доступа:
+23–24.10 из домашней сети TCP 22/443 на `193.8.215.130` доступен. 24.10 VPS получил
+синтетический UDP на порт AWG и из mesh (3/3), и с проводного Jetson (3/3).
+На `95.163.176.103` TCP 22/443 не ответил в проверке 23.10 из дома и с контрольной
+Cloud VM; это не устанавливает причину его недоступности.
+
+**Итог 24.10** ([контрольная точка 24.10](plans/CHECKPOINT_2026-10-24.ru.md)):
+- `95.163.176.103` из дома закрыт полностью (TCP и UDP);
+- на `193.8.215.130` обычный TLS проходит (444 КБ за 0,8 с), но провайдер режет XRay по отпечатку TLS (`fp=chrome`) и теряет UDP вниз — AWG 2.0 и 3.1 дома не работают;
+- рабочий путь — XRay с `fp=firefox`;
+- клиентам выдаётся имя `vpn.borovskoy.dynv6.net` (A → `193.8.215.130`, TTL 60);
+- третий адрес `45.159.144.217` (24.10) из дома данные не пропускает.
+
+EN: the August IP-block diagnosis is historical. **October 24 result**
+([checkpoint](plans/CHECKPOINT_2026-10-24.md)):
+- from home, `95.163.176.103` is fully blocked;
+- on `193.8.215.130` plain TLS passes, but the ISP cuts XRay by TLS fingerprint (`fp=chrome`) and drops downstream UDP, so AWG 2.0/3.1 fail at home;
+- XRay with `fp=firefox` works;
+- clients get `vpn.borovskoy.dynv6.net` (A → `193.8.215.130`, TTL 60).
+
+Исторически использовавшиеся пути (август; текущую доступность проверять отдельно):
 
 | Путь | Когда использовать |
 |---|---|
-| `95.163.176.103` | обычный, работает |
-| `172.29.172.1` (внутренний адрес VPS в VPN-туннеле) | если публичный IP снова заблокируют |
+| `95.163.176.103` | использовался после августовской смены; 23.10 не ответил на проверенных TCP-портах |
+| `172.29.172.1` (внутренний адрес VPS в VPN-туннеле) | исторический запасной путь, требует работающего VPN; сегодня не проверен |
 
 Хост туннеля на Jetson правится в **root-owned** `/opt/nasa/config/.env` (`VPS_HOST=`),
 а не в `~/nasa/config/.env`. После правки — `systemctl restart nasa-tunnel`.
@@ -293,9 +312,9 @@ sudo bash scripts/storage/storage_preflight.sh
 | VPS external access | ✅ Live: nginx+tunnel, ports 8080/2283/8090 | — |
 | USB storage incident | 250 GB device recovered as `/dev/sda1` and mounted at `/mnt/storage`, but prior `error -71`/ext4 errors show hardware risk | Keep preflight/boot guard; replace suspect cable/enclosure/power if errors return |
 | HDD partition | Target ext4 partition for NAS is active: label `nas_jetson_nano-storage`, UUID tracked in fstab | Keep read-only fsck path for future incidents; destructive format only with explicit confirmation |
-| External access | ✅ Implemented via VPS reverse tunnel (ADR-0005), now pointing at `95.163.176.103` | — |
+| External access | Implemented via VPS reverse tunnel (ADR-0005); `95.163.176.103` is the historical August endpoint, not a current availability guarantee | Use verified SSH aliases and live configuration; see the October reachability update above |
 | Service ports exposed to internet | ✅ Closed 2026-08-07: ufw allows service ports only from `172.29.172.0/24` and `10.8.1.0/24` | — |
-| VPS IP blocked from RU ISPs | Old `193.8.215.130` unreachable; migrated to `95.163.176.103` | Keep `172.29.172.1` (in-tunnel) as the fallback path |
+| VPS reachability | From home (2026-10-24): `95.163.176.103` fully blocked; `193.8.215.130` passes plain TLS, but the ISP cuts XRay `fp=chrome` and loses downstream UDP (AWG 2.0/3.1 fail) | Home path: XRay `fp=firefox` via `vpn.borovskoy.dynv6.net`; see [`CHECKPOINT_2026-10-24.md`](plans/CHECKPOINT_2026-10-24.md) |
 | No LAN segmentation | Every service is reachable by anyone with the Wi-Fi password | Guest network during the home-network rebuild (`26_DECO_E4_NETWORK.md`) |
 | Keenetic Omni KN-1410 extender | ⛔ **Plan cancelled 2026-08-10** — superseded by the Deco E4 mesh | Keep as a cold spare; do not commission |
 | TP-Link Deco E4 mesh (2 units) | ✅ **Decided 2026-08-10: Deco replaces the router entirely** (Router mode, LAN IP set to `192.168.0.1`). Cost accepted: Jetson link drops 1000 → 100 Mbit/s | Follow the runbook in [`27_HOME_NETWORK_MESH.md`](27_HOME_NETWORK_MESH.md). Capture the WAN connection type from the EC220-G5 **before** removing it |

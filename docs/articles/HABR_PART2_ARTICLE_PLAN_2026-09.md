@@ -1,12 +1,16 @@
 # Habr Part 2 article plan (2026-09, ред. 2) / План статьи Habr — Часть 2 (редакция 2)
 
-> **Фактура 23.10 / Evidence update:** [контрольная точка / checkpoint](../plans/CHECKPOINT_2026-10-23.ru.md).
-> RU: причина домашнего отказа VPN не установлена; обычный UDP прошёл повтор с контролем,
-> но телефонный handshake, обратный путь и Deco не проверены. Итог суточного OBS-1
-> сегодня не прочитан; замена модели Cloud.ru FM до 02.11 ещё не выполнена.
-> EN: home VPN cause remains unknown; controlled ordinary UDP passed, but phone handshake,
-> return traffic, and Deco remain untested. The daily OBS-1 result was not read today;
-> Cloud.ru FM migration before November 2 is pending. These are not completed fixes.
+> **Фактура 24.10 / Evidence update:** [контрольная точка / checkpoint](../plans/CHECKPOINT_2026-10-24.ru.md).
+> RU: причина домашнего отказа VPN установлена замерами. Провайдер режет XRay по отпечатку
+> TLS-клиента (`fp=chrome`) и теряет UDP вниз от адреса VPS, поэтому AWG 2.0 дома не работает;
+> пилот 3.1 на том же адресе тоже не помог. Рабочий путь — XRay с `fp=firefox`, проверен дома
+> и на LTE. Это обход, а не устранение фильтра; устойчивость во времени не проверена.
+> Итог суточного OBS-1 не принят; замена модели Cloud.ru FM до 02.11 ещё не выполнена.
+> EN: the home VPN cause is now measured. The ISP cuts XRay by client TLS fingerprint
+> (`fp=chrome`) and drops downstream UDP from the VPS address, so AWG 2.0 fails at home;
+> an AWG 3.1 pilot on the same address did not help. XRay with `fp=firefox` works at home
+> and on LTE — a workaround, not a removed filter; its durability is untested.
+> The daily OBS-1 result remains unaccepted; Cloud.ru FM migration before November 2 is pending.
 
 > 🇬🇧 **Status:** writing plan, restructured 2026-09-26 around a new spine (see §3).
 > 🇷🇺 **Статус:** план к написанию, переформирован 2026-09-26 вокруг новой оси (см. §3).

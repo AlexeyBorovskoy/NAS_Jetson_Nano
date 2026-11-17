@@ -1,0 +1,88 @@
+{
+  "schema_version": "2.0",
+  "policy_version": "2.0.0-rc1",
+  "generated_at": "2026-11-17T07:47:17Z",
+  "auto_order": [
+    "SE-PRIMARY",
+    "SE-HY2"
+  ],
+  "devices": [
+    {
+      "device_id": "alexey-windows",
+      "platform": "windows",
+      "client_app": "FlClash",
+      "core": "mihomo",
+      "profile_format": "mihomo-yaml",
+      "pilot": true,
+      "v1_sha256": "51b1f2e7921259447d47022cac0678444d07cb34d0ae83595c994c6a63575f15",
+      "v2_sha256": "0dbcd82e97257671e693f9d4bfcf7ea74f3c6be12d001c9bc4377feefcf0c5b6",
+      "migration_status": "generated"
+    },
+    {
+      "device_id": "ivan-windows",
+      "platform": "windows",
+      "client_app": "FlClash",
+      "core": "mihomo",
+      "profile_format": "mihomo-yaml",
+      "pilot": false,
+      "v1_sha256": "756c853d327b4a78352e1bc0aa4d65eec1fb0542cbd48a3552ecd7ed33f724c8",
+      "v2_sha256": "eba4a88f02e699a6bad7b1546a4f2a7712fa22e80ad199d10bf9e2baf4dd8c7d",
+      "migration_status": "PENDING_DEVICE"
+    },
+    {
+      "device_id": "ivan-android",
+      "platform": "android",
+      "client_app": "FlClash",
+      "core": "mihomo",
+      "profile_format": "mihomo-yaml",
+      "pilot": false,
+      "v1_sha256": "5037db53587405fa8f406687f32ab9edcfd276857147221016e2164db6e492cb",
+      "v2_sha256": "2ebab287808af1db6015ca18c70d955bd18eb1e06e765b75ac296eda3f92127c",
+      "migration_status": "PENDING_DEVICE"
+    },
+    {
+      "device_id": "olga-android",
+      "platform": "android",
+      "client_app": "FlClash",
+      "core": "mihomo",
+      "profile_format": "mihomo-yaml",
+      "pilot": false,
+      "v1_sha256": "ee213ba577b8915e8860e195a629c6bb08e0c3b0f0e2d325aaf54c1ace310994",
+      "v2_sha256": "ce059e4a475c6a5f6e6fd62a8d98c8401900bfbf0d99642831f1239ee7d86766",
+      "migration_status": "PENDING_DEVICE"
+    },
+    {
+      "device_id": "ulyana-android-1",
+      "platform": "android",
+      "client_app": "FlClash",
+      "core": "mihomo",
+      "profile_format": "mihomo-yaml",
+      "pilot": false,
+      "v1_sha256": "360e537a7c976f53afbcae7eb2a2aca722007dc8505ec8b975530e0763e02e4f",
+      "v2_sha256": "66419b3b81530c3da0c29f5118924563a7e930ae4b593bebfb29485387483685",
+      "migration_status": "PENDING_DEVICE"
+    },
+    {
+      "device_id": "ulyana-android-2",
+      "platform": "android",
+      "client_app": "FlClash",
+      "core": "mihomo",
+      "profile_format": "mihomo-yaml",
+      "pilot": false,
+      "v1_sha256": "2a5b847cf0fea115f1c0e2f21ce2b668bf2a8bf788293f2fadf3b2da430420c9",
+      "v2_sha256": "f9835c880b36bd9479041964c8e184e8e4aeacadd9822d104a65280432137875",
+      "migration_status": "PENDING_DEVICE"
+    },
+    {
+      "device_id": "hagircbmsszlx4in",
+      "platform": "android",
+      "client_app": "FlClash",
+      "core": "mihomo",
+      "profile_format": "mihomo-yaml",
+      "pilot": true,
+      "v1_sha256": "961a4a2cd7908c62440db92dffbf0808eaa33c93423c6ca67064642af054656d",
+      "v2_sha256": "770ff01876d9bfe946d22b4970ad0c789afe17255ec7ce6c0c42f115e442543f",
+      "migration_status": "PENDING_DEVICE"
+    }
+  ]
+}

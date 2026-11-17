@@ -1,0 +1,13 @@
+device_id,owner_alias,platform,v1_yaml_files,v1_vless_sha12,v1_hy2_sha12,v3_status,old_credential_dependencies
+alexey-windows,Alexey,windows,FAMILY-SE-Alexey-Windows.yaml,f0726aec03fd,22cbc8d3535d,PREPARED,alexey-windows
+ivan-windows,Ivan,windows,family/FAMILY-SE-Ivan-Windows.yaml,518cfd1b617b,b844def49c51,PREPARED,ivan-windows
+ivan-android,Ivan,android,family/FAMILY-SE-Ivan-Android.yaml,21912ab69732,46b4f07f1147,PREPARED,ivan-android
+olga-android,Olga,android,family/FAMILY-SE-Olga-Android.yaml,ec810b3ed717,04e86039a864,PREPARED,olga-android
+ulyana-android-1,Ulyana,android,family/FAMILY-SE-Ulyana-Android-1.yaml,a689219a5032,55629049976c,PREPARED,ulyana-android-1
+ulyana-android-2,Ulyana,android,family/FAMILY-SE-Ulyana-Android-2.yaml,e979104afa61,d6da11f7e911,PREPARED,ulyana-android-2
+hagircbmsszlx4in,Test-Android,android,"FAMILY-SE-01.yaml;FAMILY-SE-02.yaml;FAMILY-SE-03-HY2.yaml;FAMILY-SE-04-TLS.yaml",489142fef3ba,e3855eb7ed19,PREPARED,"FAMILY-SE-01;02;03-HY2;04-TLS"
+new-01,Unassigned-01,android,NONE,NONE,NONE,PREPARED,NONE
+new-02,Unassigned-02,android,NONE,NONE,NONE,PREPARED,NONE
+new-03,Unassigned-03,windows,NONE,NONE,NONE,PREPARED,NONE
+new-04,Unassigned-04,windows,NONE,NONE,NONE,PREPARED,NONE
+new-05,Unassigned-05,android,NONE,NONE,NONE,PREPARED,NONE

@@ -1,0 +1,96 @@
+schema_version: "2.0"
+policy_version: "2.0.0-rc1"
+
+common:
+  mixed-port: 7890
+  allow-lan: false
+  mode: rule
+  log-level: info
+  ipv6: false
+  unified-delay: true
+  tcp-concurrent: true
+  sniffer:
+    enable: true
+    parse-pure-ip: true
+    override-destination: true
+    sniff:
+      HTTP:
+        ports: [80, 8080]
+      TLS:
+        ports: [443, 8443]
+      QUIC:
+        ports: [443]
+  dns:
+    enable: true
+    ipv6: false
+    respect-rules: true
+    enhanced-mode: fake-ip
+    fake-ip-range: 198.19.0.1/16
+    fake-ip-filter:
+      - "*.lan"
+      - "*.local"
+      - "vpn.privet.dynv6.net"
+      - "*.ru"
+      - "*.su"
+      - "*.xn--p1ai"
+      - "*.vk.com"
+      - "10.0.0.0/8"
+      - "172.16.0.0/12"
+      - "192.168.0.0/16"
+    default-nameserver:
+      - "1.1.1.1"
+      - "8.8.8.8"
+      - "system"
+    proxy-server-nameserver:
+      - "1.1.1.1"
+      - "8.8.8.8"
+      - "system"
+    direct-nameserver:
+      - "system"
+    nameserver:
+      - "https://1.1.1.1/dns-query"
+      - "https://8.8.8.8/dns-query"
+    fallback:
+      - "tls://1.1.1.1:853"
+      - "tls://8.8.8.8:853"
+    fallback-filter:
+      geoip: false
+      ipcidr:
+        - "240.0.0.0/4"
+
+platform_tun:
+  windows:
+    enable: true
+    stack: gvisor
+    auto-route: true
+    auto-detect-interface: true
+    strict-route: false
+    dns-hijack:
+      - "any:53"
+  android:
+    enable: true
+    stack: gvisor
+    dns-hijack:
+      - "any:53"
+
+auto_group:
+  name: AUTO
+  type: fallback
+  order:
+    - SE-PRIMARY
+    - SE-HY2
+  url: "https://www.gstatic.com/generate_204"
+  interval: 120
+  timeout: 3000
+  lazy: false
+  max-failed-times: 2
+
+base_rules:
+  - "IP-CIDR,192.168.0.0/16,DIRECT,no-resolve"
+  - "IP-CIDR,10.0.0.0/8,DIRECT,no-resolve"
+  - "IP-CIDR,172.16.0.0/12,DIRECT,no-resolve"
+  - "DOMAIN-SUFFIX,ru,DIRECT"
+  - "DOMAIN-SUFFIX,su,DIRECT"
+  - "DOMAIN-SUFFIX,xn--p1ai,DIRECT"
+  - "DOMAIN-SUFFIX,vk.com,DIRECT"
+  - "MATCH,PROXY"

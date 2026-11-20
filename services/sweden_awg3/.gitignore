@@ -1,0 +1,8 @@
+private/
+clients/
+bin/
+*.conf
+*.uapi
+*.key
+*.zip
+__pycache__/

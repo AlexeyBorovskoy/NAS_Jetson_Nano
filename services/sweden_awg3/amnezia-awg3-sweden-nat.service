@@ -1,0 +1,22 @@
+[Unit]
+Description=Scoped NAT for Sweden AmneziaWG
+Wants=network-online.target
+After=network-online.target ufw.service
+Before=amnezia-awg3-sweden.service
+PartOf=amnezia-awg3-sweden.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/python3 /opt/amnezia-awg3-sweden/awg_control.py nat-start
+ExecStop=/usr/bin/python3 /opt/amnezia-awg3-sweden/awg_control.py nat-stop
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+CapabilityBoundingSet=CAP_NET_ADMIN
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+MemoryMax=64M
+TasksMax=16

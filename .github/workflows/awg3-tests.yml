@@ -1,0 +1,32 @@
+name: AmneziaWG contracts
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "services/sweden_awg3/**"
+      - "tests/sweden_awg3/**"
+      - ".github/workflows/awg3-tests.yml"
+  pull_request:
+    paths:
+      - "services/sweden_awg3/**"
+      - "tests/sweden_awg3/**"
+      - ".github/workflows/awg3-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install cryptographic library
+        run: pip install -r services/sweden_awg3/requirements.txt
+      - name: Test contracts without host networking
+        run: python -m unittest discover -s tests/sweden_awg3 -v

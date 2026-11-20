@@ -1,0 +1,39 @@
+[Unit]
+Description=Independent Sweden AmneziaWG 3.1
+Wants=network-online.target
+Requires=amnezia-awg3-sweden-nat.service
+After=network-online.target ufw.service amnezia-awg3-sweden-nat.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/amnezia-awg3-sweden
+Environment=LOG_LEVEL=error
+Environment=GOMAXPROCS=1
+ExecStart=/opt/amnezia-awg3-sweden/bin/amneziawg-go -f awgse0
+ExecStartPost=/usr/bin/python3 /opt/amnezia-awg3-sweden/awg_control.py start
+ExecStopPost=/usr/bin/python3 /opt/amnezia-awg3-sweden/awg_control.py stop
+Restart=on-failure
+RestartSec=3
+TimeoutStartSec=25
+TimeoutStopSec=12
+UMask=0077
+RuntimeDirectory=amneziawg
+RuntimeDirectoryMode=0700
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ReadWritePaths=/run/amneziawg
+CapabilityBoundingSet=CAP_NET_ADMIN
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+DevicePolicy=closed
+DeviceAllow=/dev/net/tun rw
+MemoryMax=256M
+CPUQuota=50%
+TasksMax=64
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target

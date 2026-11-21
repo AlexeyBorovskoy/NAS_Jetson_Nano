@@ -113,3 +113,6 @@ ds_board/
 
 # Local outputs; existing tracked evidence stays tracked (hygiene policy 2026-10-06)
 /artifacts/
+
+# Local handover folder (owner 2026-11-21): private keys and connection data never go to git
+/nil/
